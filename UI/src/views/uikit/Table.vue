@@ -36,6 +36,9 @@ onBeforeMount(() => {
         customer1.value = data;
         loading1.value = false;
         customer1.value.forEach((customer) => (customer.date = new Date(customer.date)));
+
+        alert(JSON.stringify(customer1.value))
+        console.log(customer1.value)
     });
     customerService.getCustomersLarge().then((data) => (customer2.value = data));
     customerService.getCustomersMedium().then((data) => (customer3.value = data));

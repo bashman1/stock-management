@@ -5,11 +5,11 @@ const router = createRouter({
     history: createWebHashHistory(),
     routes: [
         {
-            path: '/',
+            path: '/admin',
             component: AppLayout,
             children: [
                 {
-                    path: '/',
+                    path: '/admin',
                     name: 'dashboard',
                     component: () => import('@/views/Dashboard.vue')
                 },
@@ -140,11 +140,52 @@ const router = createRouter({
                     path: '/documentation',
                     name: 'documentation',
                     component: () => import('@/views/utilities/Documentation.vue')
+                },
+                {
+                    path: '/create-institution',
+                    name: 'institution',
+                    component: () => import('@/views/pages/institution-management/CreateInstitution.vue')
+                },
+                {
+                    path: '/view-institutions',
+                    name: 'ViewInstitutions',
+                    component: () => import('@/views/pages/institution-management/ViewInstitutions.vue')
+                },
+                {
+                    path: '/create-user',
+                    name: 'CreateUser',
+                    component: () => import('@/views/pages/user-management/CreateUser.vue')
+                },
+                {
+                    path: '/view-users',
+                    name: 'ViewUsers',
+                    component: () => import('@/views/pages/user-management/ViewUsers.vue')
+                },
+                {
+                    path: '/create-role',
+                    name: 'CreateRole',
+                    component: () => import('@/views/pages/user-management/CreateRole.vue')
+                },
+                {
+                    path: '/view-roles',
+                    name: 'ViewRoles',
+                    component: () => import('@/views/pages/user-management/ViewRoles.vue')
+                },
+                {
+                    path: '/create-member',
+                    name: 'CreateMember',
+                    component: () => import('@/views/pages/member-management/CreateMember.vue')
+                },
+                {
+                    path: '/view-members',
+                    name: 'ViewMember',
+                    component: () => import('@/views/pages/member-management/ViewMembers.vue')
                 }
-            ]
+            
+        ]
         },
         {
-            path: '/landing',
+            path: '/',
             name: 'landing',
             component: () => import('@/views/pages/Landing.vue')
         },

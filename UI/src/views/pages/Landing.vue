@@ -2,8 +2,11 @@
 import { useLayout } from '@/layout/composables/layout';
 import { computed } from 'vue';
 import AppConfig from '@/layout/AppConfig.vue';
+import { useRouter } from 'vue-router';
 
 const { layoutConfig } = useLayout();
+
+const router = useRouter(); 
 
 const smoothScroll = (id) => {
     document.querySelector(id).scrollIntoView({
@@ -14,6 +17,11 @@ const smoothScroll = (id) => {
 const logoUrl = computed(() => {
     return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
 });
+
+const goToLogin = ()=>{
+ router.push("/auth/login");
+}
+
 </script>
 
 <template>
@@ -48,7 +56,7 @@ const logoUrl = computed(() => {
                         </li>
                     </ul>
                     <div class="flex justify-content-between lg:block border-top-1 lg:border-top-none surface-border py-3 lg:py-0 mt-3 lg:mt-0">
-                        <Button label="Login" class="p-button-text p-button-rounded border-none font-light line-height-2 text-blue-500"></Button>
+                        <Button @click="goToLogin" label="Login" class="p-button-text p-button-rounded border-none font-light line-height-2 text-blue-500"></Button>
                         <Button label="Register" class="p-button-rounded border-none ml-5 font-light text-white line-height-2 bg-blue-500"></Button>
                     </div>
                 </div>

@@ -13,31 +13,28 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('members', function (Blueprint $table) {
             $table->id();
             $table->string('first_name');
             $table->string('last_name');
             $table->string('other_name')->nullable();
             $table->string('phone_number')->nullable();
+            $table->string('member_number');
+            $table->string('alt_member_number')->nullable();
             $table->string('gender')->nullable();
             $table->timestamp('date_of_birth')->nullable();
             $table->text('address')->nullable();
             $table->unsignedBigInteger('city_id')->nullable();
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->unsignedBigInteger('institution_id');
+            $table->unsignedBigInteger('branch_id');
             $table->string("status");
             $table->string("street")->nullable();
             $table->string("p_o_box")->nullable();
             $table->text('description')->nullable();
-            $table->unsignedBigInteger('role_id');
-            $table->unsignedBigInteger('institution_id')->nullable();
-            $table->unsignedBigInteger('branch_id')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_on')->nullable();
             $table->timestamp('updated_on')->nullable();
-            $table->rememberToken();
             $table->timestamps();
         });
     }
@@ -49,6 +46,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('members');
     }
 };

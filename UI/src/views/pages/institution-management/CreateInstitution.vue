@@ -1,0 +1,185 @@
+<script setup>
+ import {ref, onMounted} from 'vue';
+ import { useRouter } from 'vue-router';
+ import CommonService from '@/service/CommonService'
+
+ const commonService = new CommonService();
+
+//  const router = useRouter(); 
+ const name = ref(null);
+ const type = ref(null);
+ const startDate = ref(null);
+ const address = ref(null);
+ const city = ref(null);
+ const street = ref(null);
+ const pOBox = ref(null);
+ const description = ref(null);
+ const contactName = ref(null);
+ const contactNumber = ref(null);
+ const contactEmail = ref(null);
+ const contactWeb = ref(null);
+ const bankName = ref(null);
+ const acctName = ref(null);
+ const acctNumber = ref(null);
+
+ const onSubmit=()=>{
+    let postData = {
+        name:name.value,
+        type: type.value,
+        start_date:startDate.value,
+        address:address.value,
+        city:city.value,
+        street:street.value,
+        p_o_box:pOBox.value,
+        description:description.value,
+        contact_name:contactName.value,
+        contact_number:contactNumber.value,
+        contact_email:contactEmail.value,
+        contact_web:contactWeb.value,
+        bank_id:bankName.value,
+        acct_name:acctName.value,
+        acct_no:acctNumber.value,
+        status:'Active'
+    }
+
+    // alert(name.value)
+    console.log(postData);
+    commonService.genericRequest('create-institution', 'post', false, postData).then((response)=>{})
+ }
+
+
+</script>
+<template>
+    <div>
+        <div class="card">
+            <h5>Create Institution</h5>
+            <div class="grid p-fluid mt-3">
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="instName" v-model="name"  />  <!-- class="p-invalid"-->
+                        <label for="instName">Institution Name</label>
+                    </span>
+                </div>
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <Dropdown id="instType" :options="cities" v-model="type" optionLabel="name"></Dropdown>
+                        <label for="instType">Institution Type</label>
+                    </span>
+                </div>
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <Calendar inputId="instStart" v-model="startDate"></Calendar>
+                        <label for="instStart">Start Date</label>
+                    </span>
+                </div>
+    
+                <div class="field col-12 md:col-12">
+                    <span class="p-float-label">
+                        <Textarea inputId="textarea" rows="3" cols="30" v-model="address"></Textarea>
+                        <label for="textarea">Address</label>
+                    </span>
+                </div>
+    
+    
+    
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="instCity" v-model="city" />
+                        <label for="instCity">City</label>
+                    </span>
+                </div>
+    
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="instStreet" v-model="street" />
+                        <label for="instStreet">Street</label>
+                    </span>
+                </div>
+    
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="instPOBox" v-model="pOBox" />
+                        <label for="instPOBox">P.O Box</label>
+                    </span>
+                </div>
+
+
+                <div class="field col-12 md:col-10">
+                    <span class="p-float-label">
+                        <Textarea inputId="instDescription" rows="3" cols="30" v-model="description"></Textarea>
+                        <label for="instDescription">Description</label>
+                    </span>
+                </div>
+                <div class="field col-12 md:col-2">
+                    <h5>Attachment</h5>
+                    <FileUpload mode="basic" name="demo[]" accept="image/*" :maxFileSize="1000000" @uploader="onUpload" customUpload />
+            
+                </div>
+
+            </div>
+        </div>
+
+        <div class="card">
+            <h5>Institution Contact Info</h5>
+            <div class="grid p-fluid mt-3">
+                <div class="field col-12 md:col-3">
+                    <span class="p-float-label">
+                        <InputText type="text" id="contactName" v-model="contactName" />
+                        <label for="contactName">Contact Person Name</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-3">
+                    <span class="p-float-label">
+                        <InputText type="text" id="contactNumber" v-model="contactNumber" />
+                        <label for="contactNumber">Phone Number</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-3">
+                    <span class="p-float-label">
+                        <InputText type="text" id="contactEmail" v-model="contactEmail" />
+                        <label for="contactEmail">Email</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-3">
+                    <span class="p-float-label">
+                        <InputText type="text" id="contactWeb" v-model="contactWeb" />
+                        <label for="contactWeb">Website</label>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h5>Institution Bank Info</h5>
+            <div class="grid p-fluid mt-3">
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <Dropdown id="bankName" :options="cities" v-model="bankName" optionLabel="name"></Dropdown>
+                        <label for="bankName">Bank</label>
+                    </span>
+                </div>
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="acctName" v-model="acctName" />
+                        <label for="acctName">Account Name</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="acctNumber" v-model="acctNumber" />
+                        <label for="acctNumber">Account Number</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-8"></div>
+                <div class="field col-12 md:col-4">
+                    <Button @click="onSubmit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
