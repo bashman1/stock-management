@@ -29,7 +29,7 @@ const onSubmit = () => {
         status:'Active'
     }
 
-    commonService.genericRequest('crate-role', 'post', false, postData).then((response) => { 
+    commonService.genericRequest('crate-role', 'post', true, postData).then((response) => { 
         if(response.status){
             commonService.showSuccess(toast,response.message);
         }else{

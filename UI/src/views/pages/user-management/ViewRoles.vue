@@ -8,7 +8,7 @@ const toast = useToast();
 const roles = ref(null);
 const commonService = new CommonService();
 
-//  const router = useRouter(); 
+ const router = useRouter(); 
 
 const AddRolesPermissions=(role)=>{
     alert(JSON.stringify(role))
@@ -27,9 +27,12 @@ const getAllRoles = () => {
     })
 }
 
+const goToAssignRolePermissions=(event)=>{
+    router.push("/role-permission/"+event?.id);
+}
+
 onMounted(() => {
     getAllRoles();
-    // productService.getProducts().then((data) => (products.value = data));
 });
 
 </script>
@@ -74,9 +77,11 @@ onMounted(() => {
                     </Column>
                     <Column headerStyle="min-width:10rem;">
                         <template #body="{data}">
-                            <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="AddRolesPermissions(data)" />
-                            <!-- <Button icon="pi pi-trash" class="p-button-rounded p-button-warning mt-2" @click="confirmDeleteProduct(data)" /> -->
+                            <Button icon="pi pi-pencil" class="p-button-rounded p-button-outlined-success  p-button-outlined mr-2" @click="AddRolesPermissions(data)" />
+                            <Button icon="pi pi-arrow-right-arrow-left" class="p-button-rounded p-button-outlined mr-2 mt-2" @click="goToAssignRolePermissions(data)" />
+                            <!-- <Button icon="pi pi-check" class="p-button-rounded p-button-outlined mr-2" /> -->
                         </template>
+                        
                     </Column>
 
                 </DataTable>

@@ -180,6 +180,11 @@ const router = createRouter({
                     path: '/view-members',
                     name: 'ViewMember',
                     component: () => import('@/views/pages/member-management/ViewMembers.vue')
+                },
+                {
+                    path: '/role-permission/:id',
+                    name: 'RolePermission',
+                    component: ()=>import('@/views/pages/user-management/AssignRolePermissions.vue')
                 }
             
         ]
