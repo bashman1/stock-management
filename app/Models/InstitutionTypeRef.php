@@ -8,4 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class InstitutionTypeRef extends Model
 {
     use HasFactory;
+
+    protected $fillable = ['name', 'status', 'created_by', 'updated_by', 'created_on', 'updated_on'];
+
 }

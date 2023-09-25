@@ -3,6 +3,8 @@
     "version": "3.7.0",
     "scripts": {
         "dev": "vite --open http://127.0.0.1:5001 --port 5001",
+        "serve": "vite --open http://127.0.0.1:5001 --port 5001",
+        "start": "vite --open http://127.0.0.1:5001 --port 5001",
         "build": "vite build",
         "preview": "vite preview",
         "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"

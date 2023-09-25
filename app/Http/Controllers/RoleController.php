@@ -19,6 +19,7 @@ class RoleController extends Controller
             $role->type = $request->type;
             $role->institution_id = $request->institution_id;
             $role->status = $request->status;
+            $role->role_type=$request->role_type;
             $role->description = $request->description;
             $role->created_by = 1;//$userData->id;
             $role->created_on =now();
@@ -85,5 +86,26 @@ class RoleController extends Controller
         } catch (\Throwable $th) {
             return $this->genericResponse(false, "Role retrieval  Failed", 500, $th);
         }
+    }
+
+    public function getInstitutionRoles(Request $request){
+        try {
+            $roles =  Role::where(['institution_id'=>$request->institutionId, 'status'=>$request->status])->get();
+            return $this->genericResponse(true, "Roles retrieved successfully", 200, $roles);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, "Role retrieval  Failed", 500, $th);
+        }
+    }
+
+
+    public function getRolesByTypes(Request $request){
+
+        try {
+            $roles =  Role::where(['role_type'=>$request->roleType, 'status'=>$request->status])->get();
+            return $this->genericResponse(true, "Roles retrieved successfully", 200, $roles);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, "Role retrieval  Failed", 500, $th);
+        }
+
     }
 }

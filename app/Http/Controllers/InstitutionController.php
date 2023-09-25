@@ -78,8 +78,6 @@ class InstitutionController extends Controller
         
     }
 
-
-
     public function getInstitutions()
     {
         try {
@@ -89,5 +87,10 @@ class InstitutionController extends Controller
             return $this->genericResponse(false, "institution creation Failed", 500, []);
         }
 
+    }
+
+    public function getBranchesByInstitutionId(Request $request){
+        $branches = Branch::where(['status'=>$request->status, 'institution_id'=>$request->institutionId])->get();
+        return $this->genericResponse(true, "Fetched institution branches", 200, $branches);
     }
 }

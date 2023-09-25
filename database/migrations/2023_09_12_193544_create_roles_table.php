@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string("type");
             $table->unsignedBigInteger("institution_id")->nullable();
             $table->string("status");
+            $table->string("role_type");
             $table->text("description");
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

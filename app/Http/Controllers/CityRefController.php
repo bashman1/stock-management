@@ -7,79 +7,23 @@ use Illuminate\Http\Request;
 
 class CityRefController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        //
+
+    public function createCity(Request $request){
+        $city = new CityRef();
+
+        $city->country_id = $request->country_id;
+        $city->name = $request->name;
+        $city->code = $request->code;
+        $city->status = $request->status;
+        $city->created_on = now();
+        $city->save();
+        
+        return $this->genericResponse(true, "City created successfully", 201, $city);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\CityRef  $cityRef
-     * @return \Illuminate\Http\Response
-     */
-    public function show(CityRef $cityRef)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\CityRef  $cityRef
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(CityRef $cityRef)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\CityRef  $cityRef
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, CityRef $cityRef)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\CityRef  $cityRef
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(CityRef $cityRef)
-    {
-        //
+    public function getCityByCountryId($country_id){
+        $cities = CityRef::where('country_id', $country_id)->get();
+        return $this->genericResponse(true, "Cities retrieved successfully", 200, $cities);
     }
 }

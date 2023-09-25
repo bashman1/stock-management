@@ -7,79 +7,22 @@ use Illuminate\Http\Request;
 
 class BankRefController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        //
+
+    public function createBankRef(Request $request){
+        $bank = new BankRef();
+        $bank->name = $request->name;
+        $bank->code = $request->code;
+        $bank->status = $request->status;
+        // $bank->created_by = $request->created_by ;
+        $bank->created_on = now();
+        $bank->save();
+        return $this->genericResponse(true, "Bank created successfully", 201, $bank);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\BankRef  $bankRef
-     * @return \Illuminate\Http\Response
-     */
-    public function show(BankRef $bankRef)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\BankRef  $bankRef
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(BankRef $bankRef)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\BankRef  $bankRef
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, BankRef $bankRef)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\BankRef  $bankRef
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(BankRef $bankRef)
-    {
-        //
+    public function getBanks(){
+        $banks =  BankRef::all();
+        return $this->genericResponse(true, "City created successfully", 200, $banks);
     }
 }

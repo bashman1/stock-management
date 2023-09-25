@@ -1,11 +1,14 @@
 <script setup>
  import {ref, onMounted} from 'vue';
  import { useRouter } from 'vue-router';
- import CommonService from '@/service/CommonService'
+ import CommonService from '@/service/CommonService';
+ import { useToast } from 'primevue/usetoast';
+
+const toast = useToast();
 
  const commonService = new CommonService();
 
-//  const router = useRouter(); 
+ const router = useRouter(); 
  const name = ref(null);
  const type = ref(null);
  const startDate = ref(null);
@@ -21,14 +24,19 @@
  const bankName = ref(null);
  const acctName = ref(null);
  const acctNumber = ref(null);
+ const instType = ref(null);
+ const cities = ref(null);
+ const banks = ref(null);
+ 
+ 
 
  const onSubmit=()=>{
     let postData = {
         name:name.value,
-        type: type.value,
+        type: type.value.id,
         start_date:startDate.value,
         address:address.value,
-        city:city.value,
+        city:city.value.id,
         street:street.value,
         p_o_box:pOBox.value,
         description:description.value,
@@ -36,16 +44,60 @@
         contact_number:contactNumber.value,
         contact_email:contactEmail.value,
         contact_web:contactWeb.value,
-        bank_id:bankName.value,
+        bank_id:bankName.value.id,
         acct_name:acctName.value,
         acct_no:acctNumber.value,
         status:'Active'
     }
-
-    // alert(name.value)
-    console.log(postData);
-    commonService.genericRequest('create-institution', 'post', false, postData).then((response)=>{})
+    commonService.genericRequest('create-institution', 'post', false, postData).then((response)=>{
+        if(response.status){
+            commonService.showSuccess(toast,response.message);
+            commonService.redirect(router, "/view-institutions");
+        }else{
+            commonService.showError(toast,response.message);
+        }
+    })
  }
+
+
+ const getInstitutionTypes=()=>{
+    commonService.genericRequest('get-institution-types', 'get', true, {}).then((response)=>{
+        if(response.status){
+            instType.value = response.data
+        }else{
+
+        }
+    })
+ }
+
+ const getCities=()=>{
+    commonService.genericRequest('get-city-county-id/'+1, 'get', true, {}).then((response)=>{
+        if(response.status){
+            cities.value = response.data
+        }else{
+
+        }
+    })
+ }
+
+ const getBanks=()=>{
+    commonService.genericRequest('get-bank-ref', 'get', true, {}).then((response)=>{
+        if(response.status){
+            banks.value = response.data
+        }else{
+
+        }
+    })
+ }
+ 
+
+
+
+ onMounted(() => {
+    getInstitutionTypes();
+    getCities();
+    getBanks();
+});
 
 
 </script>
@@ -54,6 +106,7 @@
         <div class="card">
             <h5>Create Institution</h5>
             <div class="grid p-fluid mt-3">
+                <Toast />
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <InputText type="text" id="instName" v-model="name"  />  <!-- class="p-invalid"-->
@@ -62,7 +115,7 @@
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="instType" :options="cities" v-model="type" optionLabel="name"></Dropdown>
+                        <Dropdown id="instType" :options="instType" v-model="type" optionLabel="name"></Dropdown>
                         <label for="instType">Institution Type</label>
                     </span>
                 </div>
@@ -81,10 +134,9 @@
                 </div>
     
     
-    
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="instCity" v-model="city" />
+                        <Dropdown id="instCity" :options="cities" v-model="city" optionLabel="name"></Dropdown>
                         <label for="instCity">City</label>
                     </span>
                 </div>
@@ -102,7 +154,6 @@
                         <label for="instPOBox">P.O Box</label>
                     </span>
                 </div>
-
 
                 <div class="field col-12 md:col-10">
                     <span class="p-float-label">
@@ -157,7 +208,7 @@
             <div class="grid p-fluid mt-3">
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="bankName" :options="cities" v-model="bankName" optionLabel="name"></Dropdown>
+                        <Dropdown id="bankName" :options="banks" v-model="bankName" optionLabel="name"></Dropdown>
                         <label for="bankName">Bank</label>
                     </span>
                 </div>

@@ -290,4 +290,31 @@ export default class CommonService {
     return now;
   };
 
+
+  /**
+   * Generic Redirect
+   * @param {*} router 
+   * @param {*} path 
+   * @returns 
+   * @author Bash
+   */
+  redirect=(router, path)=>{
+    return router.push(path);
+  }
+
+
+  /**
+   * Checking for logged in user
+   * @returns 
+   * @author Bash
+   */
+  checkingAuthentication=()=>{
+    let response = false;
+    let data = this.getStorage();
+    if(data !=null && data?.token){
+      response=true
+    }
+    return response;
+  }
+
 }

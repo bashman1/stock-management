@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Run the migrations. 
      *
      * @return void
      */
@@ -27,6 +27,8 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string("status");
+            $table->string("user_type")->nullable();
+            $table->string("user_category")->nullable();
             $table->string("street")->nullable();
             $table->string("p_o_box")->nullable();
             $table->text('description')->nullable();

@@ -10,7 +10,7 @@ class UserController extends Controller
 {
     
     public function createUser(Request $request){
-        try {
+        // try {
             $user = new User();
             $user->first_name = $request->first_name;           
             $user->last_name = $request->last_name;        
@@ -26,16 +26,18 @@ class UserController extends Controller
             $user->street = $request->street;           
             $user->p_o_box = $request->p_o_box;           
             $user->description = $request->description;           
-            $user->role_id =  1;          
-            $user->institution_id =1;          
-            $user->branch_id = 1;         
+            $user->role_id =  $request->role_id;        
+            $user->user_type = $request->user_type;        
+            $user->user_category =  $request->user_category;      
+            $user->institution_id = $request->institution_id;    
+            $user->branch_id =  $request->institution_id;     
             $user->created_by = 1;         
             $user->created_on = now();
             $user->save();
             return $this->genericResponse(true, "User created successfully", 201, $user);
-        } catch (\Throwable $th) {
-            return $this->genericResponse(false, "User creation  Failed", 500, []);
-        }
+        // } catch (\Throwable $th) {
+        //     return $this->genericResponse(false, "User creation  Failed", 500, []);
+        // }
     }
 
 
@@ -52,10 +54,8 @@ class UserController extends Controller
             $userData = auth()->user();
 
  
-            ['user_id', 'token', 'status', 'locked',
-    'logged_in_at', 'created_by', 'updated_by', 'created_on', 'updated_on'];
-
-
+    //         ['user_id', 'token', 'status', 'locked',
+    // 'logged_in_at', 'created_by', 'updated_by', 'created_on', 'updated_on'];
 
             $token = auth()->user()->createToken("auth_token");
 
@@ -69,6 +69,7 @@ class UserController extends Controller
             }
             $loggedInSession->logged_in_at=now();
             $loggedInSession->token=now();
+            $loggedInSession->save();
 
     
             return $this->genericResponse(true, "Logged in successfully", 200, ["token" => $token, "user_data" => $userData]);
@@ -84,5 +85,11 @@ class UserController extends Controller
         } catch (\Throwable $th) {
             return $this->genericResponse(false, "User creation  Failed", 500, []);
         }
+    }
+
+    public function logOut(){
+        $user = auth()->user()->token();
+        $user->revoke();
+        return $this->genericResponse(true, "Users logged out successfully", 200, []);
     }
 }

@@ -40,6 +40,8 @@ class User extends Authenticatable
         'updated_by',
         'created_on',
         'updated_on',
+        'user_type',
+        'user_category',
 
     ];
 

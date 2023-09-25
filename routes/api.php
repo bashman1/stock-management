@@ -7,6 +7,9 @@ use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\CityRefController;
+use App\Http\Controllers\InstitutionTypeRefController;
+use App\Http\Controllers\BankRefController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -26,7 +29,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('create-institution', [InstitutionController::class, 'createInstitution']);
 Route::post('create-user', [UserController::class, 'createUser']);
 Route::post('user-login', [UserController::class, 'login']);
-
 Route::get('get-roles', [RoleController::class, 'getAllRoles']);
 Route::get('get-institutions', [InstitutionController::class, 'getInstitutions']);
 Route::get('get-users', [UserController::class, 'getUsers']);
@@ -38,4 +40,15 @@ Route::post('assign-role-permission', [RoleController::class, 'assignRolePermiss
 
 Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('crate-role', [RoleController::class, 'createRole']);
+    Route::post('create-city', [CityRefController::class, 'createCity']);
+    Route::get('get-city-county-id/{id}', [CityRefController::class, 'getCityByCountryId']);
+    Route::post('create-institution-type', [InstitutionTypeRefController::class, 'InstitutionTypeRefController']);
+    Route::get('get-institution-types', [InstitutionTypeRefController::class, 'getInstitutionTypes']);
+    Route::post('create-bank-ref', [BankRefController::class, 'createBankRef']);
+    Route::get('get-bank-ref', [BankRefController::class, 'getBanks']);
+    Route::post('get-institution-branches', [InstitutionController::class, 'getBranchesByInstitutionId']);
+    Route::post('get-institution-roles', [RoleController::class, 'getInstitutionRoles']);
+    Route::post('get-role-type', [RoleController::class, 'getRolesByTypes']);
+    Route::get('log-out', [UserController::class, 'logOut']);
+
 });

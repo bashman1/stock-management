@@ -10,5 +10,5 @@ class Role extends Model
     use HasFactory;
 
     protected $fillable=['name', 'type', 'institution_id', 'status', 'description',
-                         'created_by', 'updated_by', 'created_on', 'updated_on'];
+                         'created_by', 'updated_by', 'created_on', 'updated_on', 'role_type'];
 }

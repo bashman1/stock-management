@@ -8,9 +8,10 @@ const toast = useToast();
 
 const commonService = new CommonService();
 
-//  const router = useRouter(); 
+ const router = useRouter(); 
 const name = ref(null);
 const type = ref(null);
+const institutionsData = ref(null);
 const institution = ref(null);
 const description = ref(null);
 
@@ -26,17 +27,36 @@ const onSubmit = () => {
         type: type.value.value,
         institution_id:institution.value,
         description: description.value,
+        institution_id:institution.value!=null?institution?.value.id:null,
+        role_type:type.value.value,
         status:'Active'
     }
 
     commonService.genericRequest('crate-role', 'post', true, postData).then((response) => { 
         if(response.status){
             commonService.showSuccess(toast,response.message);
+            commonService.redirect(router, "/view-roles");
         }else{
             commonService.showError(toast,response.message);
         }
     })
 }
+
+
+const getInstitution=()=>{
+    commonService.genericRequest('get-institutions', 'get', false, {}).then((response)=>{
+        if(response.status){
+            institutionsData.value = response.data
+        }else{
+
+        }
+    })
+ }
+
+
+ onMounted(() => {
+    getInstitution();
+});
 
 
 </script>
@@ -60,7 +80,7 @@ const onSubmit = () => {
                 </div>
                 <div class="field col-12 md:col-4" v-if="type?.value =='Institution'">
                     <span class="p-float-label">
-                        <Dropdown id="institution" :options="genderOptions" v-model="institution" optionLabel="label"></Dropdown>
+                        <Dropdown id="institution" :options="institutionsData" v-model="institution" optionLabel="name"></Dropdown>
                         <label for="institution">Institution</label>
                     </span>
                 </div>
