@@ -47,7 +47,7 @@ const onSubmit = () => {
         description: description.value,
         status: 'Active'
     }
-    commonService.genericRequest('create-member', 'post', false, postData).then((response) => {
+    commonService.genericRequest('create-member', 'post', true, postData).then((response) => {
         if (response.status) {
             commonService.showSuccess(toast, response.message);
             commonService.redirect(router, "/view-members");

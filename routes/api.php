@@ -32,7 +32,7 @@ Route::post('user-login', [UserController::class, 'login']);
 Route::get('get-roles', [RoleController::class, 'getAllRoles']);
 Route::get('get-institutions', [InstitutionController::class, 'getInstitutions']);
 Route::get('get-users', [UserController::class, 'getUsers']);
-Route::post('create-member', [MemberController::class, 'createMember']);
+
 Route::get('get-members', [MemberController::class,'getMembers']);
 Route::get('get-role/{id}', [RoleController::class, 'getRoleById']);
 Route::get('get-permissions', [RoleController::class, 'getPermissions']);
@@ -50,5 +50,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('get-institution-roles', [RoleController::class, 'getInstitutionRoles']);
     Route::post('get-role-type', [RoleController::class, 'getRolesByTypes']);
     Route::get('log-out', [UserController::class, 'logOut']);
+    Route::post('create-member', [MemberController::class, 'createMember']);
 
 });

@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\InstitutionBank;
 use App\Models\InstitutionContact;
 use Illuminate\Http\Request;
+use App\Models\MemberNoConfig;
 use Illuminate\Support\Facades\DB;
 
 class InstitutionController extends Controller
@@ -69,6 +70,16 @@ class InstitutionController extends Controller
             $contact->branch_id=$branch->id;
             $contact->created_on=now();
             $contact->save();
+
+            $memberNumberConfig = new MemberNoConfig();
+            $memberNumberConfig->prefix = $this->getLetters($institution->name);
+            $memberNumberConfig->institution_id_code = 1000 + $institution->id;
+            $memberNumberConfig->start_from = 1000;
+            $memberNumberConfig->current_value = 0;
+            $memberNumberConfig->institution_id = $institution->id;
+            // $memberNumberConfig->created_by = 
+            $memberNumberConfig->created_on = now();
+            $memberNumberConfig->save();
             DB::commit();
             return $this->genericResponse(true, "institution created successfully", 201, $institution);
         } catch (\Throwable $th) {
@@ -77,6 +88,9 @@ class InstitutionController extends Controller
         }
         
     }
+
+
+
 
     public function getInstitutions()
     {

@@ -21,7 +21,7 @@ class RoleController extends Controller
             $role->status = $request->status;
             $role->role_type=$request->role_type;
             $role->description = $request->description;
-            $role->created_by = 1;//$userData->id;
+            $role->created_by = $userData->id;
             $role->created_on =now();
             $role->save();
             return $this->genericResponse(true, "Role crated successfully", 201, $role);

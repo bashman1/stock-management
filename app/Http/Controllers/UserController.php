@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\LoginSession;
 use Illuminate\Http\Request;
+use App\Models\Role;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -53,10 +55,6 @@ class UserController extends Controller
             }
             $userData = auth()->user();
 
- 
-    //         ['user_id', 'token', 'status', 'locked',
-    // 'logged_in_at', 'created_by', 'updated_by', 'created_on', 'updated_on'];
-
             $token = auth()->user()->createToken("auth_token");
 
             $loggedInSession = LoginSession::where('user_id', $userData->id)->first();
@@ -71,7 +69,14 @@ class UserController extends Controller
             $loggedInSession->token=now();
             $loggedInSession->save();
 
-    
+            $role = Role::find($userData->role_id);
+            $permissions = DB::select("SELECT R.id, R.role_id, R.permission_id, P.name, P.description, P.is_admin, P.status
+            FROM role_permissions R INNER JOIN permissions P ON R.permission_id = P.id
+            WHERE R.role_id= " . $userData->role_id . " ");
+
+            $userData->role = $role;
+            $userData->permissions = $permissions;
+
             return $this->genericResponse(true, "Logged in successfully", 200, ["token" => $token, "user_data" => $userData]);
         } catch (\Throwable $th) {
             return $this->genericResponse(false, "User creation  Failed", 500, $th);

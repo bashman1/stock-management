@@ -30,4 +30,34 @@ class Controller extends BaseController
             "data"=>$data
         ]);
     }
+
+
+    /**
+     * get current logged in user data  04 Oct 2023
+     * @return 
+     * @author Bashir <wamulabash1@gmail.com.com>
+     */
+    public function getUserLogin(){
+        return auth()->user();
+    }
+
+
+    /**
+     * 
+     */
+    public function getLetters($input) {
+        // Split the input string into words
+        $words = explode(' ', $input);
+    
+        // Initialize an empty result string
+        $result = '';
+    
+        // Loop through the words
+        foreach ($words as $word) {
+            // Get the first two letters of a single word or the first letter of each word (maximum 2 letters)
+            $result .= substr($word, 0, min(1, strlen($word)));
+        }
+    
+        return  substr($result, 0, 2);
+    }
 }

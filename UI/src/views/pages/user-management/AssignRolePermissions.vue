@@ -16,6 +16,7 @@ const getRoleDetails = (id) => {
     commonService.genericRequest('get-role/' + id, 'get', false, {}).then((response) => {
         if (response.status) {
             roleDetails.value = response.data;
+   
         } else {
             commonService.showError(toast, response.message);
         }
