@@ -11,7 +11,7 @@ class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
-     
+
 
         /**
      * For returning responses of the application 25 oct 2022
@@ -34,8 +34,8 @@ class Controller extends BaseController
 
     /**
      * get current logged in user data  04 Oct 2023
-     * @return 
-     * @author Bashir <wamulabash1@gmail.com.com>
+     * @return
+     * @author Bashir <wamulabash1@gmail.com>
      */
     public function getUserLogin(){
         return auth()->user();
@@ -43,21 +43,25 @@ class Controller extends BaseController
 
 
     /**
-     * 
+     * Generating the member number staring letters
+     *
+     * @param [type] $input
+     * @return void
+     * @author Bashir <wamulabash1@gmail.com>
      */
     public function getLetters($input) {
         // Split the input string into words
         $words = explode(' ', $input);
-    
+
         // Initialize an empty result string
         $result = '';
-    
+
         // Loop through the words
         foreach ($words as $word) {
             // Get the first two letters of a single word or the first letter of each word (maximum 2 letters)
-            $result .= substr($word, 0, min(1, strlen($word)));
+            $result .= strtoupper(substr($word, 0, min(1, strlen($word))));
         }
-    
+
         return  substr($result, 0, 2);
     }
 }

@@ -87,7 +87,69 @@ export default class CommonService {
       });
   };
 
-  /**
+
+    /**
+   * for submitting data to the back end
+   * @param {*} url
+   * @param {*} method
+   * @param {*} postData
+   * @returns
+   * @author Bash
+   */
+    // postFormDataToServerWithToken = (url, method, formData) => {
+    //     return fetch(url, {
+    //       method: method,
+    //       headers: {
+    //         "Content-Type": "multipart/form-data",
+    //         // Accept: "application/json",
+    //         Authorization: "Bearer " + this.getStorage().token
+    //       },
+    //       body: formData
+    //     })
+    //       .then(res => {
+    //         return res.json();
+    //       })
+    //       .then(json => {
+    //         return json;
+    //       })
+    //       .catch(err => {
+    //         console.log(err);
+    //       });
+    //   };
+
+    postFormDataToServerWithToken = (url, method,formData) => {
+        console.log(formData)
+        return new Promise((resolve, reject) => {
+            fetch(url, {
+                method: 'post',
+                headers: {
+                    // Include the necessary headers for a form submission with a file upload.
+                    // Note that the "Authorization" header should be set if needed.
+                    // "Content-Type" is set to 'multipart/form-data' automatically when using FormData.
+                    Authorization: 'Bearer ' + this.getStorage().token,
+                },
+                body: formData,
+            })
+                .then((response) => {
+                    // Check if the response status indicates success (e.g., 2xx).
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    // Resolve with the response data.
+                    return response.json();
+                })
+                .then((data) => {
+                    resolve(data);
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        });
+    };
+
+
+
+    /**
    * getting data from the server
    * @param {*} url
    * @param {*} method
@@ -184,6 +246,61 @@ export default class CommonService {
     }
   };
 
+
+  uploadFile = async (url, image) => {
+        // if (!uploadedFile.value) {
+        //     return;
+        // }
+        const formData = new FormData();
+        formData.append('file', image);
+        try {
+            const response = await fetch(this.baseUrl+""+url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    Authorization: `Bearer ${this.getStorage().token}`,
+                },
+            });
+            if (!response.ok) {
+                throw new Error('Upload failed');
+            }
+            const data = await response.json();
+            return data
+            // console.log(data.message);
+        } catch (error) {
+            console.error(error.message);
+        }
+    }
+
+
+
+    /**
+   * Generic request to the server
+   * @param {*} url
+   * @param {*} method
+   * @param {*} isAuthenticated
+   * @param {*} postData
+   * @returns
+   * @author Bash
+   */
+    genericFormRequest = (url, method, isAuthenticated, formData) => {
+        return this.postFormDataToServerWithToken(
+            this.baseUrl + "" + url,
+            method,
+            formData
+        ).then(response => {
+            return response;
+          });
+      };
+
+
+
+
+
+  /**
+   * validation messages
+   * @returns
+   */
   ValidationMessage = () => {
     let messages = {
       serviceName: [{ required: true, message: "Service name is required" }]
@@ -220,9 +337,9 @@ export default class CommonService {
 
   /**
    * Return error toast message
-   * @param {*} toast 
-   * @param {*} message 
-   * @returns 
+   * @param {*} toast
+   * @param {*} message
+   * @returns
    * @author Bash
    */
   showError = (toast, message, duration = 3000) => {
@@ -231,9 +348,9 @@ export default class CommonService {
 
   /**
    * Return success toast message
-   * @param {*} toast 
-   * @param {*} message 
-   * @returns 
+   * @param {*} toast
+   * @param {*} message
+   * @returns
    * @author Bash
    */
   showSuccess = (toast, message, duration = 3000) => {
@@ -243,9 +360,9 @@ export default class CommonService {
 
   /**
   * Return info toast message
-  * @param {*} toast 
-  * @param {*} message 
-  * @returns 
+  * @param {*} toast
+  * @param {*} message
+  * @returns
   * @author Bash
   */
   showInfo = (toast, message, duration = 3000) => {
@@ -254,9 +371,9 @@ export default class CommonService {
 
   /**
   * Return info toast message
-  * @param {*} toast 
-  * @param {*} message 
-  * @returns 
+  * @param {*} toast
+  * @param {*} message
+  * @returns
   * @author Bash
   */
   showWarning = (toast, message, duration = 3000) => {
@@ -293,9 +410,9 @@ export default class CommonService {
 
   /**
    * Generic Redirect
-   * @param {*} router 
-   * @param {*} path 
-   * @returns 
+   * @param {*} router
+   * @param {*} path
+   * @returns
    * @author Bash
    */
   redirect=(router, path)=>{
@@ -305,7 +422,7 @@ export default class CommonService {
 
   /**
    * Checking for logged in user
-   * @returns 
+   * @returns
    * @author Bash
    */
   checkingAuthentication=()=>{
@@ -317,4 +434,26 @@ export default class CommonService {
     return response;
   }
 
+    /**
+     * converting file to base 64 string
+     * @param file
+     * @returns {Promise<unknown>}
+     * @author Bashir
+     */
+  convertExcelToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64String = reader.result.split(',')[1]; // Extract the base64 part
+                resolve(base64String);
+            };
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+
+
+
 }
+

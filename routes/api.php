@@ -10,6 +10,8 @@ use App\Http\Controllers\MemberController;
 use App\Http\Controllers\CityRefController;
 use App\Http\Controllers\InstitutionTypeRefController;
 use App\Http\Controllers\BankRefController;
+use App\Http\Controllers\TempMemberController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -51,5 +53,9 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('get-role-type', [RoleController::class, 'getRolesByTypes']);
     Route::get('log-out', [UserController::class, 'logOut']);
     Route::post('create-member', [MemberController::class, 'createMember']);
+    Route::post('upload-members', [TempMemberController::class, 'uploadMembers']);
+    Route::post("get-upload-batch", [TempMemberController::class, "getMemberBatches"]);
+    Route::post("get-batch-members", [TempMemberController::class, "getBatchMembers"]);
+    Route::post("approve-batch-member", [MemberController::class, "approveBulkMembers"]);
 
 });

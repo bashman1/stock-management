@@ -8,7 +8,7 @@ const toast = useToast();
 
  const commonService = new CommonService();
 
- const router = useRouter(); 
+ const router = useRouter();
  const name = ref(null);
  const type = ref(null);
  const startDate = ref(null);
@@ -27,8 +27,9 @@ const toast = useToast();
  const instType = ref(null);
  const cities = ref(null);
  const banks = ref(null);
- 
- 
+ const validation= ref({})
+
+
 
  const onSubmit=()=>{
     let postData = {
@@ -89,7 +90,16 @@ const toast = useToast();
         }
     })
  }
- 
+
+ const validationCheck=(event)=>{
+     alert(event.value)
+     if (event.value==null || event.value.trim()==""){
+         validation.value[event]=true;
+     }else{
+         validation.value[event]=false;
+     }
+ }
+
 
 
 
@@ -109,13 +119,13 @@ const toast = useToast();
                 <Toast />
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="instName" v-model="name"  />  <!-- class="p-invalid"-->
+                        <InputText type="text" @blur="validationCheck('name')" id="instName" v-model="name"  :class="{ 'p-invalid' : validation.name === true}"  />  <!-- class="p-invalid"-->
                         <label for="instName">Institution Name</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="instType" :options="instType" v-model="type" optionLabel="name"></Dropdown>
+                        <Dropdown id="instType" @blur="validationCheck('type')" :options="instType" v-model="type" optionLabel="name" :class="{ 'p-invalid' : validation.type === true}"></Dropdown>
                         <label for="instType">Institution Type</label>
                     </span>
                 </div>
@@ -125,29 +135,29 @@ const toast = useToast();
                         <label for="instStart">Start Date</label>
                     </span>
                 </div>
-    
+
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
                         <Textarea inputId="textarea" rows="3" cols="30" v-model="address"></Textarea>
                         <label for="textarea">Address</label>
                     </span>
                 </div>
-    
-    
+
+
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <Dropdown id="instCity" :options="cities" v-model="city" optionLabel="name"></Dropdown>
                         <label for="instCity">City</label>
                     </span>
                 </div>
-    
+
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <InputText type="text" id="instStreet" v-model="street" />
                         <label for="instStreet">Street</label>
                     </span>
                 </div>
-    
+
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <InputText type="text" id="instPOBox" v-model="pOBox" />
@@ -164,7 +174,7 @@ const toast = useToast();
                 <div class="field col-12 md:col-2">
                     <h5>Attachment</h5>
                     <FileUpload mode="basic" name="demo[]" accept="image/*" :maxFileSize="1000000" @uploader="onUpload" customUpload />
-            
+
                 </div>
 
             </div>

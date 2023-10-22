@@ -25,7 +25,7 @@ const model = ref([
                         icon: 'pi pi-fw pi-circle',
                         to: '/view-institutions'
                     },
-       
+
                 ]
             },
             {
@@ -52,7 +52,7 @@ const model = ref([
                         icon: 'pi pi-fw pi-circle',
                         to: '/view-roles'
                     },
-       
+
                 ]
             },
             {
@@ -69,12 +69,68 @@ const model = ref([
                         icon: 'pi pi-fw pi-circle',
                         to: '/view-members'
                     },
-       
+
+                ]
+            },
+            {
+                label: 'Bulk Upload',
+                icon: 'pi pi-fw pi-briefcase',
+                items: [
+                    {
+                        label: 'Upload Members',
+                        icon: 'pi pi-fw pi-circle',
+                        to: '/upload-members'
+                    },
+                    {
+                        label: 'View Uploaded Members',
+                        icon: 'pi pi-fw pi-circle',
+                        to: '/view-uploaded-members'
+                    },
+
+                ]
+            },
+            {
+                label: 'Collections',
+                icon: 'pi pi-fw pi-money-bill',
+                items:[
+                    {
+                        label: 'Collect Money',
+                        icon: 'pi pi-fw pi-circle',
+                        to: '/collect-money'
+                    },
+                    {
+                        label: 'View Collections',
+                        icon: 'pi pi-fw pi-circle',
+                        to: '/view-collected-money'
+                    },
+                    {
+                        label: 'Approve Collections',
+                        icon: 'pi pi-fw pi-circle',
+                        to: '/approve-collections'
+                    },
+                    {
+                        label: 'Approved Collections',
+                        icon: 'pi pi-fw pi-circle',
+                        to: '/approved-collections'
+                    },
+                ]
+            },
+            {
+                label: 'Reports',
+                icon: 'pi pi-fw pi-folder',
+                items:[
+
                 ]
             },
             // {
+            //     label: 'Sign Out',
+            //     icon: 'pi pi-fw pi-desktop',
+            //     to: '/admin'
+            // },
+
+            // {
             //     label: 'Roles Management',
-            //     icon: 'pi pi-fw pi-shield' 
+            //     icon: 'pi pi-fw pi-shield'
             // }
         ]
     },
@@ -240,11 +296,16 @@ const model = ref([
             <app-menu-item v-if="!item.separator" :item="item" :index="i"></app-menu-item>
             <li v-if="item.separator" class="menu-separator"></li>
         </template>
-        <!-- <li>
-            <a href="https://www.primefaces.org/primeblocks-vue/#/" target="_blank">
-                <img src="/layout/images/banner-primeblocks.png" alt="Prime Blocks" class="w-full mt-3" />
-            </a>
-        </li> -->
+<!--        <template>-->
+<!--            <app-menu-item :item="item" :index="i"></app-menu-item>-->
+<!--            <li class="menu-separator">Log Out</li>-->
+<!--        </template>-->
+<!--       <li>-->
+<!--            <a href="https://www.primefaces.org/primeblocks-vue/#/" target="_blank">-->
+<!--                <i class="pi pi-sign-out"></i>-->
+<!--                Log out-->
+<!--            </a>-->
+<!--        </li>-->
     </ul>
 </template>
 

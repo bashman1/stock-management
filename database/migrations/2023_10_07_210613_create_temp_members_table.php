@@ -1,0 +1,53 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('temp_members', function (Blueprint $table) {
+            $table->id();
+            $table->string('first_name')->nullable();
+            $table->string('last_name')->nullable();
+            $table->string('other_name')->nullable();
+            $table->string('phone_number')->nullable();
+            $table->string('member_number')->nullable();
+            $table->string('alt_member_number')->nullable();
+            $table->string('institution_ref')->nullable();
+            $table->string('gender')->nullable();
+            $table->timestamp('date_of_birth')->nullable();
+            $table->text('address')->nullable();
+            $table->unsignedBigInteger('city_id')->nullable();
+            $table->unsignedBigInteger('institution_id')->nullable();
+            $table->unsignedBigInteger('batch_id')->nullable();
+            $table->unsignedBigInteger('branch_id')->nullable();
+            $table->string("status")->nullable();
+            $table->string("street")->nullable();
+            $table->string("p_o_box")->nullable();
+            $table->text('description')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->timestamp('created_on')->nullable();
+            $table->timestamp('updated_on')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('temp_members');
+    }
+};

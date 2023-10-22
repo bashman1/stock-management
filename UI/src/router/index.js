@@ -222,7 +222,66 @@ const router = createRouter({
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
-                }
+                },
+                {
+                    path:'/upload-members',
+                    name: 'BulkUploadMembers',
+                    component: ()=>import('@/views/pages/member-management/BulkUploadMembers.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+
+                },
+                {
+                    path:'/view-uploaded-members',
+                    name: 'ViewBulkUploadedMembers',
+                    component: ()=>import('@/views/pages/member-management/ViewBulkUploadedMembers.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+
+                },
+                {
+                    path:'/approve-uploaded-members/:id',
+                    name: 'ApproveBulkUploadedMembers',
+                    component: ()=>import('@/views/pages/member-management/ApproveBulkMember.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+
+                {
+                    path: '/collect-money',
+                    name: 'CollectMoney',
+                    component: ()=> import('@/views/pages/collection-management/CollectMoney.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-collected-money',
+                    name: 'ViewMoneyCollected',
+                    component: ()=> import('@/views/pages/collection-management/ViewCollections.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/approve-collections',
+                    name: 'ApproveCollections',
+                    component: ()=> import('@/views/pages/collection-management/ApproveCollections.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/approved-collections',
+                    name: 'ApprovedCollections',
+                    component: ()=> import('@/views/pages/collection-management/ViewApprovedCollections.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
 
             ]
         },
@@ -251,7 +310,8 @@ const router = createRouter({
             path: '/auth/error',
             name: 'error',
             component: () => import('@/views/pages/auth/Error.vue')
-        }
+        },
+
     ]
 });
 

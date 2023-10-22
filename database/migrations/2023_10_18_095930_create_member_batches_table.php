@@ -13,18 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('institutions', function (Blueprint $table) {
+        Schema::create('member_batches', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('ref_no');
-            $table->unsignedBigInteger('institution_type_id');
-            $table->timestamp('start_date');
-            $table->text('address')->nullable();
-            $table->unsignedBigInteger('city_id')->nullable();
-            $table->string('street')->nullable();
-            $table->string('p_o_box')->nullable();
-            $table->text('description')->nullable();
+            $table->string("name");
             $table->string("status");
+            $table->unsignedBigInteger('institution_id')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_on')->nullable();
@@ -40,6 +33,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('institutions');
+        Schema::dropIfExists('member_batches');
     }
 };

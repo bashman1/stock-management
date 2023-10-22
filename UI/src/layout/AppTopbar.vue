@@ -24,7 +24,8 @@ onBeforeUnmount(() => {
 });
 
 const logoUrl = computed(() => {
-    return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
+    // return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
+    return `demo/images/Smart-Collect-logo-black-removebg.png`;
 });
 
 const onTopBarMenuButton = () => {
@@ -82,9 +83,10 @@ const logOut = () => {
 
 <template>
     <div class="layout-topbar">
-        <router-link to="/" class="layout-topbar-logo">
-            <img :src="logoUrl" alt="logo" />
-            <span>SAKAI</span>
+        <router-link to="/admin" class="layout-topbar-logo">
+<!--            <img :src="logoUrl" alt="logo" />-->
+            <img :src="logoUrl" alt="logo" class="w-15rem h-4rem" />
+<!--            <span>SAKAI</span>-->
         </router-link>
 
         <button class="p-link layout-menu-button layout-topbar-button" @click="onMenuToggle()">
@@ -118,7 +120,7 @@ const logOut = () => {
                                     </template>
                                 </Column>
                             </DataTable> -->
-                            <Button @click="logOut" icon="pi pi-sign-out" label="Log out" class="p-button-outlined p-button-danger mr-2 mb-2" />            
+                            <Button @click="logOut" icon="pi pi-sign-out" label="Log out" class="p-button-outlined p-button-danger mr-2 mb-2" />
              </OverlayPanel>
             <!-- <button @click="onSettingsClick()" class="p-link layout-topbar-button">
                 <i class="pi pi-cog"></i>

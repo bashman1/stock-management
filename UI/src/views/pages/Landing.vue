@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router';
 
 const { layoutConfig } = useLayout();
 
-const router = useRouter(); 
+const router = useRouter();
 
 const smoothScroll = (id) => {
     document.querySelector(id).scrollIntoView({
@@ -15,7 +15,8 @@ const smoothScroll = (id) => {
 };
 
 const logoUrl = computed(() => {
-    return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
+    // return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
+    return `demo/images/Smart-Collect-logo-black-removebg.png`;
 });
 
 const goToLogin = ()=>{
@@ -28,7 +29,7 @@ const goToLogin = ()=>{
     <div class="surface-0 flex justify-content-center">
         <div id="home" class="landing-wrapper overflow-hidden">
             <div class="py-4 px-4 mx-0 md:mx-6 lg:mx-8 lg:px-8 flex align-items-center justify-content-between relative lg:static mb-3">
-                <a class="flex align-items-center" href="#"> <img :src="logoUrl" alt="Sakai Logo" height="50" class="mr-0 lg:mr-2" /><span class="text-900 font-medium text-2xl line-height-3 mr-8">SAKAI</span> </a>
+                <a class="flex align-items-center" href="#"> <img :src="logoUrl" alt="Sakai Logo" height="60" class="mr-0 lg:mr-2" /><span class="text-900 font-medium text-2xl line-height-3 mr-8"></span> </a>
                 <a class="cursor-pointer block lg:hidden text-700 p-ripple" v-ripple v-styleclass="{ selector: '@next', enterClass: 'hidden', leaveToClass: 'hidden', hideOnOutsideClick: true }">
                     <i class="pi pi-bars text-4xl"></i>
                 </a>

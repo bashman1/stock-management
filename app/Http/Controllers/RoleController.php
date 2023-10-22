@@ -9,11 +9,11 @@ use App\Models\Permissions;
 
 class RoleController extends Controller
 {
-   
+
 
     public function createRole(Request $request){
         $role = new Role();
-        try {
+        // try {
             $userData = auth()->user();
             $role->name = $request->name;
             $role->type = $request->type;
@@ -25,9 +25,9 @@ class RoleController extends Controller
             $role->created_on =now();
             $role->save();
             return $this->genericResponse(true, "Role crated successfully", 201, $role);
-        } catch (\Exception $th) {
-            return $this->genericResponse(false, "Role creation  Failed", 500, $th);
-        }
+        // } catch (\Exception $th) {
+            // return $this->genericResponse(false, "Role creation  Failed", 500, $th);
+        // }
     }
 
 
@@ -82,7 +82,7 @@ class RoleController extends Controller
                 $assignRolePermissions->delete();
             }
             return $this->genericResponse(true, 201, "Permissions assigned successfully", $assignRolePermissions);
-            
+
         } catch (\Throwable $th) {
             return $this->genericResponse(false, "Role retrieval  Failed", 500, $th);
         }
