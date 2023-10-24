@@ -47,7 +47,7 @@ class CollectionController extends Controller
             INNER JOIN institutions I ON I.id = T.institution_id
             INNER JOIN branches B ON B.id = T.branch_id
             INNER JOIN users U ON T.user_id = U.id
-            WHERE T.institution_id = $userData->institution_id AND T.branch_id=$userData->branch_id AND T.user_id=$userData->branch_id");
+            WHERE T.institution_id = $userData->institution_id AND T.branch_id=$userData->branch_id AND T.user_id=$userData->branch_id ORDER BY T.id DESC");
         return $this->genericResponse(true, "Collected successfully", 201, $transaction);
     }
 

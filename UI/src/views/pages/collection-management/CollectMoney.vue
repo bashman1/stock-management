@@ -50,7 +50,6 @@ const SelectedMember=(event)=>{
     mName.value=event.name;
     mNumber.value=event.member_number;
     mContact.value=event.phone_number;
-    alert(membersId.value);
 }
 
 const onCancel=()=>{
