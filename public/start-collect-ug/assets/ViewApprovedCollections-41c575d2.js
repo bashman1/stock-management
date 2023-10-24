@@ -1,1 +1,0 @@
-import{_ as o,c as t,d as s,e}from"./index-3e783a36.js";const c={},n={className:"card"},a=e("h5",null,"Approved Collections",-1),r=e("p",null,"Use this page to start from scratch and place your custom content.",-1),_=[a,r];function d(l,i){return t(),s("div",n,_)}const h=o(c,[["render",d]]);export{h as default};
