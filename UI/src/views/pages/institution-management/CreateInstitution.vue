@@ -130,7 +130,7 @@ const toast = useToast();
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="instType" @blur="validationCheck($event.value, 'type')" :options="instType" v-model="type" optionLabel="name" :class="{ 'p-invalid' : validation.type === true}"></Dropdown>
+                        <Dropdown id="instType" @blur="validationCheck($event.value, 'type')" :options="instType" v-model="type" optionLabel="name" ></Dropdown>
                         <label for="instType">Institution Type</label>
                     </span>
                 </div>
