@@ -69,4 +69,14 @@ class MemberController extends Controller
         }
         return $this->genericResponse(true, "Approved Successfully", 200, []);
     }
+
+    public function getMembersByInstitution(Request $request){
+        $userData = auth()->user();
+        $members=DB::select("SELECT M.id, CONCAT(M.first_name,' ',M.last_name,' ',M.other_name) AS name, M.phone_number,
+            M.member_number, M.alt_member_number FROM members M WHERE (M.first_name ILIKE '%".$request->searchKey."%'
+            OR M.last_name ILIKE '%".$request->searchKey."%' OR M.other_name ILIKE '%".$request->searchKey."%' OR
+            M.alt_member_number ILIKE '%".$request->searchKey."%' OR M.member_number ILIKE '%".$request->searchKey."%')
+            AND M.institution_id=$userData->institution_id AND status='".$request->status."' ");
+        return $this->genericResponse(true, "Approved Successfully", 200, $members);
+    }
 }

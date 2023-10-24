@@ -11,6 +11,7 @@ use App\Http\Controllers\CityRefController;
 use App\Http\Controllers\InstitutionTypeRefController;
 use App\Http\Controllers\BankRefController;
 use App\Http\Controllers\TempMemberController;
+use \App\Http\Controllers\CollectionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,5 +58,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-upload-batch", [TempMemberController::class, "getMemberBatches"]);
     Route::post("get-batch-members", [TempMemberController::class, "getBatchMembers"]);
     Route::post("approve-batch-member", [MemberController::class, "approveBulkMembers"]);
-
+    Route::post("get-members-by-institution", [MemberController::class, "getMembersByInstitution"]);
+    Route::post("collect-deposit", [CollectionController::class, "fieldCollect"]);
+    Route::get('get-officer-collection', [CollectionController::class, "getOfficerCollection"]);
 });

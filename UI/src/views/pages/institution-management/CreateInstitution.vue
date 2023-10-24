@@ -3,6 +3,8 @@
  import { useRouter } from 'vue-router';
  import CommonService from '@/service/CommonService';
  import { useToast } from 'primevue/usetoast';
+ // import { required, email } from '@vuelidate/validators';
+ // import { useVuelidate } from '@vuelidate/core';
 
 const toast = useToast();
 
@@ -28,8 +30,6 @@ const toast = useToast();
  const cities = ref(null);
  const banks = ref(null);
  const validation= ref({})
-
-
 
  const onSubmit=()=>{
     let postData = {
@@ -91,16 +91,21 @@ const toast = useToast();
     })
  }
 
- const validationCheck=(event)=>{
-     alert(event.value)
-     if (event.value==null || event.value.trim()==""){
-         validation.value[event]=true;
+ const validationCheck=(value, key)=>{
+     console.log(value)
+     if (value==null || value.trim()==""){
+         validation.value[key]=true;
      }else{
-         validation.value[event]=false;
+         validation.value[key]=false;
      }
  }
 
+ // const rules = {
+ //     name: required,
+ //     contactEmail: { required, email },
+ // };
 
+ // const v = useVuelidate(rules, toRefs(validation));
 
 
  onMounted(() => {
@@ -119,26 +124,26 @@ const toast = useToast();
                 <Toast />
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" @blur="validationCheck('name')" id="instName" v-model="name"  :class="{ 'p-invalid' : validation.name === true}"  />  <!-- class="p-invalid"-->
+                        <InputText type="text" id="instName" v-model="name"   />  <!-- class="p-invalid"-->
                         <label for="instName">Institution Name</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="instType" @blur="validationCheck('type')" :options="instType" v-model="type" optionLabel="name" :class="{ 'p-invalid' : validation.type === true}"></Dropdown>
+                        <Dropdown id="instType" @blur="validationCheck($event.value, 'type')" :options="instType" v-model="type" optionLabel="name" :class="{ 'p-invalid' : validation.type === true}"></Dropdown>
                         <label for="instType">Institution Type</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Calendar inputId="instStart" v-model="startDate"></Calendar>
+                        <Calendar id="instStart" v-model="startDate"></Calendar>
                         <label for="instStart">Start Date</label>
                     </span>
                 </div>
 
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
-                        <Textarea inputId="textarea" rows="3" cols="30" v-model="address"></Textarea>
+                        <Textarea id="textarea" rows="3" cols="30" v-model="address"></Textarea>
                         <label for="textarea">Address</label>
                     </span>
                 </div>
@@ -167,7 +172,7 @@ const toast = useToast();
 
                 <div class="field col-12 md:col-10">
                     <span class="p-float-label">
-                        <Textarea inputId="instDescription" rows="3" cols="30" v-model="description"></Textarea>
+                        <Textarea id="instDescription" rows="3" cols="30" v-model="description"></Textarea>
                         <label for="instDescription">Description</label>
                     </span>
                 </div>

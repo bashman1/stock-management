@@ -277,8 +277,8 @@ const searchCountry = (event) => {
 
                     <div class="col-12 md:col-6">
                         <div class="p-inputgroup">
-                            <Button label="Search" />
                             <InputText placeholder="Keyword" />
+                            <Button label="Search" />
                         </div>
                     </div>
 
