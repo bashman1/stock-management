@@ -9,7 +9,7 @@ const institution = ref(null);
 const commonService = new CommonService();
 
 const getAllInstitutions = () => {
-    commonService.genericRequest('get-institutions', 'get', false, {}).then((response) => {
+    commonService.genericRequest('get-institutions', 'get', true, {}).then((response) => {
         if (response.status) {
             institution.value = response.data;
         } else {

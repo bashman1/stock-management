@@ -16,7 +16,7 @@ const AddRolesPermissions=(role)=>{
 }
 
 const getAllMembers = () => {
-    commonService.genericRequest('get-members', 'get', false, {}).then((response) => {
+    commonService.genericRequest('get-members', 'get', true, {}).then((response) => {
         if (response.status) {
             members.value = response.data;
         } else {

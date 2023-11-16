@@ -50,7 +50,7 @@ const toast = useToast();
         acct_no:acctNumber.value,
         status:'Active'
     }
-    commonService.genericRequest('create-institution', 'post', false, postData).then((response)=>{
+    commonService.genericRequest('create-institution', 'post', true, postData).then((response)=>{
         if(response.status){
             commonService.showSuccess(toast,response.message);
             commonService.redirect(router, "/view-institutions");
@@ -197,7 +197,8 @@ const toast = useToast();
 
                 <div class="field col-12 md:col-3">
                     <span class="p-float-label">
-                        <InputText type="text" id="contactNumber" v-model="contactNumber" />
+                        <!-- <InputText type="text" id="contactNumber" v-model="contactNumber" /> -->
+                        <InputMask id="basic" v-model="contactNumber" slotChar="_" mask="99-999999" placeholder="25-______" />
                         <label for="contactNumber">Phone Number</label>
                     </span>
                 </div>

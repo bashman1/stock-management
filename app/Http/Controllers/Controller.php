@@ -64,4 +64,14 @@ class Controller extends BaseController
 
         return  substr($result, 0, 2);
     }
+
+
+    public function isNotAdmin(){
+        $userData = auth()->user();
+        if ($userData->institution_id != null) {
+             return true;
+        }
+        return false;
+    }
+
 }

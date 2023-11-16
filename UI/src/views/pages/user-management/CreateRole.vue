@@ -8,7 +8,7 @@ const toast = useToast();
 
 const commonService = new CommonService();
 
- const router = useRouter(); 
+ const router = useRouter();
 const name = ref(null);
 const type = ref(null);
 const institutionsData = ref(null);
@@ -32,7 +32,7 @@ const onSubmit = () => {
         status:'Active'
     }
 
-    commonService.genericRequest('crate-role', 'post', true, postData).then((response) => { 
+    commonService.genericRequest('crate-role', 'post', true, postData).then((response) => {
         if(response.status){
             commonService.showSuccess(toast,response.message);
             commonService.redirect(router, "/view-roles");
@@ -44,7 +44,7 @@ const onSubmit = () => {
 
 
 const getInstitution=()=>{
-    commonService.genericRequest('get-institutions', 'get', false, {}).then((response)=>{
+    commonService.genericRequest('get-institutions', 'get', true, {}).then((response)=>{
         if(response.status){
             institutionsData.value = response.data
         }else{

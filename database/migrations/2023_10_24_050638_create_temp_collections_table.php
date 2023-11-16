@@ -19,12 +19,18 @@ return new class extends Migration
             $table->text("description");
             $table->timestamp("tran_date");
             $table->string("member_number");
+            $table->string("tran_cd")->nullable();
+            $table->string("tran_indicator")->nullable();
             $table->unsignedBigInteger("member_id");
             $table->unsignedBigInteger("institution_id");
             $table->unsignedBigInteger("branch_id");
             $table->unsignedBigInteger("user_id");
             $table->string("tran_id");
             $table->string("status");
+            $table->unsignedBigInteger('approved_by')->nullable();
+            $table->unsignedBigInteger('declined_by')->nullable();
+            $table->timestamp('approved_on')->nullable();
+            $table->timestamp('declined_on')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_on')->nullable();

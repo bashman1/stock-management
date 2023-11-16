@@ -8,14 +8,14 @@ const toast = useToast();
 const users = ref(null);
 const commonService = new CommonService();
 
-//  const router = useRouter(); 
+//  const router = useRouter();
 
 const AddRolesPermissions=(role)=>{
     alert(JSON.stringify(role))
 }
 
 const getAllUsers = () => {
-    commonService.genericRequest('get-users', 'get', false, {}).then((response) => {
+    commonService.genericRequest('get-users', 'get', true, {}).then((response) => {
         if (response.status) {
             users.value = response.data;
         } else {

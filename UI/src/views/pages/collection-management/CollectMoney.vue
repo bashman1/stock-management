@@ -72,6 +72,7 @@ const onSubmit=()=>{
     commonService.genericRequest('collect-deposit', 'post', true, postData).then((response)=>{
         if(response.status){
             commonService.showSuccess(toast,response.message);
+            commonService.redirect(router, "/view-collected-money");
         }else{
             commonService.showError(toast,response.message);
         }

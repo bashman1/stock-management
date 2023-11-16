@@ -8,7 +8,7 @@ const toast = useToast();
 
  const commonService = new CommonService();
 
- const router = useRouter(); 
+ const router = useRouter();
  const fName = ref(null);
  const lName = ref(null);
  const oName = ref(null);
@@ -72,7 +72,7 @@ const categoryOptions =  ref([
         branch_id:branch.value!=null?branch.value.id:null,
 
     }
-    commonService.genericRequest('create-user', 'post', false, postData).then((response)=>{
+    commonService.genericRequest('create-user', 'post', true, postData).then((response)=>{
         if(response.status){
             commonService.showSuccess(toast,response.message);
             commonService.redirect(router, "/view-users");
@@ -142,7 +142,7 @@ const getAdminRoles=(type)=>{
 
 
  const getInstitution=()=>{
-    commonService.genericRequest('get-institutions', 'get', false, {}).then((response)=>{
+    commonService.genericRequest('get-institutions', 'get', true, {}).then((response)=>{
         if(response.status){
             institutionsData.value = response.data
         }else{
@@ -165,7 +165,7 @@ const roleChange=(event)=>{
     }
 }
 
- 
+
 onMounted(() => {
     getInstitution();
     getCities();
@@ -240,7 +240,7 @@ onMounted(() => {
                         <Dropdown id="institution"  :options="branchData" v-model="branch" optionLabel="name"></Dropdown>
                         <label for="institution">Branch</label>
                     </span>
-                </div> 
+                </div>
 
                 <div class="field col-12 md:col-4" v-if="type?.value =='Institution'">
                     <span class="p-float-label">
@@ -248,35 +248,35 @@ onMounted(() => {
                         <label for="institution">User Category</label>
                     </span>
                 </div>
-                
+
                 <div class="field col-12 md:col-4" >
                     <span class="p-float-label">
                         <Dropdown id="institution"  :options="rolesData" v-model="role" optionLabel="name"></Dropdown>
                         <label for="institution">Role</label>
                     </span>
-                </div> 
-    
+                </div>
+
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
                         <Textarea inputId="textarea" rows="3" cols="30" v-model="address"></Textarea>
                         <label for="textarea">Address</label>
                     </span>
                 </div>
-    
+
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <Dropdown id="instCity" :options="cities" v-model="city" optionLabel="name"></Dropdown>
                         <label for="instCity">City</label>
                     </span>
                 </div>
-    
+
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <InputText type="text" id="instStreet" v-model="street" />
                         <label for="instStreet">Street</label>
                     </span>
                 </div>
-    
+
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <InputText type="text" id="instPOBox" v-model="pOBox" />
@@ -294,7 +294,7 @@ onMounted(() => {
                 <!-- <div class="field col-12 md:col-2">
                     <h5>Attachment</h5>
                     <FileUpload mode="basic" name="demo[]" accept="image/*" :maxFileSize="1000000" @uploader="onUpload" customUpload />
-            
+
                 </div> -->
 
             </div>

@@ -8,7 +8,7 @@ const toast = useToast();
 const roles = ref(null);
 const commonService = new CommonService();
 
- const router = useRouter(); 
+ const router = useRouter();
 
 const AddRolesPermissions=(role)=>{
     alert(JSON.stringify(role))
@@ -16,7 +16,7 @@ const AddRolesPermissions=(role)=>{
 
 
 const getAllRoles = () => {
-    commonService.genericRequest('get-roles', 'get', false, {}).then((response) => {
+    commonService.genericRequest('get-roles', 'get', true, {}).then((response) => {
         if (response.status) {
             // roles.value = {data:response.data};
             roles.value = response.data;
@@ -42,9 +42,9 @@ onMounted(() => {
             <div class="card">
                 <h5>Roles</h5>
                 <DataTable :value="roles" :paginator="true" class="p-datatable-gridlines" :rows="10" dataKey="id"
-                    :rowHover="true"  filterDisplay="menu" 
+                    :rowHover="true"  filterDisplay="menu"
                     responsiveLayout="scroll">
-    
+
                     <Column field="name" header="Name" style="min-width: 10rem">
                         <template #body="{ data }">
                             {{ data.name }}
@@ -81,7 +81,7 @@ onMounted(() => {
                             <Button icon="pi pi-arrow-right-arrow-left" class="p-button-rounded p-button-outlined mr-2 mt-2" @click="goToAssignRolePermissions(data)" />
                             <!-- <Button icon="pi pi-check" class="p-button-rounded p-button-outlined mr-2" /> -->
                         </template>
-                        
+
                     </Column>
 
                 </DataTable>

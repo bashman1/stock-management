@@ -13,10 +13,10 @@ const router = useRouter();
 const route = useRoute()
 
 const getRoleDetails = (id) => {
-    commonService.genericRequest('get-role/' + id, 'get', false, {}).then((response) => {
+    commonService.genericRequest('get-role/' + id, 'get', true, {}).then((response) => {
         if (response.status) {
             roleDetails.value = response.data;
-   
+
         } else {
             commonService.showError(toast, response.message);
         }
@@ -29,7 +29,7 @@ const onChangeSwitch = (event, permission) => {
         event: event.target.checked,
         roleId: roleId.value,
     };
-    commonService.genericRequest("assign-role-permission", "post", false, postObject).then(
+    commonService.genericRequest("assign-role-permission", "post", true, postObject).then(
         (response) => {
             if (response.status) {
             }

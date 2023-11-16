@@ -70,7 +70,7 @@ const getCities = () => {
 
 const getInstitution = () => {
     if (userData.value?.user_type == 'Admin') {
-        commonService.genericRequest('get-institutions', 'get', false, {}).then((response) => {
+        commonService.genericRequest('get-institutions', 'get', true, {}).then((response) => {
             if (response.status) {
                 institutionsData.value = response.data
             } else {

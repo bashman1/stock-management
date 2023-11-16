@@ -12,6 +12,8 @@ use App\Http\Controllers\InstitutionTypeRefController;
 use App\Http\Controllers\BankRefController;
 use App\Http\Controllers\TempMemberController;
 use \App\Http\Controllers\CollectionController;
+use App\Http\Controllers\SavingAccountProductController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -29,17 +31,16 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 
-Route::post('create-institution', [InstitutionController::class, 'createInstitution']);
-Route::post('create-user', [UserController::class, 'createUser']);
+// Route::post('create-institution', [InstitutionController::class, 'createInstitution']);
+// Route::post('create-user', [UserController::class, 'createUser']);
 Route::post('user-login', [UserController::class, 'login']);
-Route::get('get-roles', [RoleController::class, 'getAllRoles']);
-Route::get('get-institutions', [InstitutionController::class, 'getInstitutions']);
-Route::get('get-users', [UserController::class, 'getUsers']);
-
-Route::get('get-members', [MemberController::class,'getMembers']);
-Route::get('get-role/{id}', [RoleController::class, 'getRoleById']);
-Route::get('get-permissions', [RoleController::class, 'getPermissions']);
-Route::post('assign-role-permission', [RoleController::class, 'assignRolePermission']);
+// Route::get('get-roles', [RoleController::class, 'getAllRoles']);
+// Route::get('get-institutions', [InstitutionController::class, 'getInstitutions']);
+// Route::get('get-users', [UserController::class, 'getUsers']);
+// Route::get('get-members', [MemberController::class,'getMembers']);
+// Route::get('get-role/{id}', [RoleController::class, 'getRoleById']);
+// Route::get('get-permissions', [RoleController::class, 'getPermissions']);
+// Route::post('assign-role-permission', [RoleController::class, 'assignRolePermission']);
 
 Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('crate-role', [RoleController::class, 'createRole']);
@@ -61,4 +62,19 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-members-by-institution", [MemberController::class, "getMembersByInstitution"]);
     Route::post("collect-deposit", [CollectionController::class, "fieldCollect"]);
     Route::get('get-officer-collection', [CollectionController::class, "getOfficerCollection"]);
+    Route::get('get-transaction-receipt/{id}', [CollectionController::class, "getReceiptData"]);
+    Route::get('get-pending-transactions/{status}', [CollectionController::class, "getPendingTransactions"]);
+    Route::post('approve-transactions', [CollectionController::class, "approveTransactions"]);
+    Route::get('get-collected-transactions', [CollectionController::class, "getApprovedTransactions"]);
+    Route::post('create-savings-product', [SavingAccountProductController::class, "createSavingsProduct"]);
+
+    Route::post('create-user', [UserController::class, 'createUser']);
+    Route::post('create-institution', [InstitutionController::class, 'createInstitution']);
+    Route::get('get-roles', [RoleController::class, 'getAllRoles']);
+    Route::get('get-institutions', [InstitutionController::class, 'getInstitutions']);
+    Route::get('get-users', [UserController::class, 'getUsers']);
+    Route::get('get-members', [MemberController::class,'getMembers']);
+    Route::get('get-role/{id}', [RoleController::class, 'getRoleById']);
+    Route::get('get-permissions', [RoleController::class, 'getPermissions']);
+    Route::post('assign-role-permission', [RoleController::class, 'assignRolePermission']);
 });

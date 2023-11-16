@@ -10,10 +10,16 @@ use App\Models\InstitutionContact;
 use Illuminate\Http\Request;
 use App\Models\MemberNoConfig;
 use Illuminate\Support\Facades\DB;
+use App\Services\SavingAccountProductService;
 
 class InstitutionController extends Controller
 {
 
+    protected $savingsProduct;
+
+    public function __construct(SavingAccountProductService $savingsProduct){
+        $this->savingsProduct = $savingsProduct;
+    }
 
     public function createInstitution(Request $request){
 
@@ -74,13 +80,29 @@ class InstitutionController extends Controller
             $contact->created_on=now();
             $contact->save();
 
+            $productRequest=(object)[
+                "name"=>"Default Savings Product",
+                "description"=>"Default Savings Product",
+                "balance"=>0,
+                "min_balance"=>0,
+                "withdraw_allowed"=>true,
+                "overdraw_allowed"=>false,
+                "currency"=>"UGX",
+                "is_default"=>true,
+                "institution_id"=>$institution->id,
+                "branch_id"=>$branch->id,
+                "user_id"=>1,
+                "status"=>"Active"
+            ];
+            $product=$this->savingsProduct->createSavingsProduct($productRequest);
+
+
             $memberNumberConfig = new MemberNoConfig();
             $memberNumberConfig->prefix = $this->getLetters($institution->name);
             $memberNumberConfig->institution_id_code = 1000 + $institution->id;
             $memberNumberConfig->start_from = 1000;
             $memberNumberConfig->current_value = 0;
             $memberNumberConfig->institution_id = $institution->id;
-            // $memberNumberConfig->created_by =
             $memberNumberConfig->created_on = now();
             $memberNumberConfig->save();
             DB::commit();
@@ -98,7 +120,7 @@ class InstitutionController extends Controller
     public function getInstitutions()
     {
         try {
-            $institution = Institution::all();
+            $institution = Institution::orderBy('id', 'desc')->get();
             return $this->genericResponse(true, "institution created successfully", 201, $institution);
         } catch (\Throwable $th) {
             return $this->genericResponse(false, "institution creation Failed", 500, []);

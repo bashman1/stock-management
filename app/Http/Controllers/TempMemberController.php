@@ -34,7 +34,21 @@ class TempMemberController extends Controller
      */
     public function getMemberBatches(Request $request){
 //        $batches=MemberBatch::all();
-        $batches=DB::select("SELECT M.*, I.name AS institution_name FROM member_batches M INNER JOIN institutions I ON I.id = M.institution_id");
+        // $batches=DB::select("SELECT M.*, I.name AS institution_name FROM member_batches M INNER JOIN institutions I ON I.id = M.institution_id");
+        $userData = auth()->user();
+        $isNotAdmin=false;
+        if($userData->institution_id !=null){
+            $isNotAdmin=true;
+        }
+
+    $batches = DB::table('member_batches AS M')
+    ->join('institutions AS I', 'I.id', '=', 'M.institution_id')
+    ->when($isNotAdmin, function ($query) use ($userData) {
+        return $query->where("M.institution_id", $userData->institution_id );
+    })
+    ->select('M.*', 'I.name AS institution_name')
+    ->get();
+
         return $this->genericResponse(true, "Member batches", 200, $batches);
     }
 

@@ -33,7 +33,7 @@ class RoleController extends Controller
 
     public function getAllRoles(){
         try {
-            $roles =  Role::all();
+            $roles =  Role::orderBy("id", "desc")->get();
             return $this->genericResponse(true, "Roles retrieved successfully", 200, $roles);
         } catch (\Throwable $th) {
             return $this->genericResponse(false, "Role retrieval  Failed", 500, $th);

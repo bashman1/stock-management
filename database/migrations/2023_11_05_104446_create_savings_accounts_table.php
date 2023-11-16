@@ -13,21 +13,16 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('collections', function (Blueprint $table) {
+        Schema::create('savings_accounts', function (Blueprint $table) {
             $table->id();
-            $table->double('amount', 8, 2);
-            $table->text("description");
-            $table->timestamp("tran_date");
             $table->string("member_number");
+            $table->double('balance', 8, 2)->default(0);
+            $table->unsignedBigInteger("acct_prod_id");
             $table->unsignedBigInteger("member_id");
             $table->unsignedBigInteger("institution_id");
             $table->unsignedBigInteger("branch_id");
             $table->unsignedBigInteger("user_id");
-            $table->string("tran_id");
             $table->string("status");
-            $table->string("tran_cd")->nullable();
-            $table->string("tran_indicator")->nullable();
-            $table->unsignedBigInteger('temp_collection_id')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_on')->nullable();
@@ -43,6 +38,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('collections');
+        Schema::dropIfExists('savings_accounts');
     }
 };
