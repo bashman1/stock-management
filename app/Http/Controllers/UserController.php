@@ -78,8 +78,8 @@ class UserController extends Controller
             $userData->permissions = $permissions;
 
             return $this->genericResponse(true, "Logged in successfully", 200, ["token" => $token, "user_data" => $userData]);
-        } catch (\Throwable $th) {
-            return $this->genericResponse(false, "User creation  Failed", 500, $th);
+        } catch (\Exception $e) {
+            return $this->genericResponse(false, "User creation  Failed", 500, $e->getMessage());
         }
     }
 
