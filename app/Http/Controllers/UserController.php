@@ -44,7 +44,7 @@ class UserController extends Controller
 
 
     public function login(Request $request){
-        try {
+        // try {
             $login_data = $request->validate([
                 "email" => "required",
                 "password" => "required",
@@ -78,9 +78,9 @@ class UserController extends Controller
             $userData->permissions = $permissions;
 
             return $this->genericResponse(true, "Logged in successfully", 200, ["token" => $token, "user_data" => $userData]);
-        } catch (\Exception $e) {
-            return $this->genericResponse(false, "User creation  Failed", 500, $e->getMessage());
-        }
+        // } catch (\Exception $e) {
+        //     return $this->genericResponse(false, "User creation  Failed", 500, $e->getMessage());
+        // }
     }
 
     public function getUsers(){
