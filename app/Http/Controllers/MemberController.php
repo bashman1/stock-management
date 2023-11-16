@@ -70,9 +70,9 @@ class MemberController extends Controller
             $savingAcct->institution_id = $request->institution_id;
             $savingAcct->branch_id = $request->branch_id;
             $savingAcct->acct_prod_id = $savingProd->id;
-            $savingAcct->user_id = $request->user_id;
+            $savingAcct->user_id = $request->user_id==null?1:$request->user_id;
             $savingAcct->status = "Active";
-            $savingAcct->created_by = $request->user_id;
+            $savingAcct->created_by = $request->user_id==null?1:$request->user_id;
             $savingAcct->created_on = now();
             $savingAcct->save();
         }
