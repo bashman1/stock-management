@@ -11,9 +11,17 @@ use Illuminate\Http\Request;
 use App\Models\CollectionHistory;
 use App\Models\SavingsAccount;
 use Illuminate\Support\Facades\DB;
+use App\Services\CommissionConfigService;
+use App\Models\ComissionConfig;
 
 class CollectionController extends Controller
 {
+
+    protected $commissionConfig;
+
+    public function __construct(CommissionConfigService $commissionConfig){
+        $this->commissionConfig = $commissionConfig;
+    }
 
     public function fieldCollect(Request  $request)
     {
@@ -164,6 +172,22 @@ class CollectionController extends Controller
                         $savingsAcct->balance = $savingsAcct->balance + $approveTmpTran->amount;
                         $savingsAcct->save();
                     }
+
+                    /** collecting the commissions */
+                    // commission config
+                    $config = ComissionConfig::where(["institution_id"=>$approveTmpTran->institution_id, "branch_id"=>$approveTmpTran->branch_id, "status"=>"Active"])->first();
+                    $commissionRequest=(object)[
+                        "tran_id"=> $approveTmpTran->tran_id,
+                        "amount"=> $config->amount,
+                        "commission_config_id"=> $config->id ,
+                        "branch_id"=> $approveTmpTran->branch_id ,
+                        "institution_id"=>$approveTmpTran->institution_id,
+                        "user_id"=>$userData->id ,
+                        "status"=> "Pending",
+                        "created_by"=> $userData->id,
+                        "created_on"=>now()
+                    ];
+                    $this->commissionConfig->collectCommission($commissionRequest);
                 }
             } else {
                 foreach ($request->tranList as  $value) {
@@ -175,6 +199,7 @@ class CollectionController extends Controller
             DB::commit();
             return $this->genericResponse(true, "Transaction $request->action successfully", 201, []);
         } catch (\Throwable $th) {
+            // throw new $th;
             return $this->genericResponse(false, "Transaction $request->action failed", 400, $th);
         }
     }

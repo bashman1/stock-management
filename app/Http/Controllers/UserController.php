@@ -32,7 +32,7 @@ class UserController extends Controller
             $user->user_type = $request->user_type;
             $user->user_category =  $request->user_category;
             $user->institution_id = $request->institution_id;
-            $user->branch_id =  $request->institution_id;
+            $user->branch_id =  $request->branch_id;
             $user->created_by = 1;
             $user->created_on = now();
             $user->save();

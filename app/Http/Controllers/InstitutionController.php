@@ -11,14 +11,17 @@ use Illuminate\Http\Request;
 use App\Models\MemberNoConfig;
 use Illuminate\Support\Facades\DB;
 use App\Services\SavingAccountProductService;
+use App\Services\CommissionConfigService;
 
 class InstitutionController extends Controller
 {
 
     protected $savingsProduct;
+    protected $commissionConfig;
 
-    public function __construct(SavingAccountProductService $savingsProduct){
+    public function __construct(SavingAccountProductService $savingsProduct, CommissionConfigService $commissionConfig){
         $this->savingsProduct = $savingsProduct;
+        $this->commissionConfig = $commissionConfig;
     }
 
     public function createInstitution(Request $request){
@@ -96,6 +99,18 @@ class InstitutionController extends Controller
             ];
             $product=$this->savingsProduct->createSavingsProduct($productRequest);
 
+            $commissionRequest=(object)[
+                "name"=>$request->name,
+                "amount"=>100,
+                "commission_type"=>"PER_TRANSACTION",
+                "institution_id"=>$institution->id,
+                "branch_id"=>$branch->id,
+                "user_id"=>1,
+                "status"=>"Active",
+                "created_by"=>1,
+                "created_on"=>now()
+            ];
+            $commission = $this->commissionConfig->createCommissionConfig($commissionRequest);
 
             $memberNumberConfig = new MemberNoConfig();
             $memberNumberConfig->prefix = $this->getLetters($institution->name);
