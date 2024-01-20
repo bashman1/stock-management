@@ -21,7 +21,9 @@ const membersData = ref(null);
 const membersId  = ref(null);
 const selectedMember = ref(null);
 const transactionType=ref([
-    {label:"Deposit", value: "DP"},
+    {label:"Cash Deposit", value: "DP"},
+    {label: "Shares Purchase", value: "SP"},
+    {label: "Loan Repayment", value: "LN"}
 ])
 
 

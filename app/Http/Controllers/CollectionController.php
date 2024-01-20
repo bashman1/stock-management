@@ -199,6 +199,7 @@ class CollectionController extends Controller
             DB::commit();
             return $this->genericResponse(true, "Transaction $request->action successfully", 201, []);
         } catch (\Throwable $th) {
+            DB::rollback();
             // throw new $th;
             return $this->genericResponse(false, "Transaction $request->action failed", 400, $th);
         }

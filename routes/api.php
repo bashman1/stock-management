@@ -12,6 +12,7 @@ use App\Http\Controllers\InstitutionTypeRefController;
 use App\Http\Controllers\BankRefController;
 use App\Http\Controllers\TempMemberController;
 use \App\Http\Controllers\CollectionController;
+use App\Http\Controllers\ComissionController;
 use App\Http\Controllers\SavingAccountProductController;
 
 
@@ -77,4 +78,5 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get('get-role/{id}', [RoleController::class, 'getRoleById']);
     Route::get('get-permissions', [RoleController::class, 'getPermissions']);
     Route::post('assign-role-permission', [RoleController::class, 'assignRolePermission']);
+    Route::get('get-commissions', [ComissionController::class, "getCommissionsEarned"]);
 });

@@ -282,6 +282,23 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/view-commissions',
+                    name: 'Commissions',
+                    component: ()=> import('@/views/pages/comission/Comissions.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+
+                },
+                {
+                    path: '/create-product',
+                    name: 'CreateProduct',
+                    component: ()=>import('@/views/pages/stock-management/CreateProduct.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                }
 
             ]
         },

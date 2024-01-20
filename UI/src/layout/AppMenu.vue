@@ -116,10 +116,32 @@ const model = ref([
                 ]
             },
             {
+                label: 'Commissions',
+                icon: 'pi pi-dollar',
+                items:[
+                    {
+                        label: 'View Commission',
+                        icon: 'pi pi-fw pi-circle',
+                        to: '/view-commissions'
+                    }
+                ]
+            },
+            {
                 label: 'Reports',
                 icon: 'pi pi-fw pi-folder',
                 items:[
 
+                ]
+            },
+            {
+                label: 'Stock Management',
+                icon: 'pi pi-dollar',
+                items:[
+                    {
+                        label: 'Create Product',
+                        icon: 'pi pi-fw pi-circle',
+                        to: '/create-product'
+                    }
                 ]
             },
             // {

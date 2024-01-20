@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Services\SavingAccountProductService;
-use App\Services\CommissionConfig;
+use App\Services\CommissionConfigService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,8 +18,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(SavingAccountProductService::class, function ($app) {
             return new SavingAccountProductService();
         });
-        $this->app->singleton(CommissionConfig::class, function ($app){
-            return new CommissionConfig();
+        $this->app->singleton(CommissionConfigService::class, function ($app){
+            return new CommissionConfigService();
         });
     }
 
