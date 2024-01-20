@@ -1,6 +1,6 @@
 export default class CommonService {
-    // baseUrl = "http://localhost:8000/api/";
-      baseUrl = "http://137.184.230.127/api/";
+    baseUrl = "http://localhost:8000/api/";
+    //   baseUrl = "http://137.184.230.127/api/";
 
     /**
      * setting the object data to storage
@@ -518,22 +518,53 @@ export default class CommonService {
         return word;
     }
 
+
     /**
      *
      * @param {*} array
      * @returns
      */
-    sumOfAmount=(array)=>{
+    sumOfAmount = (array) => {
         let totalAmount = 0;
-        if(array === undefined || array.length == 0){
+        if (array === undefined || array.length == 0) {
             return totalAmount;
         }
         for (const obj of array) {
-          // Use Number() to convert obj.amount to a number, and add it to totalAmount
-          totalAmount += Number(obj.amount) || 0;
+            // Use Number() to convert obj.amount to a number, and add it to totalAmount
+            totalAmount += Number(obj.amount) || 0;
         }
         return totalAmount;
-      }
+    }
+
+
+
+    /**
+     * Validate form field
+     * @param {*} value
+     * @returns
+     */
+    validateFormField = (value) => {
+        return value === null || value === undefined ||
+            (typeof value === 'string' && value.trim().length === 0) ||
+            (Array.isArray(value) && value.length === 0) ||
+            (typeof value === 'object' && Object.keys(value).length === 0);
+    }
+
+    /**
+     * check for the required fields if there valid in case they are in valid it returns true else false
+     * @param {*} formObj
+     * @returns
+     */
+    validateRequiredFields=(formObj)=>{
+        let response=false
+        Object.keys(formObj).forEach(key => {
+            if(formObj[key]){
+                response=true
+            }
+        });
+        return response;
+    }
+
 
 }
 
