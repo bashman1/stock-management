@@ -128,7 +128,6 @@ class CollectionController extends Controller
                     $approveTmpTran = TempCollection::find($value["id"]);
                     $approveTmpTran->status = $request->action;
                     $approveTmpTran->save();
-
                     /** approving the transactions **/
                     $collection =  new Collection();
                     $collection->amount = $approveTmpTran->amount;

@@ -13,8 +13,14 @@ use App\Http\Controllers\BankRefController;
 use App\Http\Controllers\TempMemberController;
 use \App\Http\Controllers\CollectionController;
 use App\Http\Controllers\ComissionController;
+use App\Http\Controllers\CommonController;
+use App\Http\Controllers\CountryRefController;
+use App\Http\Controllers\ManufacturerController;
+use App\Http\Controllers\MeasurementUnitController;
+use App\Http\Controllers\ProductCategoryController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SavingAccountProductController;
-
+use App\Http\Controllers\SupplierController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,7 +74,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('approve-transactions', [CollectionController::class, "approveTransactions"]);
     Route::get('get-collected-transactions', [CollectionController::class, "getApprovedTransactions"]);
     Route::post('create-savings-product', [SavingAccountProductController::class, "createSavingsProduct"]);
-
     Route::post('create-user', [UserController::class, 'createUser']);
     Route::post('create-institution', [InstitutionController::class, 'createInstitution']);
     Route::get('get-roles', [RoleController::class, 'getAllRoles']);
@@ -79,4 +84,22 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get('get-permissions', [RoleController::class, 'getPermissions']);
     Route::post('assign-role-permission', [RoleController::class, 'assignRolePermission']);
     Route::get('get-commissions', [ComissionController::class, "getCommissionsEarned"]);
+    Route::post('create-product-category', [ProductCategoryController::class, "createProductCategory"]);
+    Route::get('get-product-categories', [ProductCategoryController::class, "getProductCategories"]);
+    Route::post('create-product-sub-category', [ProductCategoryController::class, "createProductSubCategory"]);
+    Route::get('get-product-sub-categories', [ProductCategoryController::class, "getProductSubCategory"]);
+    Route::get('get-countries', [CountryRefController::class, "getCountries"]);
+
+    Route::post('create-manufacturer', [ManufacturerController::class, "createManufacturer"]);
+    Route::get('get-manufacturers', [ManufacturerController::class, "getManufacturers"]);
+
+    Route::post('create-supplier', [SupplierController::class, "createSupplier"]);
+    Route::get('get-suppliers', [SupplierController::class, "getSuppliers"]);
+
+    Route::post('create-measurement-unit', [MeasurementUnitController::class, "createMeasurementUnit"]);
+    Route::get('get-measurement-unit', [MeasurementUnitController::class, "getMeasurementUnit"]);
+
+    Route::post('create-product', [ProductController::class, "createProduct"]);
+    Route::get('get-dashboard-stats', [CommonController::class, "getDashboardStats"]);
+
 });

@@ -557,14 +557,43 @@ export default class CommonService {
      */
     validateRequiredFields=(formObj)=>{
         let response=false
-        Object.keys(formObj).forEach(key => {
-            if(formObj[key]){
+        Object.entries(formObj).forEach(([key, value]) => {
+            if( typeof value ==='boolean' && value){
                 response=true
             }
         });
         return response;
     }
 
+
+    /**
+     * generate graph label
+     * @returns
+     */
+    getMonthsStartingFromCurrent=()=>{
+        const today = new Date();
+        const currentMonthIndex = today.getMonth(); // Get the index of the current month (0-based)
+        const monthsLebel = [
+          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        ];
+        // Use modulo operator to calculate the index for each month
+        const rotatedMonths = Array.from({ length: 12 }, (_, i) => monthsLebel[(currentMonthIndex + 12 - i) % 12]);
+        return rotatedMonths.reverse();
+    }
+
+    /**
+     * Organize graph data
+     * @param {*} array
+     * @param {*} key
+     * @returns
+     */
+    organizeGraphData=(array, key)=>{
+        let formattedArray=[];
+        array.forEach(element => {
+            formattedArray.push(element[key]);
+        });
+        return formattedArray;
+    }
 
 }
 

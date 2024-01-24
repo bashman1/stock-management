@@ -13,14 +13,15 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('country_refs', function (Blueprint $table) {
+        Schema::create('product_sub_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('country_code')->nullable();
-            $table->string('capital')->nullable();
-            $table->string('region')->nullable();
-            $table->string('dialling_code')->nullable();
-            $table->string("status");
+            $table->text('description');
+            $table->unsignedBigInteger("category_id");
+            $table->unsignedBigInteger("institution_id");
+            $table->unsignedBigInteger("branch_id");
+            $table->unsignedBigInteger("user_id");
+            $table->string("status")->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_on')->nullable();
@@ -36,6 +37,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('country_refs');
+        Schema::dropIfExists('product_sub_categories');
     }
 };

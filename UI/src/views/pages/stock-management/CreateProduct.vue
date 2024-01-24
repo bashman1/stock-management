@@ -16,7 +16,6 @@ const supplier  = ref(null);
 const productId = ref(null);
 const description = ref(null);
 
-
 const quantity = ref(null);
 const minStock = ref(null);
 const maxStock = ref(null);
@@ -27,10 +26,31 @@ const date = ref(null);
 const sellingPrice = ref(null);
 const discount = ref(null);
 
-const citiesData = ref(null);
-const userData = ref(null);
-const institutionsData = ref(null);
-const institution = ref(null);
+const catName = ref(null);
+const catDesc = ref(null);
+
+const subCatName = ref(null);
+const subCatCat = ref(null);
+const subCatDesc = ref(null);
+const manufacturerName= ref(null)
+const manufacturerCountry=ref(null);
+const manufacturerWeb=ref(null);
+const manufactureAddress=ref(null);
+const manufacturerEmail=ref(null);
+const manufacturerContact=ref(null);
+const manufactureDesc=ref(null);
+
+const supplierName=ref(null);
+const supplierCountry=ref(null);
+const supplierWeb=ref(null);
+const supplierAddress=ref(null);
+const supplierEmail=ref(null);
+const supplierContact=ref(null);
+const supplierDesc=ref(null);
+
+const unitName= ref(null);
+const unitDesc= ref(null);
+
 const showCategoryModal = ref(false);
 const showSubCategoryModal = ref(false);
 const showManufacturerModal = ref(false);
@@ -38,61 +58,26 @@ const showSupplierModal = ref(false);
 const showMeasurementUnitModal = ref(false);
 const formError = ref({});
 
+const catFormError=ref({});
+const subCatFormError=ref({});
+const manufactureFormError=ref({});
+const supplierFormError=ref({});
+const unitFormError=ref({});
+
+
+const productCategoryData = ref(null);
+const productSubCategoryData= ref(null);
+
+const countriesData = ref(null);
+const manufacturersData=ref(null);
+const suppliersData=ref(null);
+const measurementUnitsData=ref(null);
 
 
 const genderOptions = ref([
     { label: 'Male', value: 'Male' },
     { label: 'Female', value: 'Female' },
 ]);
-
-// const onSubmit = () => {
-//     let postData = {
-//         first_name: fName.value,
-//         last_name: lName.value,
-//         other_name: oName.value,
-//         email: email.value,
-//         phone_number: phoneNumber.value,
-//         date_of_birth: dob.value,
-//         gender: gender.value.value,
-//         address: address.value,
-//         city_id: city.value.id,
-//         street: street.value,
-//         p_o_box: pOBox.value,
-//         description: description.value,
-//         status: 'Active'
-//     }
-//     commonService.genericRequest('create-member', 'post', true, postData).then((response) => {
-//         if (response.status) {
-//             commonService.showSuccess(toast, response.message);
-//             commonService.redirect(router, "/view-members");
-//         } else {
-//             commonService.showError(toast, response.message);
-//         }
-//     })
-// }
-
-const getCities = () => {
-    commonService.genericRequest('get-city-county-id/' + 1, 'get', true, {}).then((response) => {
-        if (response.status) {
-            citiesData.value = response.data
-        } else {
-
-        }
-    })
-}
-
-
-const getInstitution = () => {
-    if (userData.value?.user_type == 'Admin') {
-        commonService.genericRequest('get-institutions', 'get', true, {}).then((response) => {
-            if (response.status) {
-                institutionsData.value = response.data
-            } else {
-
-            }
-        })
-    }
-}
 
 
 // ********************************************************
@@ -128,34 +113,320 @@ const onInputBlur=(value, key)=>{
     formError.value[key] = commonService.validateFormField(value);
 }
 
+const onCatInputBlur=(value, key)=>{
+    catFormError.value[key]= commonService.validateFormField(value);
+}
 
-const onSubmit= async()=>{
+const onSubCatInputBlur=(value, key)=>{
+    subCatFormError.value[key]= commonService.validateFormField(value);
+}
+
+const onManufacturerInputBlur=(value, key)=>{
+    manufactureFormError.value[key]= commonService.validateFormField(value);
+}
+
+const onSupplierInputBlur=(value, key)=>{
+    supplierFormError.value[key]= commonService.validateFormField(value);
+}
+
+const onUnitInputBlur=(value, key)=>{
+    unitFormError.value[key]= commonService.validateFormField(value);
+}
+
+
+const onSubmit= ()=>{
     formError.value.name=commonService.validateFormField(name.value);
     formError.value.category=commonService.validateFormField(category.value);
     formError.value.quantity=commonService.validateFormField(quantity.value);
     formError.value.measurementUnit=commonService.validateFormField(measurementUnit.value);
     formError.value.sellingPrice=commonService.validateFormField(sellingPrice.value);
 
-    let invalid = await commonService.validateRequiredFields(formError);
-
+    let invalid = commonService.validateRequiredFields(formError.value);
     if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
         return
     }
 
-    alert("Passed")
-    submitNow();
+    let postData={
+        name: name.value,
+        category_id: category.value.id,
+        sub_category_id: subCategory.value.id,
+        manufacturer_id:manufacturer.value.id,
+        supplier_id:supplier.value.id,
+        product_no: productId.value,
+        description: description.value,
+        quantity: quantity.value,
+        min_quantity:minStock.value,
+        max_quantity: maxStock.value,
+        measurement_unit_id: measurementUnit.value.id,
+        purchase_price: purchasePrice.value,
+        date:date.value,
+        selling_price: sellingPrice.value,
+        discount: discount.value,
+    }
+
+    commonService.genericRequest('create-product', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            name.value=null;
+            category.value=null;
+            subCategory.value=null;
+            manufacturer.value=null;
+            supplier.value=null;
+            productId.value=null;
+            description.value=null;
+            quantity.value=null;
+            minStock.value=null;
+            maxStock.value=null;
+            measurementUnit.value=null;
+            purchasePrice.value=null;
+            date.value=null;
+            sellingPrice.value=null;
+            discount.value=null;
+
+
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+
 
 }
 
-const submitNow=()=>{
 
+const onSubmitCat=()=>{
+    catFormError.value.catName = commonService.validateFormField(catName.value);
+    let invalid = commonService.validateRequiredFields(catFormError.value);
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
+    let postData={
+        name: catName.value,
+        description: catDesc.value,
+        status: "Active",
+    }
+    commonService.genericRequest('create-product-category', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getProductCategories();
+            closeCategoryModal();
+            catName.value=null;
+            catDesc.value=null;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
 }
 
+const getProductCategories=()=>{
+    commonService.genericRequest('get-product-categories', 'get', true, {}).then((response) => {
+        if (response.status) {
+            productCategoryData.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const onSubmitSubCat=()=>{
+    subCatFormError.value.subCatName = commonService.validateFormField(subCatName.value);
+    subCatFormError.value.subCatCat = commonService.validateFormField(subCatCat.value);
+
+    let invalid = commonService.validateRequiredFields(subCatFormError.value);
+
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+    let postData ={
+        category_id: subCatCat.value.id,
+        name: subCatName.value,
+        status:"Active",
+        description:subCatDesc.value
+    }
+    commonService.genericRequest('create-product-sub-category', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getProductSubCategories();
+            closeSubCategoryModal();
+            subCatCat.value=null;
+            subCatName.value=null;
+            subCatDesc.value=null;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
+const getProductSubCategories=()=>{
+    commonService.genericRequest('get-product-sub-categories', 'get', true, {}).then((response) => {
+        if (response.status) {
+            productSubCategoryData.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const onSubmitManufacturer=()=>{
+    manufactureFormError.value.manufacturerName = commonService.validateFormField(manufacturerName.value);
+    let invalid = commonService.validateRequiredFields(manufactureFormError.value);
+
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
+    let postData = {
+        name: manufacturerName.value,
+        country_id: manufacturerCountry.value.id,
+        website: manufacturerWeb.value,
+        address: manufactureAddress.value,
+        email: manufacturerEmail.value,
+        phone_number: manufacturerContact.value,
+        description:manufactureDesc.value,
+        status:"Active",
+    }
+
+    commonService.genericRequest('create-manufacturer', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getManufacturers();
+            toggleManufacturerModal(false);
+            manufacturerName.value=null;
+            manufacturerCountry.value=null;
+            manufacturerWeb.value=null;
+            manufactureAddress.value=null;
+            manufacturerEmail.value=null;
+            manufacturerContact.value=null;
+            manufactureDesc.value=null;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const getManufacturers=()=>{
+    commonService.genericRequest('get-manufacturers', 'get', true, {}).then((response) => {
+        if (response.status) {
+            manufacturersData.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const onSubmitSupplier=()=>{
+    supplierFormError.value.supplierName = commonService.validateFormField(supplierName.value);
+
+    let invalid = commonService.validateRequiredFields(supplierFormError.value);
+
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
+    let postData ={
+        name: supplierName.value,
+        country_id: supplierCountry.value.id,
+        website:supplierWeb.value,
+        address: supplierAddress.value,
+        email:supplierEmail.value,
+        phone_number:supplierContact.value,
+        description: supplierDesc.value,
+        status: "Active",
+    }
+
+    commonService.genericRequest('create-supplier', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getSuppliers();
+            toggleSupplierModal(false);
+            supplierName.value=null;
+            supplierCountry.value=null;
+            supplierWeb.value=null;
+            supplierAddress.value=null;
+            supplierEmail.value=null;
+            supplierContact.value=null;
+            supplierDesc.value=null;
+
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const getSuppliers=()=>{
+    commonService.genericRequest('get-suppliers', 'get', true, {}).then((response) => {
+        if (response.status) {
+            suppliersData.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
+const onSubmitUnit=()=>{
+    unitFormError.value.unitName = commonService.validateFormField(unitName.value);
+    let invalid = commonService.validateRequiredFields(unitFormError.value);
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
+    let postData={
+        name: unitName.value,
+        description: unitDesc.value,
+        status: "Active"
+    }
+
+    commonService.genericRequest('create-measurement-unit', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getMeasurementUnit();
+            toggleMeasurementUnitModal(false);
+            unitName.value=null;
+            unitDesc.value=null;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const getMeasurementUnit=()=>{
+    commonService.genericRequest('get-measurement-unit', 'get', true, {}).then((response) => {
+        if (response.status) {
+            measurementUnitsData.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
+const getCountries=()=>{
+
+    commonService.genericRequest('get-countries', 'get', true, {}).then((response) => {
+        if (response.status) {
+            countriesData.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+
+}
 
 onMounted(() => {
-    userData.value = commonService.getStorage().userData;
-    getCities();
-    getInstitution();
+    getProductCategories();
+    getProductSubCategories();
+    getCountries();
+    getManufacturers()
+    getSuppliers();
+    getMeasurementUnit();
 });
 
 
@@ -176,7 +447,7 @@ onMounted(() => {
                     <div class="field col-12 md:col-12">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
-                                <Dropdown id="Category" @blur="onInputBlur(category, 'category')" :options="genderOptions" v-model="category"  :class="{ 'p-invalid': formError?.category }" optionLabel="label">
+                                <Dropdown id="Category" @blur="onInputBlur(category, 'category')" filter :options="productCategoryData" v-model="category"  :class="{ 'p-invalid': formError?.category }" optionLabel="name">
                                 </Dropdown>
                                 <label for="Category">Category</label>
                             </span>
@@ -186,7 +457,7 @@ onMounted(() => {
                     <div class="field col-12 md:col-12">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
-                                <Dropdown id="subCategory" :options="genderOptions" v-model="subCategory" optionLabel="label">
+                                <Dropdown id="subCategory" :options="productSubCategoryData" filter v-model="subCategory" optionLabel="name">
                                 </Dropdown>
                                 <label for="subCategory">Sub Category</label>
                             </span>
@@ -196,7 +467,7 @@ onMounted(() => {
                     <div class="field col-12 md:col-12">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
-                                <Dropdown id="manufacturer"  :options="genderOptions" v-model="manufacturer" optionLabel="label">
+                                <Dropdown id="manufacturer" :options="manufacturersData" filter v-model="manufacturer" optionLabel="name">
                                 </Dropdown>
                                 <label for="manufacturer">Manufacturer</label>
                             </span>
@@ -207,7 +478,7 @@ onMounted(() => {
                     <div class="field col-12 md:col-12">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
-                                <Dropdown id="supplier"  :options="genderOptions" v-model="supplier" optionLabel="label">
+                                <Dropdown id="supplier"  :options="suppliersData" filter v-model="supplier" optionLabel="name">
                                 </Dropdown>
                                 <label for="supplier">Supplier</label>
                             </span>
@@ -259,7 +530,7 @@ onMounted(() => {
                     <div class="field col-12 md:col-6">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
-                                <Dropdown id="measurementUnit" :options="genderOptions" @blur="onInputBlur(measurementUnit, 'measurementUnit')" v-model="measurementUnit" :class="{ 'p-invalid': formError?.measurementUnit }" optionLabel="label">
+                                <Dropdown id="measurementUnit" :options="measurementUnitsData" filter @blur="onInputBlur(measurementUnit, 'measurementUnit')" v-model="measurementUnit" :class="{ 'p-invalid': formError?.measurementUnit }" optionLabel="name">
                                 </Dropdown>
                                 <label for="measurementUnit">Measurement Unit</label>
                             </span>
@@ -322,14 +593,14 @@ onMounted(() => {
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Name</label>
+                        <InputText type="text" id="catName" @blur="onCatInputBlur(catName, 'catName')" v-model="catName" :class="{ 'p-invalid': catFormError?.catName }"/> <!-- class="p-invalid"-->
+                        <label for="catName">Name</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
-                        <Textarea inputId="textarea" rows="7" v-model="address"></Textarea>
-                        <label for="textarea">Description</label>
+                        <Textarea inputId="catDesc" rows="7" v-model="catDesc"></Textarea>
+                        <label for="catDesc">Description</label>
                     </span>
                 </div>
             </div>
@@ -337,33 +608,33 @@ onMounted(() => {
             <template #footer>
                 <Button label="Cancel" @click="closeCategoryModal" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
-                <Button @click="onSubmit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+                <Button @click="onSubmitCat" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
             </template>
         </Dialog>
 
-        <Dialog header="Create Category" v-model:visible="showSubCategoryModal" :style="{ width: '30vw' }" :modal="true"
+        <Dialog header="Create Sub Category" v-model:visible="showSubCategoryModal" :style="{ width: '30vw' }" :modal="true"
             class="p-fluid">
             <p style="padding-top: 20px;">
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Name</label>
+                        <InputText type="text" id="subCatName" @blur="onSubCatInputBlur(subCatName, 'subCatName')" v-model="subCatName" :class="{ 'p-invalid': subCatFormError?.subCatName }" /> <!-- class="p-invalid"-->
+                        <label for="subCatName">Name</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-12">
                     <div class="p-inputgroup">
                         <span class="p-float-label">
-                            <Dropdown id="gender" :options="genderOptions" v-model="gender" optionLabel="label"></Dropdown>
-                            <label for="gender">Category</label>
+                            <Dropdown id="subCatCat" :options="productCategoryData" @blur="onSubCatInputBlur(subCatCat, 'subCatCat')" v-model="subCatCat" optionLabel="name" :class="{ 'p-invalid': subCatFormError?.subCatCat }"></Dropdown>
+                            <label for="subCatCat">Category</label>
                         </span>
                         <Button @click="openCategoryModal" icon="pi pi-plus" />
                     </div>
                 </div>
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
-                        <Textarea inputId="textarea" rows="7" v-model="address"></Textarea>
-                        <label for="textarea">Description</label>
+                        <Textarea inputId="subCatDesc" rows="7" v-model="subCatDesc"></Textarea>
+                        <label for="subCatDesc">Description</label>
                     </span>
                 </div>
             </div>
@@ -371,7 +642,7 @@ onMounted(() => {
             <template #footer>
                 <Button label="Cancel" @click="closeSubCategoryModal" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
-                <Button @click="onSubmit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+                <Button @click="onSubmitSubCat" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
             </template>
         </Dialog>
 
@@ -381,44 +652,44 @@ onMounted(() => {
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Name</label>
+                        <InputText type="text" id="manufacturerName" @blur="onManufacturerInputBlur(manufacturerName, 'manufacturerName')" v-model="manufacturerName" :class="{ 'p-invalid': manufactureFormError?.manufacturerName }" /> <!-- class="p-invalid"-->
+                        <label for="manufacturerName">Name</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="gender" :options="genderOptions" v-model="gender" optionLabel="label"></Dropdown>
-                        <label for="gender">Country</label>
+                        <Dropdown id="manufacturerCountry" :options="countriesData" filter  v-model="manufacturerCountry" optionLabel="name"></Dropdown>
+                        <label for="manufacturerCountry">Country</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Website</label>
+                        <InputText type="text" id="manufacturerWeb" v-model="manufacturerWeb" /> <!-- class="p-invalid"-->
+                        <label for="manufacturerWeb">Website</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Address</label>
+                        <InputText type="text" id="manufactureAddress" v-model="manufactureAddress" /> <!-- class="p-invalid"-->
+                        <label for="manufactureAddress">Address</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Email</label>
+                        <InputText type="text" id="manufacturerEmail" v-model="manufacturerEmail" /> <!-- class="p-invalid"-->
+                        <label for="manufacturerEmail">Email</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Phone Number</label>
+                        <InputText type="text" id="manufacturerContact" v-model="manufacturerContact" /> <!-- class="p-invalid"-->
+                        <label for="manufacturerContact">Phone Number</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
-                        <Textarea inputId="textarea" rows="7" v-model="address"></Textarea>
-                        <label for="textarea">Description</label>
+                        <Textarea inputId="manufactureDesc" rows="7" v-model="manufactureDesc"></Textarea>
+                        <label for="manufactureDesc">Description</label>
                     </span>
                 </div>
             </div>
@@ -426,7 +697,7 @@ onMounted(() => {
             <template #footer>
                 <Button label="Cancel" @click="toggleManufacturerModal(false)" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
-                <Button @click="onSubmit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+                <Button @click="onSubmitManufacturer" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
             </template>
         </Dialog>
 
@@ -437,44 +708,44 @@ onMounted(() => {
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Name</label>
+                        <InputText type="text" id="supplierName" @blur="onSupplierInputBlur(supplierName, 'supplierName')" v-model="supplierName"  :class="{ 'p-invalid': supplierFormError?.supplierName }"/> <!-- class="p-invalid"-->
+                        <label for="supplierName">Name</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="gender" :options="genderOptions" v-model="gender" optionLabel="label"></Dropdown>
-                        <label for="gender">Country</label>
+                        <Dropdown id="supplierCountry" :options="countriesData" filter v-model="supplierCountry" optionLabel="name"></Dropdown>
+                        <label for="supplierCountry">Country</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Website</label>
+                        <InputText type="text" id="supplierWeb" v-model="supplierWeb" /> <!-- class="p-invalid"-->
+                        <label for="supplierWeb">Website</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Address</label>
+                        <InputText type="text" id="supplierAddress" v-model="supplierAddress" /> <!-- class="p-invalid"-->
+                        <label for="supplierAddress">Address</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Email</label>
+                        <InputText type="text" id="supplierEmail" v-model="supplierEmail" /> <!-- class="p-invalid"-->
+                        <label for="supplierEmail">Email</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Phone Number</label>
+                        <InputText type="text" id="supplierContact" v-model="supplierContact" /> <!-- class="p-invalid"-->
+                        <label for="supplierContact">Phone Number</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
-                        <Textarea inputId="textarea" rows="7" v-model="address"></Textarea>
-                        <label for="textarea">Description</label>
+                        <Textarea inputId="supplierDesc" rows="7" v-model="supplierDesc"></Textarea>
+                        <label for="supplierDesc">Description</label>
                     </span>
                 </div>
             </div>
@@ -482,7 +753,7 @@ onMounted(() => {
             <template #footer>
                 <Button label="Cancel" @click="toggleSupplierModal(false)" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
-                <Button @click="onSubmit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+                <Button @click="onSubmitSupplier" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
             </template>
         </Dialog>
 
@@ -492,14 +763,14 @@ onMounted(() => {
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="name" /> <!-- class="p-invalid"-->
-                        <label for="firstName">Name</label>
+                        <InputText type="text" id="unitName" @blur="onUnitInputBlur(unitName, 'unitName')" v-model="unitName" :class="{ 'p-invalid': unitFormError?.unitName }" /> <!-- class="p-invalid"-->
+                        <label for="unitName">Name</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
-                        <Textarea inputId="textarea" rows="7" v-model="address"></Textarea>
-                        <label for="textarea">Description</label>
+                        <Textarea inputId="unitDesc" rows="7" v-model="unitDesc"></Textarea>
+                        <label for="unitDesc">Description</label>
                     </span>
                 </div>
         </div>
@@ -507,10 +778,9 @@ onMounted(() => {
         <template #footer>
             <Button label="Cancel" @click="toggleMeasurementUnitModal(false)" icon="pi pi-times"
                 class="p-button-outlined p-button-danger mr-2 mb-2" />
-            <Button @click="onSubmit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+            <Button @click="onSubmitUnit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
         </template>
     </Dialog>
-
     <!-- /End of the modals -->
 
 </div></template>
