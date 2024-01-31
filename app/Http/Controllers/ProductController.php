@@ -44,6 +44,8 @@ class ProductController extends Controller
         $stock->max_quantity = $request->max_quantity ;
         $stock->institution_id = $userData->institution_id ;
         $stock->stock_date = $request->date ;
+        $stock->manufactured_date = $request->manufactured_date ;
+        $stock->expiry_date = $request->expiry_date ;
         $stock->branch_id = $userData->branch_id ;
         $stock->user_id = $userData->id ;
         $stock->status = $request->status ;
@@ -62,6 +64,8 @@ class ProductController extends Controller
         $history->max_quantity = $request->max_quantity ;
         $history->institution_id = $userData->institution_id ;
         $history->stock_date = $request->date ;
+        $history->manufactured_date = $request->manufactured_date ;
+        $history->expiry_date = $request->expiry_date ;
         $history->branch_id = $userData->branch_id ;
         $history->user_id = $userData->id ;
         $history->status = $request->status ;

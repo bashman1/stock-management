@@ -239,23 +239,23 @@ watch(
                 <Chart type="pie" :data="lineData" :options="lineOptions" />
             </div>
         </div> -->
-        <div class="col-12 xl:col-4">
+        <!-- <div class="col-12 xl:col-4">
             <div class="card">
                 <h5>Member and collection growth </h5>
                 <Chart type="radar" :data="lineData" :options="lineOptions" />
             </div>
-        </div>
+        </div> -->
         <!-- <div class="col-12 xl:col-4">
             <div class="card">
                 <h5>Member and collection growth </h5>
                 <Chart type="doughnut" :data="lineData" :options="lineOptions" />
             </div>
         </div> -->
-        <div class="col-12 xl:col-4">
+        <!-- <div class="col-12 xl:col-4">
             <div class="card">
                 <h5>Member and collection growth </h5>
                 <Chart type="polarArea" :data="lineData" :options="lineOptions" />
             </div>
-        </div>
+        </div> -->
     </div>
 </template>

@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('product_sub_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text('description');
+            $table->text('description')->nullable();
             $table->unsignedBigInteger("category_id");
             $table->unsignedBigInteger("institution_id");
             $table->unsignedBigInteger("branch_id");
@@ -29,6 +29,7 @@ return new class extends Migration
             $table->timestamps();
         });
     }
+
 
     /**
      * Reverse the migrations.

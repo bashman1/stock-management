@@ -72,13 +72,8 @@ const countriesData = ref(null);
 const manufacturersData=ref(null);
 const suppliersData=ref(null);
 const measurementUnitsData=ref(null);
-
-
-const genderOptions = ref([
-    { label: 'Male', value: 'Male' },
-    { label: 'Female', value: 'Female' },
-]);
-
+const manufacturedDate=ref(null);
+const expiryDate=ref(null);
 
 // ********************************************************
 const openCategoryModal = () => {
@@ -163,6 +158,8 @@ const onSubmit= ()=>{
         date:date.value,
         selling_price: sellingPrice.value,
         discount: discount.value,
+        manufactured_date:manufacturedDate.value,
+        expiry_date:expiryDate.value
     }
 
     commonService.genericRequest('create-product', 'post', true, postData).then((response) => {
@@ -183,8 +180,8 @@ const onSubmit= ()=>{
             date.value=null;
             sellingPrice.value=null;
             discount.value=null;
-
-
+            manufacturedDate.value=null;
+            expiryDate.value=null;
         } else {
             commonService.showError(toast, response.message);
         }
@@ -495,7 +492,7 @@ onMounted(() => {
 
                     <div class="field col-12 md:col-12">
                         <span class="p-float-label">
-                            <Textarea inputId="description" rows="7" v-model="description"></Textarea>
+                            <Textarea inputId="description" rows="11" v-model="description"></Textarea>
                             <label for="description">Description</label>
                         </span>
                     </div>
@@ -554,7 +551,21 @@ onMounted(() => {
                     <div class="field col-12 md:col-6">
                         <span class="p-float-label">
                             <Calendar id="date" v-model="date"></Calendar>
-                            <label for="date">Date</label>
+                            <label for="date">Stock Date</label>
+                        </span>
+                    </div>
+
+                    <div class="field col-12 md:col-6">
+                        <span class="p-float-label">
+                            <Calendar id="date" v-model="manufacturedDate"></Calendar>
+                            <label for="date">Manufactured Date</label>
+                        </span>
+                    </div>
+
+                    <div class="field col-12 md:col-6">
+                        <span class="p-float-label">
+                            <Calendar id="date" v-model="expiryDate"></Calendar>
+                            <label for="date">Expiry Date</label>
                         </span>
                     </div>
 

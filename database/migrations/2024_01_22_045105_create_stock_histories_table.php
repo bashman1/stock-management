@@ -25,6 +25,8 @@ return new class extends Migration
             $table->unsignedBigInteger("max_quantity")->nullable();
             $table->unsignedBigInteger("institution_id");
             $table->timestamp('stock_date')->nullable();
+            $table->timestamp('manufactured_date')->nullable();
+            $table->timestamp('expiry_date')->nullable();
             $table->unsignedBigInteger("branch_id");
             $table->unsignedBigInteger("user_id");
             $table->string("status")->nullable();

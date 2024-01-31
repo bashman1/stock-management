@@ -22,7 +22,8 @@ const logoUrl = computed(() => {
     return `demo/images/Smart-Collect-logo-black-removebg.png`;
 });
 
-const goToDashboard=()=>{
+const goToDashboard=async(storedData)=>{
+    await commonService.setStorage(storedData);
     router.push("/admin");
 }
 
@@ -38,8 +39,7 @@ const login=()=>{
                 token: response.data.token.accessToken,
                 userData: response.data.user_data,
             };
-            commonService.setStorage(storedData);
-            goToDashboard();
+            goToDashboard(storedData);
         }else{
             commonService.showError(toast,response.message);
         }
