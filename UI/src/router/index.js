@@ -6,6 +6,7 @@ import CommonService from '@/service/CommonService'
 const commonService = new CommonService();
 
 export const isAuthenticated = ref(commonService.checkingAuthentication());
+// export const isAuthenticated = ref(commonService.loggedIn);
 
 const router = createRouter({
     history: createWebHashHistory(),
@@ -295,6 +296,22 @@ const router = createRouter({
                     path: '/create-product',
                     name: 'CreateProduct',
                     component: ()=>import('@/views/pages/stock-management/CreateProduct.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-product',
+                    name: 'ViewProduct',
+                    component: ()=>import('@/views/pages/stock-management/ViewProducts.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/point-of-sale',
+                    name: 'PointOfSale',
+                    component: ()=>import('@/views/pages/stock-management/PointOfSale.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },

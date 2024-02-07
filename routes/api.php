@@ -102,4 +102,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('create-product', [ProductController::class, "createProduct"]);
     Route::get('get-dashboard-stats', [CommonController::class, "getDashboardStats"]);
 
+    Route::get('get-products', [ProductController::class, "getProducts"]);
+
 });

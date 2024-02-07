@@ -141,6 +141,16 @@ const model = ref([
                         label: 'Create Product',
                         icon: 'pi pi-fw pi-circle',
                         to: '/create-product'
+                    },
+                    {
+                        label: 'View Products',
+                        icon: 'pi pi-fw pi-circle',
+                        to: '/view-product'
+                    },
+                    {
+                        label: 'Point Of Sale',
+                        icon: 'pi pi-fw pi-circle',
+                        to: '/point-of-sale'
                     }
                 ]
             },

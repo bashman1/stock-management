@@ -444,6 +444,28 @@ onMounted(() => {
                     <div class="field col-12 md:col-12">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
+                                <Dropdown id="type" @blur="onInputBlur(category, 'category')" filter :options="productCategoryData" v-model="category"  :class="{ 'p-invalid': formError?.category }" optionLabel="name">
+                                </Dropdown>
+                                <label for="type">Type</label>
+                            </span>
+                            <Button @click="openCategoryModal" icon="pi pi-plus" />
+                        </div>
+                    </div>
+
+                    <!-- <div class="field col-12 md:col-12">
+                        <div class="p-inputgroup">
+                            <span class="p-float-label">
+                                <Dropdown id="Category" @blur="onInputBlur(category, 'category')" filter :options="productCategoryData" v-model="category"  :class="{ 'p-invalid': formError?.category }" optionLabel="name">
+                                </Dropdown>
+                                <label for="Category">Category</label>
+                            </span>
+                            <Button @click="openCategoryModal" icon="pi pi-plus" />
+                        </div>
+                    </div> -->
+
+                    <div class="field col-12 md:col-12">
+                        <div class="p-inputgroup">
+                            <span class="p-float-label">
                                 <Dropdown id="Category" @blur="onInputBlur(category, 'category')" filter :options="productCategoryData" v-model="category"  :class="{ 'p-invalid': formError?.category }" optionLabel="name">
                                 </Dropdown>
                                 <label for="Category">Category</label>
@@ -451,6 +473,7 @@ onMounted(() => {
                             <Button @click="openCategoryModal" icon="pi pi-plus" />
                         </div>
                     </div>
+
                     <div class="field col-12 md:col-12">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
@@ -461,6 +484,18 @@ onMounted(() => {
                             <Button @click="openSubCategoryModal" icon="pi pi-plus" />
                         </div>
                     </div>
+
+                    <div class="field col-12 md:col-12">
+                        <div class="p-inputgroup">
+                            <span class="p-float-label">
+                                <Dropdown id="gauge" :options="productSubCategoryData" filter v-model="subCategory" optionLabel="name">
+                                </Dropdown>
+                                <label for="gauge">Gauge</label>
+                            </span>
+                            <Button @click="openSubCategoryModal" icon="pi pi-plus" />
+                        </div>
+                    </div>
+
                     <div class="field col-12 md:col-12">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
