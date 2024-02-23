@@ -56,6 +56,8 @@ const showSubCategoryModal = ref(false);
 const showManufacturerModal = ref(false);
 const showSupplierModal = ref(false);
 const showMeasurementUnitModal = ref(false);
+const showProductTypeModal = ref(false);
+const showProductGaugeModal = ref(false);
 const formError = ref({});
 
 const catFormError=ref({});
@@ -63,7 +65,8 @@ const subCatFormError=ref({});
 const manufactureFormError=ref({});
 const supplierFormError=ref({});
 const unitFormError=ref({});
-
+const typeFormError=ref({});
+const gaugeFormError=ref({});
 
 const productCategoryData = ref(null);
 const productSubCategoryData= ref(null);
@@ -74,6 +77,19 @@ const suppliersData=ref(null);
 const measurementUnitsData=ref(null);
 const manufacturedDate=ref(null);
 const expiryDate=ref(null);
+
+const prodType=ref(null);
+const prodGauge=ref(null);
+
+const typeName=ref(null);
+const typeDesc=ref(null);
+const gaugeName=ref(null);
+const gaugeDesc=ref(null);
+
+const productTypeList = ref(null);
+const productGaugeList = ref(null);
+
+
 
 // ********************************************************
 const openCategoryModal = () => {
@@ -128,6 +144,22 @@ const onUnitInputBlur=(value, key)=>{
     unitFormError.value[key]= commonService.validateFormField(value);
 }
 
+const toggleTypeModal=(action)=>{
+    showProductTypeModal.value=action;
+}
+
+const toggleGaugeModal=(action)=>{
+    showProductGaugeModal.value=action;
+}
+
+const onTypeInputBlur=(value, key)=>{
+    typeFormError.value[key]= commonService.validateFormField(value)
+}
+
+const onGaugeInputBlur=(value, key)=>{
+    gaugeFormError.value[key]= commonService.validateFormField(value);
+}
+
 
 const onSubmit= ()=>{
     formError.value.name=commonService.validateFormField(name.value);
@@ -135,6 +167,7 @@ const onSubmit= ()=>{
     formError.value.quantity=commonService.validateFormField(quantity.value);
     formError.value.measurementUnit=commonService.validateFormField(measurementUnit.value);
     formError.value.sellingPrice=commonService.validateFormField(sellingPrice.value);
+    formError.value.prodType=commonService.validateFormField(prodType.value);
 
     let invalid = commonService.validateRequiredFields(formError.value);
     if(invalid){
@@ -143,23 +176,25 @@ const onSubmit= ()=>{
     }
 
     let postData={
-        name: name.value,
-        category_id: category.value.id,
-        sub_category_id: subCategory.value.id,
-        manufacturer_id:manufacturer.value.id,
-        supplier_id:supplier.value.id,
-        product_no: productId.value,
-        description: description.value,
-        quantity: quantity.value,
-        min_quantity:minStock.value,
-        max_quantity: maxStock.value,
-        measurement_unit_id: measurementUnit.value.id,
-        purchase_price: purchasePrice.value,
-        date:date.value,
-        selling_price: sellingPrice.value,
-        discount: discount.value,
-        manufactured_date:manufacturedDate.value,
-        expiry_date:expiryDate.value
+        name: name?.value,
+        category_id: category?.value?.id,
+        sub_category_id: subCategory?.value?.id,
+        manufacturer_id:manufacturer?.value?.id,
+        supplier_id:supplier?.value?.id,
+        product_no: productId?.value,
+        description: description?.value,
+        quantity: quantity?.value,
+        min_quantity:minStock?.value,
+        max_quantity: maxStock?.value,
+        measurement_unit_id: measurementUnit?.value?.id,
+        purchase_price: purchasePrice?.value,
+        date:date?.value,
+        selling_price: sellingPrice?.value,
+        discount: discount?.value,
+        manufactured_date:manufacturedDate?.value,
+        expiry_date:expiryDate?.value,
+        type_id: prodType?.value?.id,
+        gauge_id: prodGauge?.value?.id,
     }
 
     commonService.genericRequest('create-product', 'post', true, postData).then((response) => {
@@ -182,6 +217,8 @@ const onSubmit= ()=>{
             discount.value=null;
             manufacturedDate.value=null;
             expiryDate.value=null;
+            prodType.value=null;
+            prodGauge.value=null;
         } else {
             commonService.showError(toast, response.message);
         }
@@ -367,6 +404,9 @@ const getSuppliers=()=>{
 }
 
 
+
+
+
 const onSubmitUnit=()=>{
     unitFormError.value.unitName = commonService.validateFormField(unitName.value);
     let invalid = commonService.validateRequiredFields(unitFormError.value);
@@ -405,6 +445,82 @@ const getMeasurementUnit=()=>{
 }
 
 
+const onSubmitType=()=>{
+    typeFormError.value.typeName = commonService.validateFormField(typeName.value);
+    let invalid = commonService.validateRequiredFields(typeFormError.value);
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
+    let postData = {
+        name: typeName.value,
+        description: typeDesc.value,
+        status: "Active"
+    }
+
+    commonService.genericRequest('create-product-type', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getProductTypes();
+            toggleTypeModal(false);
+            typeName.value=null;
+            typeDesc.value=null;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+
+}
+
+const getProductTypes=()=>{
+    commonService.genericRequest('get-product-types', 'get', true, {}).then((response) => {
+        if (response.status) {
+            productTypeList.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const onSubmitGauge=()=>{
+    gaugeFormError.value.gaugeName = commonService.validateFormField(gaugeName.value);
+    let invalid = commonService.validateRequiredFields(gaugeFormError.value);
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
+    let postData = {
+        name: gaugeName.value,
+        description: gaugeDesc.value,
+        status: "Active"
+    }
+
+    commonService.genericRequest('create-product-gauge', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getProductGauge();
+            toggleGaugeModal(false);
+            gaugeName.value=null;
+            gaugeDesc.value=null;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const getProductGauge=()=>{
+    commonService.genericRequest('get-product-gauge', 'get', true, {}).then((response) => {
+        if (response.status) {
+            productGaugeList.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
 const getCountries=()=>{
 
     commonService.genericRequest('get-countries', 'get', true, {}).then((response) => {
@@ -424,6 +540,8 @@ onMounted(() => {
     getManufacturers()
     getSuppliers();
     getMeasurementUnit();
+    getProductTypes();
+    getProductGauge();
 });
 
 
@@ -444,11 +562,11 @@ onMounted(() => {
                     <div class="field col-12 md:col-12">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
-                                <Dropdown id="type" @blur="onInputBlur(category, 'category')" filter :options="productCategoryData" v-model="category"  :class="{ 'p-invalid': formError?.category }" optionLabel="name">
+                                <Dropdown id="type" @blur="onInputBlur(prodType, 'prodType')" filter :options="productTypeList" v-model="prodType"  :class="{ 'p-invalid': formError?.prodType }" optionLabel="name">
                                 </Dropdown>
                                 <label for="type">Type</label>
                             </span>
-                            <Button @click="openCategoryModal" icon="pi pi-plus" />
+                            <Button @click="toggleTypeModal(true)" icon="pi pi-plus" />
                         </div>
                     </div>
 
@@ -488,11 +606,11 @@ onMounted(() => {
                     <div class="field col-12 md:col-12">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
-                                <Dropdown id="gauge" :options="productSubCategoryData" filter v-model="subCategory" optionLabel="name">
+                                <Dropdown id="gauge" :options="productGaugeList" filter v-model="prodGauge" optionLabel="name">
                                 </Dropdown>
                                 <label for="gauge">Gauge</label>
                             </span>
-                            <Button @click="openSubCategoryModal" icon="pi pi-plus" />
+                            <Button @click="toggleGaugeModal(true)" icon="pi pi-plus" />
                         </div>
                     </div>
 
@@ -805,28 +923,79 @@ onMounted(() => {
 
         <Dialog header="Create Measurement Unit" v-model:visible="showMeasurementUnitModal" :style="{ width: '30vw' }"
             :modal="true" class="p-fluid">
+                <p style="padding-top: 20px;">
+                <div class="grid p-fluid">
+                    <div class="field col-12 md:col-12">
+                        <span class="p-float-label">
+                            <InputText type="text" id="unitName" @blur="onUnitInputBlur(unitName, 'unitName')" v-model="unitName" :class="{ 'p-invalid': unitFormError?.unitName }" /> <!-- class="p-invalid"-->
+                            <label for="unitName">Name</label>
+                        </span>
+                    </div>
+                    <div class="field col-12 md:col-12">
+                        <span class="p-float-label">
+                            <Textarea inputId="unitDesc" rows="7" v-model="unitDesc"></Textarea>
+                            <label for="unitDesc">Description</label>
+                        </span>
+                    </div>
+            </div>
+            </p>
+            <template #footer>
+                <Button label="Cancel" @click="toggleMeasurementUnitModal(false)" icon="pi pi-times"
+                    class="p-button-outlined p-button-danger mr-2 mb-2" />
+                <Button @click="onSubmitUnit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+            </template>
+        </Dialog>
+
+
+        <Dialog header="Create Product Type" v-model:visible="showProductTypeModal" :style="{ width: '30vw' }"
+        :modal="true" class="p-fluid">
             <p style="padding-top: 20px;">
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
-                        <InputText type="text" id="unitName" @blur="onUnitInputBlur(unitName, 'unitName')" v-model="unitName" :class="{ 'p-invalid': unitFormError?.unitName }" /> <!-- class="p-invalid"-->
+                        <InputText type="text" id="unitName" @blur="onTypeInputBlur(typeName, 'typeName')" v-model="typeName" :class="{ 'p-invalid': typeFormError?.typeName }" /> <!-- class="p-invalid"-->
                         <label for="unitName">Name</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
-                        <Textarea inputId="unitDesc" rows="7" v-model="unitDesc"></Textarea>
+                        <Textarea inputId="unitDesc" rows="7" v-model="typeDesc"></Textarea>
                         <label for="unitDesc">Description</label>
                     </span>
                 </div>
         </div>
         </p>
         <template #footer>
-            <Button label="Cancel" @click="toggleMeasurementUnitModal(false)" icon="pi pi-times"
+            <Button label="Cancel" @click="toggleTypeModal(false)" icon="pi pi-times"
                 class="p-button-outlined p-button-danger mr-2 mb-2" />
-            <Button @click="onSubmitUnit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+            <Button @click="onSubmitType" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
         </template>
     </Dialog>
+
+    <Dialog header="Create Product Gauge" v-model:visible="showProductGaugeModal" :style="{ width: '30vw' }"
+    :modal="true" class="p-fluid">
+        <p style="padding-top: 20px;">
+        <div class="grid p-fluid">
+            <div class="field col-12 md:col-12">
+                <span class="p-float-label">
+                    <InputText type="text" id="unitName" @blur="onGaugeInputBlur(gaugeName, 'gaugeName')" v-model="gaugeName" :class="{ 'p-invalid': gaugeFormError?.gaugeName }" /> <!-- class="p-invalid"-->
+                    <label for="unitName">Name</label>
+                </span>
+            </div>
+            <div class="field col-12 md:col-12">
+                <span class="p-float-label">
+                    <Textarea inputId="unitDesc" rows="7" v-model="gaugeDesc"></Textarea>
+                    <label for="unitDesc">Description</label>
+                </span>
+            </div>
+    </div>
+    </p>
+    <template #footer>
+        <Button label="Cancel" @click="toggleGaugeModal(false)" icon="pi pi-times"
+            class="p-button-outlined p-button-danger mr-2 mb-2" />
+        <Button @click="onSubmitGauge" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+    </template>
+</Dialog>
     <!-- /End of the modals -->
 
 </div></template>

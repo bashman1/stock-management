@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('p_o_box')->nullable();
             $table->text('description')->nullable();
             $table->string("status");
+            $table->string("code")->nullable();
             $table->boolean('is_main')->default(false);
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

@@ -27,6 +27,9 @@ class ProductController extends Controller
         $product->institution_id = $userData->institution_id ;
         $product->user_id = $userData->id ;
         $product->status = $userData->status ;
+        $product->type_id = $request->type_id ;
+        $product->gauge_id = $request->gauge_id ;
+        // $product->ref_no = $request-> ;
         $product->created_by = $userData->id ;
         $product->created_on = now();
         $product->save();

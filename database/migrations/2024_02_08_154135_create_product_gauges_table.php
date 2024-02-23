@@ -13,22 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('products', function (Blueprint $table) {
+        Schema::create('product_gauges', function (Blueprint $table) {
             $table->id();
-            $table->string("name");
-            $table->string("product_no")->nullable();
-            $table->unsignedBigInteger("type_id")->nullable();
-            $table->unsignedBigInteger("category_id")->nullable();
-            $table->unsignedBigInteger("sub_category_id")->nullable();
-            $table->unsignedBigInteger("manufacturer_id")->nullable();
-            $table->unsignedBigInteger("supplier_id")->nullable();
-            $table->unsignedBigInteger("measurement_unit_id")->nullable();
-            $table->unsignedBigInteger("gauge_id")->nullable();
+            $table->string('name');
             $table->text('description')->nullable();
             $table->unsignedBigInteger("institution_id");
+            $table->unsignedBigInteger("branch_id")->nullable();
             $table->unsignedBigInteger("user_id");
             $table->string("status")->nullable();
-            $table->string("ref_no")->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_on')->nullable();
@@ -44,6 +36,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('products');
+        Schema::dropIfExists('product_gauges');
     }
 };

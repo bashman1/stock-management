@@ -6,6 +6,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
+use App\Models\Branch;
 
 class Controller extends BaseController
 {
@@ -72,6 +73,32 @@ class Controller extends BaseController
              return true;
         }
         return false;
+    }
+
+
+    public function generateBranchCode(){
+        $randomCode='';
+        do {
+            $randomCode = $this->randomThreeDigitCode(3);
+            $branchCd = Branch::where("code", $randomCode)->first();
+        } while ((isset($branchCd) && !empty($branchCd)) ||  strlen($randomCode)!=3);
+
+        return strtoupper($randomCode);
+    }
+
+    /**
+     * Generate 3 digit code
+     * @return void
+     * @author Bashir <wamulabash1@@gmail.com>
+     */
+    public function randomThreeDigitCode($length){
+        $charset = 'abcdefghjklmnpqrstuvwxyz23456789';
+        $randomCode = '';
+        $charsetLength = strlen($charset);
+        for ($i = 0; $i < $length; $i++) {
+            $randomCode .= $charset[mt_rand(0, $charsetLength - 1)];
+        }
+        return $randomCode;
     }
 
 }

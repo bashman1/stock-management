@@ -15,9 +15,9 @@ return new class extends Migration
     {
         Schema::create('stock_histories', function (Blueprint $table) {
             $table->id();
-            $table->double('purchase_price', 8, 2)->default(0);
+            $table->double('purchase_price', 8, 2)->default(0)->nullable();
             $table->double('selling_price', 8, 2)->default(0);
-            $table->double('discount', 8, 2)->default(0);
+            $table->double('discount', 8, 2)->default(0)->nullable();
             $table->unsignedBigInteger("product_id");
             $table->unsignedBigInteger("stock_id");
             $table->unsignedBigInteger("quantity");

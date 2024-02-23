@@ -147,4 +147,17 @@ class InstitutionController extends Controller
         $branches = Branch::where(['status'=>$request->status, 'institution_id'=>$request->institutionId])->get();
         return $this->genericResponse(true, "Fetched institution branches", 200, $branches);
     }
+
+
+    public function generateMissingCodesForBranches(){
+        $branches = Branch::all();
+        foreach ($branches as $value) {
+            $branch=Branch::find($value["id"]);
+            if(empty($branch->code)){
+                $branch->code = $this->generateBranchCode();
+                $branch->save();
+            }
+        }
+        return $this->genericResponse(true, "Branch codes created successfully", 200, $branches);
+    }
 }

@@ -2,7 +2,6 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-// use App\Http\
 use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
@@ -21,6 +20,10 @@ use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SavingAccountProductController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\ProductTypeController;
+use App\Http\Controllers\ProductGaugeController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -48,6 +51,7 @@ Route::post('user-login', [UserController::class, 'login']);
 // Route::get('get-role/{id}', [RoleController::class, 'getRoleById']);
 // Route::get('get-permissions', [RoleController::class, 'getPermissions']);
 // Route::post('assign-role-permission', [RoleController::class, 'assignRolePermission']);
+Route::get('create-branch-codes', [InstitutionController::class, "generateMissingCodesForBranches"]);
 
 Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('crate-role', [RoleController::class, 'createRole']);
@@ -103,5 +107,11 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get('get-dashboard-stats', [CommonController::class, "getDashboardStats"]);
 
     Route::get('get-products', [ProductController::class, "getProducts"]);
+
+    Route::post('create-product-type', [ProductTypeController::class, "createProductTypes"]);
+    Route::get('get-product-types', [ProductTypeController::class, "getProductTypes"]);
+
+    Route::post('create-product-gauge', [ProductGaugeController::class, "createGauge"]);
+    Route::get('get-product-gauge', [ProductGaugeController::class, "getGauges"]);
 
 });
