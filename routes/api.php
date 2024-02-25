@@ -22,6 +22,7 @@ use App\Http\Controllers\SavingAccountProductController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ProductTypeController;
 use App\Http\Controllers\ProductGaugeController;
+use App\Http\Controllers\GLBalanceController;
 
 
 
@@ -52,6 +53,9 @@ Route::post('user-login', [UserController::class, 'login']);
 // Route::get('get-permissions', [RoleController::class, 'getPermissions']);
 // Route::post('assign-role-permission', [RoleController::class, 'assignRolePermission']);
 Route::get('create-branch-codes', [InstitutionController::class, "generateMissingCodesForBranches"]);
+
+Route::get('create-gl-bk', [GLBalanceController::class, "generateGlAcctBks"]);
+
 
 Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('crate-role', [RoleController::class, 'createRole']);

@@ -13,14 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('gl_types', function (Blueprint $table) { 
+        Schema::create('order_items', function (Blueprint $table) {
             $table->id();
-            $table->string('gl_no');
-            $table->text('description');
-            $table->string('gl_cat_no');
-            $table->string('acct_type');
-            $table->string('gl_sub_cat_no');
-            $table->string('status');
+            $table->unsignedBigInteger("order_id");
+            $table->unsignedBigInteger("product_id");
+            $table->double('qty', 8, 2);
+            $table->string("status");
+            $table->unsignedBigInteger("institution_id");
+            $table->unsignedBigInteger("branch_id");
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_on')->nullable();
@@ -36,6 +36,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('gl_types');
+        Schema::dropIfExists('order_items');
     }
 };

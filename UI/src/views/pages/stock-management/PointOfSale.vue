@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { FilterMatchMode } from 'primevue/api';
+import { ref, onMounted,onBeforeMount } from 'vue';
 import { useRouter } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
@@ -14,6 +15,7 @@ const selectedProduct = ref([]);
 const amountTOPay=ref(0);
 const discount=ref(0);
 const balance=ref(0);
+const filters = ref({});
 
 // **************************************************************************
 const getProducts = () => {
@@ -53,7 +55,6 @@ const updateQty = (event, data) => {
         }
         return product;
     });
-
 }
 
 const increaseReduce = (data, action) => {
@@ -80,9 +81,33 @@ const totalPrice = (array) => {
             totalPrice += product.quantity * product.price;
         });
     }
-
     return totalPrice;
 }
+
+const onSubmitOrder=()=>{
+    let postData={
+        total:totalPrice(selectedProduct?.value)- Number(discount?.value),
+        discount:Number(discount?.value),
+        amountPaid:Number(amountTOPay?.value),
+        itemCount: selectedProduct?.value.length,
+        tranDate: new Date(),
+        items:selectedProduct?.value
+
+    }
+
+    alert(JSON.stringify(postData))
+    
+}
+
+const initFilters = () => {
+    filters.value = {
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+    };
+};
+
+onBeforeMount(() => {
+    initFilters();
+});
 
 onMounted(() => {
     getProducts()
@@ -98,9 +123,18 @@ onMounted(() => {
                 <div class="grid">
 
                     <div class="col-12 md:col-12">
-                        <p>Use this page to start from scratch and place your custom content.</p>
+                        <p>Items available in the stock.</p>
                         <DataTable :value="productList" :paginator="true" class="p-datatable-gridlines" :rows="50"
-                            dataKey="id" :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+                            dataKey="id"  :filters="filters" :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+                            <template #header>
+                                <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
+                                    <!-- <h5 class="m-0">Manage Products</h5> -->
+                                    <span class="block mt-2 md:mt-0 p-input-icon-left">
+                                        <i class="pi pi-search" />
+                                        <InputText v-model="filters['global'].value" placeholder="Search..." />
+                                    </span>
+                                </div>
+                            </template>
                             <Column field="name" header="Product" style="min-width: 10rem">
                                 <template #body="{ data }">
                                     {{ data.name }}
@@ -121,12 +155,12 @@ onMounted(() => {
                                     {{ data.sub_category_name }}
                                 </template>
                             </Column> -->
-                            <Column field="name" header="Selling Price" style="min-width: 10rem">
+                            <Column field="name" header="Price" style="max-width: 10rem">
                                 <template #body="{ data }">
-                                    {{ data.selling_price }}
+                                    {{ commonService.commaSeparator(data.selling_price) }}
                                 </template>
                             </Column>
-                            <Column field="name" header="Quantity" style="min-width: 10rem">
+                            <Column field="name" header="Quantity" style="max-width: 15rem">
                                 <template #body="{ data }">
                                     {{ data.quantity + ' ' + data.unit }}
                                 </template>
@@ -151,9 +185,9 @@ onMounted(() => {
                                     {{ data.created_at }}
                                 </template>
                             </Column>
-                            <Column headerStyle="min-width:10rem;">
+                            <Column headerStyle="max-width:10rem;">
                                 <template #body="{ data }">
-                                    <Button icon="pi pi-file-edit" class="p-button-rounded p-button-success mr-2"
+                                    <Button icon="pi pi-check" class="p-button-rounded p-button-success mr-2"
                                         @click="OnSelectItem(data)" />
                                 </template>
                             </Column>
@@ -170,16 +204,17 @@ onMounted(() => {
                 <h5>Selected Items</h5><br>
                 <div class="grid">
                     <div class="field col-12 md:col-12">
+                        <!-- <p>Items available in the stock.</p> -->
                         <DataTable :value="selectedProduct" size="small" :rows="20" dataKey="id" :rowHover="true"
                             filterDisplay="menu" responsiveLayout="scroll">
-                            <Column field="name" header="Name" style="min-width: 10rem">
+                            <Column field="name" header="Name" style="max-width: 10rem">
                                 <template #body="{ data }">
                                     {{ data.name }}
                                 </template>
                             </Column>
-                            <Column field="price" header="Price" style="min-width: 10rem">
+                            <Column field="price" header="Price" style="max-width: 10rem">
                                 <template #body="{ data }">
-                                    {{ data.price }}
+                                    {{ commonService.commaSeparator(data.price) }}
                                 </template>
                             </Column>
                             <Column field="quantity" header="Qty" style="min-width: 10rem">
@@ -197,12 +232,12 @@ onMounted(() => {
                                     <!-- <Button icon="pi pi-plus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
                                 </template>
                             </Column>
-                            <Column field="subtotal" header="Sub Total" style="min-width: 10rem">
+                            <Column field="subtotal" header="Sub Total" style="max-width: 10rem">
                                 <template #body="{ data }">
                                     {{ commonService.commaSeparator(data.quantity * data.price) }}
                                 </template>
                             </Column>
-                            <Column headerStyle="min-width:10rem;">
+                            <Column headerStyle="max-width:10rem;">
                                 <template #body="{ data }">
                                     <Button icon="pi pi-trash" class="p-button-rounded p-button-danger mr-2"
                                         @click="OnSelectRemoveItem(data)" />
@@ -264,7 +299,7 @@ onMounted(() => {
 
                     <div class="field col-12 md:col-8"></div>
                     <div class="field col-12 md:col-4">
-                        <Button @click="onSubmit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+                        <Button @click="onSubmitOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
                     </div>
                 </div>
             </div>
