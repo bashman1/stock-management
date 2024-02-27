@@ -47,4 +47,35 @@ class OrderController extends Controller
         DB::commit();
         return $this->genericResponse(true, "Order submitted successfully", 201, $order);
     }
+
+    public function getOrders(){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+
+        $queryString = "SELECT O.id, O.ref_no, O.receipt_no, O.tran_id, O.item_count, O.total, 
+        O.discount, O.amount_paid, O.user_id, O.customer_id, O.tran_date,
+        O.status, O.payment_status, O.institution_id, O.branch_id, O.created_on,
+        O.created_at, O.updated_at FROM orders O";
+
+        if($isNotAdmin){
+            $queryString.=" WHERE O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id AND O.status='Active'";
+        }else{
+            $queryString.=" WHERE O.status='Active'";
+        }
+        $queryString.=" ORDER BY O.id DESC";
+
+        $orders = DB::select($queryString);
+        return $this->genericResponse(true, "Collected successfully", 200, $orders);
+    }
+
+    public function getOderDetails($orderId){
+        $queryString="SELECT O.id, O.order_id, O.product_id,O.qty, O.status,
+        O.institution_id, O.branch_id, O.created_at, P.name,
+        P.product_no, S.selling_price AS price
+        FROM order_items O INNER JOIN products P 
+        ON P.id = O.product_id INNER JOIN stocks S 
+        ON S.product_id = P.id WHERE  O.order_id = $orderId";
+        $orderDetails = DB::select($queryString);
+        return $this->genericResponse(true, "Order details fetched successfully", 200, $orderDetails);
+    }
 }

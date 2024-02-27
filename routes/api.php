@@ -24,6 +24,7 @@ use App\Http\Controllers\ProductTypeController;
 use App\Http\Controllers\ProductGaugeController;
 use App\Http\Controllers\GLBalanceController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\MtnPaymentsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,6 +55,7 @@ Route::post('user-login', [UserController::class, 'login']);
 Route::get('create-branch-codes', [InstitutionController::class, "generateMissingCodesForBranches"]);
 
 Route::get('create-gl-bk', [GLBalanceController::class, "generateGlAcctBks"]);
+Route::get('test-momo-api', [MtnPaymentsController::class, "getMOMOAuth"]);
 
 
 Route::group(['middleware'=>["auth:api"]], function(){
@@ -117,5 +119,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('create-product-gauge', [ProductGaugeController::class, "createGauge"]);
     Route::get('get-product-gauge', [ProductGaugeController::class, "getGauges"]);
     Route::post('create-order', [OrderController::class, "createOrder"]);
-
+    Route::get('get-orders', [OrderController::class, "getOrders"]);
+    Route::get('get-orders-details/{id}', [OrderController::class, "getOderDetails"]);
 });

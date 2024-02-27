@@ -151,7 +151,14 @@ const model = ref([
                         label: 'Point Of Sale',
                         icon: 'pi pi-fw pi-circle',
                         to: '/point-of-sale'
+                    },
+                    {
+                        label: 'Sales',
+                        icon: 'pi pi-fw pi-circle',
+                        to: '/view-sales'
                     }
+
+                    
                 ]
             },
             // {

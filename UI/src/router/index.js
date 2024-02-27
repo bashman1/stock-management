@@ -315,6 +315,14 @@ const router = createRouter({
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
+                },
+                {
+                    path: '/view-sales',
+                    name: 'ViewOrders',
+                    component: ()=>import('@/views/pages/stock-management/ViewOrders.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
                 }
 
             ]
