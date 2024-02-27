@@ -23,7 +23,7 @@ return new class extends Migration
             $table->double('discount', 8, 2)->default(0);
             $table->double('amount_paid', 8, 2)->default(0);
             $table->unsignedBigInteger("user_id");
-            $table->unsignedBigInteger("customer_id");
+            $table->unsignedBigInteger("customer_id")->nullable();
             $table->timestamp('tran_date')->nullable();
             $table->string("status")->nullable();
             $table->string("payment_status")->nullable();

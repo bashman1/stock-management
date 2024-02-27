@@ -91,11 +91,18 @@ const onSubmitOrder=()=>{
         amountPaid:Number(amountTOPay?.value),
         itemCount: selectedProduct?.value.length,
         tranDate: new Date(),
-        items:selectedProduct?.value
-
+        items:selectedProduct?.value,
+        status:"Active"
     }
 
-    alert(JSON.stringify(postData))
+    commonService.genericRequest('create-order', 'post', true, postData).then((response) => {
+        if (response.status) {
+            // productList.value = response.data;
+            commonService.showSuccess(toast, response.message)
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
     
 }
 
@@ -283,11 +290,12 @@ onMounted(() => {
                         <span class="p-float-label">
                             <InputText type="text" id="discount"  v-model="amountTOPay" />
                             <label for="discount">Amount</label>
+                            <!-- <small class="p-invalid ">Enter.</small> -->
                         </span>
                     </div>
                     <div class="field col-12 md:col-4">
                         <span class="p-float-label">
-                            Balance
+                            Change
                         </span>
                     </div>
                     <div class="field col-12 md:col-8">

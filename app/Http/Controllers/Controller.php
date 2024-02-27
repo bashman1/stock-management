@@ -7,6 +7,8 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 use App\Models\Branch;
+use Illuminate\Support\Str;
+use App\Models\InstitutionConfig;
 
 class Controller extends BaseController
 {
@@ -99,6 +101,19 @@ class Controller extends BaseController
             $randomCode .= $charset[mt_rand(0, $charsetLength - 1)];
         }
         return $randomCode;
+    }
+
+
+    public function generateTranRef(){
+        $tranIdRef = InstitutionConfig::where("type", "tran_id_ref")->first();
+        $tranId = $tranIdRef->prefix . '' . $tranIdRef->starting . '' . $tranIdRef->current;
+        $tranIdRef->current = $tranIdRef->current + $tranIdRef->step;
+        $tranIdRef->save();
+        return $tranId;
+    }
+
+    public function generateUuid(){
+        return (string) Str::uuid();
     }
 
 }

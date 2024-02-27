@@ -23,8 +23,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ProductTypeController;
 use App\Http\Controllers\ProductGaugeController;
 use App\Http\Controllers\GLBalanceController;
-
-
+use App\Http\Controllers\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -117,5 +116,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
 
     Route::post('create-product-gauge', [ProductGaugeController::class, "createGauge"]);
     Route::get('get-product-gauge', [ProductGaugeController::class, "getGauges"]);
+    Route::post('create-order', [OrderController::class, "createOrder"]);
 
 });
