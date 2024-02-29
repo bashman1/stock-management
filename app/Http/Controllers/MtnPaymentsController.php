@@ -16,7 +16,7 @@ class MtnPaymentsController extends Controller
             return $this->genericResponse(false, "Failed to create api user", 500, $createApiUser);
         }
         $getApiUser=$this->getAPIUser($postData);
-        if($getApiUser != 200){
+        if($getApiUser['httpCode'] != 200){
             return $this->genericResponse(false, "Failed to get api user", 500, $getApiUser);
         }
         $apiKey = $this->generateAPIKey($postData);
@@ -25,8 +25,20 @@ class MtnPaymentsController extends Controller
         }
         $postData['apiKey']=$apiKey['apiKey'];
         $accessToken=$this->generateAccessToken($postData);
+        if($accessToken['httpCode'] !=200){
+            return $this->genericResponse(false, "Failed to create access token", 500, $accessToken);
+        }
+        $postData['accessToken']=$accessToken['accessToken'];
+        $postData['targetEnvironment']=$getApiUser['targetEnvironment'];
+        $postData['newUuid']=$this->generateUuid();
 
-        return $this->genericResponse(true, "Testing the end point", 200, $accessToken);
+        $userDetails= $this->getCustomerBasicInfo($postData);
+
+        $requestPayment = $this->requestToPay($postData);
+
+
+
+        return $this->genericResponse(true, "Testing the end point", 200, $requestPayment);
     }
 
 
@@ -89,8 +101,9 @@ class MtnPaymentsController extends Controller
 
         $resp = curl_exec($curl);
         $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $resp = json_decode($resp, true);
         curl_close($curl);
-        return $http_code;
+        return ["httpCode"=>$http_code, "response"=> $resp, "targetEnvironment"=>$resp['targetEnvironment'], 'providerCallbackHost'=>$resp['providerCallbackHost']];
     }
 
 
@@ -146,14 +159,76 @@ class MtnPaymentsController extends Controller
         $request_body = '{}';
         curl_setopt($curl, CURLOPT_POSTFIELDS, $request_body);
 
-        
         $resp = curl_exec($curl);
         $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $resp = json_decode($resp, true);
         curl_close($curl);
-        return ["httpCode"=>$http_code, "response"=>$resp];
+        return ["httpCode"=>$http_code, "response"=>$resp, "accessToken"=>$resp['access_token'], "tokenType"=>$resp['token_type'], 'expiresIn'=>$resp['expires_in']];
     }
 
 
+    public function getCustomerBasicInfo($postData){
+        $url = "https://sandbox.momodeveloper.mtn.com/collection/v1_0/accountholder/msisdn/0775722818/basicuserinfo";
+        $curl = curl_init($url);
+
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "GET");
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        # Request headers
+        $headers = array(
+            'Authorization: Bearer ' . $postData['accessToken'],
+            'Ocp-Apim-Subscription-Key:'.$postData['key'],
+            'X-Reference-Id:'.$postData['newUuid'],
+            'X-Target-Environment:'.$postData['targetEnvironment'],
+            'Cache-Control: no-cache',);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+
+        $resp = curl_exec($curl);
+        $resp = json_decode($resp, true);
+        curl_close($curl);
+        return $resp;
+    }
+
+
+    public function requestToPay($postData){
+        $url = "https://sandbox.momodeveloper.mtn.com/collection/v1_0/requesttopay";
+        $curl = curl_init($url);
+
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+        # Request headers
+        $headers = array(
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $postData['accessToken'],
+            'Ocp-Apim-Subscription-Key:'.$postData['key'],
+            'X-Reference-Id:'.$postData['newUuid'],
+            'X-Target-Environment:'.$postData['targetEnvironment'],
+            'Cache-Control: no-cache',);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+
+        # Request body
+        $request_body = '{
+            "amount": "1000",
+            "currency": "EUR",
+            "externalId": "12255",
+            "payer": {
+                "partyIdType": "MSISDN",
+                "partyId": "0775722818"
+            },
+            "payerMessage": "Testing Payment",
+            "payeeNote": "PayNow"
+        }';
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $request_body);
+
+        $resp = curl_exec($curl);
+        $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+        // var_dump($resp);
+        return ['httpCode'=>$http_code, 'response'=>$resp];
+    }
 
 
 }
