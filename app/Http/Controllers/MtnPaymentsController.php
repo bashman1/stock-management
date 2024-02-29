@@ -20,8 +20,13 @@ class MtnPaymentsController extends Controller
             return $this->genericResponse(false, "Failed to get api user", 500, $getApiUser);
         }
         $apiKey = $this->generateAPIKey($postData);
+        if($apiKey['httpCode'] != 201){
+            return $this->genericResponse(false, "Failed to create api key", 500, $apiKey);
+        }
+        $postData['apiKey']=$apiKey['apiKey'];
+        $accessToken=$this->generateAccessToken($postData);
 
-        return $this->genericResponse(true, "Testing the end point", 200, $apiKey);
+        return $this->genericResponse(true, "Testing the end point", 200, $accessToken);
     }
 
 
@@ -93,25 +98,7 @@ class MtnPaymentsController extends Controller
      * 
      */
     public function generateAPIKey($postData){
-        // $url = "https://sandbox.momodeveloper.mtn.com/v1_0/apiuser/".$postData['uuid']."/apikey";
-        // $curl = curl_init($url);
-
-        // curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "POST");
-        // curl_setopt($curl, CURLOPT_URL, $url);
-        // curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-        // # Request headers
-        // $headers = array(
-        //     'Content-Type: application/json',
-        //     'Cache-Control: no-cache',
-        //     'Ocp-Apim-Subscription-Key:'.$postData['key']);
-        // curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-
-        // $resp = curl_exec($curl);
-        // $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        // curl_close($curl);
-        // return ["httpCode"=>$http_code, "response"=>$url ];
-
+    
         $url = "https://sandbox.momodeveloper.mtn.com/v1_0/apiuser/".$postData['uuid']."/apikey";
         $curl = curl_init($url);
 
@@ -132,9 +119,38 @@ class MtnPaymentsController extends Controller
 
         $resp = curl_exec($curl);
         $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $resp = json_decode($resp, true);
         curl_close($curl);
-        // var_dump($resp);
-        return ["httpCode"=>$http_code, "response"=>$resp , "url"=>$url];
+        return ["httpCode"=>$http_code, "response"=>$resp , "url"=>$url, "apiKey"=>$resp['apiKey']];
+    }
+
+    public function generateAccessToken($postData){
+        $url = "https://sandbox.momodeveloper.mtn.com/collection/token/";
+        $curl = curl_init($url);
+        
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        
+        # Request headers
+        $headers = array(
+            'Cache-Control: no-cache',
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen('{}'),
+            'Ocp-Apim-Subscription-Key:'.$postData['key'],);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+
+        # Basic Authentication
+        curl_setopt($curl, CURLOPT_USERPWD, $postData['uuid'] . ':' . $postData['apiKey']);
+
+        $request_body = '{}';
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $request_body);
+
+        
+        $resp = curl_exec($curl);
+        $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+        return ["httpCode"=>$http_code, "response"=>$resp];
     }
 
 
