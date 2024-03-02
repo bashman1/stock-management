@@ -27,8 +27,6 @@ class InstitutionController extends Controller
     public function createInstitution(Request $request){
 
         DB::beginTransaction();
-        // try {
-
             $instConfig = InstitutionConfig::where('type', 'institution_ref')->first();
             $instRef = $instConfig->prefix.''.$instConfig->starting.''.$instConfig->current;
             $instConfig->current= $instConfig->current + $instConfig->step;
@@ -63,7 +61,7 @@ class InstitutionController extends Controller
 
             $bank = new InstitutionBank();
             $bank->bank_id= $request->bank_id;
-            $bank->acct_name=$request->street;
+            $bank->acct_name=$request->acct_name;
             $bank->acct_number=$request->acct_no;
             $bank->status=$request->status;
             $bank->branch_id=$branch->id;

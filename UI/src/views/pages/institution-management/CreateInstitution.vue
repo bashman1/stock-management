@@ -30,24 +30,43 @@ const toast = useToast();
  const cities = ref(null);
  const banks = ref(null);
  const validation= ref({})
+ const formError = ref({});
 
  const onSubmit=()=>{
+
+
+    formError.value.name = commonService.validateFormField(name.value);
+    formError.value.type = commonService.validateFormField(type.value);
+    formError.value.city = commonService.validateFormField(city.value);
+    formError.value.contactName = commonService.validateFormField(contactName.value);
+    formError.value.contactNumber = commonService.validateFormField(contactNumber.value);
+    formError.value.contactEmail = commonService.validateFormField(contactEmail.value);
+    formError.value.bankName = commonService.validateFormField(bankName.value);
+    formError.value.acctName = commonService.validateFormField(acctName.value);
+    formError.value.acctNumber = commonService.validateFormField(acctNumber.value);
+
+    let invalid = commonService.validateRequiredFields(formError.value);
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
     let postData = {
-        name:name.value,
-        type: type.value.id,
-        start_date:startDate.value,
-        address:address.value,
-        city:city.value.id,
-        street:street.value,
-        p_o_box:pOBox.value,
-        description:description.value,
-        contact_name:contactName.value,
-        contact_number:contactNumber.value,
-        contact_email:contactEmail.value,
-        contact_web:contactWeb.value,
-        bank_id:bankName.value.id,
-        acct_name:acctName.value,
-        acct_no:acctNumber.value,
+        name:name?.value,
+        type: type?.value?.id,
+        start_date:(!startDate?.value)?new Date(): startDate?.value,
+        address:address?.value,
+        city:city?.value?.id,
+        street:street?.value,
+        p_o_box:pOBox?.value,
+        description:description?.value,
+        contact_name:contactName?.value,
+        contact_number:contactNumber?.value,
+        contact_email:contactEmail?.value,
+        contact_web:contactWeb?.value,
+        bank_id:bankName?.value?.id,
+        acct_name:acctName?.value,
+        acct_no:acctNumber?.value,
         status:'Active'
     }
     commonService.genericRequest('create-institution', 'post', true, postData).then((response)=>{
@@ -91,6 +110,10 @@ const toast = useToast();
     })
  }
 
+ const onInputBlur=(value, key)=>{
+    formError.value[key] = commonService.validateFormField(value);
+}
+
  const validationCheck=(value, key)=>{
      console.log(value)
      if (value==null || value.trim()==""){
@@ -124,19 +147,19 @@ const toast = useToast();
                 <Toast />
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="instName" v-model="name"   />  <!-- class="p-invalid"-->
+                        <InputText type="text" id="instName" v-model="name" @blur="onInputBlur(name, 'name')"  :class="{ 'p-invalid': formError?.name }" />  <!-- class="p-invalid"-->
                         <label for="instName">Institution Name</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="instType" @blur="validationCheck($event.value, 'type')" :options="instType" v-model="type" optionLabel="name" ></Dropdown>
+                        <Dropdown id="instType" @blur="onInputBlur(type, 'type')" :options="instType" v-model="type" :class="{ 'p-invalid': formError?.type }" optionLabel="name" ></Dropdown>
                         <label for="instType">Institution Type</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Calendar id="instStart" v-model="startDate"></Calendar>
+                        <Calendar id="instStart"  v-model="startDate"></Calendar>
                         <label for="instStart">Start Date</label>
                     </span>
                 </div>
@@ -151,7 +174,7 @@ const toast = useToast();
 
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="instCity" :options="cities" v-model="city" optionLabel="name"></Dropdown>
+                        <Dropdown id="instCity" :options="cities" v-model="city" @blur="onInputBlur(city, 'city')" :class="{ 'p-invalid': formError?.city }" optionLabel="name"></Dropdown>
                         <label for="instCity">City</label>
                     </span>
                 </div>
@@ -190,7 +213,7 @@ const toast = useToast();
             <div class="grid p-fluid mt-3">
                 <div class="field col-12 md:col-3">
                     <span class="p-float-label">
-                        <InputText type="text" id="contactName" v-model="contactName" />
+                        <InputText type="text" id="contactName" v-model="contactName" @blur="onInputBlur(contactName, 'contactName')" :class="{ 'p-invalid': formError?.contactName }" />
                         <label for="contactName">Contact Person Name</label>
                     </span>
                 </div>
@@ -198,14 +221,14 @@ const toast = useToast();
                 <div class="field col-12 md:col-3">
                     <span class="p-float-label">
                         <!-- <InputText type="text" id="contactNumber" v-model="contactNumber" /> -->
-                        <InputMask id="basic" v-model="contactNumber" slotChar="_" mask="99-999999" placeholder="25-______" />
+                        <InputMask id="basic" v-model="contactNumber" slotChar="_" mask="99-999999" placeholder="25-______" @blur="onInputBlur(contactNumber, 'contactNumber')" :class="{ 'p-invalid': formError?.contactNumber }" />
                         <label for="contactNumber">Phone Number</label>
                     </span>
                 </div>
 
                 <div class="field col-12 md:col-3">
                     <span class="p-float-label">
-                        <InputText type="text" id="contactEmail" v-model="contactEmail" />
+                        <InputText type="text" id="contactEmail" v-model="contactEmail" @blur="onInputBlur(contactEmail, 'contactEmail')" :class="{ 'p-invalid': formError?.contactEmail }" />
                         <label for="contactEmail">Email</label>
                     </span>
                 </div>
@@ -224,20 +247,20 @@ const toast = useToast();
             <div class="grid p-fluid mt-3">
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="bankName" :options="banks" v-model="bankName" optionLabel="name"></Dropdown>
+                        <Dropdown id="bankName" :options="banks" v-model="bankName" optionLabel="name" @blur="onInputBlur(bankName, 'bankName')" :class="{ 'p-invalid': formError?.bankName }"></Dropdown>
                         <label for="bankName">Bank</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="acctName" v-model="acctName" />
+                        <InputText type="text" id="acctName" v-model="acctName"  @blur="onInputBlur(acctName, 'acctName')" :class="{ 'p-invalid': formError?.acctName }"/>
                         <label for="acctName">Account Name</label>
                     </span>
                 </div>
 
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="acctNumber" v-model="acctNumber" />
+                        <InputText type="text" id="acctNumber" v-model="acctNumber" @blur="onInputBlur(acctNumber, 'acctNumber')" :class="{ 'p-invalid': formError?.acctNumber }"/>
                         <label for="acctNumber">Account Number</label>
                     </span>
                 </div>

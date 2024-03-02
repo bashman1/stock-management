@@ -55,7 +55,7 @@ Route::post('user-login', [UserController::class, 'login']);
 Route::get('create-branch-codes', [InstitutionController::class, "generateMissingCodesForBranches"]);
 
 Route::get('create-gl-bk', [GLBalanceController::class, "generateGlAcctBks"]);
-Route::get('test-momo-api', [MtnPaymentsController::class, "getMOMOAuth"]);
+Route::post('test-momo-api', [MtnPaymentsController::class, "getMOMOAuth"]);
 
 
 Route::group(['middleware'=>["auth:api"]], function(){

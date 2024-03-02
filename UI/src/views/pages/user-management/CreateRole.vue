@@ -14,6 +14,7 @@ const type = ref(null);
 const institutionsData = ref(null);
 const institution = ref(null);
 const description = ref(null);
+const formError = ref({});
 
 
 const typeOptions = ref([
@@ -22,13 +23,22 @@ const typeOptions = ref([
 ]);
 
 const onSubmit = () => {
+    formError.value.name = commonService.validateFormField(name.value);
+    formError.value.type = commonService.validateFormField(type.value);
+
+    let invalid = commonService.validateRequiredFields(formError.value);
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
     let postData = {
-        name: name.value,
-        type: type.value.value,
-        institution_id:institution.value,
-        description: description.value,
+        name: name?.value,
+        type: type?.value?.value,
+        institution_id:institution?.value,
+        description: description?.value,
         institution_id:institution.value!=null?institution?.value.id:null,
-        role_type:type.value.value,
+        role_type:type?.value?.value,
         status:'Active'
     }
 
@@ -40,6 +50,11 @@ const onSubmit = () => {
             commonService.showError(toast,response.message);
         }
     })
+}
+
+
+const onInputBlur=(value, key)=>{
+    formError.value[key] = commonService.validateFormField(value);
 }
 
 
@@ -68,13 +83,13 @@ const getInstitution=()=>{
                 <Toast />
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="name" v-model="name" /> <!-- class="p-invalid"-->
+                        <InputText type="text" id="name" v-model="name"  @blur="onInputBlur(name, 'name')" :class="{ 'p-invalid': formError?.name }"/> <!-- class="p-invalid"-->
                         <label for="firstName">Name</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="type" :options="typeOptions" v-model="type" optionLabel="label"></Dropdown>
+                        <Dropdown id="type" :options="typeOptions" v-model="type" optionLabel="label" @blur="onInputBlur(type, 'type')" :class="{ 'p-invalid': formError?.type }"></Dropdown>
                         <label for="type">Type</label>
                     </span>
                 </div>

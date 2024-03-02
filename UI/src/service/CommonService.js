@@ -1,6 +1,6 @@
 export default class CommonService {
-    baseUrl = "http://localhost:8000/api/";
-    // baseUrl = "http://137.184.230.127/api/";
+    // baseUrl = "http://localhost:8000/api/";
+    baseUrl = "http://137.184.230.127/api/";
 
     // loggedIn = this.checkingAuthentication();
 
@@ -560,11 +560,11 @@ export default class CommonService {
      * @param {*} formObj
      * @returns
      */
-    validateRequiredFields=(formObj)=>{
-        let response=false
+    validateRequiredFields = (formObj) => {
+        let response = false
         Object.entries(formObj).forEach(([key, value]) => {
-            if( typeof value ==='boolean' && value){
-                response=true
+            if (typeof value === 'boolean' && value) {
+                response = true
             }
         });
         return response;
@@ -575,11 +575,11 @@ export default class CommonService {
      * generate graph label
      * @returns
      */
-    getMonthsStartingFromCurrent=()=>{
+    getMonthsStartingFromCurrent = () => {
         const today = new Date();
         const currentMonthIndex = today.getMonth(); // Get the index of the current month (0-based)
         const monthsLebel = [
-          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
         ];
         // Use modulo operator to calculate the index for each month
         const rotatedMonths = Array.from({ length: 12 }, (_, i) => monthsLebel[(currentMonthIndex + 12 - i) % 12]);
@@ -592,8 +592,8 @@ export default class CommonService {
      * @param {*} key
      * @returns
      */
-    organizeGraphData=(array, key)=>{
-        let formattedArray=[];
+    organizeGraphData = (array, key) => {
+        let formattedArray = [];
         array.forEach(element => {
             formattedArray.push(element[key]);
         });

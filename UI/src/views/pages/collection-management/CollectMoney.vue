@@ -25,6 +25,7 @@ const transactionType=ref([
     {label: "Shares Purchase", value: "SP"},
     {label: "Loan Repayment", value: "LN"}
 ])
+const formError = ref({});
 
 
 const getMembers=(keyWord)=>{
@@ -61,13 +62,26 @@ const onCancel=()=>{
 }
 
 const onSubmit=()=>{
+
+    formError.value.mName = commonService.validateFormField(mName.value);
+    formError.value.mNumber = commonService.validateFormField(mNumber.value);
+    formError.value.tranAmt = commonService.validateFormField(tranAmt.value);
+    formError.value.tType = commonService.validateFormField(tType.value);
+    formError.value.description = commonService.validateFormField(description.value);
+
+    let invalid = commonService.validateRequiredFields(formError.value);
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
     let postData={
         name:mName.value,
         member_number:mNumber.value,
         member_contact:mContact.value,
         amount:tranAmt.value,
         tran_type:tType.value.value,
-        tran_date:tDate.value,
+        tran_date:(!tDate.value)?new Date():tDate.value,
         description:description.value,
         member_id:membersId.value,
     }
@@ -79,6 +93,10 @@ const onSubmit=()=>{
             commonService.showError(toast,response.message);
         }
     })
+}
+
+const onInputBlur=(value, key)=>{
+    formError.value[key] = commonService.validateFormField(value);
 }
 
 onMounted(() => {
@@ -129,31 +147,31 @@ onMounted(() => {
             </div>
             <div class="field col-12 md:col-4"  v-if="selectedMember">
                     <span class="p-float-label">
-                        <InputText type="text" id="name" v-model="mName" disabled="true"/>  <!-- class="p-invalid"-->
+                        <InputText type="text" id="name" v-model="mName" disabled="true" @blur="onInputBlur(mName, 'mName')" :class="{ 'p-invalid': formError?.mName }"/>  <!-- class="p-invalid"-->
                         <label for="name">Member Name</label>
                     </span>
             </div>
             <div class="field col-12 md:col-4" v-if="selectedMember">
                     <span class="p-float-label" >
-                        <InputText type="text" id="number" v-model="mNumber"  disabled="true" />  <!-- class="p-invalid"-->
+                        <InputText type="text" id="number" v-model="mNumber"  disabled="true" @blur="onInputBlur(mNumber, 'mNumber')" :class="{ 'p-invalid': formError?.mNumber }" />  <!-- class="p-invalid"-->
                         <label for="number">Member Number</label>
                     </span>
             </div>
             <div class="field col-12 md:col-4" v-if="selectedMember">
                     <span class="p-float-label">
-                        <InputText type="text" id="contact" v-model="mContact" disabled="true"  />  <!-- class="p-invalid"-->
+                        <InputText type="text" id="contact" v-model="mContact" disabled="true"   />  <!-- class="p-invalid"-->
                         <label for="contact">Member Contact</label>
                     </span>
             </div>
             <div class="field col-12 md:col-4" v-if="selectedMember">
                     <span class="p-float-label">
-                        <InputText type="text" id="amount" v-model="tranAmt"  />  <!-- class="p-invalid"-->
+                        <InputText type="text" id="amount" v-model="tranAmt" @blur="onInputBlur(tranAmt, 'tranAmt')" :class="{ 'p-invalid': formError?.tranAmt }" />  <!-- class="p-invalid"-->
                         <label for="amount">Amount</label>
                     </span>
             </div>
             <div class="field col-12 md:col-4" v-if="selectedMember">
                 <span class="p-float-label">
-                        <Dropdown id="transactionType"  :options="transactionType" v-model="tType" optionLabel="label"></Dropdown>
+                        <Dropdown id="transactionType" @blur="onInputBlur(tType, 'tType')" :class="{ 'p-invalid': formError?.tType }" :options="transactionType" v-model="tType" optionLabel="label"></Dropdown>
                         <label for="transactionType">Transact type</label>
                     </span>
             </div>
@@ -165,7 +183,7 @@ onMounted(() => {
             </div>
             <div class="field col-12 md:col-12" v-if="selectedMember">
                     <span class="p-float-label">
-                        <Textarea  id="textarea" rows="3" cols="30" v-model="description"></Textarea>
+                        <Textarea  id="textarea" rows="3" cols="30" @blur="onInputBlur(description, 'description')" :class="{ 'p-invalid': formError?.description }" v-model="description"></Textarea>
                         <label for="textarea">Description</label>
                     </span>
             </div>

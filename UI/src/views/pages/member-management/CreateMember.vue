@@ -24,6 +24,7 @@ const citiesData = ref(null);
 const userData=ref(null);
 const institutionsData=ref(null);
 const institution=ref(null);
+const formError = ref({});
 
 
 const genderOptions = ref([
@@ -32,19 +33,29 @@ const genderOptions = ref([
 ]);
 
 const onSubmit = () => {
+
+    formError.value.fName = commonService.validateFormField(fName.value);
+    formError.value.lName = commonService.validateFormField(lName.value);
+
+    let invalid = commonService.validateRequiredFields(formError.value);
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
     let postData = {
-        first_name: fName.value,
-        last_name: lName.value,
-        other_name: oName.value,
-        email: email.value,
-        phone_number: phoneNumber.value,
-        date_of_birth: dob.value,
-        gender: gender.value.value,
-        address: address.value,
-        city_id: city.value.id,
-        street: street.value,
-        p_o_box: pOBox.value,
-        description: description.value,
+        first_name: fName?.value,
+        last_name: lName?.value,
+        other_name: oName?.value,
+        email: email?.value,
+        phone_number: phoneNumber?.value,
+        date_of_birth: dob?.value,
+        gender: gender?.value?.value,
+        address: address?.value,
+        city_id: city?.value?.id,
+        street: street?.value,
+        p_o_box: pOBox?.value,
+        description: description?.value,
         status: 'Active'
     }
     commonService.genericRequest('create-member', 'post', true, postData).then((response) => {
@@ -80,6 +91,10 @@ const getInstitution = () => {
     }
 }
 
+const onInputBlur=(value, key)=>{
+    formError.value[key] = commonService.validateFormField(value);
+}
+
 
 onMounted(() => {
     userData.value=commonService.getStorage().userData;
@@ -103,13 +118,13 @@ onMounted(() => {
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="fName" /> <!-- class="p-invalid"-->
+                        <InputText type="text" id="firstName" v-model="fName" @blur="onInputBlur(fName, 'fName')" :class="{ 'p-invalid': formError?.fName }" /> <!-- class="p-invalid"-->
                         <label for="firstName">First Name</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="lastName" v-model="lName" /> <!-- class="p-invalid"-->
+                        <InputText type="text" id="lastName" v-model="lName" @blur="onInputBlur(lName, 'lName')" :class="{ 'p-invalid': formError?.lName }" /> <!-- class="p-invalid"-->
                         <label for="lastName">Last Name</label>
                     </span>
                 </div>

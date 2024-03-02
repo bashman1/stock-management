@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class MtnPaymentsController extends Controller
 {
-    public function getMOMOAuth(){
+    public function getMOMOAuth(Request $request){
         $uuid=$this->generateUuid();
         $subscriptionSecKey = env("SUBSCRIPTION_SEC_KEY");
         $postData = ["uuid"=>$uuid, "key"=>$subscriptionSecKey];
@@ -34,13 +34,14 @@ class MtnPaymentsController extends Controller
 
         $userDetails= $this->getCustomerBasicInfo($postData);
 
+        if($request->action =='VERIFY_NAME'){
+            return $this->genericResponse(true, "User name verified successfully", 200,$userDetails);
+        }
+
         $requestPayment = $this->requestToPay($postData);
 
-
-
-        return $this->genericResponse(true, "Testing the end point", 200, $requestPayment);
+        return $this->genericResponse(true, "Testing the end point", 200, ['response'=>$requestPayment, 'userDetails'=>$userDetails]);
     }
-
 
 
     /**

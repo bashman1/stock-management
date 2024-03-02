@@ -32,6 +32,7 @@ const toast = useToast();
  const role = ref(null);
  const rolesData=ref(null);
  const category =ref(null);
+ const formError = ref({});
 
  const genderOptions = ref([
     { label: 'Male', value: 'Male' },
@@ -49,26 +50,41 @@ const categoryOptions =  ref([
 ])
 
  const onSubmit=()=>{
+
+    formError.value.fName = commonService.validateFormField(fName.value);
+    formError.value.lName = commonService.validateFormField(lName.value);
+    formError.value.email = commonService.validateFormField(email.value);
+    formError.value.type = commonService.validateFormField(type.value);
+    formError.value.role = commonService.validateFormField(role.value);
+    formError.value.password = commonService.validateFormField(password.value);
+    formError.value.confirmPassword = commonService.validateFormField(confirmPassword.value);
+
+    let invalid = commonService.validateRequiredFields(formError.value);
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
     let postData = {
-        first_name:fName.value,
-        last_name: lName.value,
-        other_name:oName.value,
-        email: email.value,
-        phone_number:phoneNumber.value,
-        date_of_birth:dob.value,
-        gender:gender.value.value,
-        address:address.value,
-        city_id:city.value.id,
-        street:street.value,
-        p_o_box:pOBox.value,
-        description:description.value,
-        password:password.value,
-        confirm_password:confirmPassword.value,
+        first_name:fName?.value,
+        last_name: lName?.value,
+        other_name:oName?.value,
+        email: email?.value,
+        phone_number:phoneNumber?.value,
+        date_of_birth:dob?.value,
+        gender:gender?.value?.value,
+        address:address?.value,
+        city_id:city.value?.id,
+        street:street?.value,
+        p_o_box:pOBox?.value,
+        description:description?.value,
+        password:password?.value,
+        confirm_password:confirmPassword?.value,
         status:'Active',
-        user_type: type.value.value,
+        user_type: type?.value?.value,
         user_category:category.value!=null?category.value.value:null,
         institution_id:institution.value!=null?institution?.value.id:null,
-        role_id:role.value.id,
+        role_id:role.value?.id,
         branch_id:branch.value!=null?branch.value.id:null,
 
     }
@@ -156,6 +172,10 @@ const getAdminRoles=(type)=>{
     getRoles(event.value.id)
 }
 
+const onInputBlur=(value, key)=>{
+    formError.value[key] = commonService.validateFormField(value);
+}
+
 const roleChange=(event)=>{
     if(event.value.value == 'Admin'){
         getAdminRoles(event.value.value);
@@ -181,13 +201,13 @@ onMounted(() => {
                 <Toast/>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="firstName" v-model="fName"  />  <!-- class="p-invalid"-->
+                        <InputText type="text" id="firstName" v-model="fName" @blur="onInputBlur(fName, 'fName')" :class="{ 'p-invalid': formError?.fName }" />  <!-- class="p-invalid"-->
                         <label for="firstName">First Name</label>
                     </span>
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="lastName" v-model="lName"  />  <!-- class="p-invalid"-->
+                        <InputText type="text" id="lastName" v-model="lName" @blur="onInputBlur(lName, 'lName')" :class="{ 'p-invalid': formError?.lName }" />  <!-- class="p-invalid"-->
                         <label for="lastName">Last Name</label>
                     </span>
                 </div>
@@ -199,7 +219,7 @@ onMounted(() => {
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputText type="text" id="email" v-model="email"  />  <!-- class="p-invalid"-->
+                        <InputText type="text" id="email" v-model="email" @blur="onInputBlur(email, 'email')" :class="{ 'p-invalid': formError?.email }" />  <!-- class="p-invalid"-->
                         <label for="email">Email</label>
                     </span>
                 </div>
@@ -224,7 +244,7 @@ onMounted(() => {
 
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="type" @change="roleChange" :options="typeOptions" v-model="type" optionLabel="label"></Dropdown>
+                        <Dropdown id="type" @change="roleChange" :options="typeOptions" v-model="type" optionLabel="label" @blur="onInputBlur(type, 'type')" :class="{ 'p-invalid': formError?.type }"></Dropdown>
                         <label for="type">Type</label>
                     </span>
                 </div>
@@ -251,7 +271,7 @@ onMounted(() => {
 
                 <div class="field col-12 md:col-4" >
                     <span class="p-float-label">
-                        <Dropdown id="institution"  :options="rolesData" v-model="role" optionLabel="name"></Dropdown>
+                        <Dropdown id="institution"  :options="rolesData" v-model="role" optionLabel="name" @blur="onInputBlur(role, 'role')" :class="{ 'p-invalid': formError?.role }"></Dropdown>
                         <label for="institution">Role</label>
                     </span>
                 </div>
@@ -305,14 +325,14 @@ onMounted(() => {
             <div class="grid p-fluid mt-3">
                 <div class="field col-12 md:col-6">
                     <span class="p-float-label">
-                        <InputText type="text" id="password" v-model="password" />
+                        <Password type="text" id="password" v-model="password" @blur="onInputBlur(password, 'password')" :class="{ 'p-invalid': formError?.password }"/>
                         <label for="password">Password</label>
                     </span>
                 </div>
 
                 <div class="field col-12 md:col-6">
                     <span class="p-float-label">
-                        <InputText type="text" id="confirmPassword" v-model="confirmPassword" />
+                        <Password type="text" id="confirmPassword" v-model="confirmPassword" @blur="onInputBlur(confirmPassword, 'confirmPassword')" :class="{ 'p-invalid': formError?.confirmPassword }"/>
                         <label for="confirmPassword">Confirm Password</label>
                     </span>
                 </div>
