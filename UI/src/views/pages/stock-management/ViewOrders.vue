@@ -70,14 +70,24 @@ onMounted(() => {
                     {{ data.item_count }}
                 </template>
             </Column>
+            <!-- <Column field="name" header="Cost" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ commonService.commaSeparator(data.total) }}
+                </template>
+            </Column> -->
+            <Column field="name" header="Amount Paid" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ commonService.commaSeparator(data.amount_paid) }}
+                </template>
+            </Column>
             <Column field="name" header="Cost" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ commonService.commaSeparator(data.total) }}
                 </template>
             </Column>
-            <Column field="name" header="Amount Paid" style="min-width: 10rem">
+            <Column field="name" header="Change" style="min-width: 10rem">
                 <template #body="{ data }">
-                    {{ commonService.commaSeparator(data.amount_paid) }}
+                    {{ commonService.commaSeparator(data.amount_paid-data.total) }}
                 </template>
             </Column>
             <Column header="Discount" style="min-width: 10rem">

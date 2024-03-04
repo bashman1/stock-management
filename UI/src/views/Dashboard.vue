@@ -32,6 +32,7 @@ let lineData = reactive({
     //     }
     // ]
 });
+let inventoryData = reactive({})
 const items = ref([
     { label: 'Add New', icon: 'pi pi-fw pi-plus' },
     { label: 'Remove', icon: 'pi pi-fw pi-minus' }
@@ -44,6 +45,7 @@ const getDataStats=()=>{
         if (response.status) {
             stats.value = response.data.count[0];
             organizeGraphicalData(response.data);
+            organizeGraphicalData2(response.data)
         } else {
             commonService.showError(toast, response.message);
         }
@@ -65,6 +67,32 @@ const organizeGraphicalData=(data)=>{
             {
                 label: 'No. of Collections',
                 data: commonService.organizeGraphData(data.collectionGraph, "count"),
+                fill: false,
+                backgroundColor: 'rgba(0, 187, 126, 1)',
+                borderColor: '#00bb7e',
+                tension: 0.4
+            }
+
+        ]
+    })
+}
+
+
+const organizeGraphicalData2=(data)=>{
+    inventoryData=reactive({
+        labels:commonService.getMonthsStartingFromCurrent(),
+        datasets:[
+            {
+                label: "No. of Products ",
+                data: commonService.organizeGraphData(data.productsGraph, "count"),
+                fill: false,
+                backgroundColor: 'rgba(47, 72, 96, 1)',
+                borderColor: '#2f4860',
+                tension: 0.4
+            },
+            {
+                label: 'No. of Sales',
+                data: commonService.organizeGraphData(data.salesGraph, "count"),
                 fill: false,
                 backgroundColor: 'rgba(0, 187, 126, 1)',
                 borderColor: '#00bb7e',
@@ -160,7 +188,7 @@ watch(
 
 <template>
     <div class="grid">
-        <div class="col-12 lg:col-6 xl:col-3">
+        <div class="col-12 lg:col-6 xl:col-3" v-if="commonService.checkPermissions('CanViewInstitution')">
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
@@ -175,7 +203,7 @@ watch(
                 <!-- <span class="text-500">since last visit</span> -->
             </div>
         </div>
-        <div class="col-12 lg:col-6 xl:col-3">
+        <div class="col-12 lg:col-6 xl:col-3" v-if="commonService.checkPermissions('CanViewInstitution')">
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
@@ -190,7 +218,7 @@ watch(
                 <!-- <span class="text-500">since last week</span> -->
             </div>
         </div>
-        <div class="col-12 lg:col-6 xl:col-3">
+        <div class="col-12 lg:col-6 xl:col-3" v-if="commonService.checkPermissions('ViewUsers')">
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
@@ -205,7 +233,7 @@ watch(
                 <!-- <span class="text-500">newly registered</span> -->
             </div>
         </div>
-        <div class="col-12 lg:col-6 xl:col-3">
+        <div class="col-12 lg:col-6 xl:col-3"  v-if="commonService.checkPermissions('ViewMember')">
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
@@ -221,18 +249,81 @@ watch(
             </div>
         </div>
 
-        <div class="col-12 xl:col-6">
+        <div class="col-12 lg:col-6 xl:col-3"  v-if="commonService.checkPermissions('ViewProducts')">
+            <div class="card mb-0">
+                <div class="flex justify-content-between mb-3">
+                    <div>
+                        <span class="block text-500 font-medium mb-3">Products</span>
+                        <div class="text-900 font-medium text-xl">{{stats?.products}}</div>
+                    </div>
+                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-users text-purple-500 text-xl"></i>
+                    </div>
+                </div>
+                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-500">responded</span> -->
+            </div>
+        </div>
+
+        <div class="col-12 lg:col-6 xl:col-3"  v-if="commonService.checkPermissions('ViewSales')">
+            <div class="card mb-0">
+                <div class="flex justify-content-between mb-3">
+                    <div>
+                        <span class="block text-500 font-medium mb-3">Sales</span>
+                        <div class="text-900 font-medium text-xl">{{stats?.sales}}</div>
+                    </div>
+                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-users text-purple-500 text-xl"></i>
+                    </div>
+                </div>
+                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-500">responded</span> -->
+            </div>
+        </div>
+
+        <div class="col-12 lg:col-6 xl:col-3"  v-if="commonService.checkPermissions('ViewSales')">
+            <div class="card mb-0">
+                <div class="flex justify-content-between mb-3">
+                    <div>
+                        <span class="block text-500 font-medium mb-3">Products Sold</span>
+                        <div class="text-900 font-medium text-xl">{{stats?.product_sold}}</div>
+                    </div>
+                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-users text-purple-500 text-xl"></i>
+                    </div>
+                </div>
+                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-500">responded</span> -->
+            </div>
+        </div>
+
+        <div class="col-12 xl:col-6" v-if="commonService.checkPermissions('ViewMember')">
             <div class="card">
                 <h5>Member and collection growth </h5>
                 <Chart type="bar" :data="lineData" :options="lineOptions" />
             </div>
         </div>
-        <div class="col-12 xl:col-6">
+        <div class="col-12 xl:col-6" v-if="commonService.checkPermissions('ViewCollection')">
             <div class="card">
                 <h5>Member and collection growth </h5>
                 <Chart type="line" :data="lineData" :options="lineOptions" />
             </div>
         </div>
+
+        <div class="col-12 xl:col-6" v-if="commonService.checkPermissions('ViewSales')">
+            <div class="card">
+                <h5>Products and Sales growth </h5>
+                <Chart type="bar" :data="inventoryData" :options="lineOptions" />
+            </div>
+        </div>
+        <div class="col-12 xl:col-6" v-if="commonService.checkPermissions('ViewSales')">
+            <div class="card">
+                <h5>Products and Sales growth </h5>
+                <Chart type="line" :data="inventoryData" :options="lineOptions" />
+            </div>
+        </div>
+
+        <!-- {"id":21,"role_id":2,"permission_id":1,"name":"CanCreateInstitution","description":"Create Institution","is_admin":true,"status":"Active"} -->
         <!-- <div class="col-12 xl:col-4">
             <div class="card">
                 <h5>Member and collection growth </h5>

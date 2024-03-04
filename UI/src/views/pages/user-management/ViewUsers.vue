@@ -52,6 +52,11 @@ onMounted(() => {
                             {{ data.phone_number }}
                         </template>
                     </Column>
+                    <Column header="Role" style="min-width: 12rem">
+                        <template #body="{ data }">
+                            {{ data.role }}
+                        </template>
+                    </Column>
                     <Column header="Status" style="min-width: 10rem">
                         <template #body="{ data }">
                             {{ data.status }}

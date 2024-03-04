@@ -64,7 +64,12 @@ onMounted(() => {
             </Column>
             <Column field="name" header="Quantity" style="min-width: 10rem">
                 <template #body="{ data }">
-                    {{ data.quantity+' '+data.unit }}
+                    {{ data.quantity }}
+                </template>
+            </Column>
+            <Column field="name" header="Unit" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ data.unit }}
                 </template>
             </Column>
            <Column header="Manufacturer" style="min-width: 10rem">

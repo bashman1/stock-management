@@ -59,7 +59,7 @@ class RoleController extends Controller
 
     public function getPermissions(){
         // try {
-            $permissions= Permissions::where('status', 'Active')->get();
+            $permissions= Permissions::where('status', 'Active')->orderBy('id', 'asc')->get();
             return $this->genericResponse(true, "Roles retrieved successfully", 200, $permissions);
         // } catch (\Throwable $th) {
         //     return $this->genericResponse(false, "Role retrieval  Failed", 500, $th);
