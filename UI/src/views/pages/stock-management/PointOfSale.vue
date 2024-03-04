@@ -98,7 +98,8 @@ const onSubmitOrder=()=>{
     commonService.genericRequest('create-order', 'post', true, postData).then((response) => {
         if (response.status) {
             // productList.value = response.data;
-            commonService.showSuccess(toast, response.message)
+            commonService.showSuccess(toast, response.message);
+            commonService.redirect(router, "/view-sales");
         } else {
             commonService.showError(toast, response.message);
         }

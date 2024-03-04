@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\stock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -33,6 +34,7 @@ class OrderController extends Controller
         $order->save();
 
         foreach ($request->items as $value) {
+            $stock = stock::where('product_id', $value['id'])->first();
             $items = new OrderItem();
             $items->order_id = $order->id;
             $items->product_id = $value['id'];
@@ -42,6 +44,10 @@ class OrderController extends Controller
             $items->branch_id = $userData->institution_id;
             $items->created_by = $userData->institution_id;
             $items->created_on = now();
+
+            $stock->quantity = $stock->quantity-$value['quantity'];
+            $stock->save();
+
             $items->save();
         }
         DB::commit();
