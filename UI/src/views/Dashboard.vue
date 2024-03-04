@@ -257,7 +257,7 @@ watch(
                         <div class="text-900 font-medium text-xl">{{stats?.products}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-users text-purple-500 text-xl"></i>
+                        <i class="pi pi-shopping-bag text-purple-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-medium">85 </span> -->
@@ -273,7 +273,7 @@ watch(
                         <div class="text-900 font-medium text-xl">{{stats?.sales}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-users text-purple-500 text-xl"></i>
+                        <i class="pi pi-credit-card text-purple-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-medium">85 </span> -->
@@ -289,7 +289,7 @@ watch(
                         <div class="text-900 font-medium text-xl">{{stats?.product_sold}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-users text-purple-500 text-xl"></i>
+                        <i class="pi pi-money-bill text-purple-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-medium">85 </span> -->
