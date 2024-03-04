@@ -65,10 +65,28 @@ const reportMenu = ref(
 const stockMenu = ref(
     {
         label: 'Inventory Management',
-        icon: 'pi pi-dollar',
+        icon: 'pi pi-flag',
         items: []
     }
 )
+
+
+const pointOfSaleMenu = ref(
+    {
+        label: 'Point Of Sale',
+        icon: 'pi pi-credit-card',
+        to: '/point-of-sale'
+    }
+)
+
+const salesMenu = ref(
+    {
+        label: 'sales',
+        icon: 'pi pi-flag',
+        to: '/view-sales'
+    }
+)
+
 
 
 if (commonService.checkPermissions('CanCreateInstitution')) {
@@ -225,25 +243,25 @@ if (commonService.checkPermissions('ViewProducts')) {
     );
 }
 
-if (commonService.checkPermissions('PointOfSale')) {
-    stockMenu.value.items.push(
-        {
-                        label: 'Point Of Sale',
-                        icon: 'pi pi-fw pi-circle',
-                        to: '/point-of-sale'
-                    }
-    );
-}
+// if (commonService.checkPermissions('PointOfSale')) {
+//     stockMenu.value.items.push(
+//         {
+//                         label: 'Point Of Sale',
+//                         icon: 'pi pi-fw pi-circle',
+//                         to: '/point-of-sale'
+//                     }
+//     );
+// }
 
-if (commonService.checkPermissions('ViewSales')) {
-    stockMenu.value.items.push(
-        {
-                        label: 'Sales',
-                        icon: 'pi pi-fw pi-circle',
-                        to: '/view-sales'
-                    }
-    );
-}
+// if (commonService.checkPermissions('ViewSales')) {
+//     stockMenu.value.items.push(
+//         {
+//                         label: 'Sales',
+//                         icon: 'pi pi-fw pi-circle',
+//                         to: '/view-sales'
+//                     }
+//     );
+// }
 
 
 
@@ -408,6 +426,14 @@ const model = ref([
         ]
     },
 ]);
+
+if(commonService.checkPermissions('PointOfSale')){
+    model.value[0].items.push(pointOfSaleMenu.value);
+}
+
+if(commonService.checkPermissions('ViewSales')){
+    model.value[0].items.push(salesMenu.value);
+}
 
 if(institutionMenu?.value?.items?.length>0){
     model.value[0].items.push(institutionMenu.value);
