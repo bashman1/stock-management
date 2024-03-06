@@ -9,6 +9,14 @@ use Illuminate\Routing\Controller as BaseController;
 use App\Models\Branch;
 use Illuminate\Support\Str;
 use App\Models\InstitutionConfig;
+use App\Models\GlType;
+use App\Models\GlAcctBk;
+use App\Models\GlGenerateAccount;
+use App\Models\GlAccounts;
+use App\Models\GlBalances;
+use App\Models\GlCat;
+use App\Models\GlSubCat;
+use Illuminate\Support\Facades\DB;
 
 class Controller extends BaseController
 {
@@ -116,4 +124,59 @@ class Controller extends BaseController
         return (string) Str::uuid();
     }
 
+
+    /**
+     * generate Gl accounts
+     * 
+     */
+    public function createBranchGlAccounts($instId, $branchCd, $branchId){
+        DB::beginTransaction();
+        // $userData = auth()->user();
+        $glTypes=GlAcctBk::all();
+        foreach ($glTypes as $value) {
+            $genAcctNo= "instId-braCd-000-000-glNo";
+            $acctNo = str_replace('instId', $instId, $genAcctNo);
+            $acctNo = str_replace('braCd', $branchCd, $acctNo);
+            $acctNo = str_replace('glNo', $value['gl_no'], $acctNo);
+
+            $checkExistingGlAcct = GlAccounts::where('acct_no', $acctNo)->get();
+            // return $checkExistingGlAcct;
+            if(!isset($checkExistingGl)  || !empty($checkExistingGl)){
+                $glAcct = new GlAccounts();
+                $glAcct->gl_no = $value['gl_no'];
+                $glAcct->acct_no = $acctNo;
+                $glAcct->description = $value['description'];
+                $glAcct->gl_cat_no = $value['gl_cat_no'];
+                $glAcct->gl_sub_cat_no = $value['gl_sub_cat_no'];
+                $glAcct->gl_type_no = $value['gl_type_no'];
+                $glAcct->acct_type = $value['acct_type'];
+                $glAcct->status = $value['status'];
+                $glAcct->branch_cd = $branchCd;
+                $glAcct->institution_id = $instId;
+                $glAcct->branch_id = $branchId;
+                // $glAcct->created_by = $userData->id;
+                $glAcct->created_on = now();
+                $glAcct->save();
+            }
+
+            $checkExistingGlBal = GlBalances::where('acct_no', $acctNo)->get();
+            // return $checkExistingGlBal;
+            if(!isset($checkExistingGlBal) || !empty($checkExistingGlBal)){
+                $glBal = new GlBalances();
+                $glBal->acct_no =  $acctNo;
+                $glBal->acct_type =$value['acct_type']   ;
+                $glBal->balance = 0  ;
+                $glBal->branch_cd = $branchCd;
+                $glBal->status = $value['status'];
+                $glBal->institution_id = $instId;
+                $glBal->branch_id = $branchId;
+                // $glBal->created_by =$userData->id;
+                $glBal->created_on = now();
+                $glBal->save();
+            }
+
+        }
+        DB::commit();
+        return "success";
+    }
 }

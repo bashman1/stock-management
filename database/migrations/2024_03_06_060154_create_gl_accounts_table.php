@@ -13,18 +13,19 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('gl_generate_accounts', function (Blueprint $table) {
+        Schema::create('gl_accounts', function (Blueprint $table) {
             $table->id();
+            $table->string('acct_no');
             $table->string('gl_no');
             $table->text('description');
             $table->string('gl_cat_no');
             $table->string('gl_sub_cat_no');
             $table->string('gl_type_no');
             $table->string('acct_type');
-            $table->double('const', 8, 2)->default(0)->nullable();
-            $table->unsignedBigInteger('current')->default(1)->nullable();
-            $table->unsignedBigInteger('step')->default(1)->nullable();
+            $table->string('branch_cd')->nullable();
             $table->string('status');
+            $table->unsignedBigInteger('institution_id')->nullable();
+            $table->unsignedBigInteger('branch_id')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_on')->nullable();
@@ -40,6 +41,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('gl_generate_accounts');
+        Schema::dropIfExists('gl_accounts');
     }
 };

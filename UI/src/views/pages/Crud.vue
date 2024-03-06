@@ -27,7 +27,7 @@ onBeforeMount(() => {
     initFilters();
 });
 onMounted(() => {
-    productList.value.then((data) => (productList.value = data));
+    productService.getProducts().then((data) => (products.value = data));
 });
 const formatCurrency = (value) => {
     return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });

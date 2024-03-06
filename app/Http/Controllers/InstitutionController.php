@@ -158,4 +158,16 @@ class InstitutionController extends Controller
         }
         return $this->genericResponse(true, "Branch codes created successfully", 200, $branches);
     }
+
+
+    public function generateMissingLedgers(){
+        $branches = Branch::all();
+        $myArray = array();
+        foreach ($branches as $value) {
+            $branch=Branch::find($value["id"]);
+            $results=$this->createBranchGlAccounts($value['institution_id'],$value['code'],$value['id']);
+            array_push($myArray, $results);
+        }
+        return $this->genericResponse(true, "Branch codes created successfully", 200, $myArray);
+    }
 }

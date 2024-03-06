@@ -6,6 +6,7 @@ use App\Models\GLBalance;
 use Illuminate\Http\Request;
 use App\Models\GlType;
 use App\Models\GlAcctBk;
+use App\Models\GlGenerateAccount;
 use Illuminate\Support\Facades\DB;
 
 class GLBalanceController extends Controller
@@ -26,8 +27,11 @@ class GLBalanceController extends Controller
             $acctInNumber = (double)$value['gl_no'];
             $acctInNumber=$acctInNumber+1;
 
-            $glAcctBk = new GlAcctBk();
+            $glAcctBk = new GlGenerateAccount();
             $glAcctBk->gl_no = $acctInNumber;
+            $glAcctBk->const = $acctInNumber;
+            $glAcctBk->current = 1;
+            $glAcctBk->step = 1;
             $glAcctBk->description = $value['description'];
             $glAcctBk->gl_cat_no = $value['gl_cat_no'];
             $glAcctBk->gl_sub_cat_no = $value['gl_sub_cat_no'];
@@ -39,5 +43,5 @@ class GLBalanceController extends Controller
         }
         DB::commit();
         return $this->genericResponse(true, "GL acct bk created successfully", 201,[]);
-     }
+    }
 }

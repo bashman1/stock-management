@@ -53,6 +53,8 @@ Route::post('user-login', [UserController::class, 'login']);
 // Route::get('get-permissions', [RoleController::class, 'getPermissions']);
 // Route::post('assign-role-permission', [RoleController::class, 'assignRolePermission']);
 Route::get('create-branch-codes', [InstitutionController::class, "generateMissingCodesForBranches"]);
+Route::get('create-gl-accts', [InstitutionController::class, "generateMissingLedgers"]);
+
 
 Route::get('create-gl-bk', [GLBalanceController::class, "generateGlAcctBks"]);
 Route::post('test-momo-api', [MtnPaymentsController::class, "getMOMOAuth"]);
