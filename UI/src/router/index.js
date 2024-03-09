@@ -323,8 +323,33 @@ const router = createRouter({
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
-                }
+                },
+                {
+                    path: '/chart-of-accounts',
+                    name: 'ChartOfAccounts',
+                    component: ()=>import('@/views/pages/chart-of-accounts/ChartOfAccounts.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/create-ledger',
+                    name: 'CreateLedger',
+                    component: ()=>import('@/views/pages/chart-of-accounts/CreateLedger.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/gl-accounts',
+                    name: 'GlAccounts',
+                    component: ()=>import('@/views/pages/chart-of-accounts/GlAccounts.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
 
+                
             ]
         },
         {

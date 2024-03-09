@@ -16,7 +16,9 @@ use App\Models\GlAccounts;
 use App\Models\GlBalances;
 use App\Models\GlCat;
 use App\Models\GlSubCat;
+use App\Models\CntrlParameter;
 use Illuminate\Support\Facades\DB;
+// use Illuminate\Support\Str;
 
 class Controller extends BaseController
 {
@@ -63,16 +65,10 @@ class Controller extends BaseController
     public function getLetters($input) {
         // Split the input string into words
         $words = explode(' ', $input);
-
-        // Initialize an empty result string
         $result = '';
-
-        // Loop through the words
         foreach ($words as $word) {
-            // Get the first two letters of a single word or the first letter of each word (maximum 2 letters)
             $result .= strtoupper(substr($word, 0, min(1, strlen($word))));
         }
-
         return  substr($result, 0, 2);
     }
 
@@ -158,7 +154,6 @@ class Controller extends BaseController
                 $glAcct->created_on = now();
                 $glAcct->save();
             }
-
             $checkExistingGlBal = GlBalances::where('acct_no', $acctNo)->get();
             // return $checkExistingGlBal;
             if(!isset($checkExistingGlBal) || !empty($checkExistingGlBal)){
@@ -174,9 +169,70 @@ class Controller extends BaseController
                 $glBal->created_on = now();
                 $glBal->save();
             }
-
         }
         DB::commit();
         return "success";
+    }
+
+    public function setControlParam($instId){
+        DB::beginTransaction();
+        $cl = DB::table('gl_accounts')
+            ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+            ->where('institution_id', $instId)
+            ->where('acct_type', 'ASSET')
+            ->where('gl_no', '1301001')
+            ->first();
+
+        if(!isset($cl)){return false;}  
+        $isClExisting =  CntrlParameter::where(["institution_id"=>$instId, "param_value" => strrev($cl->replaced_acct_no)])->exists();
+        if(!$isClExisting){
+            $newCl= new CntrlParameter();
+            $newCl->param_name = "Cash Ledger";
+            $newCl->param_cd="CL";
+            $newCl->param_value=strrev($cl->replaced_acct_no);
+            $newCl->institution_id=$instId;
+            $newCl->created_on=now();
+            $newCl->save();
+        }
+
+        $cgl =DB::table('gl_accounts')
+            ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+            ->where('institution_id', $instId)
+            ->where('acct_type', 'ASSET')
+            ->where('gl_no', '1302001')
+            ->first();
+
+        if(!isset($cgl)){return false;}  
+        $isCglExisting =  CntrlParameter::where(["institution_id"=>$instId, "param_value" => strrev($cgl->replaced_acct_no)])->exists();
+        if(!$isCglExisting){
+            $newCgl= new CntrlParameter();
+            $newCgl->param_name = "General Cash Ledger";
+            $newCgl->param_cd="CGL";
+            $newCgl->param_value=strrev($cgl->replaced_acct_no);
+            $newCgl->institution_id=$instId;
+            $newCgl->created_on=now();
+            $newCgl->save();
+        }
+
+        $sti =DB::table('gl_accounts')
+            ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+            ->where('institution_id', $instId)
+            ->where('acct_type', 'ASSET')
+            ->where('gl_no', '1304001')
+            ->first();    
+
+        if(!isset($sti)){return false;}  
+        $isStiExisting =  CntrlParameter::where(["institution_id"=>$instId, "param_value" => strrev($sti->replaced_acct_no)])->exists();
+        if(!$isStiExisting){
+            $newSti= new CntrlParameter();
+            $newSti->param_name = "Inventory and Stock";
+            $newSti->param_cd="STI";
+            $newSti->param_value=strrev($sti->replaced_acct_no);
+            $newSti->institution_id=$instId;
+            $newSti->created_on=now();
+            $newSti->save();
+        }
+        DB::commit();
+        return true;  
     }
 }

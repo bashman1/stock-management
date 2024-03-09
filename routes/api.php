@@ -25,6 +25,7 @@ use App\Http\Controllers\ProductGaugeController;
 use App\Http\Controllers\GLBalanceController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\MtnPaymentsController;
+use App\Http\Controllers\GlAccountsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,10 +55,12 @@ Route::post('user-login', [UserController::class, 'login']);
 // Route::post('assign-role-permission', [RoleController::class, 'assignRolePermission']);
 Route::get('create-branch-codes', [InstitutionController::class, "generateMissingCodesForBranches"]);
 Route::get('create-gl-accts', [InstitutionController::class, "generateMissingLedgers"]);
+Route::get('set-cntrl-parameter', [InstitutionController::class, "generateMissingCntrlParameter"]);
 
 
 Route::get('create-gl-bk', [GLBalanceController::class, "generateGlAcctBks"]);
 Route::post('test-momo-api', [MtnPaymentsController::class, "getMOMOAuth"]);
+Route::post('test-chart-accounts', [GlAccountsController::class, "getChartOfAccounts"]);
 
 
 Route::group(['middleware'=>["auth:api"]], function(){
@@ -123,4 +126,10 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('create-order', [OrderController::class, "createOrder"]);
     Route::get('get-orders', [OrderController::class, "getOrders"]);
     Route::get('get-orders-details/{id}', [OrderController::class, "getOderDetails"]);
+    Route::post('get-chart-accounts', [GlAccountsController::class, "getChartOfAccounts"]);
+    Route::post('get-gl-categories', [GlAccountsController::class, "getLedgerCat"]);
+    Route::post('get-gl-sub-categories', [GlAccountsController::class, "getLedgerSubCat"]);
+    Route::post('get-gl-type', [GlAccountsController::class, "getLedgerType"]);
+    Route::get('get-gl-accounts', [GlAccountsController::class, "glAccounts"]);
+    Route::post('update-gl-account', [GlAccountsController::class, "updateGlAcct"]);
 });

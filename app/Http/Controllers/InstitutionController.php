@@ -51,6 +51,7 @@ class InstitutionController extends Controller
             $branch->address=$request->address;
             $branch->city_id=$request->city;
             $branch->street=$request->street;
+            $branch->code=$this->generateBranchCode();
             $branch->p_o_box=$request->p_o_box;
             $branch->institution_id=$institution->id;
             $branch->description=$request->description;
@@ -118,6 +119,8 @@ class InstitutionController extends Controller
             $memberNumberConfig->institution_id = $institution->id;
             $memberNumberConfig->created_on = now();
             $memberNumberConfig->save();
+            $this->createBranchGlAccounts($institution->id,$branch->code,$branch->id);
+            $this->setControlParam($institution->id);
             DB::commit();
             return $this->genericResponse(true, "institution created successfully", 201, $institution);
         // } catch (\Throwable $th) {
@@ -159,7 +162,6 @@ class InstitutionController extends Controller
         return $this->genericResponse(true, "Branch codes created successfully", 200, $branches);
     }
 
-
     public function generateMissingLedgers(){
         $branches = Branch::all();
         $myArray = array();
@@ -169,5 +171,15 @@ class InstitutionController extends Controller
             array_push($myArray, $results);
         }
         return $this->genericResponse(true, "Branch codes created successfully", 200, $myArray);
+    }
+
+    public function generateMissingCntrlParameter(){
+        $myArray = array();
+        $institutions = Institution::all();
+        foreach ($institutions as $key => $value) {
+            $results=$this->setControlParam($value['id']);
+            array_push($myArray, $results);
+        }
+        return $this->genericResponse(true, "Control parameter set successfully", 200, $myArray);
     }
 }
