@@ -151,6 +151,49 @@ class GlAccountsController extends Controller
     }
 
 
+    public function searchGl(Request $request){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+
+        $conditions = array();
+        if(isset($request->acct_type)){
+            $conditions['G.acct_type'] = $request->acct_type;
+        }
+        if(isset($request->gl_no)){
+            $conditions['G.gl_no'] = $request->gl_no;
+        }
+        if(isset($request->description)){
+            $conditions['G.description'] = $request->description;
+        }
+        if(isset($request->acct_no)){
+            $conditions['G.acct_no'] = $request->acct_no;
+        }
+        if($isNotAdmin){
+            $conditions['G.institution_id'] = $userData->institution_id;
+        }
+        $results = DB::table('gl_accounts as G')
+        ->select('G.acct_no', 'G.gl_no', 'G.description', 'G.gl_cat_no', 'G.gl_sub_cat_no', 'G.gl_type_no', 'G.acct_type', 'G.branch_cd', 'G.status',  
+            'G.institution_id', 'G.branch_id', 'G.created_by', 'G.updated_by', 'G.created_on', 'G.updated_on', 'G.created_at', 'G.updated_at',
+            'T.description AS type_desc', 'S.description AS sub_cat_desc', 'C.description AS cat_desc', 'I.name AS institution_name',
+            'B.name AS branch_name', 'K.balance')
+        ->join('gl_types as T', 'G.gl_type_no', '=', 'T.gl_no')
+        ->join('gl_sub_cats as S', 'S.gl_no', '=', 'G.gl_sub_cat_no')
+        ->join('gl_cats as C', 'C.gl_no', '=', 'G.gl_cat_no')
+        ->join('institutions as I', 'I.id', '=', 'G.institution_id')
+        ->join('branches as B', 'B.id', '=', 'G.branch_id')
+        ->join('gl_balances as K', 'K.acct_no', '=', 'G.acct_no')
+        ->where($conditions)->get();
+
+        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $results);
+    }
+
+
+    public function getLedgerCategories(){
+        $cat = GlCat::all();
+        return $this->genericResponse(true, "Chart of accounts categories fetched successfully", 200, $cat);
+    }
+
+
     public function updateGlAcct(Request $request){
         $userData = auth()->user();
         $request->validate([
@@ -169,6 +212,53 @@ class GlAccountsController extends Controller
         return $this->genericResponse(true, "Ledger account updated successfully", 201, $glAcct);
     }
 
+
+    public function debitCreditGl(Request $request){
+        $userData = auth()->user();
+        $debitRequest=(object)[
+            "acct_no"=>$request->drAcctNo,
+            "acct_type"=>$request->drAcctType,
+            "tran_amt"=>$request->tranAmt,
+            "reversal_flag"=>'N',
+            "description"=>$request->description,
+            "transaction_date"=>$request->tranDate,
+            "contra_acct_no"=>$request->crAcctNo,
+            "contra_acct_type"=>$request->crAcctType,
+            "tran_type"=>'GL INJECTION',
+            "tran_cd"=>'GLI',
+            "tran_id"=>$userData->id,
+            "institution_id"=>$userData->institution_id,
+            "branch_id"=>$userData->branch_id,
+            "created_by"=>$userData->id,
+            "status"=>$request->status,
+        ];
+
+        $creditRequest=(object)[
+            "acct_no"=>$request->crAcctNo,
+            "acct_type"=>$request->crAcctType,
+            "tran_amt"=>$request->tranAmt,
+            "reversal_flag"=>'N',
+            "description"=>$request->description,
+            "transaction_date"=>$request->tranDate,
+            "contra_acct_no"=>$request->drAcctNo,
+            "contra_acct_type"=>$request->drAcctType,
+            "tran_type"=>'GL INJECTION',
+            "tran_cd"=>'GLI',
+            "tran_id"=>$userData->id,
+            "institution_id"=>$userData->institution_id,
+            "branch_id"=>$userData->branch_id,
+            "created_by"=>$userData->id,
+            "status"=>$request->status,
+        ];
+        $debit = $this->postGlDR($debitRequest);
+
+        $credit = $this->postGlCR($creditRequest);
+
+        return $this->genericResponse(true, "Ledger account updated successfully", 201,['debit'=>$debitRequest, 'credit'=>$creditRequest]);
+    }
+
+
+    // {"drAcctNo":"14-H7S-000-000-1301001","crAcctNo":"14-H7S-000-000-3101001","drAcctType":"ASSET","crAcctType":"CAPITAL","drTitle":"Cash in hand ","crTitle":"Share Capital","tranAmt":"1000","description":"Depositing the capital","tranDate":"2024-03-11T21:00:00.000Z","status":"Active"}
 }
 
 

@@ -14,6 +14,7 @@ const updateGlModal = ref(false)
 const description = ref(null);
 const acctNo = ref(null);
 const formError = ref({});
+const debitSelected = ref(null);
 
 const getGlAccounts = () => {
     commonService.genericRequest('get-gl-accounts', 'get', true, {}).then((response) => {
@@ -63,6 +64,14 @@ const updateGlName = () => {
     })
 }
 
+const debitAccount=(event)=>{
+
+}
+
+const creditAccount=(event)=>{
+    
+}
+
 onMounted(() => {
     getGlAccounts();
 });
@@ -72,7 +81,6 @@ onMounted(() => {
 <template>
     <div className="card">
         <h5>Chart Of Accounts</h5>
-
         <DataTable :value="glAccounts" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id"
             :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
             <Column field="name" header="Name" style="min-width: 10rem">

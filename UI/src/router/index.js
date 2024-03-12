@@ -348,6 +348,14 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/debit-credit-gl',
+                    name: 'GlInjection',
+                    component: ()=>import('@/views/pages/chart-of-accounts/GlInjection.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
 
                 
             ]

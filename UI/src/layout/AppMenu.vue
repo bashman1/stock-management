@@ -282,6 +282,18 @@ if (commonService.checkPermissions('ViewGlAccounts')) {
     );
 }
 
+if (commonService.checkPermissions('DebitCredit')) {
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'GL Debit/Credit',
+            icon: 'pi pi-fw pi-circle',
+            to: '/debit-credit-gl'
+        }
+    );
+}
+
+
+
 
 
 

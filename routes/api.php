@@ -132,4 +132,11 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('get-gl-type', [GlAccountsController::class, "getLedgerType"]);
     Route::get('get-gl-accounts', [GlAccountsController::class, "glAccounts"]);
     Route::post('update-gl-account', [GlAccountsController::class, "updateGlAcct"]);
+    Route::post('gl-search', [GlAccountsController::class, "searchGl"]);
+    Route::get('gl-cats', [GlAccountsController::class, "getLedgerCategories"]);
+    Route::post('debit-credit-acct', [GlAccountsController::class, "debitCreditGl"]);
+
+    
+    
+    
 });

@@ -6,6 +6,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\DB;
 use App\Models\Branch;
 use Illuminate\Support\Str;
 use App\Models\InstitutionConfig;
@@ -17,7 +18,8 @@ use App\Models\GlBalances;
 use App\Models\GlCat;
 use App\Models\GlSubCat;
 use App\Models\CntrlParameter;
-use Illuminate\Support\Facades\DB;
+use App\Models\GlHistory;
+
 // use Illuminate\Support\Str;
 
 class Controller extends BaseController
@@ -234,5 +236,74 @@ class Controller extends BaseController
         }
         DB::commit();
         return true;  
+    }
+
+
+    public function postGlDR($data){
+        DB::beginTransaction();
+        $glBalances = GlBalances::where('acct_no', $data->acct_no)->first();
+
+        if($data->acct_type=='ASSET' || $data->acct_type=='EXPENSE'){
+            $glBalances->balance=$glBalances->balance+$data->tran_amt;
+        }else{
+            $glBalances->balance=$glBalances->balance-$data->tran_amt;
+        }
+        $glBalances->save();
+
+        $glHistory = new GlHistory();
+        $glHistory->acct_no =$data->acct_no ;
+        $glHistory->dr_cr_ind = 'Dr';
+        $glHistory->tran_amount=$data->tran_amt;
+        $glHistory->reversal_flag = $data->reversal_flag;
+        $glHistory->description = $data->description;
+        $glHistory->transaction_date = $data->transaction_date;
+        $glHistory->contra_acct_no = $data->contra_acct_no;
+        $glHistory->contra_acct_type = $data->contra_acct_type;
+        $glHistory->tran_type = $data->tran_type;
+        $glHistory->tran_id = $data->tran_id;
+        $glHistory->tran_cd = $data->tran_cd;
+        $glHistory->status = $data->status;
+        $glHistory->institution_id = $data->institution_id;
+        $glHistory->branch_id = $data->branch_id;
+        $glHistory->created_by = $data->created_by;
+        $glHistory->created_on =now() ;
+        $glHistory->save() ;
+        DB::commit();
+
+        return $glHistory;
+    }
+
+
+    public function postGlCR($data){
+        DB::beginTransaction();
+        $glBalances = GlBalances::where('acct_no', $data->acct_no)->first();
+
+        if($data->acct_type=='ASSET' || $data->acct_type=='EXPENSE'){
+            $glBalances->balance=$glBalances->balance-$data->tran_amt;
+        }else{
+            $glBalances->balance=$glBalances->balance+$data->tran_amt;
+        }
+        $glBalances->save();
+
+        $glHistory = new GlHistory();
+        $glHistory->acct_no =$data->acct_no ;
+        $glHistory->dr_cr_ind = 'Cr';
+        $glHistory->tran_amount=$data->tran_amt;
+        $glHistory->reversal_flag = $data->reversal_flag;
+        $glHistory->description = $data->description;
+        $glHistory->transaction_date = $data->transaction_date;
+        $glHistory->contra_acct_no = $data->contra_acct_no;
+        $glHistory->contra_acct_type = $data->contra_acct_type;
+        $glHistory->tran_type = $data->tran_type;
+        $glHistory->tran_id = $data->tran_id;
+        $glHistory->tran_cd = $data->tran_cd;
+        $glHistory->status = $data->status;
+        $glHistory->institution_id = $data->institution_id;
+        $glHistory->branch_id = $data->branch_id;
+        $glHistory->created_by = $data->created_by;
+        $glHistory->created_on =now() ;
+        $glHistory->save() ;
+        DB::commit();
+        return $glHistory;
     }
 }
