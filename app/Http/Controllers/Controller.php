@@ -306,4 +306,13 @@ class Controller extends BaseController
         DB::commit();
         return $glHistory;
     }
+
+
+    public function generateGlAcctNo($instId, $branchCd, $gl_no){
+        $genAcctNo= "instId-braCd-000-000-glNo";
+        $acctNo = str_replace('instId', $instId, $genAcctNo);
+        $acctNo = str_replace('braCd', $branchCd, $acctNo);
+        $acctNo = str_replace('glNo', $gl_no, $acctNo);
+        return $acctNo;
+    }
 }

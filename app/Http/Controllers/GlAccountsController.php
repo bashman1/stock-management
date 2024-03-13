@@ -6,6 +6,9 @@ use App\Models\GlAccounts;
 use App\Models\GlCat;
 use App\Models\GlSubCat;
 use App\Models\GlType;
+use App\Models\GlGenerateAccount;
+use App\Models\Branch;
+use App\Models\GlBalances;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -59,19 +62,19 @@ class GlAccountsController extends Controller
     public function getLedgerCat(Request $request) {
         $userData = auth()->user();
         $isNotAdmin = $this->isNotAdmin();
-        $query = GlCat::query();
-        if ($request->filled(['acct_type', 'gl_no', 'description'])) {
-            if ($request->filled('acct_type')) {
-                $query->where('acct_type', $request->acct_type);
-            }
-            if ($request->filled('gl_no')) {
-                $query->where('gl_no', $request->gl_no);
-            }
-            if ($request->filled('description')) {
-                $query->where('description', 'like', '%' . $request->description . '%');
-            }
+
+        $conditions = array();
+        if(isset($request->acct_type)){
+            $conditions['acct_type'] =$request->acct_type;
         }
-        $glCat = $query->get();
+        if(isset($request->gl_no)){
+            $conditions['gl_no'] =$request->gl_no;
+        }
+        if(isset($request->description)){
+            $conditions['description'] = ["ilike %'".$request->description."'%"];
+        }
+
+        $glCat=DB::table('gl_cats')->select('*')->where($conditions)->get();
         return $this->genericResponse(true, "Ledger category fetched successfully", 200, $glCat);
     }
 
@@ -80,48 +83,45 @@ class GlAccountsController extends Controller
         $userData = auth()->user();
         $isNotAdmin = $this->isNotAdmin();
 
-        $query = GlSubCat::query();
-        if ($request->filled(['acct_type', 'gl_no', 'description','gl_cat_no'])) {
-
-            if ($request->filled('acct_type')) {
-                $query->where('acct_type', $request->acct_type);
-            }
-            if ($request->filled('gl_no')) {
-                $query->where('gl_no', $request->gl_no);
-            }
-            if ($request->filled('gl_cat_no')) {
-                $query->where('gl_cat_no', $request->gl_cat_no);
-            }
-            if ($request->filled('description')) {
-                $query->where('description', 'like', '%' . $request->description . '%');
-            }
+        $conditions = array();
+        if(isset($request->acct_type)){
+            $conditions['acct_type'] =$request->acct_type;
         }
-        $glSubCat = $query->get();
+        if(isset($request->gl_no)){
+            $conditions['gl_no'] =$request->gl_no;
+        }
+        if(isset( $request->gl_cat_no)){
+            $conditions['gl_cat_no'] = $request->gl_cat_no;
+        }
+        if(isset($request->description)){
+            $conditions['description'] = ["ilike %'".$request->description."'%"];
+        }
+        $glSubCat=DB::table('gl_sub_cats')->select('*')->where($conditions)->get();
         return $this->genericResponse(true, "Ledger sub category fetched successfully", 200, $glSubCat);
     }
 
     public function getLedgerType(Request $request){
         $userData = auth()->user();
         $isNotAdmin = $this->isNotAdmin();
-        $query = GlType::query();
-        if ($request->filled(['acct_type', 'gl_no', 'description','gl_cat_no, gl_sub_cat_no'])) {
-            if ($request->filled('acct_type')) {
-                $query->where('acct_type', $request->acct_type);
-            }
-            if ($request->filled('gl_no')) {
-                $query->where('gl_no', $request->gl_no);
-            }
-            if ($request->filled('gl_sub_cat_no')) {
-                $query->where('gl_no', $request->gl_no);
-            }
-            if ($request->filled('gl_cat_no')) {
-                $query->where('gl_cat_no', $request->gl_cat_no);
-            }
-            if ($request->filled('description')) {
-                $query->where('description', 'like', '%' . $request->description . '%');
-            }
+
+        $conditions = array();
+        if(isset($request->acct_type)){
+            $conditions['acct_type'] =$request->acct_type;
         }
-        $glType = $query->get();
+        if(isset($request->gl_no)){
+            $conditions['gl_no'] =$request->gl_no;
+        }
+        if(isset($request->gl_sub_cat_no)){
+            $conditions['gl_sub_cat_no'] =$request->gl_sub_cat_no;
+        }
+        if(isset( $request->gl_cat_no)){
+            $conditions['gl_cat_no'] = $request->gl_cat_no;
+        }
+        if(isset($request->description)){
+            $conditions['description'] = ["ilike %'".$request->description."'%"];
+        }
+
+        $glType = DB::table('gl_types')->select('*')->where($conditions)->get();
         return $this->genericResponse(true, "Ledger Types fetched successfully", 200, $glType);
 
     }
@@ -163,7 +163,7 @@ class GlAccountsController extends Controller
             $conditions['G.gl_no'] = $request->gl_no;
         }
         if(isset($request->description)){
-            $conditions['G.description'] = $request->description;
+            $conditions['G.description'] = ["ilike %".$request->description."%"];
         }
         if(isset($request->acct_no)){
             $conditions['G.acct_no'] = $request->acct_no;
@@ -251,14 +251,66 @@ class GlAccountsController extends Controller
             "status"=>$request->status,
         ];
         $debit = $this->postGlDR($debitRequest);
-
         $credit = $this->postGlCR($creditRequest);
-
         return $this->genericResponse(true, "Ledger account updated successfully", 201,['debit'=>$debitRequest, 'credit'=>$creditRequest]);
     }
 
 
-    // {"drAcctNo":"14-H7S-000-000-1301001","crAcctNo":"14-H7S-000-000-3101001","drAcctType":"ASSET","crAcctType":"CAPITAL","drTitle":"Cash in hand ","crTitle":"Share Capital","tranAmt":"1000","description":"Depositing the capital","tranDate":"2024-03-11T21:00:00.000Z","status":"Active"}
+    public function createGlAcct(Request $request){
+        DB::beginTransaction();
+        $userData = auth()->user();
+        $genAcct = GlGenerateAccount::where(['gl_cat_no'=>$request->cat, 'gl_sub_cat_no'=>$request->subCat, 'gl_type_no'=>$request->type, 'status'=>$request->status])->first();
+        if(!isset($genAcct)){
+            return $this->genericResponse(false, "Failed to create a new ledger account", 400, $genAcct);
+        }
+        $branch = Branch::find($userData->branch_id);
+
+        $glNo = $genAcct->const +$genAcct->current+$genAcct->step;
+        $genAcct->current =$genAcct->current+$genAcct->step;
+        $genAcct->save();
+
+        $newAcctNo=$this->generateGlAcctNo($userData->institution_id, $branch->code, $glNo);
+
+        $checkExistingGlAcct = GlAccounts::where('acct_no', $newAcctNo)->get();
+        // return $checkExistingGlAcct;
+        if(!isset($checkExistingGl)  || !empty($checkExistingGl)){
+            $glAcct = new GlAccounts();
+            $glAcct->gl_no = $glNo;
+            $glAcct->acct_no = $newAcctNo;
+            $glAcct->description = $request->name;
+            $glAcct->gl_cat_no = $request->cat;
+            $glAcct->gl_sub_cat_no = $request->subCat;
+            $glAcct->gl_type_no = $request->type;
+            $glAcct->acct_type = $genAcct->acct_type;
+            $glAcct->status = $request->status;
+            $glAcct->branch_cd = $branch->code;
+            $glAcct->institution_id = $userData->institution_id;
+            $glAcct->branch_id = $userData->branch_id;
+            $glAcct->created_by = $userData->id;
+            $glAcct->created_on = now();
+            $glAcct->save();
+        }
+
+        $checkExistingGlBal = GlBalances::where('acct_no', $newAcctNo)->get();
+        // return $checkExistingGlBal;
+        if(!isset($checkExistingGlBal) || !empty($checkExistingGlBal)){
+            $glBal = new GlBalances();
+            $glBal->acct_no =  $newAcctNo;
+            $glBal->acct_type =$genAcct->acct_type   ;
+            $glBal->balance = 0  ;
+            $glBal->branch_cd = $branch->code;
+            $glBal->status = $request->status;
+            $glBal->institution_id = $userData->institution_id;
+            $glBal->branch_id = $userData->branch_id;
+            $glBal->created_by =$userData->id;
+            $glBal->created_on = now();
+            $glBal->save();
+        }
+        DB::commit();
+        return $this->genericResponse(true, "Ledger account created successfully", 201, $genAcct);
+
+    }
+
 }
 
 

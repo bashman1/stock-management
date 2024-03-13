@@ -28,6 +28,8 @@ const typeOptions = ref([
 
 const onSubmit = () => {
     formError.value.name = commonService.validateFormField(name.value);
+    formError.value.cat = commonService.validateFormField(cat.value);
+    formError.value.subCat = commonService.validateFormField(subCat.value);
     formError.value.type = commonService.validateFormField(type.value);
 
     let invalid = commonService.validateRequiredFields(formError.value);
@@ -38,18 +40,19 @@ const onSubmit = () => {
 
     let postData = {
         name: name?.value,
-        type: type?.value?.value,
-        institution_id:institution?.value,
-        description: description?.value,
-        institution_id:institution.value!=null?institution?.value.id:null,
-        role_type:type?.value?.value,
+        cat:cat?.value?.gl_no,
+        subCat:subCat?.value?.gl_no,
+        type: type?.value?.gl_no,
         status:'Active'
     }
-
-    commonService.genericRequest('crate-role', 'post', true, postData).then((response) => {
+    commonService.genericRequest('create-gl-account', 'post', true, postData).then((response) => {
         if(response.status){
             commonService.showSuccess(toast,response.message);
-            commonService.redirect(router, "/view-roles");
+            name.value=null;
+            cat.value=null;
+            subCat.value=null;
+            type.value=null;
+
         }else{
             commonService.showError(toast,response.message);
         }
@@ -74,7 +77,6 @@ const getLedgerCat=()=>{
 
 const getLegerSubCat=(event)=>{
     let postData={acct_type: event.value.acct_type,gl_cat_no:event.value.gl_no, acct_type:event.value.acct_type, description:null };
-    alert(JSON.stringify(postData));
     commonService.genericRequest('get-gl-sub-categories', 'post', true, postData).then((response)=>{
         if(response.status){
             glSubCatList.value = response.data
@@ -115,7 +117,7 @@ const getLegerType=(event)=>{
                 </div>
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <Dropdown id="type" :options="glCatList" @change="getLegerSubCat($event)"  v-model="cat" optionLabel="description" @blur="onInputBlur(cat, 'cat')" :class="{ 'p-invalid': formError?.cat }"></Dropdown>
+                        <Dropdown id="type" :options="glCatList" @change="getLegerSubCat($event)"  v-model="cat" optionLabel="acct_type" @blur="onInputBlur(cat, 'cat')" :class="{ 'p-invalid': formError?.cat }"></Dropdown>
                         <label for="type">Category</label>
                     </span>
                 </div>
