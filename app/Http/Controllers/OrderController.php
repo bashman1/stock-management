@@ -75,12 +75,17 @@ class OrderController extends Controller
     }
 
     public function getOderDetails($orderId){
-        $queryString="SELECT O.id, O.order_id, O.product_id,O.qty, O.status,
-        O.institution_id, O.branch_id, O.created_at, P.name,
-        P.product_no, S.selling_price AS price
-        FROM order_items O INNER JOIN products P 
-        ON P.id = O.product_id INNER JOIN stocks S 
-        ON S.product_id = P.id WHERE  O.order_id = $orderId";
+        $queryString=" SELECT O.id, O.order_id, O.product_id,O.qty, O.status,O.institution_id, O.branch_id, O.created_at, P.name,
+        P.product_no, S.selling_price AS price, I.name AS institution_name, B.name AS branch_name, Q.ref_no,
+        Q.receipt_no, Q.tran_id, Q.item_count, Q.total, Q.discount, Q.amount_paid, Q.tran_date, Q.payment_status,
+        CONCAT(U.first_name,' ',U.last_name,' ',U.other_name) AS user_name, B.address AS branch_address,
+        I.address AS institution_address FROM order_items O 
+        INNER JOIN products P ON P.id = O.product_id 
+        INNER JOIN stocks S  ON S.product_id = P.id
+        INNER JOIN institutions I ON I.id =O.institution_id
+        INNER JOIN branches B ON B.id = O.branch_id
+        INNER JOIN orders Q ON Q.id = O.order_id
+        INNER JOIN users U ON Q.user_id = U.id WHERE  O.order_id = $orderId";
         $orderDetails = DB::select($queryString);
         return $this->genericResponse(true, "Order details fetched successfully", 200, $orderDetails);
     }
