@@ -215,6 +215,28 @@ class GlAccountsController extends Controller
 
     public function debitCreditGl(Request $request){
         $userData = auth()->user();
+        DB::beginTransaction();
+        $tran = (object)[
+            "acct_no"=>$request->drAcctNo,
+            "acct_type"=>$request->drAcctType,
+            "contra_acct_no"=>$request->crAcctNo,
+            "contra_acct_type"=>$request->crAcctType,
+            "description"=>$request->description,
+            "dr_cr_ind"=>"DR/CR",
+            "tran_amount"=>$request->tranAmt,
+            "reversal_flag"=>"N",
+            "tran_date"=>$request->tranDate,
+            "tran_cd"=>"GLI",
+            "tran_id"=>$this->generateUuid(),
+            "status"=>$request->status,
+            "institution_id"=>$userData->institution_id,
+            "branch_id"=>$userData->branch_id,
+            "created_by"=>$userData->id,
+            "created_on"=>now(),
+        ];
+
+        $postTran = $this->postTransaction($tran);
+
         $debitRequest=(object)[
             "acct_no"=>$request->drAcctNo,
             "acct_type"=>$request->drAcctType,
@@ -226,7 +248,7 @@ class GlAccountsController extends Controller
             "contra_acct_type"=>$request->crAcctType,
             "tran_type"=>'GL INJECTION',
             "tran_cd"=>'GLI',
-            "tran_id"=>$userData->id,
+            "tran_id"=>$postTran->tran_id,
             "institution_id"=>$userData->institution_id,
             "branch_id"=>$userData->branch_id,
             "created_by"=>$userData->id,
@@ -244,7 +266,7 @@ class GlAccountsController extends Controller
             "contra_acct_type"=>$request->drAcctType,
             "tran_type"=>'GL INJECTION',
             "tran_cd"=>'GLI',
-            "tran_id"=>$userData->id,
+            "tran_id"=>$postTran->tran_id,
             "institution_id"=>$userData->institution_id,
             "branch_id"=>$userData->branch_id,
             "created_by"=>$userData->id,
@@ -252,6 +274,7 @@ class GlAccountsController extends Controller
         ];
         $debit = $this->postGlDR($debitRequest);
         $credit = $this->postGlCR($creditRequest);
+        DB::commit();
         return $this->genericResponse(true, "Ledger account updated successfully", 201,['debit'=>$debitRequest, 'credit'=>$creditRequest]);
     }
 

@@ -19,6 +19,7 @@ use App\Models\GlCat;
 use App\Models\GlSubCat;
 use App\Models\CntrlParameter;
 use App\Models\GlHistory;
+use App\Models\Transaction;
 
 // use Illuminate\Support\Str;
 
@@ -234,6 +235,26 @@ class Controller extends BaseController
             $newSti->created_on=now();
             $newSti->save();
         }
+
+
+        $sl=DB::table('gl_accounts')
+        ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+        ->where('institution_id', $instId)
+        ->where('acct_type', 'INCOME')
+        ->where('gl_no', '4040001')
+        ->first();  
+
+        $isSlExisting =  CntrlParameter::where(["institution_id"=>$instId, "param_value" => strrev($sl->replaced_acct_no)])->exists();
+        if(!$isSlExisting){
+            $newSti= new CntrlParameter();
+            $newSti->param_name = "Sales";
+            $newSti->param_cd="SL";
+            $newSti->param_value=strrev($sl->replaced_acct_no);
+            $newSti->institution_id=$instId;
+            $newSti->created_on=now();
+            $newSti->save();
+        }
+
         DB::commit();
         return true;  
     }
@@ -314,5 +335,34 @@ class Controller extends BaseController
         $acctNo = str_replace('braCd', $branchCd, $acctNo);
         $acctNo = str_replace('glNo', $gl_no, $acctNo);
         return $acctNo;
+    }
+
+
+    /**
+     * post transaction
+     * 
+     */
+    public function postTransaction($transactions){
+        $transaction = new Transaction();
+        DB::beginTransaction();
+        $transaction->acct_no = $transactions->acct_no  ;
+        $transaction->acct_type = $transactions->acct_type  ;
+        $transaction->contra_acct_no = $transactions->contra_acct_no  ;
+        $transaction->contra_acct_type = $transactions->contra_acct_type  ;
+        $transaction->description = $transactions->description  ;
+        $transaction->dr_cr_ind = $transactions->dr_cr_ind  ;
+        $transaction->tran_amount = $transactions->tran_amount  ;
+        $transaction->reversal_flag = $transactions->reversal_flag  ;
+        $transaction->tran_date = $transactions->tran_date  ;
+        $transaction->tran_cd = $transactions->tran_cd  ;
+        $transaction->tran_id = $transactions->tran_id  ;
+        $transaction->status = $transactions->status  ;
+        $transaction->institution_id = $transactions->institution_id ;
+        $transaction->branch_id = $transactions->branch_id  ;
+        $transaction->created_by = $transactions->created_by  ;
+        $transaction->created_on = $transactions->created_on  ;
+        $transaction->save();
+        DB::commit();
+        return $transaction;
     }
 }

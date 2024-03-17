@@ -4,9 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\stock;
+use App\Models\CntrlParameter;
 use App\Models\stockHistory;
+use App\Models\Branch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use App\Models\GlAccounts;
 
 class ProductController extends Controller
 {
@@ -34,6 +38,75 @@ class ProductController extends Controller
         $product->created_on = now();
         $product->save();
 
+        $branch = Branch::where(['id'=>$userData->branch_id, 'institution_id'=>$userData->institution_id])->first();
+
+        $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
+        $sti = CntrlParameter::where(['param_cd'=>'STI', 'institution_id'=>$userData->institution_id])->first();
+
+        $cgl = str_replace('***',$branch->code, $cl->param_value);
+        $cash=GlAccounts::where('acct_no', $cgl)->first();
+
+        $sgl = str_replace('***',$branch->code, $sti->param_value);
+        $stock =GlAccounts::where('acct_no', $sgl)->first();
+
+        $tran=(object)[
+            "acct_no"=>$sgl,
+            "acct_type"=> $stock->acct_type ,
+            "contra_acct_no"=> $cgl,
+            "contra_acct_type"=>$cash->acct_type,
+            "description"=> "Create product:- $product->name on ".date('Y-m-d H:i:s'),
+            "dr_cr_ind"=>"DR/CR",
+            "tran_amount"=>$request->quantity*$request->purchase_price,
+            "reversal_flag"=>'N',
+            "tran_date"=>isset($request->date)?$request->date:now() ,
+            "tran_cd"=>'STI',
+            "tran_id"=> $this->generateUuid(),
+            "status"=> 'Active',
+            "institution_id"=> $userData->institution_id,
+            "branch_id"=>$userData->branch_id ,
+            "created_by"=>$userData->id,
+            "created_on"=>now(),
+        ];
+
+        $postTran = $this->postTransaction($tran);
+
+        $debitRequest=(object)[
+            "acct_no"=>$sgl,
+            "acct_type"=>$stock->acct_type,
+            "tran_amt"=>$postTran->tran_amount,
+            "reversal_flag"=>'N',
+            "description"=>$postTran->description,
+            "transaction_date"=>$postTran->tran_date,
+            "contra_acct_no"=>$cgl,
+            "contra_acct_type"=>$cash->acct_type,
+            "tran_type"=>'STOCK IN',
+            "tran_cd"=>'STI',
+            "tran_id"=>$postTran->tran_id,
+            "institution_id"=>$userData->institution_id,
+            "branch_id"=>$userData->branch_id,
+            "created_by"=>$userData->id,
+            "status"=>'Active',
+        ];
+
+        $creditRequest=(object)[
+            "acct_no"=>$cgl,
+            "acct_type"=>$cash->acct_type,
+            "tran_amt"=>$postTran->tran_amount,
+            "reversal_flag"=>'N',
+            "description"=>$postTran->description,
+            "transaction_date"=>$postTran->tran_date,
+            "contra_acct_no"=>$sgl,
+            "contra_acct_type"=>$stock->acct_type,
+            "tran_type"=>'STOCK IN',
+            "tran_cd"=>'STI',
+            "tran_id"=>$postTran->tran_id,
+            "institution_id"=>$userData->institution_id,
+            "branch_id"=>$userData->branch_id,
+            "created_by"=>$userData->id,
+            "status"=>'Active',
+        ];
+        $debit = $this->postGlDR($debitRequest);
+        $credit = $this->postGlCR($creditRequest);
 
         $stock = new stock();
         $history = new stockHistory();
@@ -77,7 +150,7 @@ class ProductController extends Controller
         $history->save();
 
         DB::commit();
-        return $this->genericResponse(true, "Measurement unit created successfully", 201, $product);
+        return $this->genericResponse(true, "Product created successfully", 201, $product);
     }
 
 

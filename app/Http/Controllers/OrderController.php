@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\stock;
+use App\Models\Branch;
+use App\Models\GlAccounts;
+use App\Models\CntrlParameter;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -32,6 +36,75 @@ class OrderController extends Controller
         $order->created_by = $userData->id ;
         $order->created_on = now() ;
         $order->save();
+
+        $branch = Branch::where(['id'=>$userData->branch_id, 'institution_id'=>$userData->institution_id])->first();
+        $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
+        $sti = CntrlParameter::where(['param_cd'=>'SL', 'institution_id'=>$userData->institution_id])->first();
+
+        $cgl = str_replace('***',$branch->code, $cl->param_value);
+        $cash=GlAccounts::where('acct_no', $cgl)->first();
+
+        $sgl = str_replace('***',$branch->code, $sti->param_value);
+        $stock =GlAccounts::where('acct_no', $sgl)->first();
+
+        $tran=(object)[
+            "acct_no"=>$sgl,
+            "acct_type"=> $stock->acct_type ,
+            "contra_acct_no"=> $cgl,
+            "contra_acct_type"=>$cash->acct_type,
+            "description"=> "selling products receipt no $order->receipt_no and  transaction id $order->tran_id ".date('Y-m-d H:i:s'),
+            "dr_cr_ind"=>"DR/CR",
+            "tran_amount"=>$request->total,
+            "reversal_flag"=>'N',
+            "tran_date"=>isset($request->tranDate)?$request->tranDate:now() ,
+            "tran_cd"=>'STI',
+            "tran_id"=> $this->generateUuid(),
+            "status"=> 'Active',
+            "institution_id"=> $userData->institution_id,
+            "branch_id"=>$userData->branch_id ,
+            "created_by"=>$userData->id,
+            "created_on"=>now(),
+        ];
+
+        $postTran = $this->postTransaction($tran);
+
+        $creditRequest=(object)[
+            "acct_no"=>$sgl,
+            "acct_type"=>$stock->acct_type,
+            "tran_amt"=>$postTran->tran_amount,
+            "reversal_flag"=>'N',
+            "description"=>$postTran->description,
+            "transaction_date"=>$postTran->tran_date,
+            "contra_acct_no"=>$cgl,
+            "contra_acct_type"=>$cash->acct_type,
+            "tran_type"=>'STOCK IN',
+            "tran_cd"=>'STI',
+            "tran_id"=>$postTran->tran_id,
+            "institution_id"=>$userData->institution_id,
+            "branch_id"=>$userData->branch_id,
+            "created_by"=>$userData->id,
+            "status"=>'Active',
+        ];
+
+        $debitRequest=(object)[
+            "acct_no"=>$cgl,
+            "acct_type"=>$cash->acct_type,
+            "tran_amt"=>$postTran->tran_amount,
+            "reversal_flag"=>'N',
+            "description"=>$postTran->description,
+            "transaction_date"=>$postTran->tran_date,
+            "contra_acct_no"=>$sgl,
+            "contra_acct_type"=>$stock->acct_type,
+            "tran_type"=>'STOCK IN',
+            "tran_cd"=>'STI',
+            "tran_id"=>$postTran->tran_id,
+            "institution_id"=>$userData->institution_id,
+            "branch_id"=>$userData->branch_id,
+            "created_by"=>$userData->id,
+            "status"=>'Active',
+        ];
+        $debit = $this->postGlDR($debitRequest);
+        $credit = $this->postGlCR($creditRequest);
 
         foreach ($request->items as $value) {
             $stock = stock::where('product_id', $value['id'])->first();

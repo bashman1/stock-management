@@ -697,7 +697,7 @@ onMounted(() => {
                     <div class="field col-12 md:col-6">
                         <span class="p-float-label">
                             <InputText type="text" id="purchasePrice" v-model="purchasePrice" />
-                            <label for="purchasePrice">Purchase Price </label>
+                            <label for="purchasePrice">Unit Purchase Price </label>
                         </span>
                     </div>
 
@@ -728,18 +728,18 @@ onMounted(() => {
             <div class="card">
                 <h5>Selling Price</h5><br>
                 <div class="grid">
-                    <div class="field col-12 md:col-6">
+                    <div class="field col-12 md:col-12">
                         <span class="p-float-label">
                             <InputText type="text" @blur="onInputBlur(sellingPrice, 'sellingPrice')" id="sellingPrice" v-model="sellingPrice" :class="{ 'p-invalid': formError?.sellingPrice }"/>
-                            <label for="sellingPrice">Selling Price </label>
+                            <label for="sellingPrice">Unit Selling Price </label>
                         </span>
                     </div>
-                    <div class="field col-12 md:col-6">
+                    <!-- <div class="field col-12 md:col-6">
                         <span class="p-float-label">
-                            <InputText type="text" id="discount" v-model="discount" />
-                            <label for="discount">Discount Rate</label>
+                            <InputText type="text" id="discount" :value="sellingPrice*quantity" disabled/>
+                            <label for="discount">Expected Total</label>
                         </span>
-                    </div>
+                    </div> -->
 
                     <div class="field col-12 md:col-8"></div>
                     <div class="field col-12 md:col-4">
