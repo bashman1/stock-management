@@ -301,6 +301,14 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: '/create-product/:id',
+                    name: 'EditProduct',
+                    component: ()=>import('@/views/pages/stock-management/CreateProduct.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
                     path: '/view-product',
                     name: 'ViewProduct',
                     component: ()=>import('@/views/pages/stock-management/ViewProducts.vue'),
@@ -320,6 +328,14 @@ const router = createRouter({
                     path: '/view-sales',
                     name: 'ViewOrders',
                     component: ()=>import('@/views/pages/stock-management/ViewOrders.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-product-details/:id',
+                    name: 'ViewProductDetails',
+                    component: ()=>import('@/views/pages/stock-management/ProductDetails.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },

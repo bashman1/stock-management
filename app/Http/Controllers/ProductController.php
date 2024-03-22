@@ -170,16 +170,40 @@ class ProductController extends Controller
         INNER JOIN stocks E ON E.product_id = P.id
         INNER JOIN branches B ON B.id = E.branch_id
         INNER JOIN institutions I ON I.id =P.institution_id ";
-
         if ($isNotAdmin) {
             $sqlString .= " WHERE E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
         }
-
         $sqlString .= " ORDER BY T.id DESC";
-
         $products = DB::select($sqlString);
-
         return $this->genericResponse(true, "Product list", 200, $products);
     }
+
+    public function getProductDetails(Request $request){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+
+        $sqlString="SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
+        P.institution_id, P.user_id, P.status, P.created_by, P.type_id, P.gauge_id, E.stock_date, P.updated_by, P.created_on, P.updated_on, P.created_at, P.updated_at, C.name AS category_name,
+        S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
+        E.min_quantity, E.id AS stock_id, E.max_quantity, B.name AS branch_name, I.name AS institution_name
+        FROM products P INNER JOIN product_categories C ON C.id = P.category_id
+        LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
+        LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
+        LEFT JOIN suppliers Q ON P.supplier_id = Q.id
+        LEFT JOIN measurement_units T ON P.measurement_unit_id = T.id
+        INNER JOIN stocks E ON E.product_id = P.id
+        INNER JOIN branches B ON B.id = E.branch_id
+        INNER JOIN institutions I ON I.id =P.institution_id ";
+        $sqlString .= " WHERE P.id = $request->id ";
+        if ($isNotAdmin) {
+            $sqlString .= " AND E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
+        }
+        $sqlString .= " ORDER BY P.id DESC";
+        $product = DB::select($sqlString);
+
+        return $this->genericResponse(true, "Product list", 200, $product);
+    }
+
+
 
 }

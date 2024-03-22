@@ -1,12 +1,13 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
 
 const toast = useToast();
 const commonService = new CommonService();
 const router = useRouter();
+const route = useRoute()
 
 const name = ref(null);
 const category=ref(null)
@@ -88,7 +89,7 @@ const gaugeDesc=ref(null);
 
 const productTypeList = ref(null);
 const productGaugeList = ref(null);
-
+const productDetails= ref(null);
 
 
 // ********************************************************
@@ -533,6 +534,35 @@ const getCountries=()=>{
 
 }
 
+const getProductDetails=(prodId)=>{
+    let postData={
+        id:prodId,
+    }
+    commonService.genericRequest('get-product-details', 'post', true, postData).then((response) => {
+        if (response.status) {
+            productDetails.value = response.data[0];
+            name.value= productDetails.value.name;
+            category.value=productCategoryData.value.find(cat=>cat.id ==productDetails.value.category_id)
+            manufacturer.value=manufacturersData.value.find(cat=>cat.id ==productDetails.value.manufacturer_id)
+            supplier.value=suppliersData.value.find(cat=>cat.id ==productDetails.value.supplier_id)
+            productId.value =productDetails.value.product_no;
+            description.value =productDetails.value.description;
+            quantity.value= productDetails.value.quantity
+            minStock.value= productDetails.value.min_quantity
+            maxStock.value= productDetails.value.max_quantity
+            measurementUnit.value = measurementUnitsData.value.find(cat=>cat.id ==productDetails.value.measurement_unit_id)
+            purchasePrice.value =productDetails.value.purchase_price
+            date.value =productDetails.value.stock_date
+            sellingPrice.value =productDetails.value.selling_price
+            prodType.value =productTypeList.value.find(cat=>cat.id ==productDetails.value.type_id)
+            prodGauge.value =productGaugeList.value.find(cat=>cat.id ==productDetails.value.gauge_id)
+
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
 onMounted(() => {
     getProductCategories();
     getProductSubCategories();
@@ -542,6 +572,9 @@ onMounted(() => {
     getMeasurementUnit();
     getProductTypes();
     getProductGauge();
+    if(route.params.id != null){
+        getProductDetails(route.params.id );
+    }
 });
 
 
