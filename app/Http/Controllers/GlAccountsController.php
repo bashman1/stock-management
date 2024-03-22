@@ -334,6 +334,71 @@ class GlAccountsController extends Controller
 
     }
 
+
+    public function glAcctHistory(Request $request){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+
+        $queryString = "SELECT H.id, H.acct_no,A.acct_type, H.dr_cr_ind, H.tran_amount, H.reversal_flag, H.description, H.transaction_date,
+        H.contra_acct_no, H.contra_acct_type, H.tran_type, H.tran_id, H.status, H.institution_id, H.branch_id,
+        H.created_by, H.created_on, H.created_at, H.updated_at, CONCAT(U.first_name,' ',U.last_name,' ', U.other_name) AS user_name,
+        I.name AS institution_name, B.name AS branch_name 
+        FROM gl_histories H
+        INNER JOIN gl_accounts A ON A.acct_no = H.acct_no
+        INNER JOIN institutions I ON I.id = H.institution_id
+        INNER JOIN branches B ON B.id = H.branch_id
+        INNER JOIN users U ON U.id = H.created_by";
+
+        $queryString.=" WHERE H.acct_no=  '".$request->acct_no."' ";
+
+        if($isNotAdmin){
+            $queryString.=" AND H.institution_id = $userData->institution_id  ";
+        }
+        $queryString.=" ORDER BY H.id ASC ";
+        $glHistory= DB::select($queryString);
+        $balance = 0;
+        $tempArray= Array();
+
+        $tempArray[] =['transaction_date'=>'2024-03-27 21:00:00', 'description'=>'Balance carried forward', "dr_cr_ind"=>'','balance'=>'0','reversal_flag'=>'N','user_name'=>'' ];
+
+        foreach ($glHistory as $value) {
+            $newValue = clone $value;
+            if ($value->dr_cr_ind == 'Dr') {
+                $balance += ($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') ? (float) $value->tran_amount : -(float) $value->tran_amount;
+            } elseif ($value->dr_cr_ind == 'Cr') {
+                $balance -= ($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') ? (float) $value->tran_amount : -(float) $value->tran_amount;
+            }
+            $newValue->balance = $balance;
+            $tempArray[] = $newValue;
+        }
+        return $this->genericResponse(true, "Gl accounts history fetched successfully", 201, $tempArray);
+    }
+
+    public function glAcctOverView(Request $request){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+
+        $glCat = GlCat::all();
+        $tempArray=[];
+        foreach ($glCat as $key => $value) {
+            $queryString="SELECT B.id, B.acct_no, B.acct_type, B.balance, B.branch_cd, B.institution_id, B.branch_id, B.created_on, B.created_at, B.updated_at,
+            A.description, A.gl_no
+            FROM gl_balances B INNER JOIN gl_accounts A ON B.acct_no = A.acct_no
+            WHERE balance > 0 AND B.acct_type= '".$value['acct_type']."'";
+            if($isNotAdmin){
+                $queryString.=" AND B.institution_id = $userData->institution_id  ";
+            }
+            $queryString.=" ORDER BY B.id ASC ";
+            $glBalances= DB::select($queryString);
+            if(!empty($glBalances)){
+                $tempArray[]=$glBalances;
+            }
+            
+        }
+
+        return $this->genericResponse(true, "Gl accounts overview fetched successfully", 201, $tempArray);
+    }
+
 }
 
 

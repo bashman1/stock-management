@@ -66,7 +66,7 @@ onMounted(() => {
             </Column>
             <Column field="name" header="Selling Price" style="min-width: 10rem">
                 <template #body="{ data }">
-                    {{ data.selling_price }}
+                    {{ commonService.commaSeparator(data.selling_price) }}
                 </template>
             </Column>
             <Column field="name" header="Quantity" style="min-width: 10rem">

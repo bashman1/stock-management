@@ -372,7 +372,23 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
-
+                {
+                    path: '/gl-statement/:acctNo',
+                    name: 'GlStatement',
+                    component: ()=>import('@/views/pages/chart-of-accounts/GlHistory.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/gl-overview',
+                    name: 'GlOverView',
+                    component: ()=>import('@/views/pages/chart-of-accounts/glOverView.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                
                 
             ]
         },

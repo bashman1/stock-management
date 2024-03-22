@@ -138,7 +138,10 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('create-gl-account', [GlAccountsController::class, "createGlAcct"]);
 
     Route::post('get-product-details', [ProductController::class, "getProductDetails"]);
+    Route::post('get-gl-history', [GlAccountsController::class, "glAcctHistory"]);
+    Route::post('get-gl-overview', [GlAccountsController::class, "glAcctOverView"]);
 
+    
     
     
 });
