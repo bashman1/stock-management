@@ -393,10 +393,40 @@ class GlAccountsController extends Controller
             if(!empty($glBalances)){
                 $tempArray[]=$glBalances;
             }
-            
         }
 
         return $this->genericResponse(true, "Gl accounts overview fetched successfully", 201, $tempArray);
+    }
+
+
+    public function getGlBalances(Request $request){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+
+        $glCat = GlCat::all();
+        $tempArray=[];
+        foreach ($glCat as $key => $value) {
+            $sumSql= "SELECT sum(balance) AS balance, acct_type  FROM gl_balances WHERE acct_type='".$value['acct_type']."'";
+            if($isNotAdmin){
+                $sumSql.=" AND institution_id = $userData->institution_id  ";
+            }
+            $sumSql.=" GROUP BY acct_type";
+
+            $total= DB::select($sumSql);
+            $total=$total[0];
+
+            $queryString="SELECT B.id, B.acct_no, B.acct_type, B.balance, B.branch_cd, B.institution_id, B.branch_id, B.created_on, B.created_at, B.updated_at,
+            A.description, A.gl_no
+            FROM gl_balances B INNER JOIN gl_accounts A ON B.acct_no = A.acct_no
+            WHERE balance > 0 AND B.acct_type= '".$value['acct_type']."'";
+            if($isNotAdmin){
+                $queryString.=" AND B.institution_id = $userData->institution_id  ";
+            }
+            $queryString.=" ORDER BY B.id ASC ";
+            $glBalances= DB::select($queryString);
+            $tempArray[]=$total;
+            return $this->genericResponse(true, "Gl accounts balances fetched successfully", 201, $tempArray);
+        }
     }
 
 }

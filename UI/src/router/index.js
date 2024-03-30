@@ -388,6 +388,14 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/gl-balance-sheet',
+                    name: 'GlBalanceSheet',
+                    component: ()=>import('@/views/pages/chart-of-accounts/BalanceSheet.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
                 
                 
             ]

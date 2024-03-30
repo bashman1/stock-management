@@ -43,11 +43,25 @@ class ProductController extends Controller
         $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
         $sti = CntrlParameter::where(['param_cd'=>'STI', 'institution_id'=>$userData->institution_id])->first();
 
+        $pia = CntrlParameter::where(['param_cd'=>'PIA', 'institution_id'=>$userData->institution_id])->first();
+        $pil = CntrlParameter::where(['param_cd'=>'PIL', 'institution_id'=>$userData->institution_id])->first();
+        $pp = CntrlParameter::where(['param_cd'=>'PP', 'institution_id'=>$userData->institution_id])->first();
+
+
         $cgl = str_replace('***',$branch->code, $cl->param_value);
         $cash=GlAccounts::where('acct_no', $cgl)->first();
 
         $sgl = str_replace('***',$branch->code, $sti->param_value);
         $stock =GlAccounts::where('acct_no', $sgl)->first();
+
+        $piagl = str_replace('***',$branch->code, $pia->param_value);
+        $pAss =GlAccounts::where('acct_no', $piagl)->first();
+
+        $pilgl = str_replace('***',$branch->code, $pil->param_value);
+        $pLia =GlAccounts::where('acct_no', $pilgl)->first();
+
+        $ppgl = str_replace('***',$branch->code, $pp->param_value);
+        $ppE =GlAccounts::where('acct_no', $ppgl)->first();
 
         $tran=(object)[
             "acct_no"=>$sgl,
@@ -105,8 +119,37 @@ class ProductController extends Controller
             "created_by"=>$userData->id,
             "status"=>'Active',
         ];
-        $debit = $this->postGlDR($debitRequest);
-        $credit = $this->postGlCR($creditRequest);
+        $debitStock = $this->postGlDR($debitRequest);
+        $creditCash = $this->postGlCR($creditRequest);
+
+        $debitPurchases = $debitRequest;
+        $creditPurchases = $creditRequest;
+
+        $debitPurchases->acct_no = $piagl;
+        $debitPurchases->acct_type = $pAss->acct_type;
+        $debitPurchases->contra_acct_no = $pilgl;
+        $debitPurchases->contra_acct_type = $pLia->acct_type;
+
+        $creditPurchases->acct_no = $pilgl;
+        $creditPurchases->acct_type = $pLia->acct_type;
+        $creditPurchases->contra_acct_no =$piagl ;
+        $creditPurchases->contra_acct_type = $pAss->acct_type;
+
+        $onDebitPurchases = $this->postGlDR($debitPurchases);
+        $onCreditPurchases = $this->postGlCR($creditPurchases);
+
+        $passageDebitRequest = $debitRequest;
+        $passageDebitRequest->acct_no = $ppgl;
+        // $passageDebitRequest->tran_amt = 0;
+        $passageDebitRequest->acct_type =$ppE->acct_type;
+
+        $cashCreditRequest = $creditRequest;
+        $cashCreditRequest->contra_acct_no = $ppgl;
+        // $cashCreditRequest->tran_amt = 0;
+        $cashCreditRequest->contra_acct_type =$ppE->acct_type;
+
+        $onDebitPassage = $this->postGlDR($passageDebitRequest);
+        $onCreditPassCash = $this->postGlCR($cashCreditRequest);
 
         $stock = new stock();
         $history = new stockHistory();
@@ -128,7 +171,6 @@ class ProductController extends Controller
         $stock->created_by = $userData->created_by ;
         $stock->created_on =now() ;
         $stock->save();
-
 
         $history->purchase_price = $request->purchase_price ;
         $history->selling_price = $request->selling_price ;

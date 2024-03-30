@@ -292,9 +292,15 @@ if (commonService.checkPermissions('DebitCredit')) {
     );
 }
 
-
-
-
+if (commonService.checkPermissions('GlOverView')) {
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'GL overview',
+            icon: 'pi pi-fw pi-circle',
+            to: '/gl-overview'
+        }
+    );
+}
 
 
 const model = ref([{ items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-desktop', to: '/admin' },] }]);
@@ -341,6 +347,8 @@ if (stockMenu?.value?.items?.length > 0) {
 if (chartOfAccountMenu?.value?.items?.length > 0) {
     model.value[0].items.push(chartOfAccountMenu.value);
 }
+
+
 
 </script>
 
