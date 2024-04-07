@@ -141,5 +141,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('get-gl-history', [GlAccountsController::class, "glAcctHistory"]);
     Route::post('get-gl-overview', [GlAccountsController::class, "glAcctOverView"]);
     Route::post('get-gl-balance', [GlAccountsController::class, "getGlBalances"]);
-    
+    Route::get("get-control-accts", [GlAccountsController::class,"getCntrlParamGl"]);
+
 });

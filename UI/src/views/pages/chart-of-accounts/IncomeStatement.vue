@@ -21,7 +21,6 @@ const getCntrlLedger=()=>{
     })
 }
 
-
  onMounted(() => {
     getCntrlLedger();
 });
@@ -31,7 +30,7 @@ const getCntrlLedger=()=>{
 <template>
     <div>
         <div class="card">
-            <h5>Cntrl Parameter Acct.</h5>
+            <h5>Income Statement</h5>
             <!-- <div class="grid p-fluid mt-3"> -->
                 <Toast />
 

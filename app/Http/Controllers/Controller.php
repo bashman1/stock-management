@@ -38,7 +38,7 @@ class Controller extends BaseController
      * @return void
      * @author Bashir <wamulabash1@gmail.com.com>
      */
-    public function genericResponse($status = true, $message, $code = 200, $data = []){
+    public function genericResponse($status, $message, $code, $data){
         return response()->json([
             "status"=>$status,
             "code"=>$code,

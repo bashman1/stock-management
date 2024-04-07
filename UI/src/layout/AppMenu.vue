@@ -301,6 +301,15 @@ if (commonService.checkPermissions('GlOverView')) {
         }
     );
 }
+if (commonService.checkPermissions('ViewCntrlParams')) {
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'Control Accounts',
+            icon: 'pi pi-fw pi-circle',
+            to: '/cntrl-params'
+        }
+    );
+}
 
 
 const model = ref([{ items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-desktop', to: '/admin' },] }]);

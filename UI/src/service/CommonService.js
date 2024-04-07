@@ -1,7 +1,7 @@
 export default class CommonService {
-    baseUrl = "http://localhost:8000/api/";
+    // baseUrl = "http://localhost:8000/api/";
     // baseUrl = "http://137.184.230.127/api/";
-    // baseUrl = "../api/";
+    baseUrl = "../api/";
 
     // loggedIn = this.checkingAuthentication();
 
@@ -26,7 +26,7 @@ export default class CommonService {
         return JSON.parse(data);
     };
 
-    
+
 
     /**
      * remove the data from  local storage
@@ -605,14 +605,14 @@ export default class CommonService {
 
 
     /**
-     * checking if permission exists 
-     * @param {*} permission 
-     * @returns 
+     * checking if permission exists
+     * @param {*} permission
+     * @returns
      */
     checkPermissions=(permission)=>{
         let permissions=this.getStorage()?.userData?.permissions;
         return permissions.some(element => element.name == permission);
     }
-        
+
 }
 

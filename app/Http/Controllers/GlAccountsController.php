@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CntrlParameter;
 use App\Models\GlAccounts;
 use App\Models\GlCat;
 use App\Models\GlSubCat;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class GlAccountsController extends Controller
 {
-   
+
 
     public function getChartOfAccounts(Request $request) {
         $userData = auth()->user();
@@ -31,7 +32,7 @@ class GlAccountsController extends Controller
                 $glTypes = GlType::where('gl_sub_cat_no', $subCat->gl_no)->orderBy('gl_no', 'asc')->get();
                 foreach ($glTypes as $glType) {
                    $typeData = $glType->toArray();
-                   $queryString = "SELECT G.acct_no, G.gl_no, G.description, G.gl_cat_no, G.gl_sub_cat_no, G.gl_type_no, G.acct_type, G.branch_cd, G.status,  
+                   $queryString = "SELECT G.acct_no, G.gl_no, G.description, G.gl_cat_no, G.gl_sub_cat_no, G.gl_type_no, G.acct_type, G.branch_cd, G.status,
                    G.institution_id, G.branch_id, G.created_by, G.updated_by, G.created_on, G.updated_on, G.created_at, G.updated_at,
                    T.description AS type_desc, S.description AS sub_cat_desc, C.description AS cat_desc, I.name AS institution_name,
                    B.name AS branch_name, K.balance
@@ -123,15 +124,13 @@ class GlAccountsController extends Controller
 
         $glType = DB::table('gl_types')->select('*')->where($conditions)->get();
         return $this->genericResponse(true, "Ledger Types fetched successfully", 200, $glType);
-
     }
-
 
     public function glAccounts(){
         $userData = auth()->user();
         $isNotAdmin = $this->isNotAdmin();
 
-        $queryString = "SELECT G.acct_no, G.gl_no, G.description, G.gl_cat_no, G.gl_sub_cat_no, G.gl_type_no, G.acct_type, G.branch_cd, G.status,  
+        $queryString = "SELECT G.acct_no, G.gl_no, G.description, G.gl_cat_no, G.gl_sub_cat_no, G.gl_type_no, G.acct_type, G.branch_cd, G.status,
         G.institution_id, G.branch_id, G.created_by, G.updated_by, G.created_on, G.updated_on, G.created_at, G.updated_at,
         T.description AS type_desc, S.description AS sub_cat_desc, C.description AS cat_desc, I.name AS institution_name,
         B.name AS branch_name, K.balance
@@ -172,7 +171,7 @@ class GlAccountsController extends Controller
             $conditions['G.institution_id'] = $userData->institution_id;
         }
         $results = DB::table('gl_accounts as G')
-        ->select('G.acct_no', 'G.gl_no', 'G.description', 'G.gl_cat_no', 'G.gl_sub_cat_no', 'G.gl_type_no', 'G.acct_type', 'G.branch_cd', 'G.status',  
+        ->select('G.acct_no', 'G.gl_no', 'G.description', 'G.gl_cat_no', 'G.gl_sub_cat_no', 'G.gl_type_no', 'G.acct_type', 'G.branch_cd', 'G.status',
             'G.institution_id', 'G.branch_id', 'G.created_by', 'G.updated_by', 'G.created_on', 'G.updated_on', 'G.created_at', 'G.updated_at',
             'T.description AS type_desc', 'S.description AS sub_cat_desc', 'C.description AS cat_desc', 'I.name AS institution_name',
             'B.name AS branch_name', 'K.balance')
@@ -342,7 +341,7 @@ class GlAccountsController extends Controller
         $queryString = "SELECT H.id, H.acct_no,A.acct_type, H.dr_cr_ind, H.tran_amount, H.reversal_flag, H.description, H.transaction_date,
         H.contra_acct_no, H.contra_acct_type, H.tran_type, H.tran_id, H.status, H.institution_id, H.branch_id,
         H.created_by, H.created_on, H.created_at, H.updated_at, CONCAT(U.first_name,' ',U.last_name,' ', U.other_name) AS user_name,
-        I.name AS institution_name, B.name AS branch_name 
+        I.name AS institution_name, B.name AS branch_name
         FROM gl_histories H
         INNER JOIN gl_accounts A ON A.acct_no = H.acct_no
         INNER JOIN institutions I ON I.id = H.institution_id
@@ -426,6 +425,22 @@ class GlAccountsController extends Controller
             $glBalances= DB::select($queryString);
             $tempArray[]=$total;
             return $this->genericResponse(true, "Gl accounts balances fetched successfully", 201, $tempArray);
+        }
+    }
+
+    public function getCntrlParamGl(){
+        try {
+            $userData = auth()->user();
+            $isNotAdmin = $this->isNotAdmin();
+            $conditions=  Array();
+            $conditions['status']= "Active";
+            if($isNotAdmin){
+                $conditions['institution_id']= $userData->institution_id;
+            }
+            $cntrlParam = CntrlParameter::where($conditions)->get();
+            return $this->genericResponse(true,"Control accounts", 200,$cntrlParam);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(),400, $th);
         }
     }
 

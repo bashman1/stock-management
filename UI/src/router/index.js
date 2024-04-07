@@ -396,8 +396,23 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
-                
-                
+                {
+                    path: '/cntrl-params',
+                    name: 'CntrlParams',
+                    component: ()=>import('@/views/pages/chart-of-accounts/CntrParams.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/income-statement',
+                    name: 'IncomeStatement',
+                    component: ()=>import('@/views/pages/chart-of-accounts/IncomeStatement.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+
             ]
         },
         {
