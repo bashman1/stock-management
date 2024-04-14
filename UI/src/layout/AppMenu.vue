@@ -311,6 +311,38 @@ if (commonService.checkPermissions('ViewCntrlParams')) {
     );
 }
 
+if (commonService.checkPermissions('ViewIncomeStatement')){
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'Income Statement',
+            icon: 'pi pi-fw pi-circle',
+            to: '/income-statement'
+        }
+    )
+}
+
+if(commonService.checkPermissions('ViewProductsReport')){
+    reportMenu.value.items.push(
+        {
+            label: 'Products Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/products-report'
+        }
+    )
+}
+
+if(commonService.checkPermissions('ViewSalesReport')){
+    reportMenu.value.items.push(
+        {
+            label: 'Sales Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/sales-report'
+        }
+    )
+}
+
+
+
 
 const model = ref([{ items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-desktop', to: '/admin' },] }]);
 

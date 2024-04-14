@@ -26,6 +26,7 @@ use App\Http\Controllers\GLBalanceController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\MtnPaymentsController;
 use App\Http\Controllers\GlAccountsController;
+use App\Http\Controllers\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -142,5 +143,8 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('get-gl-overview', [GlAccountsController::class, "glAcctOverView"]);
     Route::post('get-gl-balance', [GlAccountsController::class, "getGlBalances"]);
     Route::get("get-control-accts", [GlAccountsController::class,"getCntrlParamGl"]);
+    Route::post("get-income-statement", [GlAccountsController::class, "generateIncomeStatement"]);
+    Route::post("get-products-report", [ReportController::class, "getInventoryReport"]);
+    Route::post("get-sales-report", [ReportController::class,"getSalesReport"]);
 
 });

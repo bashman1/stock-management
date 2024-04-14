@@ -20,9 +20,12 @@ return new class extends Migration
             $table->double('discount', 8, 2)->default(0)->nullable();
             $table->unsignedBigInteger("product_id");
             $table->unsignedBigInteger("stock_id");
-            $table->unsignedBigInteger("quantity");
-            $table->unsignedBigInteger("min_quantity")->nullable();
-            $table->unsignedBigInteger("max_quantity")->nullable();
+            // $table->unsignedBigInteger("quantity");
+            // $table->unsignedBigInteger("min_quantity")->nullable();
+            // $table->unsignedBigInteger("max_quantity")->nullable();
+            $table->double("quantity", 8, 2);
+            $table->double("min_quantity", 8, 2)->nullable();
+            $table->double("max_quantity", 8, 2)->nullable();
             $table->unsignedBigInteger("institution_id");
             $table->timestamp('stock_date')->nullable();
             $table->timestamp('manufactured_date')->nullable();

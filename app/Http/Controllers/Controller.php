@@ -77,6 +77,8 @@ class Controller extends BaseController
 
     /**
      * check if its admin
+     *
+     * @return boolean
      */
     public function isNotAdmin(){
         $userData = auth()->user();
@@ -89,6 +91,8 @@ class Controller extends BaseController
 
     /**
      * Generate branch code
+     *
+     * @return void
      */
     public function generateBranchCode(){
         $randomCode='';
@@ -118,6 +122,8 @@ class Controller extends BaseController
 
     /**
      * generate tran ref
+     *
+     * @return void
      */
     public function generateTranRef(){
         $tranIdRef = InstitutionConfig::where("type", "tran_id_ref")->first();
@@ -127,6 +133,11 @@ class Controller extends BaseController
         return $tranId;
     }
 
+    /**
+     * generate UUID
+     *
+     * @return void
+     */
     public function generateUuid(){
         return (string) Str::uuid();
     }
@@ -135,6 +146,11 @@ class Controller extends BaseController
     /**
      * generate Gl accounts
      *
+     * @param [type] $instId
+     * @param [type] $branchCd
+     * @param [type] $branchId
+     * @return void
+     * @author bsh <email>
      */
     public function createBranchGlAccounts($instId, $branchCd, $branchId){
         DB::beginTransaction();
@@ -146,7 +162,7 @@ class Controller extends BaseController
             $acctNo = str_replace('glNo', $value['gl_no'], $acctNo);
 
             $checkExistingGlAcct = GlAccounts::where('acct_no', $acctNo)->get();
-            if(!isset($checkExistingGl)  || !empty($checkExistingGl)){
+            if(!isset($checkExistingGlAcct)  || !empty($checkExistingGlAcct)){
                 $glAcct = new GlAccounts();
                 $glAcct->gl_no = $value['gl_no'];
                 $glAcct->acct_no = $acctNo;
@@ -180,7 +196,13 @@ class Controller extends BaseController
         return "success";
     }
 
-
+    /**
+     * set control gls
+     *
+     * @param [type] $instId
+     * @return void
+     * @author bsh <email>
+     */
     public function setControlParam($instId){
         DB::beginTransaction();
         $cl = DB::table('gl_accounts')
@@ -332,6 +354,65 @@ class Controller extends BaseController
             $newSti->created_on=now();
             $newSti->save();
         }
+
+        // set Return inwards Expense
+        $rin =DB::table('gl_accounts')
+        ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+        ->where('institution_id', $instId)
+        ->where('acct_type', 'EXPENSE')
+        ->where('gl_no', '5010001')
+        ->first();
+
+        $isRinExisting =  CntrlParameter::where(["institution_id"=>$instId, "param_value" => strrev($rin->replaced_acct_no)])->exists();
+        if(!$isRinExisting){
+            $newSti= new CntrlParameter();
+            $newSti->param_name = "Return inwards(sales returns) RIN";
+            $newSti->param_cd="RIN";
+            $newSti->param_value=strrev($rin->replaced_acct_no);
+            $newSti->institution_id=$instId;
+            $newSti->created_on=now();
+            $newSti->save();
+        }
+
+        // set Return outwards Expense
+        $rot =DB::table('gl_accounts')
+        ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+        ->where('institution_id', $instId)
+        ->where('acct_type', 'EXPENSE')
+        ->where('gl_no', '5030001')
+        ->first();
+
+        $isRotExisting =  CntrlParameter::where(["institution_id"=>$instId, "param_value" => strrev($rot->replaced_acct_no)])->exists();
+        if(!$isRotExisting){
+            $newSti= new CntrlParameter();
+            $newSti->param_name = "Return outwards(purchases returns) ROT";
+            $newSti->param_cd="ROT";
+            $newSti->param_value=strrev($rot->replaced_acct_no);
+            $newSti->institution_id=$instId;
+            $newSti->created_on=now();
+            $newSti->save();
+        }
+
+
+        // set operating expenses Expense
+        $ope =DB::table('gl_accounts')
+        ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+        ->where('institution_id', $instId)
+        ->where('acct_type', 'EXPENSE')
+        ->where('gl_no', '5040001')
+        ->first();
+
+        $isOpeExisting =  CntrlParameter::where(["institution_id"=>$instId, "param_value" => strrev($ope->replaced_acct_no)])->exists();
+        if(!$isOpeExisting){
+            $newSti= new CntrlParameter();
+            $newSti->param_name = "Operating expenses OPE";
+            $newSti->param_cd="OPE";
+            $newSti->param_value=strrev($ope->replaced_acct_no);
+            $newSti->institution_id=$instId;
+            $newSti->created_on=now();
+            $newSti->save();
+        }
+
         DB::commit();
         return true;
     }
@@ -339,6 +420,10 @@ class Controller extends BaseController
 
     /**
      * Debit the gl account
+     *
+     * @param [type] $data
+     * @return void
+     * @author bsh <email>
      */
     public function postGlDR($data){
         DB::beginTransaction();
@@ -377,6 +462,10 @@ class Controller extends BaseController
 
     /**
      * credit the gl account
+     *
+     * @param [type] $data
+     * @return void
+     * @author bsh <email>
      */
     public function postGlCR($data){
         DB::beginTransaction();
@@ -414,6 +503,12 @@ class Controller extends BaseController
 
     /**
      * Generate GL number for a branch
+     *
+     * @param [type] $instId
+     * @param [type] $branchCd
+     * @param [type] $gl_no
+     * @return void
+     * @author bsh <email>
      */
     public function generateGlAcctNo($instId, $branchCd, $gl_no){
         $genAcctNo= "instId-braCd-000-000-glNo";
@@ -427,6 +522,9 @@ class Controller extends BaseController
     /**
      * post transaction
      *
+     * @param [type] $transactions
+     * @return void
+     * @author bsh <email>
      */
     public function postTransaction($transactions){
         $transaction = new Transaction();
