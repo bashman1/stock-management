@@ -487,8 +487,8 @@ class GlAccountsController extends Controller
             $branch = Branch::find(auth()->user()->branch_id);
             $salesAcctNo = str_replace("***", $branch->code, $sales->param_value);
 
-            $returnInwards =CntrlParameter::where(["param_cd" => "RIN", "institution_id" => auth()->user()->institution_id])->first();
-            $returnAcctNo = str_replace("***", $branch->code,  $returnInwards->param_value);
+            $returnOutwards =CntrlParameter::where(["param_cd" => "ROT", "institution_id" => auth()->user()->institution_id])->first();
+            $returnAcctNo = str_replace("***", $branch->code,  $returnOutwards->param_value);
 
             $openingStock =CntrlParameter::where(["param_cd" => "STI", "institution_id" => auth()->user()->institution_id])->first();
             $stockAcctNo = str_replace("***", $branch->code,  $openingStock->param_value);
@@ -514,7 +514,7 @@ class GlAccountsController extends Controller
 
             $totalOpenStock = (double) DB::table('gl_histories')
                 ->where('acct_no', $stockAcctNo)
-                ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+                ->where('transaction_date', '<', $request->fromDate)
                 ->sum('tran_amount');
 
             $totalCloseStock = (double) DB::table('gl_histories')
@@ -544,6 +544,8 @@ class GlAccountsController extends Controller
             $goodsAvailableForSale=($totalOpenStock+(($totalPurchases+$totalPassage)-$totalReturns));
             $costOfSales =  $goodsAvailableForSale-$totalCloseStock;
             $grossProfit =  $totalIncome-$costOfSales;
+
+            // $totalCloseStock = $totalOpenStock+$totalPurchases-
 
             $netProfit = $grossProfit-$totalOperatingExpenses;
 

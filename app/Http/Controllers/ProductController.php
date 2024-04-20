@@ -140,12 +140,12 @@ class ProductController extends Controller
 
         $passageDebitRequest = $debitRequest;
         $passageDebitRequest->acct_no = $ppgl;
-        // $passageDebitRequest->tran_amt = 0;
+        $passageDebitRequest->tran_amt = 0;
         $passageDebitRequest->acct_type =$ppE->acct_type;
 
         $cashCreditRequest = $creditRequest;
         $cashCreditRequest->contra_acct_no = $ppgl;
-        // $cashCreditRequest->tran_amt = 0;
+        $cashCreditRequest->tran_amt = 0;
         $cashCreditRequest->contra_acct_type =$ppE->acct_type;
 
         $onDebitPassage = $this->postGlDR($passageDebitRequest);
