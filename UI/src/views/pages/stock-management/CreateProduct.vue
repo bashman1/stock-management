@@ -91,6 +91,9 @@ const productTypeList = ref(null);
 const productGaugeList = ref(null);
 const productDetails= ref(null);
 
+const isEdit=ref(false);
+const editId=ref(null);
+
 
 // ********************************************************
 const openCategoryModal = () => {
@@ -177,6 +180,7 @@ const onSubmit= ()=>{
     }
 
     let postData={
+        id:editId.value,
         name: name?.value,
         category_id: category?.value?.id,
         sub_category_id: subCategory?.value?.id,
@@ -573,6 +577,8 @@ onMounted(() => {
     getProductTypes();
     getProductGauge();
     if(route.params.id != null){
+        editId.value=Number(route.params.id);
+        isEdit.value = true;
         getProductDetails(route.params.id );
     }
 });
@@ -693,7 +699,7 @@ onMounted(() => {
                 <div class="grid">
                     <div class="field col-12 md:col-6">
                         <span class="p-float-label">
-                            <InputText type="text" id="quantity" @blur="onInputBlur(quantity, 'quantity')" v-model.trim="quantity" :class="{ 'p-invalid': formError?.quantity }"/>
+                            <InputText type="text" id="quantity" @blur="onInputBlur(quantity, 'quantity')" v-model.trim="quantity" :class="{ 'p-invalid': formError?.quantity }" :disabled="isEdit"/>
                             <label for="quantity">Quantity</label>
                         </span>
                     </div>
@@ -729,7 +735,7 @@ onMounted(() => {
 
                     <div class="field col-12 md:col-6">
                         <span class="p-float-label">
-                            <InputText type="text" id="purchasePrice" v-model="purchasePrice" />
+                            <InputText type="text" id="purchasePrice" v-model="purchasePrice" :disabled="isEdit" />
                             <label for="purchasePrice">Unit Purchase Price </label>
                         </span>
                     </div>

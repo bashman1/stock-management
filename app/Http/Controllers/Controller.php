@@ -134,6 +134,21 @@ class Controller extends BaseController
     }
 
     /**
+     * generate the ref number
+     *
+     * @param [type] $type
+     * @return void
+     */
+    public function generateRefNumber($type){
+        $refNo = InstitutionConfig::where('type', $type)->first();
+        $generatedCode = $refNo->prefix .''.($refNo->starting+$refNo->current);
+        $refNo->current = $refNo->current + $refNo->step;
+        $refNo->save();
+        return $generatedCode;
+    }
+
+
+    /**
      * generate UUID
      *
      * @return void

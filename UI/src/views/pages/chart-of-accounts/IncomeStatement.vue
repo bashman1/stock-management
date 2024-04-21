@@ -163,12 +163,12 @@ const generateIncomeStatement=()=>{
                     </tr>
                     <tr>
                         <th>Discount received</th>
-                        <td>3,000</td>
+                        <td>0</td>
                         <td></td>
                     </tr>
                     <tr>
                         <th>Profit on deposable of NCA</th>
-                        <td>3,000</td>
+                        <td>0</td>
                         <td></td>
                     </tr>
                     <tr>

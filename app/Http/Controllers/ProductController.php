@@ -11,13 +11,33 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\GlAccounts;
+use Carbon\Carbon;
 
 class ProductController extends Controller
 {
 
     public function createProduct(Request $request){
         $userData = auth()->user();
-        $product = new Product();
+        $product = null;
+
+        $isEdit = $request->id;
+        $refNo = null;
+        $message = null;
+
+        if(isset($isEdit)){
+            $product = Product::find($isEdit);
+            $product->updated_by = auth()->user()->id;
+            $product->updated_on = Carbon::now();
+            $refNo = $product->ref_no;
+            $message= "Product updated successfully";
+            // return $this->genericResponse(false,"testing editing", 400, $product);
+        }else{
+            $product = new Product();
+            $product->created_by = $userData->id ;
+            $product->created_on = Carbon::now();
+            $refNo = $this->generateRefNumber('product_ref');
+            $message= "Product Created successfully";
+        }
 
         DB::beginTransaction();
         $product->name = $request->name ;
@@ -33,12 +53,11 @@ class ProductController extends Controller
         $product->status = $userData->status ;
         $product->type_id = $request->type_id ;
         $product->gauge_id = $request->gauge_id ;
-        // $product->ref_no = $request-> ;
-        $product->created_by = $userData->id ;
-        $product->created_on = now();
+        $product->ref_no =$refNo ;
         $product->save();
 
-        $branch = Branch::where(['id'=>$userData->branch_id, 'institution_id'=>$userData->institution_id])->first();
+        if(!isset($isEdit)){
+            $branch = Branch::where(['id'=>$userData->branch_id, 'institution_id'=>$userData->institution_id])->first();
 
         $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
         $sti = CntrlParameter::where(['param_cd'=>'STI', 'institution_id'=>$userData->institution_id])->first();
@@ -150,8 +169,30 @@ class ProductController extends Controller
 
         $onDebitPassage = $this->postGlDR($passageDebitRequest);
         $onCreditPassCash = $this->postGlCR($cashCreditRequest);
+        }
 
-        $stock = new stock();
+
+        $stock = null;
+        $history = null;
+        if (!isset($isEdit)) {
+            $stock = stock::where('product_id', $isEdit)->first();
+            $stock->updated_by = $userData->id ;
+            $stock->updated_on =Carbon::now() ;
+
+            $history = stock::where(['product_id'=>$isEdit, 'stock_id'=>$stock->id])->orderBy('created_at','desc')->first();
+            $history->updated_by = $userData->id ;
+            $history->updated_on =Carbon::now() ;
+
+        }else{
+            $stock = new stock();
+            $stock->created_by = $userData->id ;
+            $stock->created_on =Carbon::now() ;
+
+            $history = new stockHistory();
+            $history->created_by = $userData->id ;
+            $history->created_on =Carbon::now() ;
+        }
+
         $history = new stockHistory();
 
         $stock->purchase_price = $request->purchase_price ;
@@ -168,8 +209,6 @@ class ProductController extends Controller
         $stock->branch_id = $userData->branch_id ;
         $stock->user_id = $userData->id ;
         $stock->status = $request->status ;
-        $stock->created_by = $userData->created_by ;
-        $stock->created_on =now() ;
         $stock->save();
 
         $history->purchase_price = $request->purchase_price ;
@@ -187,12 +226,12 @@ class ProductController extends Controller
         $history->branch_id = $userData->branch_id ;
         $history->user_id = $userData->id ;
         $history->status = $request->status ;
-        $history->created_by = $userData->created_by ;
-        $history->created_on =now() ;
+        // $history->created_by = $userData->created_by ;
+        // $history->created_on =now() ;
         $history->save();
 
         DB::commit();
-        return $this->genericResponse(true, "Product created successfully", 201, $product);
+        return $this->genericResponse(true, $message, 201, $product);
     }
 
 
