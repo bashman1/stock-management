@@ -408,7 +408,6 @@ class Controller extends BaseController
             $newSti->save();
         }
 
-
         // set operating expenses Expense
         $ope =DB::table('gl_accounts')
         ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
@@ -427,6 +426,25 @@ class Controller extends BaseController
             $newSti->created_on=now();
             $newSti->save();
         }
+
+        $gfs = DB::table('gl_accounts')
+        ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+        ->where('institution_id', $instId)
+        ->where('acct_type', 'ASSET')
+        ->where('gl_no', '1307001')
+        ->first();
+
+        $isGfsExisting =  CntrlParameter::where(["institution_id"=>$instId, "param_value" => strrev($gfs->replaced_acct_no)])->exists();
+        if(!$isGfsExisting){
+            $newSti= new CntrlParameter();
+            $newSti->param_name = "Goods for sale GFS";
+            $newSti->param_cd="GFS";
+            $newSti->param_value=strrev($gfs->replaced_acct_no);
+            $newSti->institution_id=$instId;
+            $newSti->created_on=now();
+            $newSti->save();
+        }
+
 
         DB::commit();
         return true;

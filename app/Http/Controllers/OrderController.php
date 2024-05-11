@@ -47,6 +47,15 @@ class OrderController extends Controller
         $sgl = str_replace('***',$branch->code, $sti->param_value);
         $stock =GlAccounts::where('acct_no', $sgl)->first();
 
+        /**stock and goods for sales */
+        $gfs =  CntrlParameter::where(['param_cd'=>'GFS', 'institution_id'=>$userData->institution_id])->first();
+        $stIn =  CntrlParameter::where(['param_cd'=>'STI', 'institution_id'=>$userData->institution_id])->first();
+
+        $gfsGl=str_replace('***',$branch->code, $gfs->param_value);
+        $stInGl=str_replace('***',$branch->code, $stIn->param_value);
+        $gfsGlType =GlAccounts::where('acct_no', $gfsGl)->first();
+        $stInGlType = GlAccounts::where('acct_no', $stInGl)->first();
+
         $tran=(object)[
             "acct_no"=>$sgl,
             "acct_type"=> $stock->acct_type ,
@@ -121,6 +130,22 @@ class OrderController extends Controller
             $stock->quantity = $stock->quantity-$value['quantity'];
             $stock->save();
 
+            $creditStock=$debitRequest;
+            $debitGoodsForSale=$creditRequest;
+
+            $amount = $stock->purchase_price * $value['quantity'];
+
+            $creditStock->acct_no = $stInGl;
+            $creditStock->acct_type = $stInGlType->acct_type;
+            $creditStock->tran_amt = $amount;
+
+            $debitGoodsForSale->acct_no = $gfsGl;
+            $debitGoodsForSale->acct_type=$gfsGlType->acct_type;
+            $debitGoodsForSale->tran_amt = $amount;
+
+            $this->postGlDR($debitGoodsForSale);
+            $this->postGlCR($creditStock);
+
             $items->save();
         }
         DB::commit();
@@ -131,7 +156,7 @@ class OrderController extends Controller
         $userData = auth()->user();
         $isNotAdmin = $this->isNotAdmin();
 
-        $queryString = "SELECT O.id, O.ref_no, O.receipt_no, O.tran_id, O.item_count, O.total, 
+        $queryString = "SELECT O.id, O.ref_no, O.receipt_no, O.tran_id, O.item_count, O.total,
         O.discount, O.amount_paid, O.user_id, O.customer_id, O.tran_date,
         O.status, O.payment_status, O.institution_id, O.branch_id, O.created_on,
         O.created_at, O.updated_at FROM orders O";
@@ -152,11 +177,11 @@ class OrderController extends Controller
         P.product_no, S.selling_price AS price, I.name AS institution_name, B.name AS branch_name, Q.ref_no,
         Q.receipt_no, Q.tran_id, Q.item_count, Q.total, Q.discount, Q.amount_paid, Q.tran_date, Q.payment_status,
         CONCAT(U.first_name,' ',U.last_name,' ',U.other_name) AS user_name, B.address AS branch_address,
-        I.address AS institution_address FROM order_items O 
-        INNER JOIN products P ON P.id = O.product_id 
+        I.address AS institution_address FROM order_items O
+        INNER JOIN products P ON P.id = O.product_id
         INNER JOIN stocks S  ON S.product_id = P.id
         INNER JOIN institutions I ON I.id =O.institution_id
-        INNER JOIN branches B ON B.id = O.branch_id
+        LEFT JOIN branches B ON B.id = O.branch_id
         INNER JOIN orders Q ON Q.id = O.order_id
         INNER JOIN users U ON Q.user_id = U.id WHERE  O.order_id = $orderId";
         $orderDetails = DB::select($queryString);

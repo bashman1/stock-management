@@ -23,10 +23,15 @@ const getCntrlLedger=(postData)=>{
 
 const generateIncomeStatement=()=>{
     let postData = {
-        fromDate: fromDate.value,
-        toDate: toDate.value,
+        fromDate: new Date(),
+        toDate: new Date(),
     }
+    console.log(postData)
     getCntrlLedger(postData);
+}
+
+const checkDateFormat=(event)=>{
+    console.log(event)
 }
 
  onMounted(() => {
@@ -65,7 +70,7 @@ const generateIncomeStatement=()=>{
                             </div>
                             <div class="field col-12 md:col-4">
                                 <span class="p-float-label">
-                                    <Calendar inputId="calendar" v-model="toDate"></Calendar>
+                                    <Calendar @blur="checkDateFormat($event)" inputId="calendar" v-model="toDate"></Calendar>
                                     <label for="calendar">To Date</label>
                                 </span>
                             </div>
@@ -92,9 +97,9 @@ const generateIncomeStatement=()=>{
 
                 <table class="income-statement">
                     <tr>
-                        <th> <h5 class="statement-header">Particulars</h5></th>
-                        <td></td>
-                        <td></td>
+                        <th class="bold"> <h5 class="statement-header bold">Particulars</h5></th>
+                        <td class="bold">Amount</td>
+                        <td class="bold">Amount</td>
                     </tr>
                     <tr>
                         <th>Sales</th>
@@ -112,7 +117,7 @@ const generateIncomeStatement=()=>{
                         <td class="bold">{{ incomeStatementData?.netSales==0?incomeStatementData?.netSales:commonService.commaSeparator(incomeStatementData?.netSales) }}</td>
                     </tr>
                     <tr>
-                        <th> <h5 class="statement-header">Cost Of Sales</h5></th>
+                        <th> <h5 class="statement-header bold">Cost Of Sales</h5></th>
                         <td></td>
                         <td></td>
                     </tr>
@@ -157,7 +162,7 @@ const generateIncomeStatement=()=>{
                         <td class="bold">{{ incomeStatementData?.grossProfit==0?incomeStatementData?.grossProfit:commonService.commaSeparator(incomeStatementData?.grossProfit) }}</td>
                     </tr>
                     <tr>
-                        <th> <h5 class="statement-header">Other Incomes</h5></th>
+                        <th> <h5 class="statement-header bold">Other Incomes</h5></th>
                         <td></td>
                         <td></td>
                     </tr>
@@ -177,7 +182,7 @@ const generateIncomeStatement=()=>{
                         <td class="bold">{{ incomeStatementData?.totalIncome==0?incomeStatementData?.totalIncome:commonService.commaSeparator(incomeStatementData?.totalIncome) }}</td>
                     </tr>
                     <tr>
-                        <th> <h5 class="statement-header">Operating Expenses</h5></th>
+                        <th> <h5 class="statement-header bold">Operating Expenses</h5></th>
                         <td></td>
                         <td></td>
                     </tr>
@@ -192,20 +197,22 @@ const generateIncomeStatement=()=>{
                         <td class="bold">{{ incomeStatementData?.totalIncome==0?incomeStatementData?.totalIncome:commonService.commaSeparator(incomeStatementData?.totalIncome) }}</td>
                     </tr>
                     <tr>
-                        <th> <h5 class="statement-header">Finance Costs</h5></th>
+                        <th> <h5 class="statement-header bold">Finance Costs</h5></th>
                         <td></td>
                         <td></td>
                     </tr>
                     <tr>
                         <th>Interest on external loan</th>
 
-                        <td>{{ incomeStatementData?.totalOperatingExpenses==0?incomeStatementData?.totalOperatingExpenses:commonService.commaSeparator(incomeStatementData?.totalOperatingExpenses) }}</td>
+                        <!-- <td>{{ incomeStatementData?.totalOperatingExpenses==0?incomeStatementData?.totalOperatingExpenses:commonService.commaSeparator(incomeStatementData?.totalOperatingExpenses) }}</td> -->
+                        <td>0</td>
                         <td></td>
                     </tr>
                     <tr>
                         <th>Interest to URL</th>
 
-                        <td >{{ incomeStatementData?.totalOperatingExpenses==0?incomeStatementData?.totalOperatingExpenses:commonService.commaSeparator(incomeStatementData?.totalOperatingExpenses) }}</td>
+                        <!-- <td >{{ incomeStatementData?.totalOperatingExpenses==0?incomeStatementData?.totalOperatingExpenses:commonService.commaSeparator(incomeStatementData?.totalOperatingExpenses) }}</td> -->
+                        <td>0</td>
                         <td></td>
                     </tr>
                     <tr>

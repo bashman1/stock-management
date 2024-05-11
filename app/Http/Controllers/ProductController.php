@@ -174,12 +174,12 @@ class ProductController extends Controller
 
         $stock = null;
         $history = null;
-        if (!isset($isEdit)) {
+        if (isset($isEdit)) {
             $stock = stock::where('product_id', $isEdit)->first();
             $stock->updated_by = $userData->id ;
             $stock->updated_on =Carbon::now() ;
 
-            $history = stock::where(['product_id'=>$isEdit, 'stock_id'=>$stock->id])->orderBy('created_at','desc')->first();
+            $history = stockHistory::where(['product_id'=>$isEdit, 'stock_id'=>$stock->id])->orderBy('created_at','desc')->first();
             $history->updated_by = $userData->id ;
             $history->updated_on =Carbon::now() ;
 

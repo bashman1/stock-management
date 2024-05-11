@@ -120,6 +120,9 @@ onMounted(() => {
             class="p-fluid">
             <p style="padding: 20px;">
             <div class="grid p-fluid">
+                <div class="field col-12 md:col-12">
+                    <h1>{{orderDetails.institution_name}}</h1>
+                </div>
                 <div class="field col-6 md:col-6">
                     <span class="p-float-label">
                         <!-- <InputText type="text" id="unitName" @blur="onTypeInputBlur(typeName, 'typeName')" v-model="typeName" :class="{ 'p-invalid': typeFormError?.typeName }" /> class="p-invalid" -->
@@ -146,6 +149,9 @@ onMounted(() => {
                 </div>
                 <hr>
             </div>
+
+
+
             <div class="grid p-fluid">
                 <DataTable :value="orderItems" :paginator="true" class="p-datatable-gridlines" :rows="10" dataKey="id"
                 :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">

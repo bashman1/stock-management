@@ -139,16 +139,18 @@ const getGlCats =()=>{
 }
 
 const debitAccount=(data)=>{
-    drAcct.value = data.acct_no,
-    drTyp.value = data.acct_type
-    drTitle.value = data.description
+    drAcct.value = data.acct_no;
+    drTyp.value = data.acct_type;
+    drTitle.value = data.description;
+    glDrCatsList.value=null;
 }
 
 
 const creditAccount=(data)=>{
-    crAcct.value = data.acct_no,
-    crTyp.value = data.acct_type
-    crTitle.value = data.description
+    crAcct.value = data.acct_no;
+    crTyp.value = data.acct_type;
+    crTitle.value = data.description;
+    glCrCatsList.value=null;
 }
 
  onMounted(() => {
@@ -175,19 +177,19 @@ const creditAccount=(data)=>{
                             </div>
                             <div class="field col-12 md:col-4">
                                 <span class="p-float-label">
-                                    <InputText type="text" id="name" v-model="drGlNo"  /> 
+                                    <InputText type="text" id="name" v-model="drGlNo"  />
                                     <label for="firstName">Gl ledger no.</label>
                                 </span>
                             </div>
                             <div class="field col-12 md:col-4">
                                 <span class="p-float-label">
-                                    <InputText type="text" id="name" v-model="drAcctNo"  /> 
+                                    <InputText type="text" id="name" v-model="drAcctNo"  />
                                     <label for="firstName">Gl acct. no.</label>
                                 </span>
                             </div>
                             <div class="field col-12 md:col-8">
                                 <span class="p-float-label">
-                                    <InputText type="text" id="name" v-model="drDesc" /> 
+                                    <InputText type="text" id="name" v-model="drDesc" />
                                     <label for="firstName">Name</label>
                                 </span>
                             </div>
@@ -200,31 +202,31 @@ const creditAccount=(data)=>{
                         selectionMode="single" :metaKeySelection="true" :rowHover="true"  v-model:selection="debitSelected"
                         filterDisplay="menu" responsiveLayout="scroll">
                         <Column field="name" header="Name" style="min-width: 10rem">
-            
+
                             <template #body="{ data }">
                                 {{ data.description }}
                             </template>
                         </Column>
                         <Column field="name" header="Acct No." style="min-width: 10rem">
-            
+
                             <template #body="{ data }">
                                 {{ data.acct_no }}
                             </template>
                         </Column>
                         <Column field="name" header="Acct Type" style="min-width: 10rem">
-            
+
                             <template #body="{ data }">
                                 {{ data.acct_type }}
                             </template>
                         </Column>
                         <Column field="name" header="Ledger No." style="min-width: 10rem">
-            
+
                             <template #body="{ data }">
                                 {{ data.gl_no }}
                             </template>
                         </Column>
                         <Column field="name" header="Acct Balance" style="min-width: 10rem">
-            
+
                             <template #body="{ data }">
                                 {{ data.balance }}
                             </template>
@@ -276,31 +278,31 @@ const creditAccount=(data)=>{
                         <DataTable v-if="glCrCatsList" :value="glCrCatsList" size="small" :paginator="true" class="p-datatable-gridlines" :rows="3" dataKey="id"
                         :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
                         <Column field="name" header="Name" style="min-width: 10rem">
-            
+
                             <template #body="{ data }">
                                 {{ data.description }}
                             </template>
                         </Column>
                         <Column field="name" header="Acct No." style="min-width: 10rem">
-            
+
                             <template #body="{ data }">
                                 {{ data.acct_no }}
                             </template>
                         </Column>
                         <Column field="name" header="Acct Type" style="min-width: 10rem">
-            
+
                             <template #body="{ data }">
                                 {{ data.acct_type }}
                             </template>
                         </Column>
                         <Column field="name" header="Ledger No." style="min-width: 10rem">
-            
+
                             <template #body="{ data }">
                                 {{ data.gl_no }}
                             </template>
                         </Column>
                         <Column field="name" header="Acct Balance" style="min-width: 10rem">
-            
+
                             <template #body="{ data }">
                                 {{ data.balance }}
                             </template>

@@ -10,6 +10,7 @@ use App\Models\GlType;
 use App\Models\GlGenerateAccount;
 use App\Models\Branch;
 use App\Models\GlBalances;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -384,7 +385,7 @@ class GlAccountsController extends Controller
         if ($isNotAdmin) {
             $queryString .= " AND H.institution_id = $userData->institution_id  ";
         }
-        $queryString .= " ORDER BY H.id ASC ";
+        $queryString .= " ORDER BY H.transaction_date ASC ";
         $glHistory = DB::select($queryString);
         $balance = 0;
         $tempArray = array();
@@ -482,6 +483,7 @@ class GlAccountsController extends Controller
 
     public function generateIncomeStatement(Request $request)
     {
+        return $this->genericResponse(true,"",200, ["startDate"=> $request->fromDate, "endDate"=>$request->toDate, "request"=>$request]);
         try {
             $sales = CntrlParameter::where(["param_cd" => "SL", "institution_id" => auth()->user()->institution_id])->first();
             $branch = Branch::find(auth()->user()->branch_id);
@@ -543,7 +545,7 @@ class GlAccountsController extends Controller
 
             $goodsAvailableForSale=($totalOpenStock+(($totalPurchases+$totalPassage)-$totalReturns));
             $costOfSales =  $goodsAvailableForSale-$totalCloseStock;
-            $grossProfit =  $totalIncome-$costOfSales;
+            $grossProfit =  ($totalSales-$totalReturns)-$costOfSales;
 
             // $totalCloseStock = $totalOpenStock+$totalPurchases-
 
@@ -559,4 +561,33 @@ class GlAccountsController extends Controller
             return $this->genericResponse(false, $th->getMessage(), 400, $th);
         }
     }
+
+
+    public function getBalanceSheet(Request $request){
+        try {
+            $userData = auth()->user();
+            $isNotAdmin = $this->isNotAdmin();
+            $tempArray = Array();
+            $glSubCat = GlSubCat::all();
+            foreach ($glSubCat as $key => $value) {
+                $queryString = "SELECT A.acct_no, A.gl_no, A.description,A.gl_cat_no,
+                A.gl_type_no, A.acct_type, A.status, B.balance
+                FROM gl_accounts A INNER JOIN gl_balances B
+                ON A.acct_no = B.acct_no WHERE B.balance >0 AND A.gl_sub_cat_no = '".$value['gl_no']."' ";
+                if ($isNotAdmin) {
+                    $queryString .= " AND A.institution_id = $userData->institution_id AND A.branch_id =$userData->branch_id  ";
+                }
+                $queryString .= " ORDER BY A.id ASC ";
+                $glList = DB::select($queryString);
+                $value['list'] = $glList;
+                if ($value['acct_type'] != 'INCOME' && $value['acct_type'] != 'EXPENSE'){
+                    array_push($tempArray, $value);
+                }
+            }
+            return $this->genericResponse(true,'Balance sheet', 200, $tempArray);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(), 400, $th);
+        }
+    }
+
 }

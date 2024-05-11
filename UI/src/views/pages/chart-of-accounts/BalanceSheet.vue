@@ -62,7 +62,7 @@ const calculateCustomerTotal = (name) => {
 
 
 const getGlAccountsOverView = () => {
-    commonService.genericRequest('get-gl-balance', 'post', true, {}).then((response) => {
+    commonService.genericRequest('get-balance-sheet', 'post', true, {}).then((response) => {
         if (response.status) {
             glOverView.value = response.data;
         } else {
@@ -80,6 +80,7 @@ const getAccountTotal = (acctArray) => {
 }
 
 
+
 onMounted(() => {
     getGlAccountsOverView();
     customerService.getCustomersMedium().then((data) => (customers.value = data));
@@ -88,52 +89,56 @@ onMounted(() => {
 </script>
 
 <template>
-    <div className="card" v-for="(gl, index) in glOverView ">
-        <h5>{{ gl[0]?.acct_type + ', Total ' + commonService.commaSeparator(getAccountTotal(gl)) }}</h5>
-        <!-- <DataTable :value="gl" class="p-datatable-gridlines" dataKey="id" :rowHover="true" filterDisplay="menu"
-            responsiveLayout="scroll">
-            <Column field="name" header="Acct No." style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ data.acct_no }}
-                </template>
-            </Column>
-            <Column field="name" header="Ledger No." style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ data.gl_no }}
-                </template>
-            </Column>
-            <Column field="name" header="Name" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ data.description }}
-                </template>
-            </Column>
-            <Column field="name" header="Acct. Balance" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ commonService.commaSeparator(data.balance) }}
-                </template>
-            </Column>
-        </DataTable> -->
+    <div>
+        <div class="card">
+            <h4>Balance Sheet</h4>
+            <!-- <div class="grid p-fluid mt-3"> -->
+                <Toast />
 
+                <Toolbar class="mb-4">
+                    <template v-slot:start>
+                        <div class="grid p-fluid mt-3">
+                            <div class="field col-12 md:col-4">
+                                <span class="p-float-label">
+                                    <Calendar inputId="calendar" v-model="fromDate"></Calendar>
+                                    <label for="calendar">From Date</label>
+                                </span>
+                            </div>
+                            <div class="field col-12 md:col-4">
+                                <span class="p-float-label">
+                                    <Calendar @blur="checkDateFormat($event)" inputId="calendar" v-model="toDate"></Calendar>
+                                    <label for="calendar">To Date</label>
+                                </span>
+                            </div>
+                            <div class="field col-12 md:col-4">
+                                <div>
+                                    <Button label="Search" class="p-button-success mr-2" @click="generateIncomeStatement" />
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    <template v-slot:end>
+                        <div class="my-2">
+                            <Button label="CSV" icon="pi pi-file-excel" class="p-button-success mr-2" @click="openNew" />
+                            <Button label="PDF" icon="pi pi-file-pdf" class="p-button-danger" @click="confirmDeleteSelected" />
+                        </div>
+                    </template>
+                </Toolbar>
 
-
-        <DataTable v-model:expandedRowGroups="expandedRowGroups" :value="customers" tableStyle="min-width: 50rem"
-            expandableRowGroups rowGroupMode="subheader" groupRowsBy="representative.name"
-            @rowgroup-expand="onRowGroupExpand" @rowgroup-collapse="onRowGroupCollapse" sortMode="single"
-            sortField="representative.name" :sortOrder="1">
-            <template #groupheader="slotProps">
-                <span class="vertical-align-middle ml-2 font-bold line-height-3">{{ slotProps.data.representative.name}}</span>
-            </template>
-            <Column field="name" header="Acct No." style="width: 20%"></Column>
-            <Column field="country" header="Ledger No." style="width: 20%"></Column>
-            <Column field="company" header="Name" style="width: 20%"></Column>
-            <Column field="status" header="Status" style="width: 20%"></Column>
-            <Column field="date" header="Acct Balance" style="width: 20%"></Column>
-            <template #groupfooter="slotProps">
-                <div class="flex justify-content-end font-bold w-full">Total Customers: {{
-        calculateCustomerTotal(slotProps.data.representative.name) }}</div>
-            </template>
-        </DataTable>
-
-
+                <table class="income-statement">
+                    <tbody>
+                        <template v-for="(gl, index) in glOverView" :key="index">
+                            <tr>
+                                <th colspan="3" class="bold">{{ gl.acct_type +' - '+gl.description}}</th>
+                            </tr>
+                            <tr v-for="(acct, i) in gl.list" :key="i">
+                                <td>{{ acct.description }}</td>
+                                <td>{{ acct.balance }}</td>
+                                <td>{{ acct.balance }}</td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+        </div>
     </div>
 </template>
