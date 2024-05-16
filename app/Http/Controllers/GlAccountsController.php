@@ -579,6 +579,7 @@ class GlAccountsController extends Controller
                 }
                 $queryString .= " ORDER BY A.id ASC ";
                 $glList = DB::select($queryString);
+                array_push($glList, ['description'=>'Total', 'balance'=>null, 'total'=>$this->getTotalLedgerBalances($glList)  ]);
                 $value['list'] = $glList;
                 if ($value['acct_type'] != 'INCOME' && $value['acct_type'] != 'EXPENSE'){
                     array_push($tempArray, $value);
@@ -588,6 +589,15 @@ class GlAccountsController extends Controller
         } catch (\Throwable $th) {
             return $this->genericResponse(false, $th->getMessage(), 400, $th);
         }
+    }
+
+
+    public function getTotalLedgerBalances($acctList){
+        $total = 0;
+        foreach ($acctList as $key => $value) {
+           $total =  $total + (double) $value->balance;
+        }
+        return $total;
     }
 
 }

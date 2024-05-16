@@ -132,9 +132,9 @@ onMounted(() => {
                                 <th colspan="3" class="bold">{{ gl.acct_type +' - '+gl.description}}</th>
                             </tr>
                             <tr v-for="(acct, i) in gl.list" :key="i">
-                                <td>{{ acct.description }}</td>
-                                <td>{{ acct.balance }}</td>
-                                <td>{{ acct.balance }}</td>
+                                <td class="left-align" :class="{'bold':acct.description=='Total'}">{{ acct.description }}</td>
+                                <td>{{ commonService.commaSeparator(acct.balance) }}</td>
+                                <td class="bold">{{ commonService.commaSeparator(acct.total) }}</td>
                             </tr>
                         </template>
                     </tbody>

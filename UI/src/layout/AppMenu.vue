@@ -321,6 +321,16 @@ if (commonService.checkPermissions('ViewIncomeStatement')){
     )
 }
 
+if (commonService.checkPermissions('ViewBalanceSheet')){
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'Balance Sheet',
+            icon: 'pi pi-fw pi-circle',
+            to: '/gl-balance-sheet'
+        }
+    )
+}
+
 if(commonService.checkPermissions('ViewProductsReport')){
     reportMenu.value.items.push(
         {

@@ -1,7 +1,7 @@
 export default class CommonService {
-    // baseUrl = "http://localhost:8000/api/";
+    baseUrl = "http://localhost:8000/api/";
     // baseUrl = "http://137.184.230.127/api/";
-    baseUrl = "../api/";
+    // baseUrl = "../api/";
 
     // loggedIn = this.checkingAuthentication();
 
@@ -471,6 +471,8 @@ export default class CommonService {
     commaSeparator = (number) => {
         if (number) {
             return number.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+        }else{
+            return number
         }
     }
 
