@@ -483,8 +483,8 @@ class GlAccountsController extends Controller
 
     public function generateIncomeStatement(Request $request)
     {
-        return $this->genericResponse(true,"",200, ["startDate"=> $request->fromDate, "endDate"=>$request->toDate, "request"=>$request]);
-        try {
+        // return $this->genericResponse(true,"",200, ["startDate"=> $request->fromDate, "endDate"=>$request->toDate, "request"=>$request]);
+        // try {
             $sales = CntrlParameter::where(["param_cd" => "SL", "institution_id" => auth()->user()->institution_id])->first();
             $branch = Branch::find(auth()->user()->branch_id);
             $salesAcctNo = str_replace("***", $branch->code, $sales->param_value);
@@ -557,9 +557,9 @@ class GlAccountsController extends Controller
             'totalOperatingExpenses'=>$totalOperatingExpenses, 'totalPurchases'=>$totalPurchases, 'totalIncome'=>$totalIncome];
 
             return $this->genericResponse(true,'total sales got', 200, $response);
-        } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 400, $th);
-        }
+        // } catch (\Throwable $th) {
+        //     return $this->genericResponse(false, $th->getMessage(), 400, $th);
+        // }
     }
 
 

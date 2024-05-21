@@ -582,4 +582,18 @@ class Controller extends BaseController
         DB::commit();
         return $transaction;
     }
+
+
+    /**
+     * get control number
+     *
+     * @param [type] $code
+     * @return void
+     * @author bsh <email>
+     */
+    public function getControlAcctByCode($code){
+        $cntrl = CntrlParameter::where(["param_cd" => $code, "institution_id" => auth()->user()->institution_id])->first();
+        $branch = Branch::find(auth()->user()->branch_id);
+        return str_replace("***", $branch->code, $cntrl->param_value);
+    }
 }
