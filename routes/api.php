@@ -147,5 +147,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-products-report", [ReportController::class, "getInventoryReport"]);
     Route::post("get-sales-report", [ReportController::class,"getSalesReport"]);
     Route::post("get-balance-sheet", [GlAccountsController::class, "getBalanceSheet"]);
+    Route::post("get-inventory-product-report", [ReportController::class, "getInventoryHistoryReport"]);
+    Route::post("get-sales-product-report", [ReportController::class, "getSalesHistoryReport"]);
 
 });

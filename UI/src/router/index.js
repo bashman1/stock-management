@@ -428,6 +428,22 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/product-inventory-report/:productId',
+                    name: 'ProductsInventoryReport',
+                    component: ()=>import('@/views/pages/reports/ProductInventoryReport.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/products-sales-report/:productId',
+                    name: 'ProductsSalesReport',
+                    component: ()=>import('@/views/pages/reports/ProductSalesReport.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
 
 
             ]

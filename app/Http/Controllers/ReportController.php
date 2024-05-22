@@ -69,4 +69,46 @@ class ReportController extends Controller
 
         return $this->genericResponse(true, "Product list", 200, $orders);
     }
+
+
+    public function getInventoryHistoryReport(Request $request){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+        $sqlString = "SELECT P.name AS product_name, H.id, H.purchase_price, H.selling_price, H.product_id, H.stock_id, H.quantity, H.min_quantity,
+        H.max_quantity, H.institution_id, COALESCE(H.stock_date, H.created_on) AS stock_date, H.manufactured_date,
+        H.expiry_date, I.name AS institution_name, CONCAT(U.first_name,' ',U.last_name,' ', U.other_name) AS user_name
+        FROM stock_histories H
+        INNER JOIN products P ON P.id = H.product_id
+        INNER JOIN institutions I ON I.id =  H.institution_id
+        INNER JOIN users U ON U.id = H.user_id";
+         $sqlString .= " WHERE H.product_id= $request->productId";
+        if ($isNotAdmin) {
+            $sqlString .= " AND H.institution_id = $userData->institution_id AND H.branch_id = $userData->branch_id";
+        }
+        $sqlString .= " ORDER BY H.id DESC";
+        $stockHistory = DB::select($sqlString);
+        return $this->genericResponse(true, "Product list", 200, $stockHistory);
+    }
+
+    public function getSalesHistoryReport(Request $request){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+        $sqlString ="SELECT P.name AS product_name, O.id, O.order_id, O.product_id, O.qty AS quantity, O.status,
+        O.institution_id, O.created_on,S.ref_no, S.receipt_no, S.tran_id,I.name AS institution_name,
+        CONCAT(U.first_name,' ',U.last_name,' ', U.other_name) AS user_name, K.purchase_price,
+        K.selling_price FROM order_items O
+        INNER JOIN orders S ON S.id = O.order_id
+        INNER JOIN products P ON P.id = O.product_id
+        INNER JOIN stocks K ON K.product_id = O.product_id
+        INNER JOIN institutions I ON I.id =  O.institution_id
+        LEFT JOIN users U ON U.id = O.created_by";
+        // $sqlString .= " WHERE O.product_id= $request->productId";
+        $sqlString .= " WHERE O.product_id= $request->productId";
+        if ($isNotAdmin) {
+            $sqlString .= " AND O.institution_id = $userData->institution_id AND O.branch_id = $userData->branch_id";
+        }
+        $sqlString .= " ORDER BY O.id DESC";
+        $salesHistory = DB::select($sqlString);
+        return $this->genericResponse(true, "Product list", 200, $salesHistory);
+    }
 }

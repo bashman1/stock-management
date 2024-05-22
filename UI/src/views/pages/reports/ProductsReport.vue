@@ -24,6 +24,14 @@ const getProductsReport=()=>{
     })
 }
 
+const goToInventory=(data)=>{
+    router.push("/product-inventory-report/" + data.id);
+}
+
+const goToSales=(data)=>{
+    router.push("/products-sales-report/" + data.id);
+}
+
 
 
  onMounted(() => {
@@ -93,12 +101,12 @@ const getProductsReport=()=>{
                         {{ data.product_no }}
                     </template>
                 </Column>
-                <!-- <Column headerStyle="max-width:10rem;">
+                <Column headerStyle="max-width:10rem;">
                     <template #body="{ data }">
-                            <Button icon="pi pi-eye" @click="goToDetails(data)" class="p-button-primary mr-2" />
-                            <Button icon="pi pi-pencil" @click="updateGl(data)" class="p-button-success mr-2" />
+                            <Button icon="pi pi-shopping-bag" @click="goToInventory(data)" class="p-button-primary mr-2"   v-tooltip="'Inventory report'"/>
+                            <Button icon="pi pi-ticket" @click="goToSales(data)" class="p-button-success mr-2"  v-tooltip="'Sales report'"/>
                     </template>
-                </Column> -->
+                </Column>
             </DataTable>
             <!-- </div> -->
         </div>
