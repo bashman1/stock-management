@@ -94,6 +94,14 @@ const productDetails= ref(null);
 const isEdit=ref(false);
 const editId=ref(null);
 
+const taxConfig=ref({id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'});
+
+const taxOptions= ref([
+   {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'},
+   {id: 2, name:'Tax Inclusive', value: 'TAX_INCLUSIVE'},
+   {id: 3, name:'Tax Exempted', value: 'TAX_EXEMPTED'},
+])
+
 
 // ********************************************************
 const openCategoryModal = () => {
@@ -173,6 +181,10 @@ const onSubmit= ()=>{
     formError.value.sellingPrice=commonService.validateFormField(sellingPrice.value);
     formError.value.prodType=commonService.validateFormField(prodType.value);
 
+    formError.value.taxConfig=commonService.validateFormField(taxConfig.value);
+
+
+
     let invalid = commonService.validateRequiredFields(formError.value);
     if(invalid){
         commonService.showError(toast, "Please fill in the missing field");
@@ -198,6 +210,7 @@ const onSubmit= ()=>{
         discount: discount?.value,
         manufactured_date:manufacturedDate?.value,
         expiry_date:expiryDate?.value,
+        tax_config: taxConfig?.value?.value,
         type_id: prodType?.value?.id,
         gauge_id: prodGauge?.value?.id,
     }
@@ -224,6 +237,7 @@ const onSubmit= ()=>{
             expiryDate.value=null;
             prodType.value=null;
             prodGauge.value=null;
+            tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'}
         } else {
             commonService.showError(toast, response.message);
         }
@@ -546,20 +560,22 @@ const getProductDetails=(prodId)=>{
         if (response.status) {
             productDetails.value = response.data[0];
             name.value= productDetails.value.name;
-            // category.value=productCategoryData.value.find(cat=>cat.id ==productDetails.value.category_id)
-            // manufacturer.value=manufacturersData.value.find(cat=>cat.id ==productDetails.value.manufacturer_id)
-            // supplier.value=suppliersData.value.find(cat=>cat.id ==productDetails.value.supplier_id)
+            category.value=productCategoryData.value.find(cat=>cat.id ==productDetails.value.category_id)
+            manufacturer.value=manufacturersData.value.find(cat=>cat.id ==productDetails.value.manufacturer_id)
+            supplier.value=suppliersData.value.find(cat=>cat.id ==productDetails.value.supplier_id)
             productId.value =productDetails.value.product_no;
             description.value =productDetails.value.description;
             quantity.value= productDetails.value.quantity
             minStock.value= productDetails.value.min_quantity
             maxStock.value= productDetails.value.max_quantity
-            // measurementUnit.value = measurementUnitsData.value.find(cat=>cat.id ==productDetails.value.measurement_unit_id)
+            measurementUnit.value = measurementUnitsData.value.find(cat=>cat.id ==productDetails.value.measurement_unit_id)
             purchasePrice.value =productDetails.value.purchase_price
             date.value =productDetails.value.stock_date
             sellingPrice.value =productDetails.value.selling_price
-            // prodType.value =productTypeList.value.find(cat=>cat.id ==productDetails.value.type_id)
-            // prodGauge.value =productGaugeList.value.find(cat=>cat.id ==productDetails.value.gauge_id)
+            prodType.value =productTypeList.value.find(cat=>cat.id ==productDetails.value.type_id)
+            prodGauge.value =productGaugeList.value.find(cat=>cat.id ==productDetails.value.gauge_id)
+            taxConfig.value = taxOptions.value.find(tax=>tax.value ==productDetails.value.tax_config)
+
 
         } else {
             commonService.showError(toast, response.message);
@@ -758,6 +774,13 @@ onMounted(() => {
                         <span class="p-float-label">
                             <Calendar id="date" v-model="expiryDate"></Calendar>
                             <label for="date">Expiry Date</label>
+                        </span>
+                    </div>
+
+                    <div class="field col-12 md:col-6">
+                        <span class="p-float-label">
+                            <Dropdown id="instCity" :options="taxOptions" v-model="taxConfig" @blur="onInputBlur(taxConfig, 'taxConfig')" :class="{ 'p-invalid': formError?.taxConfig }" optionLabel="name"></Dropdown>
+                            <label for="instCity">Tax Config</label>
                         </span>
                     </div>
 

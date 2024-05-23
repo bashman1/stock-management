@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\GlAccounts;
+use App\Models\Institution;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -20,6 +21,8 @@ class ProductController extends Controller
     public function createProduct(Request $request){
         $userData = auth()->user();
         $product = null;
+
+        $institution = Institution::find($userData->institution_id);
 
         $isEdit = $request->id;
         $refNo = null;
@@ -55,6 +58,9 @@ class ProductController extends Controller
         $product->type_id = $request->type_id ;
         $product->gauge_id = $request->gauge_id ;
         $product->ref_no =$refNo ;
+        if(isset($institution->is_tax_enabled) && $institution->is_tax_enabled){
+            $product->tax_config = $request->tax_config;
+        }
         $product->save();
 
         if(!isset($isEdit)){
@@ -243,7 +249,7 @@ class ProductController extends Controller
         $sqlString = "SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
         P.institution_id, P.user_id, P.status, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.updated_at, C.name AS category_name,
         S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
-        E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name
+        E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name,  P.tax_config
         FROM products P INNER JOIN product_categories C ON C.id = P.category_id
         LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
         LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
@@ -267,7 +273,7 @@ class ProductController extends Controller
         $sqlString="SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
         P.institution_id, P.user_id, P.status, P.created_by, P.type_id, P.gauge_id, E.stock_date, P.updated_by, P.created_on, P.updated_on, P.created_at, P.updated_at, C.name AS category_name,
         S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
-        E.min_quantity, E.id AS stock_id, E.max_quantity, B.name AS branch_name, I.name AS institution_name
+        E.min_quantity, E.id AS stock_id, E.max_quantity, B.name AS branch_name, I.name AS institution_name, P.tax_config
         FROM products P INNER JOIN product_categories C ON C.id = P.category_id
         LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
         LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
