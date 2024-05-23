@@ -8,33 +8,56 @@ const toast = useToast();
 
 const commonService = new CommonService();
 
- const router = useRouter();
+const router = useRouter();
 const productsReport = ref(null);
+const isDownloading = ref(false);
 
-const getProductsReport=()=>{
-    let postData ={
+const getProductsReport = () => {
+    let postData = {
         status: 'Active'
     }
-    commonService.genericRequest('get-products-report', 'post', true, postData).then((response)=>{
-        if(response.status){
+    commonService.genericRequest('get-products-report', 'post', true, postData).then((response) => {
+        if (response.status) {
             productsReport.value = response.data
-        }else{
+        } else {
 
         }
     })
 }
 
-const goToInventory=(data)=>{
+const goToInventory = (data) => {
     router.push("/product-inventory-report/" + data.id);
 }
 
-const goToSales=(data)=>{
+const goToSales = (data) => {
     router.push("/products-sales-report/" + data.id);
+}
+
+const getProductReportPdfFile = async () => {
+
+    try {
+        isDownloading.value = true;
+        await commonService.genericRequest('download-product-report', 'get', true)
+
+            .then((response) => {
+                const fileURL = window.URL.createObjectURL(new Blob([response.data]));
+                const fileLink = document.createElement("a");
+                fileLink.href = fileURL;
+                fileLink.setAttribute("download", "product_reports.pdf");
+                document.body.appendChild(fileLink);
+                fileLink.click();
+            });
+    } catch (error) {
+        console.log(error);
+    } finally {
+        isDownloading.value = false;
+    }
+
 }
 
 
 
- onMounted(() => {
+onMounted(() => {
     getProductsReport();
 });
 
@@ -45,21 +68,23 @@ const goToSales=(data)=>{
         <div class="card">
             <h5>Products report.</h5>
             <!-- <div class="grid p-fluid mt-3"> -->
-                <Toast />
-                <Toolbar class="mb-4">
-                    <template v-slot:end>
-                        <div class="my-2">
-                            <Button label="CSV" icon="pi pi-file-excel" class="p-button-success mr-2" @click="openNew" />
-                            <Button label="PDF" icon="pi pi-file-pdf" class="p-button-danger" @click="confirmDeleteSelected" />
-                        </div>
-                    </template>
+            <Toast />
+            <Toolbar class="mb-4">
+                <template v-slot:end>
+                    <div class="my-2">
+                        <Button label="CSV" icon="pi pi-file-excel" class="p-button-success mr-2"
+                            @click="() => getProductReportPdfFile()" />
+                        <Button label="PDF" icon="pi pi-file-pdf" class="p-button-danger"
+                            @click="confirmDeleteSelected" />
+                    </div>
+                </template>
 
-                    <!-- <template v-slot:end>
+                <!-- <template v-slot:end>
                         <FileUpload mode="basic" accept="image/*" :maxFileSize="1000000" label="Import" chooseLabel="Import" class="mr-2 inline-block" />
                         <Button label="Export" icon="pi pi-upload" class="p-button-help" @click="exportCSV($event)" />
                     </template> -->
-                </Toolbar>
-                <DataTable :value="productsReport" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id"
+            </Toolbar>
+            <DataTable :value="productsReport" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id"
                 :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
                 <Column field="name" header="Name" style="min-width: 10rem">
                     <template #body="{ data }">
@@ -103,8 +128,10 @@ const goToSales=(data)=>{
                 </Column>
                 <Column headerStyle="max-width:10rem;">
                     <template #body="{ data }">
-                            <Button icon="pi pi-shopping-bag" @click="goToInventory(data)" class="p-button-primary mr-2"   v-tooltip="'Inventory report'"/>
-                            <Button icon="pi pi-ticket" @click="goToSales(data)" class="p-button-success mr-2"  v-tooltip="'Sales report'"/>
+                        <Button icon="pi pi-shopping-bag" @click="goToInventory(data)" class="p-button-primary mr-2"
+                            v-tooltip="'Inventory report'" />
+                        <Button icon="pi pi-ticket" @click="goToSales(data)" class="p-button-success mr-2"
+                            v-tooltip="'Sales report'" />
                     </template>
                 </Column>
             </DataTable>
