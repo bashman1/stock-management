@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use App\Models\GlAccounts;
 use App\Models\Institution;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProductController extends Controller
 {
@@ -289,6 +290,24 @@ class ProductController extends Controller
         $product = DB::select($sqlString);
 
         return $this->genericResponse(true, "Product list", 200, $product);
+    }
+
+    public function downLoadProductReport(){
+        //TODO get products belonging to a store
+
+        $products=Product::all();
+
+        if (count($products)>0) {
+            Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+            $pdf = Pdf::loadView('product.reports', compact('products'));
+            $pdf->setPaper('A4', 'patriot');
+            $pdf->setBasePath(public_path());
+            $pdf->setPaper('A4', 'patriot');
+            $pdf->setBasePath(public_path());
+            return $pdf->stream('product_report'.'.pdf');
+        }
+
+
     }
 
 
