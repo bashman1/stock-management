@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import CommonService from '@/service/CommonService'
+import CommonService from '@/service/CommonService';
 import { useToast } from 'primevue/usetoast';
 
 const toast = useToast();
@@ -15,35 +15,35 @@ const isDownloading = ref(false);
 const getProductsReport = () => {
     let postData = {
         status: 'Active'
-    }
+    };
     commonService.genericRequest('get-products-report', 'post', true, postData).then((response) => {
         if (response.status) {
-            productsReport.value = response.data
+            productsReport.value = response.data;
         } else {
-
         }
-    })
-}
+    });
+};
 
 const goToInventory = (data) => {
-    router.push("/product-inventory-report/" + data.id);
-}
+    router.push('/product-inventory-report/' + data.id);
+};
 
 const goToSales = (data) => {
-    router.push("/products-sales-report/" + data.id);
-}
+    router.push('/products-sales-report/' + data.id);
+};
 
-const getProductReportPdfFile = async () => {
-
+const getProductReportPdfFile = () => {
     try {
         isDownloading.value = true;
-        await commonService.genericRequest('download-product-report', 'get', true)
+        commonService
+            .genericRequest('download-product-report', 'get', true, {}, true)
 
-            .then((response) => {
-                const fileURL = window.URL.createObjectURL(new Blob([response.data]));
-                const fileLink = document.createElement("a");
+            .then((blob) => {
+                //console.log(blob, 'data.......')
+                const fileURL = window.URL.createObjectURL(new Blob([blob]));
+                const fileLink = document.createElement('a');
                 fileLink.href = fileURL;
-                fileLink.setAttribute("download", "product_reports.pdf");
+                fileLink.setAttribute('download', 'product_reports.pdf');
                 document.body.appendChild(fileLink);
                 fileLink.click();
             });
@@ -52,16 +52,11 @@ const getProductReportPdfFile = async () => {
     } finally {
         isDownloading.value = false;
     }
-
-}
-
-
+};
 
 onMounted(() => {
     getProductsReport();
 });
-
-
 </script>
 <template>
     <div>
@@ -72,10 +67,8 @@ onMounted(() => {
             <Toolbar class="mb-4">
                 <template v-slot:end>
                     <div class="my-2">
-                        <Button label="CSV" icon="pi pi-file-excel" class="p-button-success mr-2"
-                            @click="() => getProductReportPdfFile()" />
-                        <Button label="PDF" icon="pi pi-file-pdf" class="p-button-danger"
-                            @click="confirmDeleteSelected" />
+                        <Button label="CSV" icon="pi pi-file-excel" class="p-button-success mr-2" @click="() => getProductReportPdfFile()" />
+                        <Button label="PDF" icon="pi pi-file-pdf" class="p-button-danger" @click="() => getProductReportPdfFile()" />
                     </div>
                 </template>
 
@@ -84,8 +77,7 @@ onMounted(() => {
                         <Button label="Export" icon="pi pi-upload" class="p-button-help" @click="exportCSV($event)" />
                     </template> -->
             </Toolbar>
-            <DataTable :value="productsReport" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id"
-                :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+            <DataTable :value="productsReport" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id" :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
                 <Column field="name" header="Name" style="min-width: 10rem">
                     <template #body="{ data }">
                         {{ data.name }}
@@ -134,10 +126,8 @@ onMounted(() => {
                 </Column>
                 <Column headerStyle="max-width:10rem;">
                     <template #body="{ data }">
-                        <Button icon="pi pi-shopping-bag" @click="goToInventory(data)" class="p-button-primary mr-2"
-                            v-tooltip="'Inventory report'" />
-                        <Button icon="pi pi-ticket" @click="goToSales(data)" class="p-button-success mr-2"
-                            v-tooltip="'Sales report'" />
+                        <Button icon="pi pi-shopping-bag" @click="goToInventory(data)" class="p-button-primary mr-2" v-tooltip="'Inventory report'" />
+                        <Button icon="pi pi-ticket" @click="goToSales(data)" class="p-button-success mr-2" v-tooltip="'Sales report'" />
                     </template>
                 </Column>
             </DataTable>
