@@ -11,3 +11,44 @@ $gutter: 1rem; //for primeflex grid system
 /* Demos */
 @import '@/assets/demo/styles/flags/flags.css';
 @import '@/assets/demo/styles/badges.scss';
+
+
+.text-justified{
+    text-align: justify;
+}
+
+.income-statement{
+    width: 100%;
+    border-collapse: collapse;
+
+}
+
+.income-statement td, .income-statement th {
+    border: 1px solid #ddd;
+    padding: 5px;
+    font-size: 15px;
+  }
+
+.income-statement tr:nth-child(even){background-color: #f2f2f2;}
+
+.income-statement tr:hover {background-color: #ddd;}
+
+.income-statement th{
+    text-align: left;
+    font-weight: normal;
+}
+.income-statement td{
+    text-align: right;
+}
+
+.statement-header{
+    text-decoration: underline;
+}
+.bold{
+    font-weight: bold;
+}
+
+.left-align{
+    text-align: left !important;
+    padding-left: 20px !important;
+}

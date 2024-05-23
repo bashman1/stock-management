@@ -2,12 +2,18 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useLayout } from '@/layout/composables/layout';
 import { useRouter } from 'vue-router';
+import CommonService from '@/service/CommonService'
+import { useToast } from 'primevue/usetoast';
 
 const { layoutConfig, onMenuToggle } = useLayout();
 
 const outsideClickListener = ref(null);
 const topbarMenuActive = ref(false);
+const op2 = ref(null);
 const router = useRouter();
+const commonService = new CommonService();
+const toast = useToast();
+
 
 onMounted(() => {
     bindOutsideClickListener();
@@ -18,11 +24,13 @@ onBeforeUnmount(() => {
 });
 
 const logoUrl = computed(() => {
-    return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
+    // return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
+    return `demo/images/Smart-Collect-logo-black-removebg.png`;
 });
 
 const onTopBarMenuButton = () => {
     topbarMenuActive.value = !topbarMenuActive.value;
+    op2.value.toggle(event);
 };
 const onSettingsClick = () => {
     topbarMenuActive.value = false;
@@ -58,13 +66,27 @@ const isOutsideClicked = (event) => {
 
     return !(sidebarEl.isSameNode(event.target) || sidebarEl.contains(event.target) || topbarEl.isSameNode(event.target) || topbarEl.contains(event.target));
 };
+
+const logOut = () => {
+    commonService.genericRequest('log-out', 'get', true, {}).then((response) => {
+        if (response.status) {
+            commonService.removeStorage()
+            commonService.redirect(router,"/auth/login");
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
 </script>
 
 <template>
     <div class="layout-topbar">
-        <router-link to="/" class="layout-topbar-logo">
-            <img :src="logoUrl" alt="logo" />
-            <span>SAKAI</span>
+        <router-link to="/admin" class="layout-topbar-logo">
+<!--            <img :src="logoUrl" alt="logo" />-->
+            <img :src="logoUrl" alt="logo" class="w-15rem h-4rem" />
+<!--            <span>SAKAI</span>-->
         </router-link>
 
         <button class="p-link layout-menu-button layout-topbar-button" @click="onMenuToggle()">
@@ -84,11 +106,28 @@ const isOutsideClicked = (event) => {
                 <i class="pi pi-user"></i>
                 <span>Profile</span>
             </button>
-            <button @click="onSettingsClick()" class="p-link layout-topbar-button">
+            <OverlayPanel ref="op2" appendTo="body" :showCloseIcon="true" id="overlay_panel" style="width: 450px">
+                            <!-- <DataTable :value="products" v-model:selection="selectedProduct" selectionMode="single" :paginator="true" :rows="5" @row-select="onProductSelect" responsiveLayout="scroll">
+                                <Column field="name" header="Name" :sortable="true" headerStyle="min-width:12rem;"></Column>
+                                <Column header="Image" headerStyle="min-width:5rem;">
+                                    <template #body="slotProps">
+                                        <img :src="'demo/images/product/' + slotProps.data.image" :alt="slotProps.data.image" width="50" class="shadow-2" />
+                                    </template>
+                                </Column>
+                                <Column field="price" header="Price" :sortable="true" headerStyle="min-width:8rem;">
+                                    <template #body="slotProps">
+                                        {{ formatCurrency(slotProps.data.price) }}
+                                    </template>
+                                </Column>
+                            </DataTable> -->
+                            <Button @click="logOut" icon="pi pi-sign-out" label="Log out" class="p-button-outlined p-button-danger mr-2 mb-2" />
+             </OverlayPanel>
+            <!-- <button @click="onSettingsClick()" class="p-link layout-topbar-button">
                 <i class="pi pi-cog"></i>
                 <span>Settings</span>
-            </button>
+            </button> -->
         </div>
+        <Toast />
     </div>
 </template>
 
