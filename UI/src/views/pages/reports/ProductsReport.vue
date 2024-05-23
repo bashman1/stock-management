@@ -96,9 +96,15 @@ const goToSales=(data)=>{
                         {{ commonService.commaSeparator(data.selling_price) }}
                     </template>
                 </Column>
+
                 <Column field="name" header="Product No." style="min-width: 10rem">
                     <template #body="{ data }">
                         {{ data.product_no }}
+                    </template>
+                </Column>
+                <Column field="name" header="VAT Tax" style="min-width: 10rem">
+                    <template #body="{ data }">
+                        {{ data.tax_config }}
                     </template>
                 </Column>
                 <Column headerStyle="max-width:10rem;">

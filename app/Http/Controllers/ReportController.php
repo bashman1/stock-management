@@ -18,7 +18,7 @@ class ReportController extends Controller
         P.type_id, P.gauge_id, C.name AS category_name, S.name AS sub_category_name,
         M.name AS manufacturer_name, M.website, M.email,M.phone_number,M.country_id,
         M.description AS manufacturer_description, R.name AS manufacture_country,
-        K.name AS measurement_unit_name,I.name AS institution_name,
+        K.name AS measurement_unit_name,I.name AS institution_name, P.tax_config,
         T.name AS supplier_name, CONCAT(U.first_name, ' ', U.last_name,' ', U.other_name) AS user_name,
         Q.name AS type_name, G.name AS gauge_name, Y.purchase_price, Y.selling_price,
         Y.quantity, Y.min_quantity, Y.max_quantity, Y.stock_date,Y.manufactured_date,

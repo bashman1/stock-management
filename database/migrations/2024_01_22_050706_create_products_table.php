@@ -28,6 +28,7 @@ return new class extends Migration
             $table->unsignedBigInteger("institution_id");
             $table->unsignedBigInteger("user_id");
             $table->string("status")->nullable();
+            $table->string('tax_config')->nullable();
             $table->string("ref_no")->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

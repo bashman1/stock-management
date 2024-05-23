@@ -31,10 +31,15 @@ const toast = useToast();
  const banks = ref(null);
  const validation= ref({})
  const formError = ref({});
+ const taxConfig=ref({id: 1, name:'Enable tax', value: true});
+
+
+ const taxOptions= ref([
+    {id: 1, name:'Enable tax', value: true},
+    {id: 2, name:'Disable tax', value: false}
+ ])
 
  const onSubmit=()=>{
-
-
     formError.value.name = commonService.validateFormField(name.value);
     formError.value.type = commonService.validateFormField(type.value);
     formError.value.city = commonService.validateFormField(city.value);
@@ -44,6 +49,7 @@ const toast = useToast();
     formError.value.bankName = commonService.validateFormField(bankName.value);
     formError.value.acctName = commonService.validateFormField(acctName.value);
     formError.value.acctNumber = commonService.validateFormField(acctNumber.value);
+    formError.value.taxConfig = commonService.validateFormField(taxConfig.value);
 
     let invalid = commonService.validateRequiredFields(formError.value);
     if(invalid){
@@ -67,6 +73,7 @@ const toast = useToast();
         bank_id:bankName?.value?.id,
         acct_name:acctName?.value,
         acct_no:acctNumber?.value,
+        tax_config: taxConfig?.value?.value,
         status:'Active'
     }
     commonService.genericRequest('create-institution', 'post', true, postData).then((response)=>{
@@ -193,17 +200,26 @@ const toast = useToast();
                     </span>
                 </div>
 
-                <div class="field col-12 md:col-10">
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <Dropdown id="instCity" :options="taxOptions" v-model="taxConfig" @blur="onInputBlur(taxConfig, 'taxConfig')" :class="{ 'p-invalid': formError?.taxConfig }" optionLabel="name"></Dropdown>
+                        <label for="instCity">Tax Config</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <h5>Attachment</h5>
+                    <FileUpload mode="basic" name="demo[]" accept="image/*" :maxFileSize="1000000" @uploader="onUpload" customUpload />
+                </div>
+
+                <div class="field col-12 md:col-12">
                     <span class="p-float-label">
                         <Textarea id="instDescription" rows="3" cols="30" v-model="description"></Textarea>
                         <label for="instDescription">Description</label>
                     </span>
                 </div>
-                <div class="field col-12 md:col-2">
-                    <h5>Attachment</h5>
-                    <FileUpload mode="basic" name="demo[]" accept="image/*" :maxFileSize="1000000" @uploader="onUpload" customUpload />
 
-                </div>
 
             </div>
         </div>
@@ -221,7 +237,7 @@ const toast = useToast();
                 <div class="field col-12 md:col-3">
                     <span class="p-float-label">
                         <!-- <InputText type="text" id="contactNumber" v-model="contactNumber" /> -->
-                        <InputMask id="basic" v-model="contactNumber" slotChar="_" mask="99-999999" placeholder="25-______" @blur="onInputBlur(contactNumber, 'contactNumber')" :class="{ 'p-invalid': formError?.contactNumber }" />
+                        <InputText id="basic" v-model="contactNumber" @blur="onInputBlur(contactNumber, 'contactNumber')" :class="{ 'p-invalid': formError?.contactNumber }" />
                         <label for="contactNumber">Phone Number</label>
                     </span>
                 </div>

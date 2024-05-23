@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('street')->nullable();
             $table->string('p_o_box')->nullable();
             $table->text('description')->nullable();
+            $table->boolean('is_tax_enabled')->default(true);
             $table->string("status");
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

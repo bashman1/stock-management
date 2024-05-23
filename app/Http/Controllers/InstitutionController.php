@@ -41,6 +41,7 @@ class InstitutionController extends Controller
             $institution->city_id=$request->city;
             $institution->street=$request->street;
             $institution->p_o_box=$request->p_o_box;
+            $institution->is_tax_enabled = $request->tax_config;
             $institution->description=$request->description;
             $institution->status=$request->status;
             $institution->created_on=now();
