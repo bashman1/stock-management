@@ -1,6 +1,6 @@
 <script setup>
 import { FilterMatchMode } from 'primevue/api';
-import { ref, onMounted,onBeforeMount } from 'vue';
+import { ref, onMounted, onBeforeMount } from 'vue';
 import { useRouter } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
@@ -12,9 +12,9 @@ const router = useRouter();
 
 const productList = ref(null);
 const selectedProduct = ref([]);
-const amountTOPay=ref(0);
-const discount=ref(0);
-const balance=ref(0);
+const amountTOPay = ref(0);
+const discount = ref(0);
+const balance = ref(0);
 const filters = ref({});
 
 // **************************************************************************
@@ -84,15 +84,15 @@ const totalPrice = (array) => {
     return totalPrice;
 }
 
-const onSubmitOrder=()=>{
-    let postData={
-        total:totalPrice(selectedProduct?.value)- Number(discount?.value),
-        discount:Number(discount?.value),
-        amountPaid:Number(amountTOPay?.value),
+const onSubmitOrder = () => {
+    let postData = {
+        total: totalPrice(selectedProduct?.value) - Number(discount?.value),
+        discount: Number(discount?.value),
+        amountPaid: Number(amountTOPay?.value),
         itemCount: selectedProduct?.value.length,
         tranDate: new Date(),
-        items:selectedProduct?.value,
-        status:"Active"
+        items: selectedProduct?.value,
+        status: "Active"
     }
 
     commonService.genericRequest('create-order', 'post', true, postData).then((response) => {
@@ -104,7 +104,7 @@ const onSubmitOrder=()=>{
             commonService.showError(toast, response.message);
         }
     })
-    
+
 }
 
 const initFilters = () => {
@@ -132,10 +132,12 @@ onMounted(() => {
 
                     <div class="col-12 md:col-12">
                         <p>Items available in the stock.</p>
-                        <DataTable :value="productList" :paginator="true" class="p-datatable-gridlines" :rows="50"
-                            dataKey="id"  :filters="filters" :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+                        <DataTable :value="productList" :paginator="true"  size="small" class="p-datatable-gridlines" :rows="50"
+                            dataKey="id" :filters="filters" :rowHover="true" filterDisplay="menu"
+                            responsiveLayout="scroll">
                             <template #header>
-                                <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
+                                <div
+                                    class="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
                                     <!-- <h5 class="m-0">Manage Products</h5> -->
                                     <span class="block mt-2 md:mt-0 p-input-icon-left">
                                         <i class="pi pi-search" />
@@ -228,15 +230,16 @@ onMounted(() => {
                             <Column field="quantity" header="Qty" style="min-width: 10rem">
                                 <template #body="{ data }">
 
-                                    <i class="pi pi-plus" @click="increaseReduce(data, 'Add')"
-                                        style="font-size: 1rem; margin-right:3px; cursor:pointer"></i>
+                                    <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')"
+                                    style="font-size: 1rem; margin-left:3px; cursor:pointer"></i>
                                     <!-- <Button icon="pi pi-minus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
                                     <InputText type="text" @change="updateQty($event, data)" :value="data.quantity"
                                         style="width: 60px; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
                                         placeholder="Qty"></InputText>
                                     <!-- {{ data.quantity }} -->
-                                    <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')"
-                                        style="font-size: 1rem; margin-left:3px; cursor:pointer"></i>
+                                    <i class="pi pi-plus" @click="increaseReduce(data, 'Add')"
+                                    style="font-size: 1rem; margin-right:3px; cursor:pointer"></i>
+
                                     <!-- <Button icon="pi pi-plus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
                                 </template>
                             </Column>
@@ -256,6 +259,49 @@ onMounted(() => {
                 </div>
             </div>
 
+            <div class="card">
+                <h5>V.A.T Tax 18%</h5><br>
+                <div class="grid">
+                    <div class="field col-12 md:col-4">
+                        <span class="p-float-label">
+                            Product
+                        </span>
+                    </div>
+                    <div class="field col-12 md:col-4">
+                        <span class="p-float-label">
+                            Total
+                        </span>
+                    </div>
+                    <div class="field col-12 md:col-4">
+                        <span class="p-float-label">
+                        V.A.T
+                        </span>
+                    </div>
+                    <!-- <div class="field col-12 md:col-8">
+                        <span class="p-float-label">
+                            {{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) -
+                            Number(discount)) : 0 }}
+                        </span>
+                    </div> -->
+                    <!-- <div class="field col-12 md:col-4">
+                        <span class="p-float-label">
+                            Discount
+                        </span>
+                    </div> -->
+                    <!-- <div class="field col-12 md:col-8">
+                        <span class="p-float-label">
+                            <InputText type="text" id="discount" v-model="discount" />
+                            <label for="discount">Discount Amount</label>
+                        </span>
+                    </div> -->
+                    <!-- <div class="field col-12 md:col-4">
+                        <span class="p-float-label">
+                            Amount Paid
+                        </span>
+                    </div> -->
+
+                </div>
+            </div>
 
 
             <div class="card">
@@ -268,7 +314,8 @@ onMounted(() => {
                     </div>
                     <div class="field col-12 md:col-8">
                         <span class="p-float-label">
-                            {{ totalPrice(selectedProduct)?commonService.commaSeparator(totalPrice(selectedProduct)- Number(discount)):0 }}
+                            {{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) -
+                            Number(discount)) : 0 }}
                         </span>
                     </div>
                     <div class="field col-12 md:col-4">
@@ -289,7 +336,7 @@ onMounted(() => {
                     </div>
                     <div class="field col-12 md:col-8">
                         <span class="p-float-label">
-                            <InputText type="text" id="discount"  v-model="amountTOPay" />
+                            <InputText type="text" id="discount" v-model="amountTOPay" />
                             <label for="discount">Amount</label>
                             <!-- <small class="p-invalid ">Enter.</small> -->
                         </span>
@@ -300,8 +347,10 @@ onMounted(() => {
                         </span>
                     </div>
                     <div class="field col-12 md:col-8">
-                        <span class="p-float-label" v-if="amountTOPay && amountTOPay>0">
-                            {{ commonService.commaSeparator(Number(amountTOPay)+Number(discount)-totalPrice(selectedProduct)) }}
+                        <span class="p-float-label" v-if="amountTOPay && amountTOPay > 0">
+                            {{
+                            commonService.commaSeparator(Number(amountTOPay) + Number(discount) - totalPrice(selectedProduct))
+                            }}
                         </span>
                         <span class="p-float-label" v-if="!amountTOPay || amountTOPay==0">0</span>
                     </div>
@@ -319,4 +368,5 @@ onMounted(() => {
 
         <!-- /End of the modals -->
 
-</div></template>
+    </div>
+</template>

@@ -445,6 +445,25 @@ class Controller extends BaseController
             $newSti->save();
         }
 
+        $tax = DB::table('gl_accounts')
+        ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+        ->where('institution_id', $instId)
+        ->where('acct_type', 'LIABILITY')
+        ->where('gl_no', '2203001')
+        ->first();
+
+        $isTaxExisting =  CntrlParameter::where(["institution_id"=>$instId, "param_value" => strrev($tax->replaced_acct_no)])->exists();
+        if(!$isTaxExisting){
+            $newSti= new CntrlParameter();
+            $newSti->param_name = "Income taxes payable TAX";
+            $newSti->param_cd="TAX";
+            $newSti->param_value=strrev($tax->replaced_acct_no);
+            $newSti->institution_id=$instId;
+            $newSti->created_on=now();
+            $newSti->save();
+        }
+
+
 
         DB::commit();
         return true;
