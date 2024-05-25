@@ -1,7 +1,7 @@
 export default class CommonService {
-    baseUrl = "http://localhost:8000/api/";
+     baseUrl = "http://localhost:8000/api/";
     // baseUrl = "http://137.184.230.127/api/";
-    // baseUrl = "../api/";
+  //  baseUrl = "../api/";
 
     // loggedIn = this.checkingAuthentication();
 
@@ -87,6 +87,28 @@ export default class CommonService {
             })
             .then(json => {
                 return json;
+            })
+            .catch(err => {
+                console.log(err);
+            });
+    };
+
+    getFileFromTheServer = (url, method) => {
+        return fetch(url, {
+            method: method,
+            headers: {
+               // "Content-Type": "application/json",
+               // Accept: "application/json",
+                Authorization: "Bearer " + this.getStorage().token
+            }
+        })
+            .then(res => {
+              
+                return res.blob();
+            })
+            .then(blob => {
+                
+                return blob;
             })
             .catch(err => {
                 console.log(err);
@@ -217,8 +239,18 @@ export default class CommonService {
      * @returns
      * @author Bash
      */
-    genericRequest = (url, method, isAuthenticated, postData) => {
+    genericRequest = (url, method, isAuthenticated, postData, isFile) => {
         if (method == "GET" || method == "get") {
+
+            if(isAuthenticated&&isFile){
+                return this.getFileFromTheServer(
+                    this.baseUrl + "" + url,
+                    method
+                ).then(file => {
+                    return file;
+                })
+            }
+
             if (isAuthenticated) {
                 return this.getFromServerWithToken(
                     this.baseUrl + "" + url,
