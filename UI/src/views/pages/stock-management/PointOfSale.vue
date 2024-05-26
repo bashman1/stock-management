@@ -1,6 +1,6 @@
 <script setup>
 import { FilterMatchMode } from 'primevue/api';
-import { ref, onMounted,onBeforeMount } from 'vue';
+import { ref, onMounted, onBeforeMount } from 'vue';
 import { useRouter } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
@@ -9,13 +9,18 @@ const toast = useToast();
 const commonService = new CommonService();
 const router = useRouter();
 
-
 const productList = ref(null);
 const selectedProduct = ref([]);
-const amountTOPay=ref(0);
-const discount=ref(0);
-const balance=ref(0);
+const amountTOPay = ref(0);
+const discount = ref(0);
+const balance = ref(0);
 const filters = ref({});
+const institutionDetails = ref({});
+const extraTax= ref(0);
+const VAT = ref([
+    {id:1, name:"18%", amount:0, total:0},
+    {id:2, name:"Exempted", amount:0, total:0},
+])
 
 // **************************************************************************
 const getProducts = () => {
@@ -29,13 +34,19 @@ const getProducts = () => {
 }
 
 const OnSelectItem = (data) => {
-    let obj = { id: data.id, price: data.selling_price, quantity: 1, discount: 0, name: data.name };
+    let obj = { id: data.id, price: data.selling_price, quantity: 1, discount: 0, name: data.name, tax_config:data.tax_config };
     const foundItem = selectedProduct.value.find(item => item.id === obj.id);
     if (foundItem) {
         foundItem.quantity += obj.quantity;
     } else {
         selectedProduct.value.push(obj);
     }
+
+    // alert(institutionDetails?.value?.is_tax_enabled)
+    if(institutionDetails?.value?.is_tax_enabled){
+        computeVAT()
+    }
+
 }
 
 const OnSelectRemoveItem = (data) => {
@@ -84,15 +95,15 @@ const totalPrice = (array) => {
     return totalPrice;
 }
 
-const onSubmitOrder=()=>{
-    let postData={
-        total:totalPrice(selectedProduct?.value)- Number(discount?.value),
-        discount:Number(discount?.value),
-        amountPaid:Number(amountTOPay?.value),
+const onSubmitOrder = () => {
+    let postData = {
+        total: totalPrice(selectedProduct?.value) - Number(discount?.value),
+        discount: Number(discount?.value),
+        amountPaid: Number(amountTOPay?.value),
         itemCount: selectedProduct?.value.length,
         tranDate: new Date(),
-        items:selectedProduct?.value,
-        status:"Active"
+        items: selectedProduct?.value,
+        status: "Active"
     }
 
     commonService.genericRequest('create-order', 'post', true, postData).then((response) => {
@@ -104,7 +115,18 @@ const onSubmitOrder=()=>{
             commonService.showError(toast, response.message);
         }
     })
-    
+
+}
+
+
+const getInstitutionDetails=()=>{
+    commonService.genericRequest('get-institution-details', 'get', true, {}).then((response) => {
+        if (response.status) {
+            institutionDetails.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
 }
 
 const initFilters = () => {
@@ -113,12 +135,100 @@ const initFilters = () => {
     };
 };
 
+// const computeVAT=()=>{
+//     let taxExTotal = 0;
+//     let taxInTotal=0;
+//     let totalEx = 0;
+//     let totalIn = 0;
+//     let exemptedTotal = 0;
+//     selectedProduct.value.forEach((element, index) => {
+//         console.log(element.tax_config)
+//         if(element.tax_config == 'TAX_EXCLUSIVE'){
+//             taxExTotal = taxExTotal + (element.quantity * element.price);
+//         }else if(element.tax_config == 'TAX_INCLUSIVE'){
+//             taxInTotal = taxInTotal + (element.quantity * element.price);
+//         }else if(element.tax_config == 'TAX_EXEMPTED'){
+//             exemptedTotal = exemptedTotal + (element.quantity * element.price);
+//         }
+//     });
+//     totalEx=(18/100 * taxExTotal);
+//     totalIn=(18/100 * taxInTotal);
+
+
+//     console.log(totalEx)
+//     console.log(totalIn)
+
+//     extraTax.value=totalEx;
+
+//     VAT.value = VAT.value.map(item =>
+//     item.id === 1
+//         ? {
+//             ...item,
+//             total: totalEx + totalIn,
+//             amount: (taxExTotal) + (taxInTotal - totalIn)
+//         }
+//         : item.id===2
+//         ? {
+//             ...item,
+//             total: 0,
+//             amount: exemptedTotal
+//         }
+//         :item
+//     );
+// }
+
+
+const computeVAT = () => {
+    let taxExTotal = 0;
+    let taxInTotal = 0;
+    let exemptedTotal = 0;
+
+    selectedProduct.value.forEach(element => {
+        const totalPrice = element.quantity * element.price;
+        switch (element.tax_config) {
+            case 'TAX_EXCLUSIVE':
+                taxExTotal += totalPrice;
+                break;
+            case 'TAX_INCLUSIVE':
+                taxInTotal += totalPrice;
+                break;
+            case 'TAX_EXEMPTED':
+                exemptedTotal += totalPrice;
+                break;
+        }
+    });
+
+    const totalEx = 0.18 * taxExTotal;
+    const totalIn = 0.18 * taxInTotal;
+
+    extraTax.value = totalEx;
+
+    VAT.value = VAT.value.map(item => {
+        if (item.id === 1) {
+            return {
+                ...item,
+                total: totalEx + totalIn,
+                amount: taxExTotal + (taxInTotal - totalIn)
+            };
+        } else if (item.id === 2) {
+            return {
+                ...item,
+                total: 0,
+                amount: exemptedTotal
+            };
+        }
+        return item;
+    });
+}
+
+
 onBeforeMount(() => {
     initFilters();
 });
 
 onMounted(() => {
-    getProducts()
+    getProducts();
+    getInstitutionDetails();
 });
 
 
@@ -132,10 +242,12 @@ onMounted(() => {
 
                     <div class="col-12 md:col-12">
                         <p>Items available in the stock.</p>
-                        <DataTable :value="productList" :paginator="true" class="p-datatable-gridlines" :rows="50"
-                            dataKey="id"  :filters="filters" :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+                        <DataTable :value="productList" :paginator="true"  size="small" class="p-datatable-gridlines" :rows="50"
+                            dataKey="id" :filters="filters" :rowHover="true" filterDisplay="menu"
+                            responsiveLayout="scroll">
                             <template #header>
-                                <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
+                                <div
+                                    class="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
                                     <!-- <h5 class="m-0">Manage Products</h5> -->
                                     <span class="block mt-2 md:mt-0 p-input-icon-left">
                                         <i class="pi pi-search" />
@@ -228,15 +340,16 @@ onMounted(() => {
                             <Column field="quantity" header="Qty" style="min-width: 10rem">
                                 <template #body="{ data }">
 
-                                    <i class="pi pi-plus" @click="increaseReduce(data, 'Add')"
-                                        style="font-size: 1rem; margin-right:3px; cursor:pointer"></i>
+                                    <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')"
+                                    style="font-size: 1rem; margin-left:3px; cursor:pointer"></i>
                                     <!-- <Button icon="pi pi-minus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
                                     <InputText type="text" @change="updateQty($event, data)" :value="data.quantity"
                                         style="width: 60px; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
                                         placeholder="Qty"></InputText>
                                     <!-- {{ data.quantity }} -->
-                                    <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')"
-                                        style="font-size: 1rem; margin-left:3px; cursor:pointer"></i>
+                                    <i class="pi pi-plus" @click="increaseReduce(data, 'Add')"
+                                    style="font-size: 1rem; margin-right:3px; cursor:pointer"></i>
+
                                     <!-- <Button icon="pi pi-plus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
                                 </template>
                             </Column>
@@ -256,6 +369,31 @@ onMounted(() => {
                 </div>
             </div>
 
+            <div class="card" v-if="institutionDetails?.is_tax_enabled && selectedProduct.length>0">
+                <h5>V.A.T 18%</h5><br>
+                <div class="grid">
+                    <div class="field col-12 md:col-12">
+                        <DataTable :value="VAT" size="small" :rows="20" dataKey="id" :rowHover="true"
+                        filterDisplay="menu" responsiveLayout="scroll">
+                        <Column field="name" header="18%" style="max-width: 10rem">
+                            <template #body="{ data }">
+                                {{ data.name }}
+                            </template>
+                        </Column>
+                        <Column field="price" header="Amount" style="max-width: 10rem">
+                            <template #body="{ data }">
+                                {{ commonService.commaSeparator(data.amount) }}
+                            </template>
+                        </Column>
+                        <Column field="subtotal" header="V.A.T" style="max-width: 10rem">
+                            <template #body="{ data }">
+                                {{ commonService.commaSeparator(data.total) }}
+                            </template>
+                        </Column>
+                    </DataTable>
+                    </div>
+                </div>
+            </div>
 
 
             <div class="card">
@@ -268,7 +406,8 @@ onMounted(() => {
                     </div>
                     <div class="field col-12 md:col-8">
                         <span class="p-float-label">
-                            {{ totalPrice(selectedProduct)?commonService.commaSeparator(totalPrice(selectedProduct)- Number(discount)):0 }}
+                            {{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) -
+                            Number(discount) + Number(extraTax)) : 0 }}
                         </span>
                     </div>
                     <div class="field col-12 md:col-4">
@@ -289,7 +428,7 @@ onMounted(() => {
                     </div>
                     <div class="field col-12 md:col-8">
                         <span class="p-float-label">
-                            <InputText type="text" id="discount"  v-model="amountTOPay" />
+                            <InputText type="text" id="discount" v-model="amountTOPay" />
                             <label for="discount">Amount</label>
                             <!-- <small class="p-invalid ">Enter.</small> -->
                         </span>
@@ -300,8 +439,10 @@ onMounted(() => {
                         </span>
                     </div>
                     <div class="field col-12 md:col-8">
-                        <span class="p-float-label" v-if="amountTOPay && amountTOPay>0">
-                            {{ commonService.commaSeparator(Number(amountTOPay)+Number(discount)-totalPrice(selectedProduct)) }}
+                        <span class="p-float-label" v-if="amountTOPay && amountTOPay > 0">
+                            {{
+                            commonService.commaSeparator(Number(amountTOPay) + Number(discount) - totalPrice(selectedProduct))
+                            }}
                         </span>
                         <span class="p-float-label" v-if="!amountTOPay || amountTOPay==0">0</span>
                     </div>
@@ -319,4 +460,5 @@ onMounted(() => {
 
         <!-- /End of the modals -->
 
-</div></template>
+    </div>
+</template>

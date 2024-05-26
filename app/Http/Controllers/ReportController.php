@@ -109,6 +109,7 @@ class ReportController extends Controller
         }
         $sqlString .= " ORDER BY O.id DESC";
         $salesHistory = DB::select($sqlString);
-        return $this->genericResponse(true, "Product list", 200, $salesHistory);
+        return $this->genericResponse(true, "Product list", 200, ['institution_id'=>$userData->institution_id, 'branch_id'=>$userData->branch_id]);
+        // return $this->genericResponse(true, "Product list", 200, $salesHistory );
     }
 }

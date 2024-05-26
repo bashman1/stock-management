@@ -23,7 +23,7 @@ const logoUrl = computed(() => {
 });
 
 
-const login=()=>{
+const login=  ()=>{
    let postData = {
         email:email.value,
         password:password.value,
@@ -34,7 +34,6 @@ const login=()=>{
                 token: response.data.token.accessToken,
                 userData: response.data.user_data,
             };
-
             goToDashboard(storedData);
         }else{
             commonService.showError(toast,response.message);
@@ -45,9 +44,12 @@ const login=()=>{
 
 const goToDashboard=async(storedData)=>{
     await commonService.setStorage(storedData);
-    router.push("/admin");
+    await redirectToHome();
 }
 
+const redirectToHome = ()=>{
+    router.push("/admin");
+}
 
 </script>
 
