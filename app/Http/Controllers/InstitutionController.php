@@ -183,4 +183,10 @@ class InstitutionController extends Controller
         }
         return $this->genericResponse(true, "Control parameter set successfully", 200, $myArray);
     }
+
+    public function getInstitutionDetails(){
+        $userData = auth()->user();
+        $institution = Institution::find($userData->institution_id);
+        return $this->genericResponse(true, "Institution details", 200, $institution);
+    }
 }

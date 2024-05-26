@@ -9,13 +9,18 @@ const toast = useToast();
 const commonService = new CommonService();
 const router = useRouter();
 
-
 const productList = ref(null);
 const selectedProduct = ref([]);
 const amountTOPay = ref(0);
 const discount = ref(0);
 const balance = ref(0);
 const filters = ref({});
+const institutionDetails = ref({});
+const extraTax= ref(0);
+const VAT = ref([
+    {id:1, name:"18%", amount:0, total:0},
+    {id:2, name:"Exempted", amount:0, total:0},
+])
 
 // **************************************************************************
 const getProducts = () => {
@@ -29,13 +34,19 @@ const getProducts = () => {
 }
 
 const OnSelectItem = (data) => {
-    let obj = { id: data.id, price: data.selling_price, quantity: 1, discount: 0, name: data.name };
+    let obj = { id: data.id, price: data.selling_price, quantity: 1, discount: 0, name: data.name, tax_config:data.tax_config };
     const foundItem = selectedProduct.value.find(item => item.id === obj.id);
     if (foundItem) {
         foundItem.quantity += obj.quantity;
     } else {
         selectedProduct.value.push(obj);
     }
+
+    // alert(institutionDetails?.value?.is_tax_enabled)
+    if(institutionDetails?.value?.is_tax_enabled){
+        computeVAT()
+    }
+
 }
 
 const OnSelectRemoveItem = (data) => {
@@ -107,18 +118,117 @@ const onSubmitOrder = () => {
 
 }
 
+
+const getInstitutionDetails=()=>{
+    commonService.genericRequest('get-institution-details', 'get', true, {}).then((response) => {
+        if (response.status) {
+            institutionDetails.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
 const initFilters = () => {
     filters.value = {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
     };
 };
 
+// const computeVAT=()=>{
+//     let taxExTotal = 0;
+//     let taxInTotal=0;
+//     let totalEx = 0;
+//     let totalIn = 0;
+//     let exemptedTotal = 0;
+//     selectedProduct.value.forEach((element, index) => {
+//         console.log(element.tax_config)
+//         if(element.tax_config == 'TAX_EXCLUSIVE'){
+//             taxExTotal = taxExTotal + (element.quantity * element.price);
+//         }else if(element.tax_config == 'TAX_INCLUSIVE'){
+//             taxInTotal = taxInTotal + (element.quantity * element.price);
+//         }else if(element.tax_config == 'TAX_EXEMPTED'){
+//             exemptedTotal = exemptedTotal + (element.quantity * element.price);
+//         }
+//     });
+//     totalEx=(18/100 * taxExTotal);
+//     totalIn=(18/100 * taxInTotal);
+
+
+//     console.log(totalEx)
+//     console.log(totalIn)
+
+//     extraTax.value=totalEx;
+
+//     VAT.value = VAT.value.map(item =>
+//     item.id === 1
+//         ? {
+//             ...item,
+//             total: totalEx + totalIn,
+//             amount: (taxExTotal) + (taxInTotal - totalIn)
+//         }
+//         : item.id===2
+//         ? {
+//             ...item,
+//             total: 0,
+//             amount: exemptedTotal
+//         }
+//         :item
+//     );
+// }
+
+
+const computeVAT = () => {
+    let taxExTotal = 0;
+    let taxInTotal = 0;
+    let exemptedTotal = 0;
+
+    selectedProduct.value.forEach(element => {
+        const totalPrice = element.quantity * element.price;
+        switch (element.tax_config) {
+            case 'TAX_EXCLUSIVE':
+                taxExTotal += totalPrice;
+                break;
+            case 'TAX_INCLUSIVE':
+                taxInTotal += totalPrice;
+                break;
+            case 'TAX_EXEMPTED':
+                exemptedTotal += totalPrice;
+                break;
+        }
+    });
+
+    const totalEx = 0.18 * taxExTotal;
+    const totalIn = 0.18 * taxInTotal;
+
+    extraTax.value = totalEx;
+
+    VAT.value = VAT.value.map(item => {
+        if (item.id === 1) {
+            return {
+                ...item,
+                total: totalEx + totalIn,
+                amount: taxExTotal + (taxInTotal - totalIn)
+            };
+        } else if (item.id === 2) {
+            return {
+                ...item,
+                total: 0,
+                amount: exemptedTotal
+            };
+        }
+        return item;
+    });
+}
+
+
 onBeforeMount(() => {
     initFilters();
 });
 
 onMounted(() => {
-    getProducts()
+    getProducts();
+    getInstitutionDetails();
 });
 
 
@@ -259,47 +369,29 @@ onMounted(() => {
                 </div>
             </div>
 
-            <div class="card">
-                <h5>V.A.T Tax 18%</h5><br>
+            <div class="card" v-if="institutionDetails?.is_tax_enabled && selectedProduct.length>0">
+                <h5>V.A.T 18%</h5><br>
                 <div class="grid">
-                    <div class="field col-12 md:col-4">
-                        <span class="p-float-label">
-                            Product
-                        </span>
+                    <div class="field col-12 md:col-12">
+                        <DataTable :value="VAT" size="small" :rows="20" dataKey="id" :rowHover="true"
+                        filterDisplay="menu" responsiveLayout="scroll">
+                        <Column field="name" header="18%" style="max-width: 10rem">
+                            <template #body="{ data }">
+                                {{ data.name }}
+                            </template>
+                        </Column>
+                        <Column field="price" header="Amount" style="max-width: 10rem">
+                            <template #body="{ data }">
+                                {{ commonService.commaSeparator(data.amount) }}
+                            </template>
+                        </Column>
+                        <Column field="subtotal" header="V.A.T" style="max-width: 10rem">
+                            <template #body="{ data }">
+                                {{ commonService.commaSeparator(data.total) }}
+                            </template>
+                        </Column>
+                    </DataTable>
                     </div>
-                    <div class="field col-12 md:col-4">
-                        <span class="p-float-label">
-                            Total
-                        </span>
-                    </div>
-                    <div class="field col-12 md:col-4">
-                        <span class="p-float-label">
-                        V.A.T
-                        </span>
-                    </div>
-                    <!-- <div class="field col-12 md:col-8">
-                        <span class="p-float-label">
-                            {{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) -
-                            Number(discount)) : 0 }}
-                        </span>
-                    </div> -->
-                    <!-- <div class="field col-12 md:col-4">
-                        <span class="p-float-label">
-                            Discount
-                        </span>
-                    </div> -->
-                    <!-- <div class="field col-12 md:col-8">
-                        <span class="p-float-label">
-                            <InputText type="text" id="discount" v-model="discount" />
-                            <label for="discount">Discount Amount</label>
-                        </span>
-                    </div> -->
-                    <!-- <div class="field col-12 md:col-4">
-                        <span class="p-float-label">
-                            Amount Paid
-                        </span>
-                    </div> -->
-
                 </div>
             </div>
 
@@ -315,7 +407,7 @@ onMounted(() => {
                     <div class="field col-12 md:col-8">
                         <span class="p-float-label">
                             {{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) -
-                            Number(discount)) : 0 }}
+                            Number(discount) + Number(extraTax)) : 0 }}
                         </span>
                     </div>
                     <div class="field col-12 md:col-4">

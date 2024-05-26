@@ -94,12 +94,22 @@ const productDetails= ref(null);
 const isEdit=ref(false);
 const editId=ref(null);
 
+const institutionDetails =ref({});
+const taxableConfigs=(null);
+
 const taxConfig=ref({id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'});
 
+
 const taxOptions= ref([
-   {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'},
-   {id: 2, name:'Tax Inclusive', value: 'TAX_INCLUSIVE'},
-   {id: 3, name:'Tax Exempted', value: 'TAX_EXEMPTED'},
+   {id: 1, name:'VAT Exclusive', value: 'TAX_EXCLUSIVE'},
+   {id: 2, name:'VAT Inclusive', value: 'TAX_INCLUSIVE'},
+//    {id: 3, name:'VAT Exempted', value: 'TAX_EXEMPTED'},
+])
+
+const taxExempted=ref([
+    {id: 1, name:'VAT Exempted', value: 'TAX_EXEMPTED'},
+    {id: 2, name:'Standard Rated Supplies', value: 'TAX_NOT_EXEMPTED'},
+    {id: 3, name:'Zero Sated Supplies', value: 'TAX_ZERO_RATED'},
 ])
 
 
@@ -541,7 +551,6 @@ const getProductGauge=()=>{
 
 
 const getCountries=()=>{
-
     commonService.genericRequest('get-countries', 'get', true, {}).then((response) => {
         if (response.status) {
             countriesData.value = response.data
@@ -549,7 +558,17 @@ const getCountries=()=>{
             commonService.showError(toast, response.message);
         }
     })
+}
 
+
+const getInstitutionDetails=()=>{
+    commonService.genericRequest('get-institution-details', 'get', true, {}).then((response) => {
+        if (response.status) {
+            institutionDetails.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
 }
 
 const getProductDetails=(prodId)=>{
@@ -592,6 +611,7 @@ onMounted(() => {
     getMeasurementUnit();
     getProductTypes();
     getProductGauge();
+    getInstitutionDetails();
     if(route.params.id != null){
         editId.value=Number(route.params.id);
         isEdit.value = true;
@@ -777,12 +797,13 @@ onMounted(() => {
                         </span>
                     </div>
 
-                    <div class="field col-12 md:col-6">
+                    <div class="field col-12 md:col-6" v-if="institutionDetails?.is_tax_enabled">
                         <span class="p-float-label">
-                            <Dropdown id="instCity" :options="taxOptions" v-model="taxConfig" @blur="onInputBlur(taxConfig, 'taxConfig')" :class="{ 'p-invalid': formError?.taxConfig }" optionLabel="name"></Dropdown>
-                            <label for="instCity">Tax Config</label>
+                            <Dropdown id="taxableConfig" :options="taxExempted" v-model="taxableConfigs" @blur="onInputBlur(taxableConfigs, 'taxableConfigs')" :class="{ 'p-invalid': formError?.taxableConfigs }" optionLabel="name"></Dropdown>
+                            <label for="taxableConfig">VAT Config</label>
                         </span>
                     </div>
+
 
                 </div>
             </div>
@@ -790,10 +811,16 @@ onMounted(() => {
             <div class="card">
                 <h5>Selling Price</h5><br>
                 <div class="grid">
-                    <div class="field col-12 md:col-12">
+                    <div class="field col-12 md:col-6">
                         <span class="p-float-label">
                             <InputText type="text" @blur="onInputBlur(sellingPrice, 'sellingPrice')" id="sellingPrice" v-model="sellingPrice" :class="{ 'p-invalid': formError?.sellingPrice }"/>
                             <label for="sellingPrice">Unit Selling Price </label>
+                        </span>
+                    </div>
+                    <div class="field col-12 md:col-6" v-if="institutionDetails?.is_tax_enabled">
+                        <span class="p-float-label">
+                            <Dropdown id="instCity" :options="taxOptions" v-model="taxConfig" @blur="onInputBlur(taxConfig, 'taxConfig')" :class="{ 'p-invalid': formError?.taxConfig }" optionLabel="name"></Dropdown>
+                            <label for="instCity">Tax Config</label>
                         </span>
                     </div>
                     <!-- <div class="field col-12 md:col-6">
