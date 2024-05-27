@@ -295,8 +295,9 @@ class ProductController extends Controller
     public function downLoadProductReport(){
         //TODO get products belonging to a store
 
-        $products=Product::all();
+        $products=Product::with(['stock', 'category', 'subCategory', 'measurement'])->get();
 
+        //return response()->json(['result'=>$products]);
         if (count($products)>0) {
             Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
             $pdf = Pdf::loadView('product.reports', compact('products'));

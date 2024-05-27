@@ -19,6 +19,7 @@ class CommonController extends Controller
         $bestSellingProduct=[];
 
         if($isNotAdmin){
+            
             $inventoryAcct= $this->getControlAcctByCode("STI");
             $salesAcct= $this->getControlAcctByCode("SL");
             $data = DB::select("SELECT
