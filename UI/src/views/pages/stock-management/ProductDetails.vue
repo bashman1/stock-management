@@ -12,9 +12,12 @@ const router = useRouter();
 const productDetails = ref(null)
 
 const getProductDetail=()=>{
-    commonService.genericRequest('get-batch-members', 'post', true, {}).then((response) => {
+    let postData={
+        id: route.params.id,
+    }
+    commonService.genericRequest('get-product-details', 'post', true, postData).then((response) => {
          if (response.status) {
-            productDetails.value = response.data;
+            productDetails.value = response?.data[0];
          } else {
              commonService.showError(toast, response.message);
          }
@@ -22,7 +25,7 @@ const getProductDetail=()=>{
 }
 
 onMounted(() => {
-    getInstitution();
+    getProductDetail();
 });
 
 
@@ -33,64 +36,127 @@ onMounted(() => {
         <div class="col-12 md:col-6">
             <div class="card p-fluid">
                 <h5>Product Details</h5>
-                <!-- <div class="field">
-                    <label for="name1">Name</label>
-                    <InputText id="name1" type="text" />
-                </div> -->
-                <!-- <div class="field">
-                    <label for="email1">Email</label>
-                    <InputText id="email1" type="text" />
-                </div> -->
-                <!-- <div class="field">
-                    <label for="age1">Age</label>
-                    <InputText id="age1" type="text" />
-                </div> -->
+                <div class="field">
+                    <label for="name1">Product Name: <span> {{productDetails?.name}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Product No.: <span> {{productDetails?.product_no}}</span></label>
+                </div>
+
+                <div class="field">
+                    <label for="name1">Product Type: <span> {{productDetails?.type_name}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Product Category: <span> {{productDetails?.category_name}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Product Sub Category: <span> {{productDetails?.sub_category_name}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Product Gauge: <span> {{productDetails?.gauge_name}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Status: <span> {{productDetails?.status}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Ref. No: <span> {{productDetails?.ref_no}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">VAT: <span> {{productDetails?.tax_config}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Description: <span> {{productDetails?.description}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Institution: <span> {{productDetails?.institution_name}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Branch: <span> {{productDetails?.branch_name}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Created By: <span> {{productDetails?.user_name}}</span></label>
+                </div>
             </div>
 
             <div class="card p-fluid">
-                <h5>Vertical Grid</h5>
-                <div class="formgrid grid">
-                    <!-- <div class="field col">
-                        <label for="name2">Name</label>
-                        <InputText id="name2" type="text" />
-                    </div> -->
-                    <!-- <div class="field col">
-                        <label for="email2">Email</label>
-                        <InputText id="email2" type="text" />
-                    </div> -->
-                </div>
+                <h5>Manufacturer</h5>
+                <!-- <div class="formgrid grid"> -->
+                    <div class="field">
+                        <label for="name1">Name: <span> {{productDetails?.manufacturer_name}}</span></label>
+                    </div>
+
+                    <div class="field">
+                        <label for="name1">Website: <span> {{productDetails?.manufacturer_website}}</span></label>
+                    </div>
+
+                    <div class="field">
+                        <label for="name1">Email: <span> {{productDetails?.manufacturer_email}}</span></label>
+                    </div>
+
+                    <div class="field">
+                        <label for="name1">Phone Number: <span> {{productDetails?.manufacturer_phone_number}}</span></label>
+                    </div>
+
+                    <div class="field">
+                        <label for="name1">Country: <span> {{productDetails?.manufacturer_country}}</span></label>
+                    </div>
+
+                <!-- </div> -->
             </div>
         </div>
 
         <div class="col-12 md:col-6">
             <div class="card p-fluid">
                 <h5>Stock</h5>
-                <!-- <div class="field grid">
-                    <label for="name3" class="col-12 mb-2 md:col-2 md:mb-0">Name</label>
-                    <div class="col-12 md:col-10">
-                        <InputText id="name3" type="text" />
-                    </div>
+                <div class="field">
+                    <label for="name1">Quantity: <span> {{productDetails?.quantity}}</span></label>
                 </div>
-                <div class="field grid">
-                    <label for="email3" class="col-12 mb-2 md:col-2 md:mb-0">Email</label>
-                    <div class="col-12 md:col-10">
-                        <InputText id="email3" type="text" />
-                    </div>
-                </div> -->
+                <div class="field">
+                    <label for="name1">Purchase Price: <span> {{productDetails?.purchase_price}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Selling Price: <span> {{productDetails?.selling_price}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Min Quantity: <span> {{productDetails?.min_quantity}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Max Quantity: <span> {{productDetails?.max_quantity}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Measurement: <span> {{productDetails?.measurement_unit}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Stocked: <span> {{productDetails?.stock_date}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Manufacturing: <span> {{productDetails?.manufactured_date}}</span></label>
+                </div>
+                <div class="field">
+                    <label for="name1">Expiry: <span> {{productDetails?.expiry_date}}</span></label>
+                </div>
             </div>
 
             <div class="card">
-                <h5>Inline</h5>
-                <div class="formgroup-inline">
-                    <!-- <div class="field">
-                        <label for="firstname1" class="p-sr-only">Firstname</label>
-                        <InputText id="firstname1" type="text" placeholder="Firstname" />
-                    </div> -->
-                    <!-- <div class="field">
-                        <label for="lastname1" class="p-sr-only">Lastname</label>
-                        <InputText id="lastname1" type="text" placeholder="Lastname" />
-                    </div> -->
-                    <!-- <Button label="Submit"></Button> -->
+                <h5>Supplier</h5>
+                <div class="field">
+                    <label for="name1">Name: <span> {{productDetails?.supplier_name}}</span></label>
+                </div>
+
+                <div class="field">
+                    <label for="name1">Website: <span> {{productDetails?.supplier_website}}</span></label>
+                </div>
+
+                <div class="field">
+                    <label for="name1">Email: <span> {{productDetails?.supplier_email}}</span></label>
+                </div>
+
+                <div class="field">
+                    <label for="name1">Phone Number: <span> {{productDetails?.supplier_phone_number}}</span></label>
+                </div>
+
+                <div class="field">
+                    <label for="name1">Country: <span> {{productDetails?.supplier_country}}</span></label>
                 </div>
             </div>
         </div>
