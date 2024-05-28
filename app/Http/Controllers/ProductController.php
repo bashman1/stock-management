@@ -270,21 +270,43 @@ class ProductController extends Controller
         $userData = auth()->user();
         $isNotAdmin = $this->isNotAdmin();
 
-        $sqlString="SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
-        P.institution_id, P.user_id, P.status, P.created_by, P.type_id, P.gauge_id, E.stock_date, P.updated_by, P.created_on, P.updated_on, P.created_at, P.updated_at, C.name AS category_name,
-        S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
-        E.min_quantity, E.id AS stock_id, E.max_quantity, B.name AS branch_name, I.name AS institution_name, P.tax_config
-        FROM products P INNER JOIN product_categories C ON C.id = P.category_id
-        LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
-        LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
-        LEFT JOIN suppliers Q ON P.supplier_id = Q.id
-        LEFT JOIN measurement_units T ON P.measurement_unit_id = T.id
-        INNER JOIN stocks E ON E.product_id = P.id
-        INNER JOIN branches B ON B.id = E.branch_id
-        INNER JOIN institutions I ON I.id =P.institution_id ";
+        // $sqlString="SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
+        // P.institution_id, P.user_id, P.status, P.created_by, P.type_id, P.gauge_id, E.stock_date, P.updated_by, P.created_on, P.updated_on, P.created_at, P.updated_at, C.name AS category_name,
+        // S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
+        // E.min_quantity, E.id AS stock_id, E.max_quantity, B.name AS branch_name, I.name AS institution_name, P.tax_config
+        // FROM products P INNER JOIN product_categories C ON C.id = P.category_id
+        // LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
+        // LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
+        // LEFT JOIN suppliers Q ON P.supplier_id = Q.id
+        // LEFT JOIN measurement_units T ON P.measurement_unit_id = T.id
+        // INNER JOIN stocks E ON E.product_id = P.id
+        // INNER JOIN branches B ON B.id = E.branch_id
+        // INNER JOIN institutions I ON I.id =P.institution_id ";
+        $sqlString="SELECT P.id, P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id,
+        P.description, P.institution_id, P.user_id, P.status, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at,
+        P.updated_at, P.type_id, P.gauge_id, P.ref_no, P.tax_config, S.purchase_price, S.selling_price, S.discount, S.quantity,
+        S.min_quantity, S.max_quantity, S.stock_date, S.manufactured_date, S.expiry_date, C.name AS category_name, T.name AS type_name,
+        K.name AS sub_category_name, G.name AS gauge_name, M.name AS manufacturer_name, M.website AS manufacturer_website,
+        M.email AS manufacturer_email, M.phone_number AS manufacturer_phone_number,MC.name AS manufacturer_country, Q.name AS supplier_name,
+        Q.website AS supplier_website, Q.email AS supplier_email, Q.phone_number AS supplier_phone_number, QC.name AS supplier_country,
+        MU.name AS measurement_unit, CONCAT(U.first_name,' ',U.last_name, ' ', U.other_name) AS user_name, I.name AS institution_name,
+        B.name AS branch_name
+        FROM products P INNER JOIN stocks S ON S.product_id = P.id
+        INNER JOIN product_categories C ON C.id = P.category_id
+        INNER JOIN product_types T ON T.id = P.type_id
+        LEFT JOIN product_sub_categories K ON K.id = P.sub_category_id
+        LEFT JOIN product_gauges G ON G.id = P.gauge_id
+        LEFT JOIN manufacturers M ON M.id = P.manufacturer_id
+        LEFT JOIN country_refs MC ON M.country_id = MC.id
+        LEFT JOIN suppliers Q ON Q.id = P.supplier_id
+        LEFT JOIN country_refs QC ON Q.country_id = QC.id
+        LEFT JOIN measurement_units MU ON MU.id = P.measurement_unit_id
+        INNER JOIN users U ON U.id = P.user_id
+        INNER JOIN institutions I ON I.id = P.institution_id
+        LEFT JOIN branches B ON B.id = S.branch_id ";
         $sqlString .= " WHERE P.id = $request->id ";
         if ($isNotAdmin) {
-            $sqlString .= " AND E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
+            $sqlString .= " AND P.institution_id = $userData->institution_id AND S.branch_id = $userData->branch_id ";
         }
         $sqlString .= " ORDER BY P.id DESC";
         $product = DB::select($sqlString);
@@ -294,9 +316,7 @@ class ProductController extends Controller
 
     public function downLoadProductReport(){
         //TODO get products belonging to a store
-
         $products=Product::all();
-
         if (count($products)>0) {
             Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
             $pdf = Pdf::loadView('product.reports', compact('products'));
@@ -306,9 +326,10 @@ class ProductController extends Controller
             $pdf->setBasePath(public_path());
             return $pdf->stream('product_report'.'.pdf');
         }
-
-
     }
+
+
+    // public function getPro
 
 
 
