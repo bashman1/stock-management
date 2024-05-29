@@ -30,8 +30,13 @@ class Product extends Model
         return $this->hasOne(measurementUnit::class, 'id', 'measurement_unit_id');
     }
 
+    public function productType()
+    {
+        return $this->hasOne(ProductType::class, 'id', 'type_id');
+    }
+
     public function stock()
     {
-        return $this->belongsTo(stock::class, 'product_id', 'id');
+        return $this->belongsTo(stock::class, 'id', 'product_id');
     }
 }
