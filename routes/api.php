@@ -139,7 +139,8 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('create-gl-account', [GlAccountsController::class, "createGlAcct"]);
 
     Route::post('get-product-details', [ProductController::class, "getProductDetails"]);
-    Route::get('download-product-report', [ProductController::class, "downLoadProductReport"]);
+    Route::get('download-product-report-pdf', [ProductController::class, "downLoadProductPdfReport"]);
+    Route::get('download-product-report-csv', [ProductController::class, "downLoadProductCsvReport"]);
 
 
     Route::post('get-gl-history', [GlAccountsController::class, "glAcctHistory"]);

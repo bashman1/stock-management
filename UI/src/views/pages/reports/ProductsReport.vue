@@ -36,7 +36,7 @@ const getProductReportPdfFile = () => {
     try {
         isDownloading.value = true;
         commonService
-            .genericRequest('download-product-report', 'get', true, {}, true)
+            .genericRequest('download-product-report-pdf', 'get', true, {}, true)
 
             .then((blob) => {
                 //console.log(blob, 'data.......')
@@ -44,6 +44,29 @@ const getProductReportPdfFile = () => {
                 const fileLink = document.createElement('a');
                 fileLink.href = fileURL;
                 fileLink.setAttribute('download', 'product_reports.pdf');
+                document.body.appendChild(fileLink);
+                fileLink.click();
+            });
+    } catch (error) {
+        console.log(error);
+    } finally {
+        isDownloading.value = false;
+    }
+};
+
+
+const getProductReportCsvFile = () => {
+    try {
+        isDownloading.value = true;
+        commonService
+            .genericRequest('download-product-report-csv', 'get', true, {}, true)
+
+            .then((blob) => {
+                //console.log(blob, 'data.......')
+                const fileURL = window.URL.createObjectURL(new Blob([blob]));
+                const fileLink = document.createElement('a');
+                fileLink.href = fileURL;
+                fileLink.setAttribute('download', 'product_reports.csv');
                 document.body.appendChild(fileLink);
                 fileLink.click();
             });
@@ -67,7 +90,7 @@ onMounted(() => {
             <Toolbar class="mb-4">
                 <template v-slot:end>
                     <div class="my-2">
-                        <Button label="CSV" icon="pi pi-file-excel" class="p-button-success mr-2" @click="() => getProductReportPdfFile()" />
+                        <Button label="CSV" icon="pi pi-file-excel" class="p-button-success mr-2" @click="() => getProductReportCsvFile()" />
                         <Button label="PDF" icon="pi pi-file-pdf" class="p-button-danger" @click="() => getProductReportPdfFile()" />
                     </div>
                 </template>
