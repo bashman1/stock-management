@@ -23,8 +23,8 @@ const getCntrlLedger=(postData)=>{
 
 const generateIncomeStatement=()=>{
     let postData = {
-        fromDate: new Date(),
-        toDate: new Date(),
+        fromDate: fromDate.value,
+        toDate: toDate.value,
     }
     console.log(postData)
     getCntrlLedger(postData);

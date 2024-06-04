@@ -107,7 +107,7 @@ onMounted(() => {
             </Column>
             <Column headerStyle="min-width:10rem;">
                 <template #body="{ data }">
-                    <Button icon="pi pi-info" class="p-button-rounded p-button-success mr-2" @click="viewDetails(data)" />
+                    <Button icon="pi pi-eye" class="p-button-primary mr-2" @click="viewDetails(data)" v-tooltip="'View sell details'"/>
                     <!--                    <Button icon="pi pi-check" class="p-button-rounded p-button-warning mt-2"-->
                     <!--                            @click="confirmDeleteProduct(data)" />-->
                 </template>

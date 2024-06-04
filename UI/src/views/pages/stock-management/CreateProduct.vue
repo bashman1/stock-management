@@ -95,10 +95,9 @@ const isEdit=ref(false);
 const editId=ref(null);
 
 const institutionDetails =ref({});
-const taxableConfigs=(null);
+const taxableConfigs=ref({id: 2, name:'Standard Rated Supplies', value: 'TAX_STANDARD_RATED'});
 
 const taxConfig=ref({id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'});
-
 
 const taxOptions= ref([
    {id: 1, name:'VAT Exclusive', value: 'TAX_EXCLUSIVE'},
@@ -108,7 +107,7 @@ const taxOptions= ref([
 
 const taxExempted=ref([
     {id: 1, name:'VAT Exempted', value: 'TAX_EXEMPTED'},
-    {id: 2, name:'Standard Rated Supplies', value: 'TAX_NOT_EXEMPTED'},
+    {id: 2, name:'Standard Rated Supplies', value: 'TAX_STANDARD_RATED'},
     {id: 3, name:'Zero Sated Supplies', value: 'TAX_ZERO_RATED'},
 ])
 
@@ -182,7 +181,6 @@ const onGaugeInputBlur=(value, key)=>{
     gaugeFormError.value[key]= commonService.validateFormField(value);
 }
 
-
 const onSubmit= ()=>{
     formError.value.name=commonService.validateFormField(name.value);
     formError.value.category=commonService.validateFormField(category.value);
@@ -192,7 +190,6 @@ const onSubmit= ()=>{
     formError.value.prodType=commonService.validateFormField(prodType.value);
 
     formError.value.taxConfig=commonService.validateFormField(taxConfig.value);
-
 
 
     let invalid = commonService.validateRequiredFields(formError.value);
@@ -571,6 +568,15 @@ const getInstitutionDetails=()=>{
     })
 }
 
+const onTaxableConfigChange=(event)=>{
+    if(event.value.value=='TAX_ZERO_RATED' || event.value.value == 'TAX_EXEMPTED'){
+        taxConfig.value = event.value;
+    }else{
+        taxConfig.value = {id: 2, name:'VAT Inclusive', value: 'TAX_INCLUSIVE'};
+        // "TAX_STANDARD_RATED"
+    }
+}
+
 const getProductDetails=(prodId)=>{
     let postData={
         id:prodId,
@@ -799,10 +805,17 @@ onMounted(() => {
 
                     <div class="field col-12 md:col-6" v-if="institutionDetails?.is_tax_enabled">
                         <span class="p-float-label">
-                            <Dropdown id="taxableConfig" :options="taxExempted" v-model="taxableConfigs" @blur="onInputBlur(taxableConfigs, 'taxableConfigs')" :class="{ 'p-invalid': formError?.taxableConfigs }" optionLabel="name"></Dropdown>
+                            <Dropdown id="taxableConfig" :options="taxExempted" @change="onTaxableConfigChange($event)" v-model="taxableConfigs" @blur="onInputBlur(taxableConfigs, 'taxableConfigs')" :class="{ 'p-invalid': formError?.taxableConfigs }" optionLabel="name"></Dropdown>
                             <label for="taxableConfig">VAT Config</label>
                         </span>
                     </div>
+
+                    <!-- <div class="field col-12 md:col-6" v-if="institutionDetails?.is_tax_enabled">
+                        <span class="p-float-label">
+                            <Dropdown id="instCity" :options="taxOptions" v-model="taxableConfigs" @blur="onInputBlur(taxableConfigs, 'taxableConfigs')" :class="{ 'p-invalid': formError?.taxableConfigs }" optionLabel="name"></Dropdown>
+                            <label for="instCity">Tax Config</label>
+                        </span>
+                    </div> -->
 
 
                 </div>
@@ -817,7 +830,7 @@ onMounted(() => {
                             <label for="sellingPrice">Unit Selling Price </label>
                         </span>
                     </div>
-                    <div class="field col-12 md:col-6" v-if="institutionDetails?.is_tax_enabled">
+                    <div class="field col-12 md:col-6" v-if="institutionDetails?.is_tax_enabled && taxableConfigs.value ==  'TAX_STANDARD_RATED'">
                         <span class="p-float-label">
                             <Dropdown id="instCity" :options="taxOptions" v-model="taxConfig" @blur="onInputBlur(taxConfig, 'taxConfig')" :class="{ 'p-invalid': formError?.taxConfig }" optionLabel="name"></Dropdown>
                             <label for="instCity">Tax Config</label>

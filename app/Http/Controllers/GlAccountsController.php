@@ -519,10 +519,10 @@ class GlAccountsController extends Controller
                 ->where('transaction_date', '<', $request->fromDate)
                 ->sum('tran_amount');
 
-            $totalCloseStock = (double) DB::table('gl_histories')
-                ->where('acct_no', $stockAcctNo)
-                ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-                ->sum('tran_amount');
+            // $totalCloseStock = (double) DB::table('gl_histories')
+            //     ->where('acct_no', $stockAcctNo)
+            //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+            //     ->sum('tran_amount');
 
             $totalPurchases = (double) DB::table('gl_histories')
                 ->where('acct_no', $purchaseAcctNo)
@@ -543,11 +543,17 @@ class GlAccountsController extends Controller
                 ->where(['acct_type'=>'INCOME', 'institution_id'=>$branch->institution_id, 'branch_id'=>$branch->id])
                 ->sum('balance');
 
+            //return needs to be purchase return
             $goodsAvailableForSale=($totalOpenStock+(($totalPurchases+$totalPassage)-$totalReturns));
+
+
+            // closing stock is Opening Stock+Purchases−Sales+Sales Returns−Purchase Returns±Adjustments
+            $totalCloseStock = $totalOpenStock+$totalPurchases-$totalSales;
+
+            // cost of sale = goods available for sale - closing stock
             $costOfSales =  $goodsAvailableForSale-$totalCloseStock;
             $grossProfit =  ($totalSales-$totalReturns)-$costOfSales;
 
-            // $totalCloseStock = $totalOpenStock+$totalPurchases-
 
             $netProfit = $grossProfit-$totalOperatingExpenses;
 

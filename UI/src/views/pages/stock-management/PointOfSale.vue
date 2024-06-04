@@ -17,6 +17,10 @@ const balance = ref(0);
 const filters = ref({});
 const institutionDetails = ref({});
 const extraTax= ref(0);
+
+const totalInclusiveTax= ref(0);
+const totalExclusiveTax= ref(0);
+
 const VAT = ref([
     {id:1, name:"18%", amount:0, total:0},
     {id:2, name:"Exempted", amount:0, total:0},
@@ -41,8 +45,6 @@ const OnSelectItem = (data) => {
     } else {
         selectedProduct.value.push(obj);
     }
-
-    // alert(institutionDetails?.value?.is_tax_enabled)
     if(institutionDetails?.value?.is_tax_enabled){
         computeVAT()
     }
@@ -53,9 +55,7 @@ const OnSelectRemoveItem = (data) => {
     const index = selectedProduct.value.findIndex(item => item.id === data.id);
     if (index !== -1) {
         selectedProduct.value.splice(index, 1);
-        // console.log(`Object with id ${id} removed from the array.`);
     } else {
-        // console.log(`Object with id ${id} not found in the array.`);
     }
 }
 
@@ -83,6 +83,7 @@ const increaseReduce = (data, action) => {
         }
         return product;
     });
+    computeVAT();
 }
 
 const totalPrice = (array) => {
@@ -97,13 +98,16 @@ const totalPrice = (array) => {
 
 const onSubmitOrder = () => {
     let postData = {
-        total: totalPrice(selectedProduct?.value) - Number(discount?.value),
+        total: totalPrice(selectedProduct?.value) - Number(discount?.value) + Number(extraTax.value),
         discount: Number(discount?.value),
         amountPaid: Number(amountTOPay?.value),
         itemCount: selectedProduct?.value.length,
         tranDate: new Date(),
         items: selectedProduct?.value,
-        status: "Active"
+        status: "Active",
+        vat:  Number(extraTax.value),
+        vatInc:  totalInclusiveTax.value,
+        vatEx: totalExclusiveTax.value
     }
 
     commonService.genericRequest('create-order', 'post', true, postData).then((response) => {
@@ -135,49 +139,6 @@ const initFilters = () => {
     };
 };
 
-// const computeVAT=()=>{
-//     let taxExTotal = 0;
-//     let taxInTotal=0;
-//     let totalEx = 0;
-//     let totalIn = 0;
-//     let exemptedTotal = 0;
-//     selectedProduct.value.forEach((element, index) => {
-//         console.log(element.tax_config)
-//         if(element.tax_config == 'TAX_EXCLUSIVE'){
-//             taxExTotal = taxExTotal + (element.quantity * element.price);
-//         }else if(element.tax_config == 'TAX_INCLUSIVE'){
-//             taxInTotal = taxInTotal + (element.quantity * element.price);
-//         }else if(element.tax_config == 'TAX_EXEMPTED'){
-//             exemptedTotal = exemptedTotal + (element.quantity * element.price);
-//         }
-//     });
-//     totalEx=(18/100 * taxExTotal);
-//     totalIn=(18/100 * taxInTotal);
-
-
-//     console.log(totalEx)
-//     console.log(totalIn)
-
-//     extraTax.value=totalEx;
-
-//     VAT.value = VAT.value.map(item =>
-//     item.id === 1
-//         ? {
-//             ...item,
-//             total: totalEx + totalIn,
-//             amount: (taxExTotal) + (taxInTotal - totalIn)
-//         }
-//         : item.id===2
-//         ? {
-//             ...item,
-//             total: 0,
-//             amount: exemptedTotal
-//         }
-//         :item
-//     );
-// }
-
-
 const computeVAT = () => {
     let taxExTotal = 0;
     let taxInTotal = 0;
@@ -200,6 +161,9 @@ const computeVAT = () => {
 
     const totalEx = 0.18 * taxExTotal;
     const totalIn = 0.18 * taxInTotal;
+
+    totalExclusiveTax.value = totalEx;
+    totalInclusiveTax.value = totalIn;
 
     extraTax.value = totalEx;
 
@@ -307,7 +271,7 @@ onMounted(() => {
                             </Column>
                             <Column headerStyle="max-width:10rem;">
                                 <template #body="{ data }">
-                                    <Button icon="pi pi-check" class="p-button-rounded p-button-success mr-2"
+                                    <Button icon="pi pi-check" class="p-button-success mr-2"  v-tooltip="'Select product'"
                                         @click="OnSelectItem(data)" />
                                 </template>
                             </Column>

@@ -83,11 +83,11 @@ onMounted(() => {
                                     </Column>
                                     <Column headerStyle="max-width:10rem;">
                                         <template #body="{ data }">
-                                                <Button icon="pi pi-eye" @click="goToDetails(data)" class="p-button-primary mr-2" />
+                                                <Button icon="pi pi-eye" @click="goToDetails(data)" class="p-button-primary mr-2"  v-tooltip="'Gl. account statement'"/>
                                                 <!-- <Button icon="pi pi-pencil" @click="updateGl(data)" class="p-button-success mr-2" /> -->
                                         </template>
                                     </Column>
-                           
+
                                 </DataTable>
 
                             </TabPanel>
