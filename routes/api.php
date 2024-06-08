@@ -155,5 +155,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get("get-institution-details", [InstitutionController::class, "getInstitutionDetails"]);
     Route::post("restock-product", [ProductController::class, "restock"]);
     Route::post("archive-product", [ProductController::class, "archiveProduct"]);
+    Route::post("get-institution-profile", [InstitutionController::class, "getInstitutionProfile"]);
 
 });

@@ -1,8 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
+
+const router = useRouter();
+const route = useRoute()
 
 const toast = useToast();
 const institution = ref(null);
@@ -16,6 +19,10 @@ const getAllInstitutions = () => {
             commonService.showError(toast, response.message);
         }
     })
+}
+
+const editInstitution = (event) => {
+    router.push("/create-institution/" + event?.id);
 }
 
 onMounted(() => {
@@ -38,7 +45,7 @@ onMounted(() => {
                     </Column>
                     <Column header="Type" style="min-width: 10rem">
                         <template #body="{ data }">
-                            {{ data.institution_type_id }}
+                            {{ data.type_name }}
                         </template>
                     </Column>
                     <Column header="Description" style="min-width: 12rem">
@@ -63,10 +70,9 @@ onMounted(() => {
                     </Column>
                     <Column headerStyle="min-width:10rem;">
                         <template #body="{ data }">
-                            <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2"
-                                @click="AddRolesPermissions(data)" />
-                            <Button icon="pi pi-trash" class="p-button-rounded p-button-warning mt-2"
-                                @click="confirmDeleteProduct(data)" />
+                            <Button icon="pi pi-eye" @click="editInstitution(data)" class="p-button-primary mr-2"  v-tooltip="'View institution details'" />
+                            <Button icon="pi pi-pencil" @click="editInstitution(data)" class="p-button-success mr-2"  v-tooltip="'Edit institution details'" />
+                            <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="editInstitution(data)"  v-tooltip="'Archive institution'" />
                         </template>
                     </Column>
 

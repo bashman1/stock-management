@@ -160,6 +160,14 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: '/create-institution/:id',
+                    name: 'EditInstitution',
+                    component: () => import('@/views/pages/institution-management/CreateInstitution.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
                     path: '/view-institutions',
                     name: 'ViewInstitutions',
                     component: () => import('@/views/pages/institution-management/ViewInstitutions.vue'),
