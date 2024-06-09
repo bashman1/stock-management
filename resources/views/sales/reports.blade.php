@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css"
         integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 
-    <title>Product Report</title>
+    <title>Sale Report</title>
 </head>
 
 <body>
@@ -25,19 +25,19 @@
                     <th scope="col">Measurement</th>
                     <th scope="col">Purchase price</th>
                     <th scope="col">Selling Price</th>
-                    <th scope="col">Product Number</th>
+                    <th scope="col">Sale Number</th>
 
                 </tr>
             </thead>
             <tbody>
-                @foreach($products as $item)
+                @foreach($Sales as $item)
                     <tr class="items">
 
                         <td scope="row">
                             {{ $item->name }}
                         </td>
                         <td>
-                            {{isset($item->product_type) ? $item->product_type['name'] : 'N/F'}}
+                            {{isset($item->Sale_type) ? $item->Sale_type['name'] : 'N/F'}}
                         </td>
                         <td>
 
@@ -55,7 +55,7 @@
                             {{isset($item->stock) ? $item->stock['selling_price'] : 'N/F'}}
                         </td>
                         <td>
-                            {{$item->product_no}}
+                            {{$item->Sale_no}}
                         </td>
 
                     </tr>

@@ -1,7 +1,7 @@
 export default class CommonService {
-     baseUrl = "http://localhost:8000/api/";
+    //  baseUrl = "http://localhost:8000/api/";
     // baseUrl = "http://137.184.230.127/api/";
-//    baseUrl = "../api/";
+   baseUrl = "../api/";
 
     // loggedIn = this.checkingAuthentication();
 
@@ -93,16 +93,18 @@ export default class CommonService {
             });
     };
 
-    getFileFromTheServer = (url, method) => {
+    getFileFromTheServer = (url, method, postData) => {
         return fetch(url, {
             method: method,
             headers: {
-               // "Content-Type": "application/json",
-               // Accept: "application/json",
+            //    "Content-Type": "application/json",
+            //    Accept: "application/blo",
                 Authorization: "Bearer " + this.getStorage().token
-            }
+            },
+            body: JSON.stringify(postData)
         })
             .then(res => {
+
 
                 return res.blob();
             })
@@ -240,17 +242,20 @@ export default class CommonService {
      * @author Bash
      */
     genericRequest = (url, method, isAuthenticated, postData, isFile) => {
+
+
+        if(isAuthenticated&&isFile){
+
+            return this.getFileFromTheServer(
+                this.baseUrl + "" + url,
+                method,
+                postData
+            ).then(file => {
+                return file;
+            })
+        }
+
         if (method == "GET" || method == "get") {
-
-            if(isAuthenticated&&isFile){
-                return this.getFileFromTheServer(
-                    this.baseUrl + "" + url,
-                    method
-                ).then(file => {
-                    return file;
-                })
-            }
-
             if (isAuthenticated) {
                 return this.getFromServerWithToken(
                     this.baseUrl + "" + url,
@@ -264,6 +269,8 @@ export default class CommonService {
                 });
             }
         } else {
+
+
             if (isAuthenticated) {
                 return this.postToServerWithToken(
                     this.baseUrl + "" + url,
