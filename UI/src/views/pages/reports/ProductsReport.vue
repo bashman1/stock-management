@@ -36,10 +36,9 @@ const getProductReportPdfFile = () => {
     try {
         isDownloading.value = true;
         commonService
-            .genericRequest('download-product-report-pdf', 'get', true, {}, true)
+            .genericRequest('download-product-report-pdf', 'post', true, {}, true)
 
             .then((blob) => {
-                //console.log(blob, 'data.......')
                 const fileURL = window.URL.createObjectURL(new Blob([blob]));
                 const fileLink = document.createElement('a');
                 fileLink.href = fileURL;
@@ -59,7 +58,7 @@ const getProductReportCsvFile = () => {
     try {
         isDownloading.value = true;
         commonService
-            .genericRequest('download-product-report-csv', 'get', true, {}, true)
+            .genericRequest('download-product-report-csv', 'post', true, {}, true)
 
             .then((blob) => {
                 //console.log(blob, 'data.......')
