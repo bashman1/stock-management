@@ -4,11 +4,25 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\ProductCsvExport;
+use App\Models\OrderItem;
+use App\Models\Product;
+use App\Services\ReportsService;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
 
-    public function getInventoryReport(Request $request){
+    protected $reportService;
+    public function __construct(ReportsService $reportServ)
+    {
+        $this->reportService = $reportServ;
+    }
+
+
+    public function getInventoryReport(Request $request)
+    {
 
         $userData = auth()->user();
         $isNotAdmin = $this->isNotAdmin();
@@ -50,28 +64,17 @@ class ReportController extends Controller
      * @param Request $request
      * @return void
      */
-    public function getSalesReport(Request $request){
-        $userData = auth()->user();
-        $isNotAdmin = $this->isNotAdmin();
-        $sqlString = "SELECT O.id, O.ref_no, O.receipt_no, O.tran_id, O.item_count, O.total, O.discount,
-        O.amount_paid, O.user_id, O.customer_id, O.tran_date, O.status, O.payment_status,
-        O.institution_id, O.branch_id, O.created_by, O.updated_by, O.created_on, O.updated_on,
-        O.created_at, O.updated_at, I.name AS institution_name, B.name AS branch_name
-        FROM orders O
-        INNER JOIN institutions I ON O.institution_id = I.id
-        INNER JOIN branches B ON B.id = O.branch_id";
-        $sqlString .= " WHERE O.status = '$request->status'";
-        if ($isNotAdmin) {
-            $sqlString .= " AND O.institution_id = $userData->institution_id AND O.branch_id = $userData->branch_id";
-        }
-        $sqlString .= " ORDER BY O.id DESC";
-        $orders = DB::select($sqlString);
+    public function getSalesReport(Request $request)
+    {
+
+        $orders = $this->reportService->salesReport($request);
 
         return $this->genericResponse(true, "Product list", 200, $orders);
     }
 
 
-    public function getInventoryHistoryReport(Request $request){
+    public function getInventoryHistoryReport(Request $request)
+    {
         $userData = auth()->user();
         $isNotAdmin = $this->isNotAdmin();
         $sqlString = "SELECT P.name AS product_name, H.id, H.purchase_price, H.selling_price, H.product_id, H.stock_id, H.quantity, H.min_quantity,
@@ -81,7 +84,7 @@ class ReportController extends Controller
         INNER JOIN products P ON P.id = H.product_id
         INNER JOIN institutions I ON I.id =  H.institution_id
         INNER JOIN users U ON U.id = H.user_id";
-         $sqlString .= " WHERE H.product_id= $request->productId";
+        $sqlString .= " WHERE H.product_id= $request->productId";
         if ($isNotAdmin) {
             $sqlString .= " AND H.institution_id = $userData->institution_id AND H.branch_id = $userData->branch_id";
         }
@@ -90,10 +93,11 @@ class ReportController extends Controller
         return $this->genericResponse(true, "Product list", 200, $stockHistory);
     }
 
-    public function getSalesHistoryReport(Request $request){
+    public function getSalesHistoryReport(Request $request)
+    {
         $userData = auth()->user();
         $isNotAdmin = $this->isNotAdmin();
-        $sqlString ="SELECT P.name AS product_name, O.id, O.order_id, O.product_id, O.qty AS quantity, O.status,
+        $sqlString = "SELECT P.name AS product_name, O.id, O.order_id, O.product_id, O.qty AS quantity, O.status,
         O.institution_id, O.created_on,S.ref_no, S.receipt_no, S.tran_id,I.name AS institution_name,
         CONCAT(U.first_name,' ',U.last_name,' ', U.other_name) AS user_name, K.purchase_price,
         K.selling_price FROM order_items O
@@ -109,7 +113,62 @@ class ReportController extends Controller
         }
         $sqlString .= " ORDER BY O.id DESC";
         $salesHistory = DB::select($sqlString);
-        return $this->genericResponse(true, "Product list", 200, ['institution_id'=>$userData->institution_id, 'branch_id'=>$userData->branch_id]);
-        // return $this->genericResponse(true, "Product list", 200, $salesHistory );
+        //return $this->genericResponse(true, "Product list", 200, ['institution_id'=>$userData->institution_id, 'branch_id'=>$userData->branch_id]);
+        return $this->genericResponse(true, "Product list", 200, $salesHistory);
+    }
+
+
+
+    public function downLoadProductPdfReport()
+    {
+        //TODO get products belonging to a store
+
+        $products = Product::with(['stock', 'category', 'subCategory', 'productType', 'measurement'])->get();
+
+        //return response()->json(['result'=>$products]);
+        if (count($products) > 0) {
+            Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+            $pdf = Pdf::loadView('product.reports', compact('products'));
+            $pdf->setPaper('A4', 'landscape');
+            $pdf->setBasePath(public_path());
+            $pdf->setPaper('A4', 'landscape');
+            $pdf->setBasePath(public_path());
+            return $pdf->stream('product_report' . '.pdf');
+        }
+    }
+
+
+    public function downLoadProductCsvReport()
+    {
+        //TODO get products belonging to a store
+
+        return Excel::download(new ProductCsvExport, 'users.csv');
+    }
+
+
+    public function downLoadSalesPdfReport(Request $request)
+    {
+      
+
+        $sales = $this->reportService->salesReport($request);
+
+        //return response()->json(['result'=>$products]);
+        if (count($sales) > 0) {
+            Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+            $pdf = Pdf::loadView('sales.reports', compact('saless'));
+            $pdf->setPaper('A4', 'patriot');
+            $pdf->setBasePath(public_path());
+            $pdf->setPaper('A4', 'patriot');
+            $pdf->setBasePath(public_path());
+            return $pdf->stream('sales_report' . '.pdf');
+        }
+    }
+
+
+    public function downLoadSalesCsvReport()
+    {
+        //TODO get products belonging to a store
+
+        return Excel::download(new ProductCsvExport, 'users.csv');
     }
 }

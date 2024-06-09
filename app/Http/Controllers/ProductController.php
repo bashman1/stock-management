@@ -13,9 +13,7 @@ use Illuminate\Support\Str;
 use App\Models\GlAccounts;
 use App\Models\Institution;
 use Carbon\Carbon;
-use Barryvdh\DomPDF\Facade\Pdf;
-use App\Exports\ProductCsvExport;
-use Maatwebsite\Excel\Facades\Excel;
+
 
 class ProductController extends Controller
 {
@@ -319,33 +317,7 @@ class ProductController extends Controller
         return $this->genericResponse(true, "Product list", 200, $product);
     }
 
-    public function downLoadProductPdfReport()
-    {
-        //TODO get products belonging to a store
-
-        $products = Product::with(['stock', 'category', 'subCategory', 'productType', 'measurement'])->get();
-
-        //return response()->json(['result'=>$products]);
-        if (count($products) > 0) {
-            Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
-            $pdf = Pdf::loadView('product.reports', compact('products'));
-            $pdf->setPaper('A4', 'patriot');
-            $pdf->setBasePath(public_path());
-            $pdf->setPaper('A4', 'patriot');
-            $pdf->setBasePath(public_path());
-            return $pdf->stream('product_report' . '.pdf');
-        }
-    }
-
-
-    public function downLoadProductCsvReport()
-    {
-        //TODO get products belonging to a store
-
-        return Excel::download(new ProductCsvExport, 'users.csv');
-
-    }
-
+   
 
     // public function getPro
 
