@@ -189,7 +189,7 @@ const onSubmit= ()=>{
     formError.value.sellingPrice=commonService.validateFormField(sellingPrice.value);
     formError.value.prodType=commonService.validateFormField(prodType.value);
 
-    formError.value.taxConfig=commonService.validateFormField(taxConfig.value);
+    // formError.value.taxConfig=commonService.validateFormField(taxConfig.value);
 
 
     let invalid = commonService.validateRequiredFields(formError.value);
