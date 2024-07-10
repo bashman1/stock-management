@@ -96,6 +96,12 @@ const chartOfAccountMenu = ref(
     }
 )
 
+const logOut = ref({
+    label: 'Log Out',
+    icon: 'pi pi-sign-out',
+    to: '/logout'
+})
+
 
 
 if (commonService.checkPermissions('CanCreateInstitution')) {
@@ -398,6 +404,8 @@ if (stockMenu?.value?.items?.length > 0) {
 if (chartOfAccountMenu?.value?.items?.length > 0) {
     model.value[0].items.push(chartOfAccountMenu.value);
 }
+
+model.value[0].items.push(logOut.value);
 
 
 

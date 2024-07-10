@@ -185,6 +185,15 @@ const router = createRouter({
 
                 },
                 {
+                    path: '/create-user/:id',
+                    name: 'EditUser',
+                    component: () => import('@/views/pages/user-management/CreateUser.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+
+                },
+                {
                     path: '/view-users',
                     name: 'ViewUsers',
                     component: () => import('@/views/pages/user-management/ViewUsers.vue'),
@@ -452,6 +461,14 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/logout',
+                    name: 'LogOut',
+                    component: ()=>import('@/views/pages/LogOut.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                }
 
 
             ]

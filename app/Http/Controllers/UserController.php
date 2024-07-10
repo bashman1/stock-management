@@ -6,19 +6,30 @@ use App\Models\User;
 use App\Models\LoginSession;
 use Illuminate\Http\Request;
 use App\Models\Role;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
 
+
     public function createUser(Request $request){
         // try {
-            $user = new User();
+            $user = null;
+            if(isset($request->id)){
+                $user = User::find($request->id);
+                $user->updated_at = Carbon::now();
+            }else{
+                $user = new User();
+                $user->created_by = 1;
+                $user->created_on = now();
+                $user->password = bcrypt($request->password);
+            }
+
             $user->first_name = $request->first_name;
             $user->last_name = $request->last_name;
             $user->other_name = $request->other_name;
             $user->email = $request->email;
-            $user->password = bcrypt($request->password);
             $user->phone_number = $request->phone_number;
             $user->gender = $request->gender;
             $user->date_of_birth = $request->date_of_birth;
@@ -33,8 +44,7 @@ class UserController extends Controller
             $user->user_category =  $request->user_category;
             $user->institution_id = $request->institution_id;
             $user->branch_id =  $request->branch_id;
-            $user->created_by = 1;
-            $user->created_on = now();
+
             $user->save();
             return $this->genericResponse(true, "User created successfully", 201, $user);
         // } catch (\Throwable $th) {
@@ -89,9 +99,9 @@ class UserController extends Controller
             $userData = auth()->user();
             $isNotAdmin = $this->isNotAdmin();
 
-            $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email, 
+            $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email,
             U.status, U.user_type, U.user_category, U.street, U.p_o_box, U.description, U.role_id, U.institution_id, U.branch_id, U.created_at,
-            U.created_on,U.updated_at, C.name AS city, R.name AS role, I.name AS institution, B.name AS branch, 
+            U.created_on,U.updated_at, C.name AS city, R.name AS role, I.name AS institution, B.name AS branch,
             CONCAT(V.first_name,' ', V.last_name,' ', V.other_name) as created_by
             FROM users U LEFT JOIN city_refs C ON C.id =U.city_id
             INNER JOIN roles R ON R.id = U.role_id
@@ -106,6 +116,34 @@ class UserController extends Controller
             return $this->genericResponse(true, "Users retrieved successfully", 200, $users);
         } catch (\Throwable $th) {
             return $this->genericResponse(false, "User creation  Failed", 500, []);
+        }
+    }
+
+
+    public function getUserDetails(Request $request){
+        try {
+            $userData = auth()->user();
+            $isNotAdmin = $this->isNotAdmin();
+
+            $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email,
+            U.status, U.user_type, U.user_category, U.street, U.p_o_box, U.description, U.role_id, U.institution_id, U.branch_id, U.created_at,
+            U.created_on,U.updated_at, C.name AS city, R.name AS role, I.name AS institution, B.name AS branch,
+            CONCAT(V.first_name,' ', V.last_name,' ', V.other_name) as created_by
+            FROM users U LEFT JOIN city_refs C ON C.id =U.city_id
+            INNER JOIN roles R ON R.id = U.role_id
+            INNER JOIN institutions I ON I.id = U.institution_id
+            INNER JOIN branches B ON B.id = U.branch_id
+            LEFT JOIN users V ON V.id = U.created_by
+            WHERE U.id = $request->userId ";
+            if($isNotAdmin){
+                    $queryString.=" AND U.institution_id = $userData->institution_id AND U.branch_id=$userData->branch_id ";
+            }
+            $queryString.=" ORDER BY U.id DESC ";
+            $users = DB::select($queryString);
+            return $this->genericResponse(true, "Users retrieved successfully", 200, $users);
+
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, "User details could not be retrieved", 500, []);
         }
     }
 
