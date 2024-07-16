@@ -178,6 +178,16 @@ if (commonService.checkPermissions('UploadMembers')) {
     );
 }
 
+if (commonService.checkPermissions('CanUploadBulkProducts')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Products',
+            icon: 'pi pi-fw pi-circle',
+            to: '/upload-products'
+        }
+    );
+}
+
 if (commonService.checkPermissions('ViewUploadedMembers')) {
     bulkMenu.value.items.push(
         {

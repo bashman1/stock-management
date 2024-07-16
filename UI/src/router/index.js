@@ -468,6 +468,14 @@ const router = createRouter({
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
+                },
+                {
+                    path: '/upload-products',
+                    name: 'UploadProducts',
+                    component: ()=>import('@/views/pages/stock-management/BulkUploadProducts.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
                 }
 
 

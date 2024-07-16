@@ -58,6 +58,12 @@ onMounted(() => {
                             {{ data.status }}
                         </template>
                     </Column>
+                     <Column header="Reference" style="min-width: 10rem">
+                        <template #body="{ data }">
+                            {{ data.ref_no }}
+                        </template>
+                    </Column>
+
                     <Column header="Created By" style="min-width: 10rem">
                         <template #body="{ data }">
                             {{ data.created_by }}
