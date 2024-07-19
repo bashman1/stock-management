@@ -476,7 +476,25 @@ const router = createRouter({
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
+                },
+                {
+                    path: '/view-uploaded-products',
+                    name: 'uploadedProducts',
+                    component: () => import('@/views/pages/stock-management/ViewUploadedProducts.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/approve-uploaded-products/:id',
+                    name: 'ApproveUploadedProducts',
+                    component: () => import('@/views/pages/stock-management/ApproveBulkProducts.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
                 }
+
+
 
 
             ]

@@ -188,6 +188,16 @@ if (commonService.checkPermissions('CanUploadBulkProducts')) {
     );
 }
 
+if (commonService.checkPermissions('ViewUploadBulkProductsBatch')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'View Upload Products',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-uploaded-products'
+        }
+    );
+}
+
 if (commonService.checkPermissions('ViewUploadedMembers')) {
     bulkMenu.value.items.push(
         {

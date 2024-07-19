@@ -47,7 +47,7 @@ const uploadFile = async () => {
     formData.append('file', uploadedFile.value);
     formData.append("name", uploadedFile.value.name);
     try {
-        const response = await fetch(commonService.baseUrl+'upload-members', {
+        const response = await fetch(commonService.baseUrl+'upload-products', {
             method: 'POST',
             body: formData,
             headers: {
@@ -59,7 +59,7 @@ const uploadFile = async () => {
         }
         const data = await response.json();
         commonService.showSuccess(toast, data.message);
-        router.push("/view-uploaded-members");
+        // router.push("/view-uploaded-members");
     } catch (error) {
         console.error(error.message);
         commonService.showError(toast, error.message);

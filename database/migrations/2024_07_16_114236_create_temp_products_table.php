@@ -23,10 +23,11 @@ return new class extends Migration
             $table->unsignedBigInteger("manufacturer_id")->nullable();
             $table->unsignedBigInteger("supplier_id")->nullable();
             $table->unsignedBigInteger("measurement_unit_id")->nullable();
+            $table->unsignedBigInteger("batch_id")->nullable();
             $table->unsignedBigInteger("gauge_id")->nullable();
             $table->text('description')->nullable();
-            $table->unsignedBigInteger("institution_id");
-            $table->unsignedBigInteger("user_id");
+            $table->unsignedBigInteger("institution_id")->nullable();
+            $table->unsignedBigInteger("user_id")->nullable();
             $table->double('purchase_price', 8, 2)->default(0)->nullable();
             $table->double('selling_price', 8, 2)->default(0);
             $table->double('discount', 8, 2)->default(0)->nullable();

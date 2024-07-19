@@ -27,6 +27,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\MtnPaymentsController;
 use App\Http\Controllers\GlAccountsController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\TempProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,7 +80,9 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('create-member', [MemberController::class, 'createMember']);
     Route::post('upload-members', [TempMemberController::class, 'uploadMembers']);
     Route::post("get-upload-batch", [TempMemberController::class, "getMemberBatches"]);
+    Route::post("get-product-upload-batch", [TempProductController::class, "getProductBatches"]);
     Route::post("get-batch-members", [TempMemberController::class, "getBatchMembers"]);
+    Route::post("get-batch-products", [TempProductController::class, "getBatchProducts"]);
     Route::post("approve-batch-member", [MemberController::class, "approveBulkMembers"]);
     Route::post("get-members-by-institution", [MemberController::class, "getMembersByInstitution"]);
     Route::post("collect-deposit", [CollectionController::class, "fieldCollect"]);
@@ -158,5 +161,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("archive-product", [ProductController::class, "archiveProduct"]);
     Route::post("get-institution-profile", [InstitutionController::class, "getInstitutionProfile"]);
     Route::post("get-user-details", [UserController::class, "getUserDetails"]);
+    Route::post("upload-products", [TempProductController::class, "uploadProducts"]);
 
 });
