@@ -7,6 +7,8 @@ use App\Models\stock;
 use App\Models\CntrlParameter;
 use App\Models\stockHistory;
 use App\Models\Branch;
+use App\Models\TempMember;
+use App\Models\TempProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -20,6 +22,13 @@ class ProductController extends Controller
 
     public function createProduct(Request $request)
     {
+        $response = $this->createNewProduct($request);
+
+        return $this->genericResponse(true, $response->message, 201, $response->product);
+    }
+
+
+    public function createNewProduct($request){
         $userData = auth()->user();
         $product = null;
 
@@ -238,7 +247,7 @@ class ProductController extends Controller
         $history->save();
 
         DB::commit();
-        return $this->genericResponse(true, $message, 201, $product);
+        return  (object)['message'=> $message, 'product'=> $product];
     }
 
 
@@ -419,7 +428,7 @@ class ProductController extends Controller
         $isNotAdmin = $this->isNotAdmin();
 
         $sqlString = "SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
-        P.institution_id, P.user_id, P.status, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.updated_at, C.name AS category_name,
+        P.institution_id, P.user_id, P.status, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.ref_no, P.updated_at, C.name AS category_name,
         S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
         E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name,  P.tax_config
         FROM products P INNER JOIN product_categories C ON C.id = P.category_id
@@ -485,6 +494,47 @@ class ProductController extends Controller
         $product = DB::select($sqlString);
 
         return $this->genericResponse(true, "Product list", 200, $product);
+    }
+
+
+    public function approveBulkProducts(Request  $request){
+        foreach ($request->products as $product) {
+            $newProduct= TempProduct::find($product["id"]);
+            $newProduct->user_id=$newProduct->created_by;
+            $newProduct->status="Active";
+//            $response = $this->newMember($newProduct);
+            $newRequest =(object) [
+                'name'   => $newProduct->name,
+                'product_no'   => $newProduct->product_no,
+                'category_id'   => $newProduct->category_id,
+                'sub_category_id'   => $newProduct->sub_category_id,
+                'manufacturer_id'   => $newProduct->manufacturer_id,
+                'supplier_id'   => $newProduct->supplier_id,
+                'measurement_unit_id'   => $newProduct->measurement_unit_id,
+                'description'   => $newProduct->description,
+                'type_id'   => $newProduct->type_id,
+                'gauge_id'   => $newProduct->gauge_id,
+                'tax_config'   => $newProduct->tax_config,
+                'quantity'   => $newProduct->quantity,
+                'purchase_price'   => $newProduct->purchase_price,
+                'date'   => $newProduct->stock_date,
+                'discount'   => $newProduct->discount,
+                'selling_price'   => $newProduct->selling_price,
+                'min_quantity'   => $newProduct->min_quantity,
+                'max_quantity'   => $newProduct->max_quantity,
+                'manufactured_date'   => $newProduct->manufactured_date,
+                'expiry_date'   => $newProduct->expiry_date,
+                'status'   => 'Active',
+                'id'   => null,
+            ];
+
+            $response = $this->createNewProduct($newRequest);
+            if ($response->product){
+//                unset($newProduct->user_id);?
+                $newProduct->save();
+            }
+        }
+        return $this->genericResponse(true, "Approved Successfully", 200, []);
     }
 
 

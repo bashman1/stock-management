@@ -492,7 +492,31 @@ const router = createRouter({
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
-                }
+                },
+                {
+                    path: '/upload-sales',
+                    name: 'UploadSales',
+                    component: ()=>import('@/views/pages/stock-management/BulkSales.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-uploaded-sales',
+                    name: 'uploadedSales',
+                    component: () => import('@/views/pages/stock-management/ViewUploadedSales.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/approve-uploaded-sales/:id',
+                    name: 'ApproveUploadedSales',
+                    component: () => import('@/views/pages/stock-management/ApproveBulkUploadedSales.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
 
 
 

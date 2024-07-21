@@ -19,7 +19,7 @@ const getBatchMembers=(batchId)=>{
         batchId:batchId
     }
 
-    commonService.genericRequest('get-batch-products', 'post', true, postData).then((response) => {
+    commonService.genericRequest('get-batch-sales', 'post', true, postData).then((response) => {
         if (response.status) {
             members.value = response.data;
         } else {
@@ -30,10 +30,10 @@ const getBatchMembers=(batchId)=>{
 
 const approveMembers=()=>{
     let postData={
-        products:selectedMember.value,
+        sales:selectedMember.value,
         status:"Active"
     }
-    commonService.genericRequest('approve-batch-product', 'post', true, postData).then((response) => {
+    commonService.genericRequest('approve-batch-sales', 'post', true, postData).then((response) => {
         if (response.status) {
             commonService.showSuccess(toast, response.message);
             getBatchMembers(route.params.id)
@@ -75,29 +75,29 @@ onMounted(() => {
                            v-model:selection="selectedMember" :rowsPerPageOptions="[5, 10, 25]">
                     <Column field="name" header="Name" style="min-width: 10rem">
                         <template #body="{ data }">
-                            {{ data.name }}
+                            {{ data.product_name }}
                         </template>
                     </Column>
-                    <Column header="Purchase Price" style="min-width: 10rem">
+                    <Column header="Ref. No." style="min-width: 10rem">
                         <template #body="{ data }">
-                            {{ data.purchase_price }}
+                            {{ data.ref_no }}
                         </template>
                     </Column>
-                    <Column header="Selling Price" style="min-width: 10rem">
-                        <template #body="{ data }">
-                            {{ data.selling_price }}
-                        </template>
-                    </Column>
+<!--                    <Column header="Selling Price" style="min-width: 10rem">-->
+<!--                        <template #body="{ data }">-->
+<!--                            {{ data.selling_price }}-->
+<!--                        </template>-->
+<!--                    </Column>-->
                     <Column header="Quantity" style="min-width: 12rem">
                         <template #body="{ data }">
                             {{ data.quantity }}
                         </template>
                     </Column>
-                    <Column header="Description" style="min-width: 10rem">
-                        <template #body="{ data }">
-                            {{ data.description }}
-                        </template>
-                    </Column>
+<!--                    <Column header="Description" style="min-width: 10rem">-->
+<!--                        <template #body="{ data }">-->
+<!--                            {{ data.description }}-->
+<!--                        </template>-->
+<!--                    </Column>-->
                     <Column header="Stock Date" style="min-width: 10rem">
                         <template #body="{ data }">
                             {{ data.stock_date }}

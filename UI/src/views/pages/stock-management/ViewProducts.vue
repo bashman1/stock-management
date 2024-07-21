@@ -197,6 +197,11 @@ onMounted(() => {
                     {{ data.name }}
                 </template>
             </Column>
+            <Column field="name" header="Ref. No" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ data.ref_no }}
+                </template>
+            </Column>
             <Column field="name" header="Product ID" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.product_no }}

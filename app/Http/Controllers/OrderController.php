@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
 use App\Models\stock;
 use App\Models\Branch;
 use App\Models\GlAccounts;
 use App\Models\CntrlParameter;
 use App\Models\Institution;
+use App\Models\TempSale;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +18,12 @@ use Illuminate\Support\Facades\DB;
 class OrderController extends Controller
 {
     public function createOrder(Request $request){
+        $response = $this->newSale($request);
+
+        return $this->genericResponse(true, "Order submitted successfully", 201, $response);
+    }
+
+    public function newSale($request){
         DB::beginTransaction();
         $userData = auth()->user();
         $order = new Order();
@@ -191,7 +199,7 @@ class OrderController extends Controller
             $items->save();
         }
         DB::commit();
-        return $this->genericResponse(true, "Order submitted successfully", 201, $order);
+        return $order;
     }
 
     public function getOrders(){
@@ -229,4 +237,42 @@ class OrderController extends Controller
         $orderDetails = DB::select($queryString);
         return $this->genericResponse(true, "Order details fetched successfully", 200, $orderDetails);
     }
+
+    public function approveBatchSales(Request $request){
+        DB::beginTransaction();
+        $tempArray = [];
+        $total = 0;
+        $stockDt = null;
+        foreach ($request->sales as $sale){
+            $product = Product::where(["ref_no"=>$sale["ref_no"], "institution_id"=>$sale["institution_id"] ])->first();
+            $stock = stock::where(["product_id"=>$product->id, "branch_id"=>$sale["branch_id"] ])->first();
+            $sum = $sale["quantity"] * $stock->selling_price;
+            $total = $total + (double)$sum;
+            $tempArray[] = ["id"=>$product->id, "quantity"=>$sale["quantity"], "status"=>"Active"];
+
+            $stockDt=$sale["stock_date"];
+
+            $updateSale = TempSale::find($sale["id"]);
+            $updateSale->status="Active";
+            $updateSale->save();
+        }
+
+        $newSale = (object)[
+            "itemCount"=>count($tempArray),
+            "total"=>$total,
+            "discount"=>0,
+            "amountPaid"=>$total,
+            "customerId"=>null,
+            "tranDate"=>$stockDt,
+            "status"=>"Active",
+            "Paid"=>"Paid",
+            "vatEx"=>0,
+            "vatInc"=>0,
+            "items"=>$tempArray,
+        ];
+        $response = $this->newSale($newSale);
+        DB::commit();
+        return $this->genericResponse(true, "Approved Successfully", 200,  $response);
+    }
+
 }

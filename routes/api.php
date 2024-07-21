@@ -28,6 +28,7 @@ use App\Http\Controllers\MtnPaymentsController;
 use App\Http\Controllers\GlAccountsController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TempProductController;
+use App\Http\Controllers\TempSaleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -84,6 +85,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-batch-members", [TempMemberController::class, "getBatchMembers"]);
     Route::post("get-batch-products", [TempProductController::class, "getBatchProducts"]);
     Route::post("approve-batch-member", [MemberController::class, "approveBulkMembers"]);
+    Route::post("approve-batch-product", [ProductController::class, "approveBulkProducts"]);
     Route::post("get-members-by-institution", [MemberController::class, "getMembersByInstitution"]);
     Route::post("collect-deposit", [CollectionController::class, "fieldCollect"]);
     Route::get('get-officer-collection', [CollectionController::class, "getOfficerCollection"]);
@@ -162,5 +164,9 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-institution-profile", [InstitutionController::class, "getInstitutionProfile"]);
     Route::post("get-user-details", [UserController::class, "getUserDetails"]);
     Route::post("upload-products", [TempProductController::class, "uploadProducts"]);
+    Route::post("upload-sales", [TempSaleController::class, "uploadSales"]);
+    Route::post("get-sales-uploaded-batch", [TempSaleController::class, "getSalesBatches"]);
+    Route::post("get-batch-sales", [TempSaleController::class, "getBatchProducts"]);
+    Route::post("approve-batch-sales", [OrderController::class, "approveBatchSales"]);
 
 });

@@ -178,6 +178,16 @@ if (commonService.checkPermissions('UploadMembers')) {
     );
 }
 
+if (commonService.checkPermissions('ViewUploadedMembers')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'View Uploaded Members',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-uploaded-members'
+        }
+    );
+}
+
 if (commonService.checkPermissions('CanUploadBulkProducts')) {
     bulkMenu.value.items.push(
         {
@@ -198,15 +208,27 @@ if (commonService.checkPermissions('ViewUploadBulkProductsBatch')) {
     );
 }
 
-if (commonService.checkPermissions('ViewUploadedMembers')) {
+
+if (commonService.checkPermissions('CanUploadBulkSales')) {
     bulkMenu.value.items.push(
         {
-            label: 'View Uploaded Members',
+            label: 'Upload Sales',
             icon: 'pi pi-fw pi-circle',
-            to: '/view-uploaded-members'
+            to: '/upload-sales'
         }
     );
 }
+
+if (commonService.checkPermissions('ViewUploadBulkSalesBatch')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'View Uploaded Sales',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-uploaded-sales'
+        }
+    );
+}
+
 
 if (commonService.checkPermissions('CollectMoney')) {
     collectionMenu.value.items.push(
