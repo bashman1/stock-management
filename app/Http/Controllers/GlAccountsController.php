@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CntrlParameter;
 use App\Models\GlAccounts;
 use App\Models\GlCat;
+use App\Models\GlHistory;
 use App\Models\GlSubCat;
 use App\Models\GlType;
 use App\Models\GlGenerateAccount;
@@ -604,6 +605,31 @@ class GlAccountsController extends Controller
            $total =  $total + (double) $value->balance;
         }
         return $total;
+    }
+
+    public function getCashBook(Request $request){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+        $queryString = "SELECT * FROM cntrl_parameters WHERE status = Active AND (param_cd = 'CL' OR param_cd = 'CGL' OR param_cd = 'PD') ";
+        if ($isNotAdmin) {
+            $queryString .= " AND institution_id = $userData->institution_id  ";
+        }
+        $queryString .= " ORDER BY B.id ASC ";
+        $contraAcct = DB::select($queryString);
+
+        $tempArray = [];
+        foreach ($contraAcct as $acct){
+            if ($isNotAdmin) {
+                $branch = Branch::find($userData->branch_id);
+                $acctNo = str_replace('***', $branch->code, $acct["param_value"]);
+                $glHistory= GlHistory::where(["acct_no" => $acctNo, "institution_id"=>$userData->institution_id, "branch_id"=>$userData->branch_id]);
+                foreach ($glHistory as $history){
+                    $history[]= ["ind"=> $acct["param_cd"]];
+                    $tempArray[] = $history;
+                }
+            }
+        }
+        return $this->genericResponse(true, "Cash book fetched successfully", 200, $tempArray);
     }
 
 }

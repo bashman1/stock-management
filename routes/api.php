@@ -168,5 +168,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-sales-uploaded-batch", [TempSaleController::class, "getSalesBatches"]);
     Route::post("get-batch-sales", [TempSaleController::class, "getBatchProducts"]);
     Route::post("approve-batch-sales", [OrderController::class, "approveBatchSales"]);
+    Route::post("get-cash-book", [GlAccountsController::class, "getCashBook"]);
 
 });
