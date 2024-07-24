@@ -22,6 +22,7 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->unsignedBigInteger('city_id')->nullable();
             $table->string('street')->nullable();
+            $table->string('tin')->nullable();
             $table->string('p_o_box')->nullable();
             $table->text('description')->nullable();
             $table->boolean('is_tax_enabled')->default(true);

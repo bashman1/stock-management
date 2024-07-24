@@ -489,7 +489,7 @@ watch(
         <div class="col-12 xl:col-6">
             <div class="card">
                 <h5>Best Selling Products</h5>
-                <DataTable :value="dashBoardData?.bestSellingProduct" :rows="5" :paginator="true" responsiveLayout="scroll">
+                <DataTable :value="dashBoardData?.bestSellingProduct" :rows="10" :paginator="true" responsiveLayout="scroll">
                     <Column field="name" header="Name" :sortable="true" style="width: 35%"></Column>
                     <Column field="quantity" header="Quantity" :sortable="true" style="width: 35%"></Column>
                     <Column field="price" header="Price" :sortable="true" style="width: 35%">
@@ -514,7 +514,7 @@ watch(
                     <li class="flex flex-column md:flex-row md:align-items-center md:justify-content-between mb-4">
                         <div>
                             <span class="text-900 font-medium mr-2 mb-1 md:mb-0">{{ product.name }}</span>
-                            <div class="mt-1 text-600">Clothing</div>
+                            <!-- <div class="mt-1 text-600">Clothing</div> -->
                         </div>
                         <div class="mt-2 md:mt-0 flex align-items-center">
                             <div class="surface-300 border-round overflow-hidden w-10rem lg:w-6rem" style="height: 8px">

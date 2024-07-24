@@ -160,6 +160,14 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: '/create-institution/:id',
+                    name: 'EditInstitution',
+                    component: () => import('@/views/pages/institution-management/CreateInstitution.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
                     path: '/view-institutions',
                     name: 'ViewInstitutions',
                     component: () => import('@/views/pages/institution-management/ViewInstitutions.vue'),
@@ -170,6 +178,15 @@ const router = createRouter({
                 {
                     path: '/create-user',
                     name: 'CreateUser',
+                    component: () => import('@/views/pages/user-management/CreateUser.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+
+                },
+                {
+                    path: '/create-user/:id',
+                    name: 'EditUser',
                     component: () => import('@/views/pages/user-management/CreateUser.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
@@ -444,6 +461,82 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/logout',
+                    name: 'LogOut',
+                    component: ()=>import('@/views/pages/LogOut.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/upload-products',
+                    name: 'UploadProducts',
+                    component: ()=>import('@/views/pages/stock-management/BulkUploadProducts.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-uploaded-products',
+                    name: 'uploadedProducts',
+                    component: () => import('@/views/pages/stock-management/ViewUploadedProducts.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/approve-uploaded-products/:id',
+                    name: 'ApproveUploadedProducts',
+                    component: () => import('@/views/pages/stock-management/ApproveBulkProducts.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/upload-sales',
+                    name: 'UploadSales',
+                    component: ()=>import('@/views/pages/stock-management/BulkSales.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-uploaded-sales',
+                    name: 'uploadedSales',
+                    component: () => import('@/views/pages/stock-management/ViewUploadedSales.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/approve-uploaded-sales/:id',
+                    name: 'ApproveUploadedSales',
+                    component: () => import('@/views/pages/stock-management/ApproveBulkUploadedSales.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-uploaded-sales',
+                    name: 'uploadedSales',
+                    component: () => import('@/views/pages/stock-management/ViewUploadedSales.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/cash-book',
+                    name: 'CashBook',
+                    component: () => import('@/views/pages/reports/CashBook.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+
+            //     CashBook.vue
+
+
 
 
             ]

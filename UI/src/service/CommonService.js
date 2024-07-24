@@ -104,7 +104,7 @@ export default class CommonService {
             body: JSON.stringify(postData)
         })
             .then(res => {
-                
+
 
                 return res.blob();
             })
@@ -245,7 +245,7 @@ export default class CommonService {
 
 
         if(isAuthenticated&&isFile){
-        
+
             return this.getFileFromTheServer(
                 this.baseUrl + "" + url,
                 method,
@@ -270,7 +270,7 @@ export default class CommonService {
             }
         } else {
 
-       
+
             if (isAuthenticated) {
                 return this.postToServerWithToken(
                     this.baseUrl + "" + url,
@@ -653,6 +653,17 @@ export default class CommonService {
     checkPermissions=(permission)=>{
         let permissions=this.getStorage()?.userData?.permissions;
         return permissions.some(element => element.name == permission);
+    }
+
+    formatDate=(date)=> {
+        const pad = (num) => String(num).padStart(2, '0');
+        const day = pad(date.getDate());
+        const month = pad(date.getMonth() + 1); // Months are zero-based
+        const year = date.getFullYear();
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+        const seconds = pad(date.getSeconds());
+        return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
     }
 
 }

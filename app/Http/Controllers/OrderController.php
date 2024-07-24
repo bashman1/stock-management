@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
 use App\Models\stock;
 use App\Models\Branch;
 use App\Models\GlAccounts;
 use App\Models\CntrlParameter;
+use App\Models\Institution;
+use App\Models\TempSale;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +18,12 @@ use Illuminate\Support\Facades\DB;
 class OrderController extends Controller
 {
     public function createOrder(Request $request){
+        $response = $this->newSale($request);
+
+        return $this->genericResponse(true, "Order submitted successfully", 201, $response);
+    }
+
+    public function newSale($request){
         DB::beginTransaction();
         $userData = auth()->user();
         $order = new Order();
@@ -37,15 +46,37 @@ class OrderController extends Controller
         $order->created_on = now() ;
         $order->save();
 
+
+        $institution = Institution::find($userData->institution_id);
+        if (!isset($institution)){
+            return $this->genericResponse(false, "Institution not found", 400, $institution);
+        }
+
+        $totalVATPayable = 0;
+        if($institution->is_tax_enabled){
+            if(isset($request->vatEx)){
+                $totalVATPayable = $totalVATPayable+$request->vatEx;
+            }
+            if(isset($request->vatInc)){
+                $totalVATPayable = $totalVATPayable+$request->vatInc;
+            }
+        }
+
+
         $branch = Branch::where(['id'=>$userData->branch_id, 'institution_id'=>$userData->institution_id])->first();
         $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
         $sti = CntrlParameter::where(['param_cd'=>'SL', 'institution_id'=>$userData->institution_id])->first();
+        $vat = CntrlParameter::where(['param_cd'=>'TAX', 'institution_id'=>$userData->institution_id])->first();
 
         $cgl = str_replace('***',$branch->code, $cl->param_value);
         $cash=GlAccounts::where('acct_no', $cgl)->first();
 
         $sgl = str_replace('***',$branch->code, $sti->param_value);
         $stock =GlAccounts::where('acct_no', $sgl)->first();
+
+        $vatGl = str_replace('***',$branch->code, $vat->param_value);
+        $vatTax =GlAccounts::where('acct_no', $vatGl)->first();
+
 
         /**stock and goods for sales */
         $gfs =  CntrlParameter::where(['param_cd'=>'GFS', 'institution_id'=>$userData->institution_id])->first();
@@ -76,18 +107,17 @@ class OrderController extends Controller
         ];
 
         $postTran = $this->postTransaction($tran);
-
         $creditRequest=(object)[
             "acct_no"=>$sgl,
             "acct_type"=>$stock->acct_type,
-            "tran_amt"=>$postTran->tran_amount,
+            "tran_amt"=>$postTran->tran_amount - $totalVATPayable,
             "reversal_flag"=>'N',
             "description"=>$postTran->description,
             "transaction_date"=>$postTran->tran_date,
             "contra_acct_no"=>$cgl,
             "contra_acct_type"=>$cash->acct_type,
             "tran_type"=>'STOCK IN',
-            "tran_cd"=>'STI',
+            "tran_cd"=>'STO',
             "tran_id"=>$postTran->tran_id,
             "institution_id"=>$userData->institution_id,
             "branch_id"=>$userData->branch_id,
@@ -104,8 +134,26 @@ class OrderController extends Controller
             "transaction_date"=>$postTran->tran_date,
             "contra_acct_no"=>$sgl,
             "contra_acct_type"=>$stock->acct_type,
-            "tran_type"=>'STOCK IN',
-            "tran_cd"=>'STI',
+            "tran_type"=>'STOCK OUT',
+            "tran_cd"=>'STO',
+            "tran_id"=>$postTran->tran_id,
+            "institution_id"=>$userData->institution_id,
+            "branch_id"=>$userData->branch_id,
+            "created_by"=>$userData->id,
+            "status"=>'Active',
+        ];
+
+        $taxCreditRequest =(object)[
+            "acct_no"=>$vatTax->acct_no,
+            "acct_type"=>$vatTax->acct_type,
+            "tran_amt"=> $totalVATPayable,
+            "reversal_flag"=>'N',
+            "description"=>$postTran->description,
+            "transaction_date"=>$postTran->tran_date,
+            "contra_acct_no"=>$cgl,
+            "contra_acct_type"=>$cash->acct_type,
+            "tran_type"=>'STOCK OUT',
+            "tran_cd"=>'STO',
             "tran_id"=>$postTran->tran_id,
             "institution_id"=>$userData->institution_id,
             "branch_id"=>$userData->branch_id,
@@ -114,7 +162,9 @@ class OrderController extends Controller
         ];
         $debit = $this->postGlDR($debitRequest);
         $credit = $this->postGlCR($creditRequest);
-
+        if($institution->is_tax_enabled){
+            $VATcredit = $this->postGlCR($taxCreditRequest);
+        }
         foreach ($request->items as $value) {
             $stock = stock::where('product_id', $value['id'])->first();
             $items = new OrderItem();
@@ -149,7 +199,7 @@ class OrderController extends Controller
             $items->save();
         }
         DB::commit();
-        return $this->genericResponse(true, "Order submitted successfully", 201, $order);
+        return $order;
     }
 
     public function getOrders(){
@@ -187,4 +237,42 @@ class OrderController extends Controller
         $orderDetails = DB::select($queryString);
         return $this->genericResponse(true, "Order details fetched successfully", 200, $orderDetails);
     }
+
+    public function approveBatchSales(Request $request){
+        DB::beginTransaction();
+        $tempArray = [];
+        $total = 0;
+        $stockDt = null;
+        foreach ($request->sales as $sale){
+            $product = Product::where(["ref_no"=>$sale["ref_no"], "institution_id"=>$sale["institution_id"] ])->first();
+            $stock = stock::where(["product_id"=>$product->id, "branch_id"=>$sale["branch_id"] ])->first();
+            $sum = $sale["quantity"] * $stock->selling_price;
+            $total = $total + (double)$sum;
+            $tempArray[] = ["id"=>$product->id, "quantity"=>$sale["quantity"], "status"=>"Active"];
+
+            $stockDt=$sale["stock_date"];
+
+            $updateSale = TempSale::find($sale["id"]);
+            $updateSale->status="Active";
+            $updateSale->save();
+        }
+
+        $newSale = (object)[
+            "itemCount"=>count($tempArray),
+            "total"=>$total,
+            "discount"=>0,
+            "amountPaid"=>$total,
+            "customerId"=>null,
+            "tranDate"=>$stockDt,
+            "status"=>"Active",
+            "Paid"=>"Paid",
+            "vatEx"=>0,
+            "vatInc"=>0,
+            "items"=>$tempArray,
+        ];
+        $response = $this->newSale($newSale);
+        DB::commit();
+        return $this->genericResponse(true, "Approved Successfully", 200,  $response);
+    }
+
 }

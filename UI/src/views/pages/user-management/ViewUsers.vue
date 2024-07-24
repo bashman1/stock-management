@@ -8,7 +8,7 @@ const toast = useToast();
 const users = ref(null);
 const commonService = new CommonService();
 
-//  const router = useRouter();
+ const router = useRouter();
 
 const AddRolesPermissions=(role)=>{
     alert(JSON.stringify(role))
@@ -22,6 +22,11 @@ const getAllUsers = () => {
             commonService.showError(toast, response.message);
         }
     })
+}
+
+const editUser=(event)=>{
+    router.push("/create-user/" + event?.id);
+    // 'create-user'
 }
 
 onMounted(() => {
@@ -74,10 +79,13 @@ onMounted(() => {
                     </Column>
                     <Column headerStyle="min-width:10rem;">
                         <template #body="{ data }">
-                            <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2"
+                            <Button icon="pi pi-eye" @click="ViewUserDetails(data)" class="p-button-primary mr-2"  v-tooltip="'View user details'" />
+                            <Button icon="pi pi-pencil" @click="editUser(data)" class="p-button-success mr-2"  v-tooltip="'Edit user details'" />
+                            <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="editInstitution(data)"  v-tooltip="'Archive user'" />
+                            <!-- <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2"
                                 @click="AddRolesPermissions(data)" />
                             <Button icon="pi pi-trash" class="p-button-rounded p-button-warning mt-2"
-                                @click="confirmDeleteProduct(data)" />
+                                @click="confirmDeleteProduct(data)" /> -->
                         </template>
                     </Column>
 

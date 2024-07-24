@@ -96,6 +96,12 @@ const chartOfAccountMenu = ref(
     }
 )
 
+const logOut = ref({
+    label: 'Log Out',
+    icon: 'pi pi-sign-out',
+    to: '/logout'
+})
+
 
 
 if (commonService.checkPermissions('CanCreateInstitution')) {
@@ -181,6 +187,48 @@ if (commonService.checkPermissions('ViewUploadedMembers')) {
         }
     );
 }
+
+if (commonService.checkPermissions('CanUploadBulkProducts')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Products',
+            icon: 'pi pi-fw pi-circle',
+            to: '/upload-products'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewUploadBulkProductsBatch')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'View Upload Products',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-uploaded-products'
+        }
+    );
+}
+
+
+if (commonService.checkPermissions('CanUploadBulkSales')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Sales',
+            icon: 'pi pi-fw pi-circle',
+            to: '/upload-sales'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewUploadBulkSalesBatch')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'View Uploaded Sales',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-uploaded-sales'
+        }
+    );
+}
+
 
 if (commonService.checkPermissions('CollectMoney')) {
     collectionMenu.value.items.push(
@@ -352,6 +400,19 @@ if(commonService.checkPermissions('ViewSalesReport')){
 }
 
 
+if(commonService.checkPermissions('ViewCashBook')){
+    reportMenu.value.items.push(
+        {
+            label: 'Cash Book',
+            icon: 'pi pi-fw pi-circle',
+            to: '/cash-book'
+        }
+    )
+}
+
+
+
+
 
 
 const model = ref([{ items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-desktop', to: '/admin' },] }]);
@@ -398,6 +459,8 @@ if (stockMenu?.value?.items?.length > 0) {
 if (chartOfAccountMenu?.value?.items?.length > 0) {
     model.value[0].items.push(chartOfAccountMenu.value);
 }
+
+model.value[0].items.push(logOut.value);
 
 
 

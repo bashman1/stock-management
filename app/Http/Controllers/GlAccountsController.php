@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CntrlParameter;
 use App\Models\GlAccounts;
 use App\Models\GlCat;
+use App\Models\GlHistory;
 use App\Models\GlSubCat;
 use App\Models\GlType;
 use App\Models\GlGenerateAccount;
@@ -519,10 +520,10 @@ class GlAccountsController extends Controller
                 ->where('transaction_date', '<', $request->fromDate)
                 ->sum('tran_amount');
 
-            $totalCloseStock = (double) DB::table('gl_histories')
-                ->where('acct_no', $stockAcctNo)
-                ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-                ->sum('tran_amount');
+            // $totalCloseStock = (double) DB::table('gl_histories')
+            //     ->where('acct_no', $stockAcctNo)
+            //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+            //     ->sum('tran_amount');
 
             $totalPurchases = (double) DB::table('gl_histories')
                 ->where('acct_no', $purchaseAcctNo)
@@ -543,11 +544,17 @@ class GlAccountsController extends Controller
                 ->where(['acct_type'=>'INCOME', 'institution_id'=>$branch->institution_id, 'branch_id'=>$branch->id])
                 ->sum('balance');
 
+            //return needs to be purchase return
             $goodsAvailableForSale=($totalOpenStock+(($totalPurchases+$totalPassage)-$totalReturns));
+
+
+            // closing stock is Opening Stock+Purchases−Sales+Sales Returns−Purchase Returns±Adjustments
+            $totalCloseStock = $totalOpenStock+$totalPurchases-$totalSales;
+
+            // cost of sale = goods available for sale - closing stock
             $costOfSales =  $goodsAvailableForSale-$totalCloseStock;
             $grossProfit =  ($totalSales-$totalReturns)-$costOfSales;
 
-            // $totalCloseStock = $totalOpenStock+$totalPurchases-
 
             $netProfit = $grossProfit-$totalOperatingExpenses;
 
@@ -599,5 +606,66 @@ class GlAccountsController extends Controller
         }
         return $total;
     }
+
+//    public function getCashBook(Request $request){
+//        $userData = auth()->user();
+//        $isNotAdmin = $this->isNotAdmin();
+//        $queryString = "SELECT * FROM cntrl_parameters WHERE status = 'Active' AND (param_cd = 'CL' OR param_cd = 'CGL' OR param_cd = 'PD') ";
+//        if ($isNotAdmin) {
+//            $queryString .= " AND institution_id = $userData->institution_id  ";
+//        }
+//        $queryString .= " ORDER BY id ASC ";
+//        $contraAcct = DB::select($queryString);
+//
+//        $tempArray = [];
+//        foreach ($contraAcct as $acct){
+//            if ($isNotAdmin) {
+//                $branch = Branch::find($userData->branch_id);
+//                $acctNo = str_replace('***', $branch->code, $acct["param_value"]);
+//                $glHistory= GlHistory::where(["acct_no" => $acctNo, "institution_id"=>$userData->institution_id, "branch_id"=>$userData->branch_id]);
+//                foreach ($glHistory as $history){
+//                    $history->ind =  $acct["param_cd"];
+//                    $tempArray[] = $history;
+//                }
+//            }
+//        }
+//        return $this->genericResponse(true, "Cash book fetched successfully", 200, $tempArray);
+//    }
+
+    public function getCashBook(Request $request){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+        $queryString = "SELECT * FROM cntrl_parameters WHERE status = 'Active' AND (param_cd = 'CL' OR param_cd = 'CGL' OR param_cd = 'PD') ";
+
+        if ($isNotAdmin) {
+            $queryString .= " AND institution_id = $userData->institution_id ";
+        }
+
+        $queryString .= " ORDER BY id ASC ";
+        $contraAcct = DB::select($queryString);
+
+        $tempArray = [];
+        foreach ($contraAcct as $acct) {
+            if ($isNotAdmin) {
+                $branch = Branch::find($userData->branch_id);
+                if ($branch) {
+                    $acctNo = str_replace('***', $branch->code, $acct->param_value); // Changed to object property access
+                    $glHistory = GlHistory::where([
+                        "acct_no" => $acctNo,
+                        "institution_id" => $userData->institution_id,
+                        "branch_id" => $userData->branch_id
+                    ])->get(); // Ensure get() to return collection
+
+                    foreach ($glHistory as $history) {
+                        $history->ind = $acct->param_cd; // Changed to object property access
+                        $tempArray[] = $history;
+                    }
+                }
+            }
+        }
+
+        return $this->genericResponse(true, "Cash book fetched successfully", 200, $tempArray);
+    }
+
 
 }

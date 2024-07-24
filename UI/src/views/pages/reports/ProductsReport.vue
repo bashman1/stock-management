@@ -146,7 +146,7 @@ onMounted(() => {
                         {{ data.tax_config }}
                     </template>
                 </Column>
-                <Column headerStyle="max-width:10rem;">
+                <Column headerStyle="min-width:10rem;">
                     <template #body="{ data }">
                         <Button icon="pi pi-shopping-bag" @click="goToInventory(data)" class="p-button-primary mr-2" v-tooltip="'Inventory report'" />
                         <Button icon="pi pi-ticket" @click="goToSales(data)" class="p-button-success mr-2" v-tooltip="'Sales report'" />
