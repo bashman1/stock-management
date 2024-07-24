@@ -517,6 +517,24 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/view-uploaded-sales',
+                    name: 'uploadedSales',
+                    component: () => import('@/views/pages/stock-management/ViewUploadedSales.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/cash-book',
+                    name: 'CashBook',
+                    component: () => import('@/views/pages/reports/CashBook.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+
+            //     CashBook.vue
 
 
 

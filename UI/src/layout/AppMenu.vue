@@ -400,6 +400,19 @@ if(commonService.checkPermissions('ViewSalesReport')){
 }
 
 
+if(commonService.checkPermissions('ViewCashBook')){
+    reportMenu.value.items.push(
+        {
+            label: 'Cash Book',
+            icon: 'pi pi-fw pi-circle',
+            to: '/cash-book'
+        }
+    )
+}
+
+
+
+
 
 
 const model = ref([{ items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-desktop', to: '/admin' },] }]);
