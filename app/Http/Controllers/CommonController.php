@@ -19,7 +19,7 @@ class CommonController extends Controller
         $bestSellingProduct=[];
 
         if($isNotAdmin){
-            
+
             $inventoryAcct= $this->getControlAcctByCode("STI");
             $salesAcct= $this->getControlAcctByCode("SL");
             $data = DB::select("SELECT
@@ -32,7 +32,7 @@ class CommonController extends Controller
             (SELECT COALESCE(sum(amount), 0) FROM collections WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_approved_collection,
             (SELECT COUNT(id) FROM products WHERE status ='Active' AND institution_id = $userData->institution_id) AS products,
             (SELECT COUNT(id) FROM orders WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS sales,
-            (SELECT COUNT(id) FROM order_items WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS product_sold,
+            (SELECT COALESCE(SUM(O.qty * S.selling_price), 0) FROM order_items O INNER JOIN stocks S ON O.product_id = S.product_id AND  O.branch_id = S.branch_id WHERE O.status ='Active' AND O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id) AS product_sold,
             (SELECT COALESCE(SUM(tran_amount), 0) FROM gl_histories WHERE acct_no = '$inventoryAcct' AND reversal_flag = 'N') AS total_stock_value,
             (SELECT COALESCE(SUM(tran_amount), 0) FROM gl_histories WHERE acct_no = '$inventoryAcct' AND reversal_flag = 'N' AND DATE(transaction_date) = CURRENT_DATE) AS today_stock_value,
             (SELECT COALESCE(SUM(tran_amount), 0) FROM gl_histories WHERE acct_no = '$salesAcct' AND reversal_flag = 'N') AS total_sales_value,
@@ -42,7 +42,9 @@ class CommonController extends Controller
             (SELECT COALESCE(ROUND(CAST(((SUM(S.selling_price) - SUM(S.purchase_price))/SUM(S.purchase_price))*100 AS NUMERIC), 2), 0)  FROM orders O INNER JOIN order_items I ON O.id= I.order_id
             INNER JOIN stocks S ON I.product_id = S.product_id WHERE DATE(tran_date) = CURRENT_DATE AND O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id ) AS today_mark_up_percentage,
             (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'EXPENSE' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id) AS total_expenses,
-            (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'EXPENSE' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id AND DATE(transaction_date) = CURRENT_DATE) AS today_expenses
+            (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'INCOME' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id) AS total_income,
+            (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'EXPENSE' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id AND DATE(transaction_date) = CURRENT_DATE) AS today_expenses,
+            (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'INCOME' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id AND DATE(transaction_date) = CURRENT_DATE) AS today_income
             ");
 
             $collectionGraph=DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
@@ -78,6 +80,17 @@ class CommonController extends Controller
             ORDER BY quantity DESC
             LIMIT 10;");
 
+            $productAboutToExpire = DB::select("SELECT P.name, S.purchase_price, S.selling_price, S.quantity,
+            DATE_PART('day', AGE(S.expiry_date::date, CURRENT_DATE::date)) AS days_difference, S.expiry_date
+            FROM orders O INNER JOIN order_items I ON O.id = I.order_id
+            INNER JOIN products P ON P.id = I.product_id
+            INNER JOIN stocks S ON P.id = S.product_id
+            WHERE O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id  AND
+            DATE_PART('day', AGE(S.expiry_date::date, CURRENT_DATE::date)) > 0
+            GROUP BY P.name, S.purchase_price, S.selling_price, S.quantity, S.expiry_date
+            ORDER BY days_difference ASC
+            LIMIT 10;");
+
         }else{
             $data = DB::select("SELECT
             (SELECT COUNT(id) FROM institutions WHERE status ='Active') AS total_institutions,
@@ -89,7 +102,8 @@ class CommonController extends Controller
             (SELECT sum(amount) FROM collections WHERE status ='Active') AS total_approved_collection,
             (SELECT COUNT(id) FROM products WHERE status ='Active') AS products,
             (SELECT COUNT(id) FROM orders WHERE status ='Active') AS sales,
-            (SELECT COUNT(id) FROM order_items WHERE status ='Active') AS product_sold
+          --  (SELECT COUNT(id) FROM order_items WHERE status ='Active') AS product_sold
+            (SELECT COALESCE(SUM(O.qty * S.selling_price), 0) FROM order_items O INNER JOIN stocks S ON O.product_id = S.product_id AND  O.branch_id = S.branch_id WHERE O.status ='Active') AS product_sold
             -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  reversal_flag = 'N') AS total_stock_value,
             -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  reversal_flag = 'N') AS today_stock_value
             -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  AND reversal_flag = 'N') AS total_sales_value
@@ -114,8 +128,20 @@ class CommonController extends Controller
             generate_series((NOW() - INTERVAL '12 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN orders c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
+
+            $productAboutToExpire = DB::select("SELECT P.name, S.purchase_price, S.selling_price, S.quantity,
+            DATE_PART('day', AGE(S.expiry_date::date, CURRENT_DATE::date)) AS days_difference, S.expiry_date
+            FROM orders O INNER JOIN order_items I ON O.id = I.order_id
+            INNER JOIN products P ON P.id = I.product_id
+            INNER JOIN stocks S ON P.id = S.product_id
+            WHERE O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id  AND
+            DATE_PART('day', AGE(S.expiry_date::date, CURRENT_DATE::date)) > 0
+            GROUP BY P.name, S.purchase_price, S.selling_price, S.quantity, S.expiry_date
+            ORDER BY days_difference ASC
+            LIMIT 10;");
         }
 
-        return $this->genericResponse(true, "Stats", 200, ["count"=>$data, "collectionGraph"=>$collectionGraph, "membersGraph"=>$membersGraph, "productsGraph"=>$productsGraph, "salesGraph"=>$salesGraph, "bestSellingProduct"=>$bestSellingProduct]);
+        return $this->genericResponse(true, "Stats", 200, ["count"=>$data, "collectionGraph"=>$collectionGraph, "membersGraph"=>$membersGraph,
+            "productsGraph"=>$productsGraph, "salesGraph"=>$salesGraph, "bestSellingProduct"=>$bestSellingProduct, "productAboutToExpire"=>$productAboutToExpire]);
     }
 }

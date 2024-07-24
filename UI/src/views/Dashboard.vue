@@ -353,7 +353,7 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Today's Stock Value</span>
+                        <span class="block text-500 font-medium mb-3">Today's Purchases</span>
                         <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.today_stock_value)}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
@@ -396,6 +396,40 @@ watch(
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
+
+        <div class="col-12 lg:col-6 xl:col-3"  v-if="commonService.checkPermissions('ViewProducts')">
+            <div class="card mb-0">
+                <div class="flex justify-content-between mb-3">
+                    <div>
+                        <span class="block text-500 font-medium mb-3">Total Income</span>
+                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.total_income)}}</div>
+                    </div>
+                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-purple-500 text-xl"></i>
+                    </div>
+                </div>
+                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-500">responded</span> -->
+            </div>
+        </div>
+
+
+        <div class="col-12 lg:col-6 xl:col-3"  v-if="commonService.checkPermissions('ViewProducts')">
+            <div class="card mb-0">
+                <div class="flex justify-content-between mb-3">
+                    <div>
+                        <span class="block text-500 font-medium mb-3">Today Income</span>
+                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.today_income)}}</div>
+                    </div>
+                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-purple-500 text-xl"></i>
+                    </div>
+                </div>
+                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-500">responded</span> -->
+            </div>
+        </div>
+
 
         <div class="col-12 lg:col-6 xl:col-3"  v-if="commonService.checkPermissions('ViewProducts')">
             <div class="card mb-0">
@@ -494,7 +528,12 @@ watch(
                     <Column field="quantity" header="Quantity" :sortable="true" style="width: 35%"></Column>
                     <Column field="price" header="Price" :sortable="true" style="width: 35%">
                         <template #body="slotProps">
-                            {{ formatCurrency(slotProps.data.selling_price) }}
+                            {{ commonService.commaSeparator(slotProps.data.selling_price) }}
+                        </template>
+                    </Column>
+                    <Column field="" header="MarkUp" :sortable="true" style="width: 40%">
+                        <template #body="slotProps">
+                            {{ commonService.commaSeparator(slotProps.data.quantity * (slotProps.data.selling_price - slotProps.data.purchase_price)) }}
                         </template>
                     </Column>
                 </DataTable>
@@ -503,87 +542,24 @@ watch(
 
         <div class="col-12 xl:col-6">
             <div class="card">
-                <div class="flex justify-content-between align-items-center mb-5">
-                    <h5>Best Selling Products</h5>
-                    <!-- <div>
-                        <Button icon="pi pi-ellipsis-v" class="p-button-text p-button-plain p-button-rounded" @click="$refs.menu2.toggle($event)"></Button>
-                        <Menu ref="menu2" :popup="true" :model="items"></Menu>
-                    </div> -->
-                </div>
-                <ul class="list-none p-0 m-0" v-for="(product, index) in dashBoardData?.bestSellingProduct" :key="index">
-                    <li class="flex flex-column md:flex-row md:align-items-center md:justify-content-between mb-4">
-                        <div>
-                            <span class="text-900 font-medium mr-2 mb-1 md:mb-0">{{ product.name }}</span>
-                            <!-- <div class="mt-1 text-600">Clothing</div> -->
-                        </div>
-                        <div class="mt-2 md:mt-0 flex align-items-center">
-                            <div class="surface-300 border-round overflow-hidden w-10rem lg:w-6rem" style="height: 8px">
-                                <div class="bg-orange-500 h-full" :style="'width: '+product.quantity+'%'"></div>
-                            </div>
-                            <span class="text-orange-500 ml-3 font-medium">%{{ product.quantity }}</span>
-                        </div>
-                    </li>
-                    <!-- <li class="flex flex-column md:flex-row md:align-items-center md:justify-content-between mb-4">
-                        <div>
-                            <span class="text-900 font-medium mr-2 mb-1 md:mb-0">Portal Sticker</span>
-                            <div class="mt-1 text-600">Accessories</div>
-                        </div>
-                        <div class="mt-2 md:mt-0 ml-0 md:ml-8 flex align-items-center">
-                            <div class="surface-300 border-round overflow-hidden w-10rem lg:w-6rem" style="height: 8px">
-                                <div class="bg-cyan-500 h-full" style="width: 16%"></div>
-                            </div>
-                            <span class="text-cyan-500 ml-3 font-medium">%16</span>
-                        </div>
-                    </li> -->
-                    <!-- <li class="flex flex-column md:flex-row md:align-items-center md:justify-content-between mb-4">
-                        <div>
-                            <span class="text-900 font-medium mr-2 mb-1 md:mb-0">Supernova Sticker</span>
-                            <div class="mt-1 text-600">Accessories</div>
-                        </div>
-                        <div class="mt-2 md:mt-0 ml-0 md:ml-8 flex align-items-center">
-                            <div class="surface-300 border-round overflow-hidden w-10rem lg:w-6rem" style="height: 8px">
-                                <div class="bg-pink-500 h-full" style="width: 67%"></div>
-                            </div>
-                            <span class="text-pink-500 ml-3 font-medium">%67</span>
-                        </div>
-                    </li> -->
-                    <!-- <li class="flex flex-column md:flex-row md:align-items-center md:justify-content-between mb-4">
-                        <div>
-                            <span class="text-900 font-medium mr-2 mb-1 md:mb-0">Wonders Notebook</span>
-                            <div class="mt-1 text-600">Office</div>
-                        </div>
-                        <div class="mt-2 md:mt-0 ml-0 md:ml-8 flex align-items-center">
-                            <div class="surface-300 border-round overflow-hidden w-10rem lg:w-6rem" style="height: 8px">
-                                <div class="bg-green-500 h-full" style="width: 35%"></div>
-                            </div>
-                            <span class="text-green-500 ml-3 font-medium">%35</span>
-                        </div>
-                    </li> -->
-                    <!-- <li class="flex flex-column md:flex-row md:align-items-center md:justify-content-between mb-4">
-                        <div>
-                            <span class="text-900 font-medium mr-2 mb-1 md:mb-0">Mat Black Case</span>
-                            <div class="mt-1 text-600">Accessories</div>
-                        </div>
-                        <div class="mt-2 md:mt-0 ml-0 md:ml-8 flex align-items-center">
-                            <div class="surface-300 border-round overflow-hidden w-10rem lg:w-6rem" style="height: 8px">
-                                <div class="bg-purple-500 h-full" style="width: 75%"></div>
-                            </div>
-                            <span class="text-purple-500 ml-3 font-medium">%75</span>
-                        </div>
-                    </li> -->
-                    <!-- <li class="flex flex-column md:flex-row md:align-items-center md:justify-content-between mb-4">
-                        <div>
-                            <span class="text-900 font-medium mr-2 mb-1 md:mb-0">Robots T-Shirt</span>
-                            <div class="mt-1 text-600">Clothing</div>
-                        </div>
-                        <div class="mt-2 md:mt-0 ml-0 md:ml-8 flex align-items-center">
-                            <div class="surface-300 border-round overflow-hidden w-10rem lg:w-6rem" style="height: 8px">
-                                <div class="bg-teal-500 h-full" style="width: 40%"></div>
-                            </div>
-                            <span class="text-teal-500 ml-3 font-medium">%40</span>
-                        </div>
-                    </li> -->
-                </ul>
+                <h5>Products About To Expire</h5>
+                <DataTable :value="dashBoardData?.productAboutToExpire" :rows="10" :paginator="true" responsiveLayout="scroll">
+                    <Column field="name" header="Name" :sortable="true" style="width: 35%"></Column>
+                    <Column field="quantity" header="Stock" :sortable="true" style="width: 20%"></Column>
+<!--                    <Column field="price" header="Price" :sortable="true" style="width: 35%">-->
+<!--                        <template #body="slotProps">-->
+<!--                            {{ commonService.commaSeparator(slotProps.data.selling_price) }}-->
+<!--                        </template>-->
+<!--                    </Column>-->
+                    <Column field="days_difference" header="Days Remaining" :sortable="true" style="width: 35%"></Column>
+<!--                    <Column field="" header="Mark Up" :sortable="true" style="width: 35%">-->
+<!--                        <template #body="slotProps">-->
+<!--                            {{ commonService.commaSeparator(slotProps.data.quantity * (slotProps.data.selling_price - slotProps.data.purchase_price)) }}-->
+<!--                        </template>-->
+<!--                    </Column>-->
+                    <Column field="expiry_date" header="Expiry" :sortable="true" style="width: 35%"></Column>
+
+                </DataTable>
             </div>
         </div>
 
