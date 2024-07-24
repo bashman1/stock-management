@@ -533,6 +533,14 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/sales-item-report',
+                    name: 'SalesItemReport',
+                    component: () => import('@/views/pages/reports/SalesItemReport.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
 
             //     CashBook.vue
 

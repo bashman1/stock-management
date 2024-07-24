@@ -16,7 +16,7 @@ const getProductsReport = () => {
     let postData = {
         status: 'Active'
     };
-    commonService.genericRequest('get-products-report', 'post', true, postData).then((response) => {
+    commonService.genericRequest('get-item-sales-report', 'post', true, postData).then((response) => {
         if (response.status) {
             productsReport.value = response.data;
         } else {
@@ -36,13 +36,13 @@ const getProductReportPdfFile = () => {
     try {
         isDownloading.value = true;
         commonService
-            .genericRequest('download-product-report-pdf', 'post', true, {}, true)
+            .genericRequest('download-sales-item-report-pdf', 'post', true, {status: 'Active'}, true)
 
             .then((blob) => {
                 const fileURL = window.URL.createObjectURL(new Blob([blob]));
                 const fileLink = document.createElement('a');
                 fileLink.href = fileURL;
-                fileLink.setAttribute('download', 'product_reports.pdf');
+                fileLink.setAttribute('download', 'sales_reports.pdf');
                 document.body.appendChild(fileLink);
                 fileLink.click();
             });
@@ -58,14 +58,12 @@ const getProductReportCsvFile = () => {
     try {
         isDownloading.value = true;
         commonService
-            .genericRequest('download-product-report-csv', 'post', true, {}, true)
-
+            .genericRequest('download-sales-item-report-csv', 'post', true, {status: 'Active'}, true)
             .then((blob) => {
-                //console.log(blob, 'data.......')
                 const fileURL = window.URL.createObjectURL(new Blob([blob]));
                 const fileLink = document.createElement('a');
                 fileLink.href = fileURL;
-                fileLink.setAttribute('download', 'product_reports.csv');
+                fileLink.setAttribute('download', 'sales_reports.csv');
                 document.body.appendChild(fileLink);
                 fileLink.click();
             });
@@ -83,7 +81,7 @@ onMounted(() => {
 <template>
     <div>
         <div class="card">
-            <h5>Products report.</h5>
+            <h5>Sales report.</h5>
             <!-- <div class="grid p-fluid mt-3"> -->
             <Toast />
             <Toolbar class="mb-4">
@@ -94,42 +92,35 @@ onMounted(() => {
                     </div>
                 </template>
 
-                <!-- <template v-slot:end>
-                        <FileUpload mode="basic" accept="image/*" :maxFileSize="1000000" label="Import" chooseLabel="Import" class="mr-2 inline-block" />
-                        <Button label="Export" icon="pi pi-upload" class="p-button-help" @click="exportCSV($event)" />
-                    </template> -->
             </Toolbar>
             <DataTable :value="productsReport" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id" :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+
+                <Column field="name" header="Date" style="min-width: 10rem">
+                    <template #body="{ data }">
+                        {{ data.created_at }}
+                    </template>
+                </Column>
                 <Column field="name" header="Name" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ data.name }}
+                        {{ data.product_name }}
                     </template>
                 </Column>
-                <Column field="name" header="Type" style="min-width: 10rem">
-                    <template #body="{ data }">
-                        {{ data.type_name }}
-                    </template>
-                </Column>
-                <Column field="name" header="Category" style="min-width: 10rem">
-                    <template #body="{ data }">
-                        {{ data.category_name }}
-                    </template>
-                </Column>
-                <Column field="name" header="Stock Available" style="min-width: 10rem">
+                <Column field="name" header="Quantity Sold" style="min-width: 10rem">
                     <template #body="{ data }">
                         {{ commonService.commaSeparator(data.quantity) }}
                     </template>
                 </Column>
-                <Column field="name" header="Measurement" style="min-width: 10rem">
+                <Column field="name" header="Measurement Unit" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ data.measurement_unit_name }}
+                        {{ data.measurement_unit }}
                     </template>
                 </Column>
-                <Column field="name" header="Purchase Price" style="min-width: 10rem">
+                <Column field="name" header="Amount" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ commonService.commaSeparator(data.purchase_price) }}
+                        {{ commonService.commaSeparator(data.quantity * data.selling_price) }}
                     </template>
                 </Column>
+
                 <Column field="name" header="Selling Price" style="min-width: 10rem">
                     <template #body="{ data }">
                         {{ commonService.commaSeparator(data.selling_price) }}
@@ -137,24 +128,7 @@ onMounted(() => {
                 </Column>
                 <Column field="name" header="Profit Margin" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ commonService.commaSeparator(data.purchase_price - data.selling_price) }}
-                    </template>
-                </Column>
-
-                <Column field="name" header="Product No." style="min-width: 10rem">
-                    <template #body="{ data }">
-                        {{ data.product_no }}
-                    </template>
-                </Column>
-                <Column field="name" header="VAT Tax" style="min-width: 10rem">
-                    <template #body="{ data }">
-                        {{ data.tax_config }}
-                    </template>
-                </Column>
-                <Column headerStyle="min-width:10rem;">
-                    <template #body="{ data }">
-                        <Button icon="pi pi-shopping-bag" @click="goToInventory(data)" class="p-button-primary mr-2" v-tooltip="'Inventory report'" />
-                        <Button icon="pi pi-ticket" @click="goToSales(data)" class="p-button-success mr-2" v-tooltip="'Sales report'" />
+                        {{ commonService.commaSeparator(data.selling_price - data.purchase_price) }}
                     </template>
                 </Column>
             </DataTable>

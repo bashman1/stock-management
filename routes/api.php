@@ -146,6 +146,8 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('get-product-details', [ProductController::class, "getProductDetails"]);
     Route::post('download-product-report-pdf', [ReportController::class, "downLoadProductPdfReport"]);
     Route::post('download-product-report-csv', [ReportController::class, "downLoadProductCsvReport"]);
+    Route::post("download-sales-item-report-csv", [ReportController::class, "downloadSalesItemCSVReport"]);
+    Route::post('download-sales-item-report-pdf', [ReportController::class, "downloadSalesItemPDFReport"]);
 
 
     Route::post('get-gl-history', [GlAccountsController::class, "glAcctHistory"]);
@@ -169,5 +171,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-batch-sales", [TempSaleController::class, "getBatchProducts"]);
     Route::post("approve-batch-sales", [OrderController::class, "approveBatchSales"]);
     Route::post("get-cash-book", [GlAccountsController::class, "getCashBook"]);
+    Route::post("get-item-sales-report", [ReportController::class, "getItemSalesReport"]);
 
 });

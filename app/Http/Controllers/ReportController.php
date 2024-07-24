@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SalesItemReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -148,7 +149,7 @@ class ReportController extends Controller
 
     public function downLoadSalesPdfReport(Request $request)
     {
-      
+
 
         $sales = $this->reportService->salesReport($request);
 
@@ -164,11 +165,56 @@ class ReportController extends Controller
         }
     }
 
-
     public function downLoadSalesCsvReport()
     {
         //TODO get products belonging to a store
 
         return Excel::download(new ProductCsvExport, 'users.csv');
     }
+
+    public function getItemSalesReport(Request $request){
+        $salesReport = $this->getItemSalesData($request);
+        return $this->genericResponse(true, "Sales list", 200, $salesReport);
+    }
+
+    public function getItemSalesData($request){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+        $sqlString = "SELECT O.id, O.order_id, O.product_id, O.qty AS quantity, O.status, O.institution_id, O.branch_id,
+            O.created_by, O.updated_by, O.updated_on, O.created_at, O.updated_at, P.name AS product_name,
+            P.description, P.product_no, P.ref_no, Q.ref_no AS transaction_ref, Q.receipt_no, Q.tran_id,
+            S.selling_price, S.purchase_price, M.name as measurement_unit FROM order_items O
+            INNER JOIN products P ON O.product_id = P.id
+            INNER JOIN orders Q ON Q.id = O.order_id
+            INNER JOIN stocks S ON S.branch_id = O.branch_id AND S.product_id = O.product_id
+            INNER JOIN measurement_units  M ON M.id = P.measurement_unit_id ";
+        $sqlString .= " WHERE O.status = '$request->status' ";
+        if ($isNotAdmin) {
+            $sqlString .= " AND O.institution_id = $userData->institution_id AND O.branch_id = $userData->branch_id";
+        }
+        $sqlString .= " ORDER BY O.id DESC";
+        return DB::select($sqlString);
+    }
+
+    public function downloadSalesItemCSVReport(Request $request){
+        $request->status = 'Active';
+        $salesReport = $this->getItemSalesData($request);
+        return Excel::download(new SalesItemReport($salesReport), "sales.csv");
+    }
+
+    public function downloadSalesItemPDFReport(Request $request){
+        $request->status = 'Active';
+        $sales = $this->getItemSalesData($request);
+        if (count($sales) > 0) {
+            Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+            $pdf = Pdf::loadView('sales.salesItem', compact('sales'));
+            $pdf->setBasePath(public_path());
+            $pdf->setPaper('A4', 'landscape');
+            $pdf->setBasePath(public_path());
+            return $pdf->stream('sales_report' . '.pdf');
+        }
+    }
+
+
+
 }
