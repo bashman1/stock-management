@@ -392,12 +392,25 @@ if(commonService.checkPermissions('ViewProductsReport')){
 if(commonService.checkPermissions('ViewSalesReport')){
     reportMenu.value.items.push(
         {
-            label: 'Sales Report',
+            label: 'Sales Transaction Report',
             icon: 'pi pi-fw pi-circle',
             to: '/sales-report'
         }
     )
 }
+
+
+if(commonService.checkPermissions('ViewSalesReport')){
+    reportMenu.value.items.push(
+        {
+            label: 'Sales Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/sales-item-report'
+        }
+    )
+}
+
+
 
 
 if(commonService.checkPermissions('ViewCashBook')){

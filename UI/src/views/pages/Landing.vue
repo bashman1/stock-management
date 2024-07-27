@@ -16,7 +16,8 @@ const smoothScroll = (id) => {
 
 const logoUrl = computed(() => {
     // return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
-    return `demo/images/Smart-Collect-logo-black-removebg.png`;
+    // return `demo/images/Smart-Collect-logo-black-removebg.png`;
+    return `demo/images/SmarCollectlogo.jpg`;
 });
 
 const goToLogin = ()=>{
@@ -58,7 +59,7 @@ const goToLogin = ()=>{
                     </ul>
                     <div class="flex justify-content-between lg:block border-top-1 lg:border-top-none surface-border py-3 lg:py-0 mt-3 lg:mt-0">
                         <Button @click="goToLogin" label="Login" class="p-button-text p-button-rounded border-none font-light line-height-2 text-blue-500"></Button>
-                        <Button label="Register" class="p-button-rounded border-none ml-5 font-light text-white line-height-2 bg-blue-500"></Button>
+                        <!-- <Button label="Register" class="p-button-rounded border-none ml-5 font-light text-white line-height-2 bg-blue-500"></Button> -->
                     </div>
                 </div>
             </div>
@@ -69,9 +70,9 @@ const goToLogin = ()=>{
                 style="background: linear-gradient(0deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2)), radial-gradient(77.36% 256.97% at 77.36% 57.52%, rgb(238, 239, 175) 0%, rgb(195, 227, 250) 100%); clip-path: ellipse(150% 87% at 93% 13%)"
             >
                 <div class="mx-4 md:mx-8 mt-0 md:mt-4">
-                    <h1 class="text-6xl font-bold text-gray-900 line-height-2"><span class="font-light block">Smart Collect</span>Elevate Your Collections with Intelligence and Efficiency</h1>
-                    <p class="font-normal text-2xl line-height-3 md:mt-3 text-gray-700">The ultimate destination where precision seamlessly meets perfection in collection management...</p>
-                    <Button label="Get Started" class="p-button-rounded text-xl border-none mt-5 bg-blue-500 font-normal text-white line-height-3 px-3"></Button>
+                    <h1 class="text-6xl font-bold text-gray-900 line-height-2"><span class="font-light block">Streamline your inventory management, income & expense tracking & more with Smart Collect. </span>Elevate Your Collections with Intelligence and Efficiency</h1>
+                    <p class="font-normal text-2xl line-height-3 md:mt-3 text-gray-700">A convenient solution for your business.</p>
+                    <Button @click="goToLogin" label="Get Started" class="p-button-rounded text-xl border-none mt-5 bg-blue-500 font-normal text-white line-height-3 px-3"></Button>
                 </div>
                 <div class="flex justify-content-center md:justify-content-end">
                     <img src="/demo/images/landing/screen-1.png" alt="Hero Image" class="w-9 md:w-auto" />
@@ -85,7 +86,8 @@ const goToLogin = ()=>{
                         <span class="text-600 text-2xl">Elevating Excellence, Redefining Innovation.</span>
                     </div>
 
-                    <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+
+                    <!-- <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
                         <div
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
                         >
@@ -97,9 +99,220 @@ const goToLogin = ()=>{
                                 <span class="text-600">A friendly user interface.</span>
                             </div>
                         </div>
+                    </div> -->
+
+                    <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div
+                            style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
+                        >
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Track your incomes and Expenses</h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                                        <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div
+                            style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
+                        >
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Send Custom Invoices and Quotes</h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                                                           <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div
+                            style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
+                        >
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Track your stock levels</h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                                                                           <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div
+                            style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
+                        >
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Distribution and Delivery management.</h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                                                                                            <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div
+                            style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
+                        >
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Track your VAT</h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div
+                            style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
+                        >
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Intuitive Inventory Management</h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div
+                            style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
+                        >
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Automated inbuilt Chart of Accounts</h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div
+                            style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
+                        >
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Track your profit Margins</h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div
+                            style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
+                        >
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Capture and Organize receipts</h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+
+                                        <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div
+                            style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
+                        >
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Insights and Reports </h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+
+                                                            <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div
+                            style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
+                        >
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Multiple stock location </h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                                                                                <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div
+                            style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
+                        >
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Track Employee time </h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))">
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Point Of Sales </h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                                        <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))">
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Automation </h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                                        <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                        <div style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))">
+                            <div class="p-3 surface-card h-full" style="border-radius: 8px">
+                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                </div>
+                                <h5 class="mb-2 text-900">Point Of Sales </h5>
+                                <span class="text-600">A friendly user interface.</span>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
                         <div
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(145, 226, 237, 0.2), rgba(251, 199, 145, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(172, 180, 223, 0.2))"
                         >
@@ -111,9 +324,9 @@ const goToLogin = ()=>{
                                 <span class="text-600">A field operation tool for collection.</span>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
-                    <div class="col-12 md:col-12 lg:col-4 p-0 lg:pb-5 mt-4 lg:mt-0">
+                    <!-- <div class="col-12 md:col-12 lg:col-4 p-0 lg:pb-5 mt-4 lg:mt-0">
                         <div
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(145, 226, 237, 0.2), rgba(172, 180, 223, 0.2)), linear-gradient(180deg, rgba(172, 180, 223, 0.2), rgba(246, 158, 188, 0.2))"
                         >
@@ -125,9 +338,9 @@ const goToLogin = ()=>{
                                 <span class="text-600">Tracks all the receipts throughout the field operations.</span>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
-                    <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                    <!-- <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
                         <div
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(187, 199, 205, 0.2), rgba(251, 199, 145, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(145, 210, 204, 0.2))"
                         >
@@ -139,9 +352,9 @@ const goToLogin = ()=>{
                                 <span class="text-600">We manage for you your accounting.</span>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
-                    <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                    <!-- <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
                         <div
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(187, 199, 205, 0.2), rgba(246, 158, 188, 0.2)), linear-gradient(180deg, rgba(145, 226, 237, 0.2), rgba(160, 210, 250, 0.2))"
                         >
@@ -153,8 +366,8 @@ const goToLogin = ()=>{
                                 <span class="text-600">Automation of recurring operations.</span>
                             </div>
                         </div>
-                    </div>
-
+                    </div> -->
+<!--
                     <div class="col-12 md:col-12 lg:col-4 p-0 lg-4 mt-4 lg:mt-0">
                         <div
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(160, 210, 250, 0.2), rgba(212, 162, 221, 0.2)), linear-gradient(180deg, rgba(246, 158, 188, 0.2), rgba(212, 162, 221, 0.2))"
@@ -167,22 +380,22 @@ const goToLogin = ()=>{
                                 <span class="text-600">We follow all the data privacy policy.</span>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
                     <div
                         class="col-12 mt-8 mb-8 p-2 md:p-8"
                         style="border-radius: 20px; background: linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), radial-gradient(77.36% 256.97% at 77.36% 57.52%, #efe1af 0%, #c3dcfa 100%)"
                     >
                         <div class="flex flex-column justify-content-center align-items-center text-center px-3 py-3 md:py-0">
-                            <h3 class="text-gray-900 mb-2">About Us</h3>
-                            <span class="text-gray-600 text-2xl">Who we are.</span>
+                            <h3 class="text-gray-900 mb-2">Access anytime, on any device</h3>
+                            <span class="text-gray-600 text-2xl">Manage all your business operations in one place at anytime on any device.</span>
+                            <!-- <span class="text-gray-600 text-2xl">Always Connected, Always Available.</span> -->
                             <p class="text-gray-900 sm:line-height-2 md:line-height-4 text-2xl mt-4 text-justified{">
-                                Welcome to Smart Collect, where we redefine the art of collection management. As the ultimate destination for enthusiasts who seek precision seamlessly intertwined with perfection, Smart Collect transforms the way you curate, organize, and cherish your prized possessions.
-                                At Smart Collect, we believe that managing your collections should be an elevated and intelligent experience. Our cutting-edge solutions are meticulously designed to streamline every facet of your collection journey, ensuring that your passion for collecting is met with the utmost brilliance of technology.
-                                What sets us apart is the commitment to unleash efficiency, reliability, and sophistication in the management of your treasures. We understand that your collections are not just items; they are a reflection of your unique taste and passion. With Smart Collect, your cherished pieces are not just stored; they are curated with unparalleled precision and perfection.
-                                Immerse yourself in a world where each collection becomes a masterpiece, a carefully crafted symphony of your interests and preferences. Smart Collect is not just a platform; it's a companion on your journey of collecting excellence. Our vision is to empower collectors like you to elevate their passion to new heights.
-                                Your world of curated excellence starts here, at Smart Collect. Join us in redefining the art of collection management, where every item is a story, and every story is told with the finesse of precision and perfection. Welcome to a new era of collecting, where technology meets passion, and your treasures find a home that appreciates their unique significance.
-
+                            SmartCollect System is a cutting-edge solution designed to revolutionize the way users manage and access their data.
+                            With its innovative technology, SmartCollect ensures that information is always within reach, regardless of the device being used.
+                            This system provides a seamless and intuitive experience, allowing users to effortlessly synchronize and retrieve their data across multiple platforms.
+                            SmartCollect prioritizes security and efficiency, utilizing advanced encryption methods and robust cloud infrastructure to safeguard sensitive information.
+                            Whether at home, in the office, or on the go, SmartCollect offers unparalleled convenience, empowering users to stay connected and productive wherever they are.
                             </p>
                             <!-- <img src="/demo/images/landing/peak-logo.svg" class="mt-4" alt="Company logo" /> -->
                         </div>
@@ -205,7 +418,7 @@ const goToLogin = ()=>{
                         <div class="flex align-items-center justify-content-center bg-purple-200 align-self-center lg:align-self-end" style="width: 4.2rem; height: 4.2rem; border-radius: 10px">
                             <i class="pi pi-fw pi-mobile text-5xl text-purple-700"></i>
                         </div>
-                        <h2 class="line-height-1 text-900 text-4xl font-normal">Small screens</h2>
+                        <h2 class="line-height-1 text-900 text-4xl font-normal">Reduced accounting and process errors.</h2>
                         <span class="text-700 text-2xl line-height-3 ml-0 md:ml-2" style="max-width: 650px"
                             >User friendly for mobile phone screens with the same details as the big screen.</span
                         >
@@ -217,7 +430,7 @@ const goToLogin = ()=>{
                         <div class="flex align-items-center justify-content-center bg-yellow-200 align-self-center lg:align-self-start" style="width: 4.2rem; height: 4.2rem; border-radius: 10px">
                             <i class="pi pi-fw pi-desktop text-5xl text-yellow-700"></i>
                         </div>
-                        <h2 class="line-height-1 text-900 text-4xl font-normal">Wide screens</h2>
+                        <h2 class="line-height-1 text-900 text-4xl font-normal">Avoid physical loss of receipts and invoices.</h2>
                         <span class="text-700 text-2xl line-height-3 mr-0 md:mr-2" style="max-width: 650px"
                             >A more detailed features on the medium and extra large screen.</span
                         >
@@ -227,7 +440,45 @@ const goToLogin = ()=>{
                         <img src="/demo/images/landing/mockup-desktop.svg" class="w-11" alt="mockup" />
                     </div>
                 </div>
+
+                <div class="grid mt-8 pb-2 md:pb-8">
+                    <div class="flex justify-content-center col-12 lg:col-6 bg-purple-100 p-0 flex-order-1 lg:flex-order-0" style="border-radius: 8px">
+                        <img src="/demo/images/landing/mockup.svg" class="w-11" alt="mockup mobile" />
+                    </div>
+
+                    <div class="col-12 lg:col-6 my-auto flex flex-column lg:align-items-end text-center lg:text-right">
+                        <div class="flex align-items-center justify-content-center bg-purple-200 align-self-center lg:align-self-end" style="width: 4.2rem; height: 4.2rem; border-radius: 10px">
+                            <i class="pi pi-fw pi-mobile text-5xl text-purple-700"></i>
+                        </div>
+                        <h2 class="line-height-1 text-900 text-4xl font-normal">Easily track your Cash flow.</h2>
+                        <span class="text-700 text-2xl line-height-3 ml-0 md:ml-2" style="max-width: 650px"
+                            >User friendly for mobile phone screens with the same details as the big screen.</span
+                        >
+                    </div>
+                </div>
+
+
+                <div class="grid my-8 pt-2 md:pt-8">
+                    <div class="col-12 lg:col-6 my-auto flex flex-column text-center lg:text-left lg:align-items-start">
+                        <div class="flex align-items-center justify-content-center bg-yellow-200 align-self-center lg:align-self-start" style="width: 4.2rem; height: 4.2rem; border-radius: 10px">
+                            <i class="pi pi-fw pi-desktop text-5xl text-yellow-700"></i>
+                        </div>
+                        <h2 class="line-height-1 text-900 text-4xl font-normal">Build better business insights.</h2>
+                        <span class="text-700 text-2xl line-height-3 mr-0 md:mr-2" style="max-width: 650px"
+                            >A more detailed features on the medium and extra large screen.</span
+                        >
+                    </div>
+
+                    <div class="flex justify-content-end flex-order-1 sm:flex-order-2 col-12 lg:col-6 bg-yellow-100 p-0" style="border-radius: 8px">
+                        <img src="/demo/images/landing/mockup-desktop.svg" class="w-11" alt="mockup" />
+                    </div>
+                </div>
+
+
             </div>
+
+
+
 
             <!-- <div id="pricing" class="py-4 px-4 lg:px-8 my-2 md:my-4">
                 <div class="text-center">
