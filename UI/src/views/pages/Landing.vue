@@ -58,7 +58,7 @@ const goToLogin = ()=>{
                         </li> -->
                     </ul>
                     <div class="flex justify-content-between lg:block border-top-1 lg:border-top-none surface-border py-3 lg:py-0 mt-3 lg:mt-0">
-                        <Button @click="goToLogin" label="Login" class="p-button-text p-button-rounded border-none font-light line-height-2 text-blue-500"></Button>
+                        <Button @click="goToLogin" label="Login" class="p-button-rounded border-none ml-5 font-light text-white line-height-2 bg-blue-500"></Button>
                         <!-- <Button label="Register" class="p-button-rounded border-none ml-5 font-light text-white line-height-2 bg-blue-500"></Button> -->
                     </div>
                 </div>
@@ -109,7 +109,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-cyan-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
                                     <i class="pi pi-fw pi-money-bill text-2xl text-cyan-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Track your incomes and Expenses</h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Track your incomes and Expenses</h5>
                                 <span class="text-600">Monitor and manage your incomes and expenses to keep your finances in check.</span>
                             </div>
                         </div>
@@ -123,7 +123,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-indigo-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
                                     <i class="pi pi-fw pi-file text-2xl text-indigo-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Send Custom Invoices and Quotes</h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Send Custom Invoices and Quotes</h5>
                                 <span class="text-600">Create and send personalized invoices and quotes to your clients.</span>
                             </div>
                         </div>
@@ -137,7 +137,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-slate-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px; --tw-bg-opacity: 1;background-color: rgb(226 232 240 / var(--tw-bg-opacity));">
                                     <i class="pi pi-fw pi-shopping-cart text-2xl text-slate-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Track your stock levels</h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Track your stock levels</h5>
                                 <span class="text-600">Monitor and manage your inventory levels in real time.</span>
                             </div>
                         </div>
@@ -153,7 +153,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
                                     <i class="pi pi-fw pi-directions text-2xl text-yellow-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Distribution and Delivery management.</h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Distribution and Delivery management.</h5>
                                 <span class="text-600">Efficiently manage and streamline the distribution and delivery of goods from your business to customers.</span>
                             </div>
                         </div>
@@ -167,7 +167,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-orange-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
                                     <i class="pi pi-fw pi-percentage text-2xl text-orange-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Track your VAT</h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Track your VAT</h5>
                                 <span class="text-600">Access real-time VAT reports to monitor collected and paid VAT.</span>
                             </div>
                         </div>
@@ -181,7 +181,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-teal-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
                                     <i class="pi pi-fw pi-database text-2xl text-teal-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Intuitive Inventory Management</h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Intuitive Inventory Management</h5>
                                 <span class="text-600">Effortless Inventory Management for Your Business.</span>
                             </div>
                         </div>
@@ -196,7 +196,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-pink-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
                                     <i class="pi pi-fw pi-chart-bar !text-2xl text-pink-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Automated inbuilt Chart of Accounts</h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Automated inbuilt Chart of Accounts</h5>
                                 <span class="text-600">Simplify Your Financial Management with an Automated Chart of Accounts.</span>
                             </div>
                         </div>
@@ -211,7 +211,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-blue-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
                                     <i class="pi pi-fw pi-chart-line text-2xl text-blue-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Track your profit Margins</h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Track your profit Margins</h5>
                                 <span class="text-600">Gain Insight into Your Business's Profitability.</span>
                             </div>
                         </div>
@@ -225,7 +225,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-purple-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
                                     <i class="pi pi-fw pi-bookmark text-2xl text-purple-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Capture and Organize receipts</h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Capture and Organize receipts</h5>
                                 <span class="text-600">Managing receipts can be a daunting task, but it doesn’t have to be.</span>
                             </div>
                         </div>
@@ -240,7 +240,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-indigo-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
                                     <i class="pi pi-fw pi-file-excel text-2xl text-indigo-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Insights and Reports </h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Insights and Reports </h5>
                                 <span class="text-600">Make informed decisions and drive your business forward with our advanced insights and reporting tools.</span>
                             </div>
                         </div>
@@ -255,7 +255,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-cyan-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
                                     <i class="pi pi-fw pi-globe text-2xl text-cyan-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Multiple stock location </h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Multiple stock location </h5>
                                 <span class="text-600">Effortless Management of Multiple Stock Locations. Streamline Your Inventory Across All Locations.</span>
                             </div>
                         </div>
@@ -269,7 +269,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
                                     <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Track Employee time </h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Track Employee time </h5>
                                 <span class="text-600">A friendly user interface.</span>
                             </div>
                         </div>
@@ -283,7 +283,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-stale-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px; --tw-bg-opacity: 1;background-color: rgb(226 232 240 / var(--tw-bg-opacity));">
                                     <i class="pi pi-fw pi-print text-2xl text-stale-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Point Of Sales </h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Point Of Sales </h5>
                                 <span class="text-600">Revolutionize Your Transactions with Our Point of Sale Solutions.</span>
                             </div>
                         </div>
@@ -295,7 +295,7 @@ const goToLogin = ()=>{
                                 <div class="flex align-items-center justify-content-center bg-teal-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
                                     <i class="pi pi-fw pi-wrench text-2xl text-teal-700"></i>
                                 </div>
-                                <h5 class="mb-2 text-900">Automation </h5>
+                                <h5 class="mb-2 text-900 text-2xl font-bold">Automation </h5>
                                 <span class="text-600">A friendly user interface.</span>
                             </div>
                         </div>
