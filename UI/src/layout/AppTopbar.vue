@@ -25,7 +25,10 @@ onBeforeUnmount(() => {
 
 const logoUrl = computed(() => {
     // return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
-    return `demo/images/Smart-Collect-logo-black-removebg.png`;
+    // return `demo/images/Smart-Collect-logo-black-removebg.png`;
+    return `demo/images/SmarCollectlogo-removebg-preview.png`;
+
+
 });
 
 const onTopBarMenuButton = () => {

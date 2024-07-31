@@ -115,13 +115,13 @@ app.use(PrimeVue, { ripple: true });
 app.use(ToastService);
 app.use(DialogService);
 app.use(ConfirmationService);
-app.use(Meta, {
-    keyName: 'smart collect',
-    attribute: 'data-vue-meta',
-    ssrAttribute: 'data-vue-meta-server-rendered',
-    tagIDKeyName: 'vmid',
-    refreshOnceOnNavigation: true
-})
+// app.use(Meta, {
+//     keyName: 'smart collect',
+//     attribute: 'data-vue-meta',
+//     ssrAttribute: 'data-vue-meta-server-rendered',
+//     tagIDKeyName: 'vmid',
+//     refreshOnceOnNavigation: true
+// })
 app.directive('tooltip', Tooltip);
 app.directive('badge', BadgeDirective);
 app.directive('ripple', Ripple);
