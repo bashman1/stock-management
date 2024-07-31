@@ -75,7 +75,7 @@ const goToLogin = ()=>{
                     <Button @click="goToLogin" label="Get Started" class="p-button-rounded text-xl border-none mt-5 bg-blue-500 font-normal text-white line-height-3 px-3"></Button>
                 </div>
                 <div class="flex justify-content-center md:justify-content-end">
-                    <img src="/demo/images/landing/screen-1.png" alt="Hero Image" class="w-9 md:w-auto" />
+                    <img src="/demo/images/landing/smartcollect.png" alt="Hero Image" class="w-9 md:w-auto" />
                 </div>
             </div>
 
@@ -106,11 +106,11 @@ const goToLogin = ()=>{
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
                         >
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
-                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                <div class="flex align-items-center justify-content-center bg-cyan-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-money-bill text-2xl text-cyan-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Track your incomes and Expenses</h5>
-                                <span class="text-600">A friendly user interface.</span>
+                                <span class="text-600">Monitor and manage your incomes and expenses to keep your finances in check.</span>
                             </div>
                         </div>
                     </div>
@@ -120,11 +120,11 @@ const goToLogin = ()=>{
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
                         >
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
-                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                <div class="flex align-items-center justify-content-center bg-indigo-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-file text-2xl text-indigo-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Send Custom Invoices and Quotes</h5>
-                                <span class="text-600">A friendly user interface.</span>
+                                <span class="text-600">Create and send personalized invoices and quotes to your clients.</span>
                             </div>
                         </div>
                     </div>
@@ -134,14 +134,16 @@ const goToLogin = ()=>{
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
                         >
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
-                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                <div class="flex align-items-center justify-content-center bg-slate-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px; --tw-bg-opacity: 1;background-color: rgb(226 232 240 / var(--tw-bg-opacity));">
+                                    <i class="pi pi-fw pi-shopping-cart text-2xl text-slate-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Track your stock levels</h5>
-                                <span class="text-600">A friendly user interface.</span>
+                                <span class="text-600">Monitor and manage your inventory levels in real time.</span>
                             </div>
                         </div>
                     </div>
+
+
 
                                                                            <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
                         <div
@@ -149,10 +151,10 @@ const goToLogin = ()=>{
                         >
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
                                 <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                    <i class="pi pi-fw pi-directions text-2xl text-yellow-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Distribution and Delivery management.</h5>
-                                <span class="text-600">A friendly user interface.</span>
+                                <span class="text-600">Efficiently manage and streamline the distribution and delivery of goods from your business to customers.</span>
                             </div>
                         </div>
                     </div>
@@ -162,11 +164,11 @@ const goToLogin = ()=>{
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
                         >
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
-                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                <div class="flex align-items-center justify-content-center bg-orange-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-percentage text-2xl text-orange-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Track your VAT</h5>
-                                <span class="text-600">A friendly user interface.</span>
+                                <span class="text-600">Access real-time VAT reports to monitor collected and paid VAT.</span>
                             </div>
                         </div>
                     </div>
@@ -176,11 +178,11 @@ const goToLogin = ()=>{
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
                         >
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
-                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                <div class="flex align-items-center justify-content-center bg-teal-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-database text-2xl text-teal-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Intuitive Inventory Management</h5>
-                                <span class="text-600">A friendly user interface.</span>
+                                <span class="text-600">Effortless Inventory Management for Your Business.</span>
                             </div>
                         </div>
                     </div>
@@ -191,11 +193,11 @@ const goToLogin = ()=>{
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
                         >
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
-                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                <div class="flex align-items-center justify-content-center bg-pink-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-chart-bar !text-2xl text-pink-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Automated inbuilt Chart of Accounts</h5>
-                                <span class="text-600">A friendly user interface.</span>
+                                <span class="text-600">Simplify Your Financial Management with an Automated Chart of Accounts.</span>
                             </div>
                         </div>
                     </div>
@@ -206,11 +208,11 @@ const goToLogin = ()=>{
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
                         >
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
-                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                <div class="flex align-items-center justify-content-center bg-blue-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-chart-line text-2xl text-blue-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Track your profit Margins</h5>
-                                <span class="text-600">A friendly user interface.</span>
+                                <span class="text-600">Gain Insight into Your Business's Profitability.</span>
                             </div>
                         </div>
                     </div>
@@ -220,11 +222,11 @@ const goToLogin = ()=>{
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
                         >
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
-                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                <div class="flex align-items-center justify-content-center bg-purple-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-bookmark text-2xl text-purple-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Capture and Organize receipts</h5>
-                                <span class="text-600">A friendly user interface.</span>
+                                <span class="text-600">Managing receipts can be a daunting task, but it doesn’t have to be.</span>
                             </div>
                         </div>
                     </div>
@@ -235,11 +237,11 @@ const goToLogin = ()=>{
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
                         >
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
-                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                <div class="flex align-items-center justify-content-center bg-indigo-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-file-excel text-2xl text-indigo-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Insights and Reports </h5>
-                                <span class="text-600">A friendly user interface.</span>
+                                <span class="text-600">Make informed decisions and drive your business forward with our advanced insights and reporting tools.</span>
                             </div>
                         </div>
                     </div>
@@ -250,11 +252,11 @@ const goToLogin = ()=>{
                             style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))"
                         >
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
-                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                <div class="flex align-items-center justify-content-center bg-cyan-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-globe text-2xl text-cyan-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Multiple stock location </h5>
-                                <span class="text-600">A friendly user interface.</span>
+                                <span class="text-600">Effortless Management of Multiple Stock Locations. Streamline Your Inventory Across All Locations.</span>
                             </div>
                         </div>
                     </div>
@@ -278,11 +280,11 @@ const goToLogin = ()=>{
                     <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
                         <div style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))">
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
-                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                <div class="flex align-items-center justify-content-center bg-stale-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px; --tw-bg-opacity: 1;background-color: rgb(226 232 240 / var(--tw-bg-opacity));">
+                                    <i class="pi pi-fw pi-print text-2xl text-stale-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Point Of Sales </h5>
-                                <span class="text-600">A friendly user interface.</span>
+                                <span class="text-600">Revolutionize Your Transactions with Our Point of Sale Solutions.</span>
                             </div>
                         </div>
                     </div>
@@ -290,8 +292,8 @@ const goToLogin = ()=>{
                                         <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
                         <div style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))">
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
-                                <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
-                                    <i class="pi pi-fw pi-users text-2xl text-yellow-700"></i>
+                                <div class="flex align-items-center justify-content-center bg-teal-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
+                                    <i class="pi pi-fw pi-wrench text-2xl text-teal-700"></i>
                                 </div>
                                 <h5 class="mb-2 text-900">Automation </h5>
                                 <span class="text-600">A friendly user interface.</span>
@@ -299,7 +301,7 @@ const goToLogin = ()=>{
                         </div>
                     </div>
 
-                                        <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
+                    <!-- <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
                         <div style="height: 160px; padding: 2px; border-radius: 10px; background: linear-gradient(90deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2)), linear-gradient(180deg, rgba(253, 228, 165, 0.2), rgba(187, 199, 205, 0.2))">
                             <div class="p-3 surface-card h-full" style="border-radius: 8px">
                                 <div class="flex align-items-center justify-content-center bg-yellow-200 mb-3" style="width: 3.5rem; height: 3.5rem; border-radius: 10px">
@@ -309,7 +311,7 @@ const goToLogin = ()=>{
                                 <span class="text-600">A friendly user interface.</span>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
 
 
                     <!-- <div class="col-12 md:col-12 lg:col-4 p-0 lg:pr-5 lg:pb-5 mt-4 lg:mt-0">
@@ -411,7 +413,7 @@ const goToLogin = ()=>{
 
                 <div class="grid mt-8 pb-2 md:pb-8">
                     <div class="flex justify-content-center col-12 lg:col-6 bg-purple-100 p-0 flex-order-1 lg:flex-order-0" style="border-radius: 8px">
-                        <img src="/demo/images/landing/mockup.svg" class="w-11" alt="mockup mobile" />
+                        <img src="/demo/images/landing/DoughnutChart.gif" class="w-11" alt="mockup mobile" />
                     </div>
 
                     <div class="col-12 lg:col-6 my-auto flex flex-column lg:align-items-end text-center lg:text-right">
@@ -420,7 +422,9 @@ const goToLogin = ()=>{
                         </div>
                         <h2 class="line-height-1 text-900 text-4xl font-normal">Reduced accounting and process errors.</h2>
                         <span class="text-700 text-2xl line-height-3 ml-0 md:ml-2" style="max-width: 650px"
-                            >User friendly for mobile phone screens with the same details as the big screen.</span
+                            >Minimize accounting and process errors by implementing robust systems that automate data entry, calculations,
+                            and financial reporting. This reduces the risk of human error, ensures accuracy in your financial records,
+                            and streamlines accounting tasks, ultimately saving time and improving overall efficiency in managing your business finances.</span
                         >
                     </div>
                 </div>
@@ -432,18 +436,19 @@ const goToLogin = ()=>{
                         </div>
                         <h2 class="line-height-1 text-900 text-4xl font-normal">Avoid physical loss of receipts and invoices.</h2>
                         <span class="text-700 text-2xl line-height-3 mr-0 md:mr-2" style="max-width: 650px"
-                            >A more detailed features on the medium and extra large screen.</span
+                            >Digitally store and manage your receipts and invoices to avoid the physical loss and deterioration of important documents.
+                            This ensures secure, organized, and easily accessible financial records, enhancing the accuracy and efficiency of your accounting processes.</span
                         >
                     </div>
 
                     <div class="flex justify-content-end flex-order-1 sm:flex-order-2 col-12 lg:col-6 bg-yellow-100 p-0" style="border-radius: 8px">
-                        <img src="/demo/images/landing/mockup-desktop.svg" class="w-11" alt="mockup" />
+                        <img src="/demo/images/landing/WithdrawalReceipt.gif" class="w-11" alt="mockup" />
                     </div>
                 </div>
 
                 <div class="grid mt-8 pb-2 md:pb-8">
                     <div class="flex justify-content-center col-12 lg:col-6 bg-purple-100 p-0 flex-order-1 lg:flex-order-0" style="border-radius: 8px">
-                        <img src="/demo/images/landing/mockup.svg" class="w-11" alt="mockup mobile" />
+                        <img src="/demo/images/landing/PaymentDone.gif" class="w-11" alt="mockup mobile" />
                     </div>
 
                     <div class="col-12 lg:col-6 my-auto flex flex-column lg:align-items-end text-center lg:text-right">
@@ -452,7 +457,7 @@ const goToLogin = ()=>{
                         </div>
                         <h2 class="line-height-1 text-900 text-4xl font-normal">Easily track your Cash flow.</h2>
                         <span class="text-700 text-2xl line-height-3 ml-0 md:ml-2" style="max-width: 650px"
-                            >User friendly for mobile phone screens with the same details as the big screen.</span
+                            >Efficiently monitor and manage your cash flow to maintain a clear and accurate understanding of your financial health.</span
                         >
                     </div>
                 </div>
@@ -465,12 +470,12 @@ const goToLogin = ()=>{
                         </div>
                         <h2 class="line-height-1 text-900 text-4xl font-normal">Build better business insights.</h2>
                         <span class="text-700 text-2xl line-height-3 mr-0 md:mr-2" style="max-width: 650px"
-                            >A more detailed features on the medium and extra large screen.</span
+                            >Gain deeper business insights by leveraging data analytics to make informed decisions and drive growth.</span
                         >
                     </div>
 
                     <div class="flex justify-content-end flex-order-1 sm:flex-order-2 col-12 lg:col-6 bg-yellow-100 p-0" style="border-radius: 8px">
-                        <img src="/demo/images/landing/mockup-desktop.svg" class="w-11" alt="mockup" />
+                        <img src="/demo/images/landing/Globaldelivery.gif" class="w-11" alt="mockup" />
                     </div>
                 </div>
 
