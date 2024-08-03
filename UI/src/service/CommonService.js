@@ -1,7 +1,7 @@
 export default class CommonService {
-    //  baseUrl = "http://localhost:8000/api/";
+     baseUrl = "http://localhost:8000/api/";
     // baseUrl = "http://137.184.230.127/api/";
-   baseUrl = "../api/";
+//    baseUrl = "../api/";
 
     // loggedIn = this.checkingAuthentication();
 
@@ -664,6 +664,20 @@ export default class CommonService {
         const minutes = pad(date.getMinutes());
         const seconds = pad(date.getSeconds());
         return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    }
+
+
+    generateUUID=()=> {
+        // Use the crypto API to generate a UUID
+        return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+        );
+    }
+
+    generateRandomId=() =>{
+        const timestamp = Date.now();  // Current timestamp in milliseconds
+        const randomNum = Math.floor(Math.random() * 1e9);  // Random number with up to 9 digits
+        return Number(`${timestamp}${randomNum}`);
     }
 
 }

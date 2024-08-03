@@ -4,6 +4,7 @@ import { ref, onMounted, onBeforeMount } from 'vue';
 import { useRouter } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
+// import { ProductService } from '@/service/ProductService';
 
 const toast = useToast();
 const commonService = new CommonService();
@@ -186,6 +187,158 @@ const computeVAT = () => {
 }
 
 
+/**
+ *
+ The start testing code for editable table
+ */
+// const productService = new ProductService();
+const products = ref([]);
+
+    const payBy = ref({id:1, name:'Cash'})
+    const billingAddress =ref(null);
+    const customer =ref(null);
+    const saleDate =ref(null);
+    const newTotal = ref(0);
+
+
+const paymentOptions = ref([
+    {id:1, name:'Cash'},
+    {id:2, name:'Bank'},
+    {id:3, name:'Credit'},
+])
+
+const initializeProducts=()=>{
+    return [
+        {id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()},
+        {id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()},
+        {id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()},
+        {id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()},
+        {id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()},
+    ];
+}
+
+
+
+const columns = ref([
+    { field: 'name', header: 'Product/Services' },
+    { field: 'description', header: 'Description' },
+    { field: 'quantity', header: 'Quantity' },
+    { field: 'rate', header: 'Rate' },
+    { field: 'amount', header: 'Amount' },
+    { field: 'tax', header: 'Tax' },
+]);
+
+
+const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+}
+
+const isPositiveInteger = (val) => {
+    let str = String(val);
+
+    str = str.trim();
+
+    if (!str) {
+        return false;
+    }
+
+    str = str.replace(/^0+/, '') || '0';
+    var n = Math.floor(Number(str));
+
+    return n !== Infinity && String(n) === str && n >= 0;
+};
+
+
+const onCellEditComplete = (event) => {
+    let { data, newValue, field } = event;
+    // const rowIndex = event.rowIndex;
+    // alert(rowIndex)
+    // console.log(event)
+    // alert(JSON.stringify(event))
+
+    computeNewSum()
+
+    switch (field) {
+        case 'quantity':
+            if (isPositiveInteger(newValue)){
+                data[field] = newValue;
+                data.amount = data[field] * data.rate;
+            }else{
+                event.preventDefault();
+                // alert(newValue)
+                data[field] = 1;
+                data.amount = data[field] * data.rate;
+            }
+            break
+        case 'amount':
+        case 'rate':
+            if (isPositiveInteger(newValue)) data[field] = newValue;
+            else event.preventDefault();
+            break;
+        case 'name':
+            data[field] = newValue
+        default:
+            if ( newValue && newValue.trim().length > 0) data[field] = newValue;
+            else event.preventDefault();
+            break;
+    }
+};
+
+
+const onDropdownChange=(uuid, name)=>{
+let index = products.value.findIndex(element => element.uuid === uuid);
+let value = products.value[index];
+console.log('---------------------------------------------------------')
+console.log(name)
+    value.name = name.name;
+    value.id = name.id;
+    value.description = name.description;
+    value.quantity = 1;
+    value.rate = name.selling_price;
+    value.amount = value.quantity * value.rate;
+products.value[index] = value;
+}
+
+
+const getIndex=(uuid)=>{
+    return products.value.findIndex(element => element.uuid === uuid);
+}
+
+const onCellEditInit=(event)=>{
+    /** add a new raw **/
+if((event.index+ 1)==products.value.length){
+ addRow()
+}
+}
+
+
+const addRow=()=>{
+    products.value.push({id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()})
+}
+
+const clearColumns=()=>{
+products.value = initializeProducts();
+}
+
+const addColumns=()=>{
+products.value = products.value.concat(initializeProducts());
+}
+
+
+const computeNewSum=()=>{
+    let total=0;
+    products.value.forEach(element => {
+        total = total + (element.quantity * element.rate);
+    });
+   newTotal.value =total;
+}
+
+/**
+ *
+ The end testing code for editable table
+ */
+
+
 onBeforeMount(() => {
     initFilters();
 });
@@ -193,16 +346,122 @@ onBeforeMount(() => {
 onMounted(() => {
     getProducts();
     getInstitutionDetails();
+    products.value = initializeProducts();
 });
 
 
 </script>
 <template>
     <div class="grid p-fluid">
+
+
+                    <div class="field col-12 md:col-3">
+                        <div class="p-inputgroup">
+                            <span class="p-float-label">
+                                <Dropdown id="gauge" :options="paymentOptions" filter v-model="payBy" optionLabel="name">
+                                </Dropdown>
+                                <label for="paymentMethod">Payment methods</label>
+                            </span>
+                            <Button @click="toggleGaugeModal(true)" icon="pi pi-plus" />
+                        </div>
+                    </div>
+
+                    <div class="field col-12 md:col-3">
+                        <div class="p-inputgroup">
+                            <span class="p-float-label">
+                                <Dropdown id="gauge" :options="productGaugeList" filter v-model="customer" optionLabel="name">
+                                </Dropdown>
+                                <label for="Customer">Select customer</label>
+                            </span>
+                            <Button @click="toggleGaugeModal(true)" icon="pi pi-plus" />
+                        </div>
+                    </div>
+
+                    <div class="field col-12 md:col-3">
+                        <span class="p-float-label">
+                            <InputText type="text" id="productId" v-model="billingAddress" /> <!-- class="p-invalid"-->
+                            <label for="productId">Billing address</label>
+                        </span>
+                    </div>
+
+                                      <div class="field col-12 md:col-3">
+                        <span class="p-float-label">
+                            <Calendar id="date" v-model="saleDate"></Calendar>
+                            <label for="date">Sales Date</label>
+                        </span>
+                    </div>
+
+
+    <!-- start testing editable table -->
+                <div class="col-12 md:col-3"></div>
+                <div class="col-12 md:col-3"></div>
+                <div class="col-12 md:col-3"></div>
+                <div class="col-12 md:col-3"> <p class="font-bold text-right text-6xl green-color">Total: {{ newTotal }}</p></div>
+
+                <div class="col-12 md:col-12">
+                    <div class="card">
+        <DataTable :value="products" stripedRows showGridlines editMode="cell" @cell-edit-complete="onCellEditComplete" @cell-edit-init="onCellEditInit"
+            :pt="{
+                table: { style: 'min-width: 30rem' },
+                column: {
+                    bodycell: ({ state }) => ({
+                        class: [{ 'pt-0 pb-0': state['d_editing'] }]
+                    })
+                }
+            }"
+        >
+        <!-- <Column header="#">
+        <template #body="data">
+          {{ getIndex(data.uuid)+1 }}
+        </template>
+      </Column> -->
+            <Column v-for="(col, colIndex) of columns" :key="col.field" :field="col.field" :header="col.header" style="width: 15%">
+                <template #body="{ data, field }">
+                    {{ field === 'price' ? formatCurrency(data[field]) : data[field] }}
+                </template>
+                <template #editor="{ data, field }">
+                    <template v-if="field == 'name'">
+                        <Dropdown id="subCategory" change="" :options="productList" filter
+                        v-model="data[field]" optionLabel="name" @change="onDropdownChange(data.uuid, data.name)">
+                                </Dropdown>
+                    </template>
+                    <template v-else-if="field === 'description'">
+                        <InputText v-model="data[field]" fluid />
+                    </template>
+                    <template v-else>
+                        <InputNumber v-model="data[field]" autofocus fluid />
+                    </template>
+                </template>
+            </Column>
+        </DataTable>
+    </div>
+                </div>
+
+
+
+                <div class="col-12 md:col-1">
+                    <Button label="Add" @click="addColumns" icon="pi pi-plus" iconPos="left" class="mr-2 mb-2"></Button>
+                </div>
+                 <div class="col-12 md:col-1">
+                    <Button label="Clear" @click="clearColumns" icon="pi pi-minus" iconPos="left" class=" p-button-danger mr-2 mb-2" />
+                </div>
+
+                <div class="col-12 md:col-4"></div>
+                <div class="col-12 md:col-3"></div>
+                <div class="col-12 md:col-3"> <p class="font-bold text-right text-xl green-color">Total: {{ newTotal }}</p></div>
+
+                <div>
+                </div>
+
+                <!-- end testing editable table -->
+
+
         <div class="col-12 md:col-7">
             <div class="card">
                 <h5>Point Of Sale</h5><br>
                 <div class="grid">
+
+
 
                     <div class="col-12 md:col-12">
                         <p>Items available in the stock.</p>
@@ -364,18 +623,18 @@ onMounted(() => {
                 <h5>Total </h5><br>
                 <div class="grid">
                     <div class="field col-12 md:col-4">
-                        <span class="p-float-label">
+                        <span class="p-float-label green-color">
                             Amount To Pay
                         </span>
                     </div>
                     <div class="field col-12 md:col-8">
-                        <span class="p-float-label">
+                        <span class="p-float-label green-color">
                             {{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) -
                             Number(discount) + Number(extraTax)) : 0 }}
                         </span>
                     </div>
                     <div class="field col-12 md:col-4">
-                        <span class="p-float-label">
+                        <span class="p-float-label green-color">
                             Discount
                         </span>
                     </div>
@@ -386,7 +645,7 @@ onMounted(() => {
                         </span>
                     </div>
                     <div class="field col-12 md:col-4">
-                        <span class="p-float-label">
+                        <span class="p-float-label green-color">
                             Amount Paid
                         </span>
                     </div>
@@ -398,12 +657,12 @@ onMounted(() => {
                         </span>
                     </div>
                     <div class="field col-12 md:col-4">
-                        <span class="p-float-label">
+                        <span class="p-float-label green-color">
                             Change
                         </span>
                     </div>
                     <div class="field col-12 md:col-8">
-                        <span class="p-float-label" v-if="amountTOPay && amountTOPay > 0">
+                        <span class="p-float-label green-color" v-if="amountTOPay && amountTOPay > 0">
                             {{
                             commonService.commaSeparator(Number(amountTOPay) + Number(discount) - totalPrice(selectedProduct))
                             }}

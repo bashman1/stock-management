@@ -62,16 +62,16 @@ const organizeGraphicalData=(data)=>{
                 label: "No. of Members ",
                 data: commonService.organizeGraphData(data.membersGraph, "count"),
                 fill: false,
-                backgroundColor: 'rgba(47, 72, 96, 1)',
-                borderColor: '#2f4860',
+                backgroundColor: 'rgba(98, 98, 98, 1)',
+                borderColor: '#626262',
                 tension: 0.4
             },
             {
                 label: 'No. of Collections',
                 data: commonService.organizeGraphData(data.collectionGraph, "count"),
                 fill: false,
-                backgroundColor: 'rgba(0, 187, 126, 1)',
-                borderColor: '#00bb7e',
+                backgroundColor: 'rgba(127, 198, 34, 1)',
+                borderColor: '#7FC622',
                 tension: 0.4
             }
 
@@ -88,16 +88,16 @@ const organizeGraphicalData2=(data)=>{
                 label: "No. of Products ",
                 data: commonService.organizeGraphData(data.productsGraph, "count"),
                 fill: false,
-                backgroundColor: 'rgba(47, 72, 96, 1)',
-                borderColor: '#2f4860',
+                backgroundColor: 'rgba(98, 98, 98, 1)',
+                borderColor: '#626262',
                 tension: 0.4
             },
             {
                 label: 'No. of Sales',
                 data: commonService.organizeGraphData(data.salesGraph, "count"),
                 fill: false,
-                backgroundColor: 'rgba(0, 187, 126, 1)',
-                borderColor: '#00bb7e',
+                backgroundColor: 'rgba(127, 198, 34, 1)',
+                borderColor: '#7FC622',
                 tension: 0.4
             }
 
@@ -194,14 +194,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Institutions</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.total_institutions)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3 ">Institutions</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_institutions)}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-blue-100 border-round" style="width: 2.5rem; height: 2.5rem">
                         <i class="pi pi-building text-blue-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">24 new </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">24 new </span> -->
                 <!-- <span class="text-500">since last visit</span> -->
             </div>
         </div>
@@ -209,14 +209,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Branches</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.total_branches)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Branches</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_branches)}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-orange-100 border-round" style="width: 2.5rem; height: 2.5rem">
                         <i class="pi pi-share-alt text-orange-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">%52+ </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">%52+ </span> -->
                 <!-- <span class="text-500">since last week</span> -->
             </div>
         </div>
@@ -224,14 +224,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Users</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.total_users)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Users</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_users)}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-cyan-100 border-round" style="width: 2.5rem; height: 2.5rem">
                         <i class="pi pi-user text-cyan-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">520 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">520 </span> -->
                 <!-- <span class="text-500">newly registered</span> -->
             </div>
         </div>
@@ -239,14 +239,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Members</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.total_customers)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Members</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_customers)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-users text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-users text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -255,14 +255,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Products</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.products)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Products</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.products)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -271,14 +271,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Sales</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.sales)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Sales</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.sales)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-credit-card text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-credit-card text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -287,14 +287,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Products Sold</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.product_sold)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Products Sold</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.product_sold)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-money-bill text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-money-bill text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -303,14 +303,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Total Sales Value</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.total_sales_value)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Total Sales Value</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_sales_value)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-money-bill text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-money-bill text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -320,14 +320,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Today's Sales Value</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.today_sales_value)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Today's Sales Value</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.today_sales_value)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-money-bill text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-money-bill text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -337,14 +337,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Total Stock Value</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.total_stock_value)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Total Stock Value</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_stock_value)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -353,14 +353,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Today's Purchases</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.today_stock_value)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Today's Purchases</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.today_stock_value)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -369,14 +369,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Today's Markup Value</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.today_mark_up)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Today's Markup Value</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.today_mark_up)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -385,14 +385,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Today's Markup Percentage</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.today_mark_up_percentage)}} %</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Today's Markup Percentage</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.today_mark_up_percentage)}} %</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -401,31 +401,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Total Income</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.total_income)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Total Income</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_income)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-purple-500 text-xl"></i>
-                    </div>
-                </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
-                <!-- <span class="text-500">responded</span> -->
-            </div>
-        </div>
-
-
-        <div class="col-12 lg:col-6 xl:col-3"  v-if="commonService.checkPermissions('ViewProducts')">
-            <div class="card mb-0">
-                <div class="flex justify-content-between mb-3">
-                    <div>
-                        <span class="block text-500 font-medium mb-3">Today Income</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.today_income)}}</div>
-                    </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -435,14 +418,31 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Total Expenses</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.total_expenses)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Today Income</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.today_income)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
+                <!-- <span class="text-500">responded</span> -->
+            </div>
+        </div>
+
+
+        <div class="col-12 lg:col-6 xl:col-3"  v-if="commonService.checkPermissions('ViewProducts')">
+            <div class="card mb-0">
+                <div class="flex justify-content-between mb-3">
+                    <div>
+                        <span class="block text-500 font-bold text-xl mb-3">Total Expenses</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_expenses)}}</div>
+                    </div>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    </div>
+                </div>
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -451,14 +451,14 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-medium mb-3">Today Expenses</span>
-                        <div class="text-900 font-medium text-xl">{{commonService.commaSeparator(stats?.today_expenses)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Today Expenses</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.today_expenses)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-purple-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
                     </div>
                 </div>
-                <!-- <span class="text-green-500 font-medium">85 </span> -->
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
                 <!-- <span class="text-500">responded</span> -->
             </div>
         </div>
@@ -523,7 +523,7 @@ watch(
         <div class="col-12 xl:col-6">
             <div class="card">
                 <h5>Best Selling Products</h5>
-                <DataTable :value="dashBoardData?.bestSellingProduct" :rows="10" :paginator="true" responsiveLayout="scroll">
+                <DataTable :value="dashBoardData?.bestSellingProduct" stripedRows :rows="10" :paginator="true" responsiveLayout="scroll">
                     <Column field="name" header="Name" :sortable="true" style="width: 35%"></Column>
                     <Column field="quantity" header="Quantity" :sortable="true" style="width: 35%"></Column>
                     <Column field="price" header="Price" :sortable="true" style="width: 35%">
@@ -543,7 +543,7 @@ watch(
         <div class="col-12 xl:col-6">
             <div class="card">
                 <h5>Products About To Expire</h5>
-                <DataTable :value="dashBoardData?.productAboutToExpire" :rows="10" :paginator="true" responsiveLayout="scroll">
+                <DataTable :value="dashBoardData?.productAboutToExpire" stripedRows :rows="10" :paginator="true" responsiveLayout="scroll">
                     <Column field="name" header="Name" :sortable="true" style="width: 35%"></Column>
                     <Column field="quantity" header="Stock" :sortable="true" style="width: 20%"></Column>
 <!--                    <Column field="price" header="Price" :sortable="true" style="width: 35%">-->
