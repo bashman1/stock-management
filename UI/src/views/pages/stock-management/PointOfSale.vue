@@ -199,6 +199,7 @@ const products = ref([]);
     const customer =ref(null);
     const saleDate =ref(null);
     const newTotal = ref(0);
+    const paidAmount = ref(0);
 
 
 const paymentOptions = ref([
@@ -278,7 +279,7 @@ const onCellEditComplete = (event) => {
         case 'name':
             data[field] = newValue
         default:
-            if ( newValue && newValue.trim().length > 0) data[field] = newValue;
+            if ( newValue && typeof newValue === 'string' && newValue.trim().length > 0) data[field] = newValue;
             else event.preventDefault();
             break;
     }
@@ -332,6 +333,14 @@ const computeNewSum=()=>{
     });
    newTotal.value =total;
 }
+
+
+    const onSubmitNewOrder=()=>{
+        console.log('****************************************************************')
+
+        let sortedProducts = products.value.find(obj => obj.id != null);
+        console.log(JSON.stringify(sortedProducts));
+    }
 
 /**
  *
@@ -429,7 +438,7 @@ onMounted(() => {
                         <InputText v-model="data[field]" fluid />
                     </template>
                     <template v-else>
-                        <InputNumber v-model="data[field]" autofocus fluid />
+                        <InputNumber v-model="data[field]" fluid />
                     </template>
                 </template>
             </Column>
@@ -450,7 +459,18 @@ onMounted(() => {
                 <div class="col-12 md:col-3"></div>
                 <div class="col-12 md:col-3"> <p class="font-bold text-right text-xl green-color">Total: {{ newTotal }}</p></div>
 
-                <div>
+                <div class="col-12 md:col-3"></div>
+                <div class="col-12 md:col-3">
+                        <span class="p-float-label">
+                            <InputText type="text" id="productId" v-model="paidAmount"  placeholder="0"/> <!-- class="p-invalid"-->
+                            <label for="productId">Amount</label>
+                        </span>
+                </div>
+                <div class="col-12 md:col-3">
+                <p class="font-bold text-left text-xl green-color">Change: {{ paidAmount-newTotal }}</p>
+                </div>
+                <div class="col-12 md:col-3">
+                    <Button @click="onSubmitNewOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
                 </div>
 
                 <!-- end testing editable table -->
