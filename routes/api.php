@@ -46,6 +46,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 
+Route::get('smart', function () {
+    return "Hello there this is Smart collect";
+});
 // Route::post('create-institution', [InstitutionController::class, 'createInstitution']);
 // Route::post('create-user', [UserController::class, 'createUser']);
 Route::post('user-login', [UserController::class, 'login']);
