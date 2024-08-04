@@ -51,6 +51,11 @@ const goToLogin = ()=>{
                                 <span>About</span>
                             </a>
                         </li>
+                        <li>
+                            <a @click="smoothScroll('#contact')" class="flex m-0 md:ml-5 px-0 py-3 text-900 font-medium line-height-3 p-ripple" v-ripple>
+                                <span>Contact</span>
+                            </a>
+                        </li>
                         <!-- <li>
                             <a @click="smoothScroll('#pricing')" class="flex m-0 md:ml-5 px-0 py-3 text-900 font-medium line-height-3 p-ripple" v-ripple>
                                 <span>Pricing</span>
@@ -70,7 +75,7 @@ const goToLogin = ()=>{
                 style="background: linear-gradient(0deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2)), radial-gradient(77.36% 256.97% at 77.36% 57.52%, rgb(120, 186, 31) 0%, rgb(204, 204, 204) 100%); clip-path: ellipse(150% 87% at 93% 13%)"
             >
                 <div class="mx-4 md:mx-8 mt-0 md:mt-4">
-                    <h1 class="text-4xl font-bold text-gray-900 line-height-2"><span class="font-light block">Streamline your inventory management, income & expense tracking & more with Smart Collect. </span>Elevate Your Collections with Intelligence and Efficiency</h1>
+                    <h1 class="text-4xl font-bold text-gray-900 line-height-2"><span class="font-light block">Streamline your inventory management, income and expense tracking and more with Smart Collect. </span>Elevate Your Collections with Intelligence and Efficiency</h1>
                     <p class="font-normal text-2xl line-height-3 md:mt-3 text-gray-700">A convenient solution for your business.</p>
                     <Button @click="goToLogin" label="Get Started" class="p-button-rounded text-xl border-none mt-5 font-normal text-white line-height-3 px-3"></Button>
                 </div>
@@ -586,6 +591,26 @@ const goToLogin = ()=>{
                     </div>
                 </div>
             </div> -->
+
+            <div id="contact" class="py-4 px-4 lg:px-8 my-2 md:my-4">
+                <div class="text-center">
+                    <h2 class="text-900 font-normal mb-2">Contact Us</h2>
+                    <!-- <span class="text-600 text-2xl">Amet consectetur adipiscing elit...</span> -->
+                </div>
+
+                <div class="grid mt-8 pb-2 md:pb-8">
+                    <div class="col-12 lg:col-4 my-auto flex flex-column  text-center lg:text-center">
+                        <p class="text-900 text-2xl"><i class="pi pi-phone" style="font-size: 1rem"></i> + 265 200 939 873</p>
+                    </div>
+                    <div class="col-12 lg:col-4 my-auto flex flex-column  text-center lg:text-center">
+                        <p class="text-900 text-2xl"><i class="pi pi-whatsapp" style="font-size: 1rem"></i> + 265 200 939 873</p>
+                    </div>
+                    <div class="col-12 lg:col-4 my-auto flex flex-column  text-center lg:text-center">
+                        <p class="text-900 text-2xl"><i class="pi pi-envelope" style="font-size: 1rem"></i> info@smartcollect.co.ug</p>
+                    </div>
+                </div>
+
+            </div>
 
             <div class="py-4 px-4 mx-0 mt-8 lg:mx-8">
                 <div class="grid justify-content-between">

@@ -11,7 +11,7 @@ const commonService = new CommonService();
 const router = useRouter();
 
 const productList = ref(null);
-const selectedProduct = ref([]);
+const selectedProduct = ref([{ id:null, price: null, quantity: null, discount: null, name: '', tax_config:null }]);
 const amountTOPay = ref(0);
 const discount = ref(0);
 const balance = ref(0);
@@ -39,12 +39,22 @@ const getProducts = () => {
 }
 
 const OnSelectItem = (data) => {
+
+    console.log(JSON.stringify(data));
+
     let obj = { id: data.id, price: data.selling_price, quantity: 1, discount: 0, name: data.name, tax_config:data.tax_config };
     const foundItem = selectedProduct.value.find(item => item.id === obj.id);
     if (foundItem) {
         foundItem.quantity += obj.quantity;
     } else {
-        selectedProduct.value.push(obj);
+        // selectedProduct.value.push(obj);
+
+        let index = selectedProduct.value.length - 1;
+
+// Insert the object at the calculated index
+        selectedProduct.value.splice(index, 0, obj);
+
+        // selectedProduct.value= selectedProduct.value.reverse();
     }
     if(institutionDetails?.value?.is_tax_enabled){
         computeVAT()
@@ -98,6 +108,9 @@ const totalPrice = (array) => {
 }
 
 const onSubmitOrder = () => {
+
+    selectedProduct.value = selectedProduct?.value.filter(obj => obj.id != null);
+
     let postData = {
         total: totalPrice(selectedProduct?.value) - Number(discount?.value) + Number(extraTax.value),
         discount: Number(discount?.value),
@@ -318,7 +331,8 @@ const addRow=()=>{
 }
 
 const clearColumns=()=>{
-products.value = initializeProducts();
+    selectedProduct.value = [{ id:null, price: null, quantity: null, discount: null, name: '', tax_config:null }];
+// products.value = initializeProducts();
 }
 
 const addColumns=()=>{
@@ -405,11 +419,61 @@ onMounted(() => {
                 <div class="col-12 md:col-3"></div>
                 <div class="col-12 md:col-3"></div>
                 <div class="col-12 md:col-3"></div>
-                <div class="col-12 md:col-3"> <p class="font-bold text-right text-6xl green-color">Total: {{ newTotal }}</p></div>
+                <div class="col-12 md:col-3"> <p class="font-bold text-right text-6xl green-color">Total: {{  totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}</p></div>
 
                 <div class="col-12 md:col-12">
                     <div class="card">
-        <DataTable :value="products" stripedRows showGridlines editMode="cell" @cell-edit-complete="onCellEditComplete" @cell-edit-init="onCellEditInit"
+
+
+                        <!-- <div class="field col-12 md:col-12"> -->
+                        <!-- <p>Items available in the stock.</p> -->
+                        <DataTable :value="selectedProduct" size="small" :rows="20" dataKey="id" :rowHover="true"
+                            filterDisplay="menu" responsiveLayout="scroll">
+                            <Column field="name" header="Name" style="max-width: 10rem">
+                                <template #body="{ data }" >
+                        <Dropdown id="subCategory" change="" :options="productList" filter v-if="!data.id"
+                         optionLabel="name" @change="OnSelectItem($event.value)">
+                                </Dropdown>
+                                    {{ data.name }}
+                                </template>
+                            </Column>
+                            <Column field="price" header="Price" style="max-width: 10rem">
+                                <template #body="{ data }">
+                                    {{ commonService.commaSeparator(data.price) }}
+                                </template>
+                            </Column>
+                            <Column field="quantity" header="Qty" style="min-width: 10rem">
+                                <template #body="{ data }">
+
+                                    <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')" v-if="data.id"
+                                    style="font-size: 1rem; margin-left:3px; cursor:pointer"></i>
+                                    <!-- <Button icon="pi pi-minus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
+                                    <InputText type="text" @change="updateQty($event, data)" :value="data.quantity" v-if="data.id"
+                                        style="width: 60px; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
+                                        placeholder="Qty"></InputText>
+                                    <!-- {{ data.quantity }} -->
+                                    <i class="pi pi-plus" @click="increaseReduce(data, 'Add')" v-if="data.id"
+                                    style="font-size: 1rem; margin-right:3px; cursor:pointer"></i>
+
+                                    <!-- <Button icon="pi pi-plus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
+                                </template>
+                            </Column>
+                            <Column field="subtotal" header="Sub Total" style="max-width: 10rem">
+                                <template #body="{ data }">
+                                    {{ data.id?commonService.commaSeparator(data.quantity * data.price):'' }}
+                                </template>
+                            </Column>
+                            <Column headerStyle="max-width:10rem;">
+                                <template #body="{ data }">
+                                    <Button icon="pi pi-trash" class="p-button-rounded p-button-danger mr-2" v-if="data.id"
+                                        @click="OnSelectRemoveItem(data)" />
+                                </template>
+                            </Column>
+                        </DataTable>
+                    <!-- </div> -->
+
+
+        <!-- <DataTable :value="products" stripedRows showGridlines editMode="cell" @cell-edit-complete="onCellEditComplete" @cell-edit-init="onCellEditInit"
             :pt="{
                 table: { style: 'min-width: 30rem' },
                 column: {
@@ -419,11 +483,6 @@ onMounted(() => {
                 }
             }"
         >
-        <!-- <Column header="#">
-        <template #body="data">
-          {{ getIndex(data.uuid)+1 }}
-        </template>
-      </Column> -->
             <Column v-for="(col, colIndex) of columns" :key="col.field" :field="col.field" :header="col.header" style="width: 15%">
                 <template #body="{ data, field }">
                     {{ field === 'price' ? formatCurrency(data[field]) : data[field] }}
@@ -442,14 +501,14 @@ onMounted(() => {
                     </template>
                 </template>
             </Column>
-        </DataTable>
+        </DataTable> -->
     </div>
                 </div>
 
 
 
                 <div class="col-12 md:col-1">
-                    <Button label="Add" @click="addColumns" icon="pi pi-plus" iconPos="left" class="mr-2 mb-2"></Button>
+                    <!-- <Button label="Add" @click="addColumns" icon="pi pi-plus" iconPos="left" class="mr-2 mb-2"></Button> -->
                 </div>
                  <div class="col-12 md:col-1">
                     <Button label="Clear" @click="clearColumns" icon="pi pi-minus" iconPos="left" class=" p-button-danger mr-2 mb-2" />
@@ -457,32 +516,30 @@ onMounted(() => {
 
                 <div class="col-12 md:col-4"></div>
                 <div class="col-12 md:col-3"></div>
-                <div class="col-12 md:col-3"> <p class="font-bold text-right text-xl green-color">Total: {{ newTotal }}</p></div>
+                <div class="col-12 md:col-3"> <p class="font-bold text-right text-xl green-color">Total: {{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}</p></div>
 
                 <div class="col-12 md:col-3"></div>
                 <div class="col-12 md:col-3">
                         <span class="p-float-label">
-                            <InputText type="text" id="productId" v-model="paidAmount"  placeholder="0"/> <!-- class="p-invalid"-->
+                            <InputText type="text" id="discount" v-model="amountTOPay" /> <!-- class="p-invalid"-->
                             <label for="productId">Amount</label>
                         </span>
                 </div>
                 <div class="col-12 md:col-3">
-                <p class="font-bold text-left text-xl green-color">Change: {{ paidAmount-newTotal }}</p>
+                <p class="font-bold text-left text-xl green-color" v-if="amountTOPay && amountTOPay > 0">Change: {{ commonService.commaSeparator(Number(amountTOPay) + Number(discount) - totalPrice(selectedProduct)) }}</p>
                 </div>
                 <div class="col-12 md:col-3">
-                    <Button @click="onSubmitNewOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+                 <Button @click="onSubmitOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+                    <!-- <Button @click="onSubmitNewOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" /> -->
                 </div>
 
                 <!-- end testing editable table -->
 
 
-        <div class="col-12 md:col-7">
+        <!-- <div class="col-12 md:col-7">
             <div class="card">
                 <h5>Point Of Sale</h5><br>
                 <div class="grid">
-
-
-
                     <div class="col-12 md:col-12">
                         <p>Items available in the stock.</p>
                         <DataTable :value="productList" :paginator="true"  size="small" class="p-datatable-gridlines" :rows="50"
@@ -491,7 +548,7 @@ onMounted(() => {
                             <template #header>
                                 <div
                                     class="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
-                                    <!-- <h5 class="m-0">Manage Products</h5> -->
+
                                     <span class="block mt-2 md:mt-0 p-input-icon-left">
                                         <i class="pi pi-search" />
                                         <InputText v-model="filters['global'].value" placeholder="Search..." />
@@ -503,21 +560,13 @@ onMounted(() => {
                                     {{ data.name }}
                                 </template>
                             </Column>
-                            <!-- <Column field="name" header="Product ID" style="min-width: 10rem">
-                                <template #body="{ data }">
-                                    {{ data.product_no }}
-                                </template>
-                            </Column> -->
+
                             <Column field="name" header="Category" style="min-width: 10rem">
                                 <template #body="{ data }">
                                     {{ data.category_name }}
                                 </template>
                             </Column>
-                            <!-- <Column field="name" header="Sub Category" style="min-width: 10rem">
-                                <template #body="{ data }">
-                                    {{ data.sub_category_name }}
-                                </template>
-                            </Column> -->
+
                             <Column field="name" header="Price" style="max-width: 10rem">
                                 <template #body="{ data }">
                                     {{ commonService.commaSeparator(data.selling_price) }}
@@ -533,16 +582,7 @@ onMounted(() => {
                                     {{ data.manufacturer }}
                                 </template>
                             </Column>
-                            <!-- <Column header="Institution" style="min-width: 10rem">
-                                <template #body="{ data }">
-                                    {{ data.institution_name }}
-                                </template>
-                            </Column>
-                            <Column header="Branch" style="min-width: 10rem">
-                                <template #body="{ data }">
-                                    {{ data.branch_name }}
-                                </template>
-                            </Column> -->
+
                             <Column header="Date" style="min-width: 10rem">
                                 <template #body="{ data }">
                                     {{ data.created_at }}
@@ -559,15 +599,14 @@ onMounted(() => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
 
 
-        <div class="col-12 md:col-5">
+        <!-- <div class="col-12 md:col-5">
             <div class="card">
                 <h5>Selected Items</h5><br>
                 <div class="grid">
                     <div class="field col-12 md:col-12">
-                        <!-- <p>Items available in the stock.</p> -->
                         <DataTable :value="selectedProduct" size="small" :rows="20" dataKey="id" :rowHover="true"
                             filterDisplay="menu" responsiveLayout="scroll">
                             <Column field="name" header="Name" style="max-width: 10rem">
@@ -585,15 +624,11 @@ onMounted(() => {
 
                                     <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')"
                                     style="font-size: 1rem; margin-left:3px; cursor:pointer"></i>
-                                    <!-- <Button icon="pi pi-minus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
                                     <InputText type="text" @change="updateQty($event, data)" :value="data.quantity"
                                         style="width: 60px; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
                                         placeholder="Qty"></InputText>
-                                    <!-- {{ data.quantity }} -->
                                     <i class="pi pi-plus" @click="increaseReduce(data, 'Add')"
                                     style="font-size: 1rem; margin-right:3px; cursor:pointer"></i>
-
-                                    <!-- <Button icon="pi pi-plus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
                                 </template>
                             </Column>
                             <Column field="subtotal" header="Sub Total" style="max-width: 10rem">
@@ -673,7 +708,6 @@ onMounted(() => {
                         <span class="p-float-label">
                             <InputText type="text" id="discount" v-model="amountTOPay" />
                             <label for="discount">Amount</label>
-                            <!-- <small class="p-invalid ">Enter.</small> -->
                         </span>
                     </div>
                     <div class="field col-12 md:col-4">
@@ -696,7 +730,7 @@ onMounted(() => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
 
 
         <!-- Start of Modals-->
