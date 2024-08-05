@@ -1,7 +1,8 @@
 export default class CommonService {
     //  baseUrl = "http://localhost:8000/api/";
     // baseUrl = "http://137.184.230.127/api/";
-   baseUrl = "../api/";
+    baseUrl = "https://test.smartcollect.co.ug/api/"
+//    baseUrl = "../api/";
 
     // loggedIn = this.checkingAuthentication();
 
