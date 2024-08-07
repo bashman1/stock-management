@@ -32,6 +32,15 @@ const router = useRouter();
 const route = useRoute()
 const showMeasurementUnitModal = ref(false);
 
+const paymentMethodOptions=ref([
+    {id:1, name: "Cash", value:"CASH"},
+    {id:2, name: "Bank", value:"BANK"},
+    {id:3, name: "Credit", value:"CREDIT"},
+])
+
+const paymentMethod=ref( {id:1, name: "Cash", value:"CASH"})
+
+
 const getMemberBatch = () => {
     commonService.genericRequest('get-products', 'get', true, {}).then((response) => {
         if (response.status) {
@@ -99,7 +108,8 @@ const onSubmit= ()=>{
         selling_price: sellingPrice?.value,
         date:date?.value,
         productId: selectedProduct.value.id,
-        status: "Active"
+        status: "Active",
+        payment_method:paymentMethod?.value.value,
     }
     console.log(postData)
     commonService.genericRequest('restock-product', 'post', true, postData).then((response) => {
@@ -113,6 +123,7 @@ const onSubmit= ()=>{
             expiryDate.value = null;
             sellingPrice.value = null;
             date.value = null;
+            paymentMethod.value={id:1, name: "Cash", value:"CASH"};
             onCancel();
             getMemberBatch();
             commonService.showSuccess(toast, response.message);
@@ -337,6 +348,13 @@ onMounted(() => {
                                 <span class="p-float-label">
                                     <Calendar id="date" v-model="expiryDate"></Calendar>
                                     <label for="date">Expiry Date</label>
+                                </span>
+                            </div>
+
+                            <div class="field col-12 md:col-6" >
+                                <span class="p-float-label">
+                                    <Dropdown id="instCity" :options="paymentMethodOptions" v-model="paymentMethod" @blur="onInputBlur(paymentMethod, 'paymentMethod')" :class="{ 'p-invalid': formError?.paymentMethod }" optionLabel="name"></Dropdown>
+                                    <label for="instCity">Payment Method</label>
                                 </span>
                             </div>
 

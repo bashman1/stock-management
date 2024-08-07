@@ -412,7 +412,6 @@ if(commonService.checkPermissions('ViewSalesReport')){
 
 
 
-
 if(commonService.checkPermissions('ViewCashBook')){
     reportMenu.value.items.push(
         {

@@ -75,8 +75,19 @@ class ProductController extends Controller
 
         if (!isset($isEdit)) {
             $branch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
+            $cl = null;
+            if (isset($request->payment_method)){
+                if ($request->payment_method == "BANK"){
+                    $cl = CntrlParameter::where(['param_cd' => 'CGL', 'institution_id' => $userData->institution_id])->first();
+                }elseif ($request->payment_method == "CREDIT"){
+                    $cl = CntrlParameter::where(['param_cd' => 'AP', 'institution_id' => $userData->institution_id])->first();
+                }else{
+                    $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+                }
+            }else{
+                $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+            }
 
-            $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
             $sti = CntrlParameter::where(['param_cd' => 'STI', 'institution_id' => $userData->institution_id])->first();
 
             $pia = CntrlParameter::where(['param_cd' => 'PIA', 'institution_id' => $userData->institution_id])->first();
@@ -222,6 +233,7 @@ class ProductController extends Controller
         $stock->stock_date = $request->date;
         $stock->manufactured_date = $request->manufactured_date;
         $stock->expiry_date = $request->expiry_date;
+        $stock->payment_method = $request->payment_method;
         $stock->branch_id = $userData->branch_id;
         $stock->user_id = $userData->id;
         $stock->status = $request->status;
@@ -239,6 +251,7 @@ class ProductController extends Controller
         $history->stock_date = $request->date;
         $history->manufactured_date = $request->manufactured_date;
         $history->expiry_date = $request->expiry_date;
+        $history->payment_method = $request->payment_method;
         $history->branch_id = $userData->branch_id;
         $history->user_id = $userData->id;
         $history->status = $request->status;
@@ -300,7 +313,20 @@ class ProductController extends Controller
 
             $branch = Branch::where(['id'=>$userData->branch_id, 'institution_id'=>$userData->institution_id])->first();
 
-            $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
+        $cl = null;
+        if (isset($request->payment_method)){
+            if ($request->payment_method == "BANK"){
+                $cl = CntrlParameter::where(['param_cd' => 'CGL', 'institution_id' => $userData->institution_id])->first();
+            }elseif ($request->payment_method == "CREDIT"){
+                $cl = CntrlParameter::where(['param_cd' => 'AP', 'institution_id' => $userData->institution_id])->first();
+            }else{
+                $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+            }
+        }else{
+            $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+        }
+
+//            $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
             $sti = CntrlParameter::where(['param_cd'=>'STI', 'institution_id'=>$userData->institution_id])->first();
 
             $pia = CntrlParameter::where(['param_cd'=>'PIA', 'institution_id'=>$userData->institution_id])->first();

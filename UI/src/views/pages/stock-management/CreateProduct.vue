@@ -111,6 +111,14 @@ const taxExempted=ref([
     {id: 3, name:'Zero Sated Supplies', value: 'TAX_ZERO_RATED'},
 ])
 
+const paymentMethodOptions=ref([
+    {id:1, name: "Cash", value:"CASH"},
+    {id:2, name: "Bank", value:"BANK"},
+    {id:3, name: "Credit", value:"CREDIT"},
+])
+
+const paymentMethod=ref( {id:1, name: "Cash", value:"CASH"})
+
 
 // ********************************************************
 const openCategoryModal = () => {
@@ -220,6 +228,7 @@ const onSubmit= ()=>{
         tax_config: taxConfig?.value?.value,
         type_id: prodType?.value?.id,
         gauge_id: prodGauge?.value?.id,
+        payment_method:paymentMethod?.value.value,
     }
 
     commonService.genericRequest('create-product', 'post', true, postData).then((response) => {
@@ -244,7 +253,8 @@ const onSubmit= ()=>{
             expiryDate.value=null;
             prodType.value=null;
             prodGauge.value=null;
-            tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'}
+            tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'};
+            paymentMethod.value={id:1, name: "Cash", value:"CASH"};
         } else {
             commonService.showError(toast, response.message);
         }
@@ -810,12 +820,12 @@ onMounted(() => {
                         </span>
                     </div>
 
-                    <!-- <div class="field col-12 md:col-6" v-if="institutionDetails?.is_tax_enabled">
+                     <div class="field col-12 md:col-6" >
                         <span class="p-float-label">
-                            <Dropdown id="instCity" :options="taxOptions" v-model="taxableConfigs" @blur="onInputBlur(taxableConfigs, 'taxableConfigs')" :class="{ 'p-invalid': formError?.taxableConfigs }" optionLabel="name"></Dropdown>
-                            <label for="instCity">Tax Config</label>
+                            <Dropdown id="instCity" :options="paymentMethodOptions" v-model="paymentMethod" @blur="onInputBlur(paymentMethod, 'paymentMethod')" :class="{ 'p-invalid': formError?.paymentMethod }" optionLabel="name"></Dropdown>
+                            <label for="instCity">Payment Method</label>
                         </span>
-                    </div> -->
+                    </div>
 
 
                 </div>

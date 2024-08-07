@@ -29,6 +29,7 @@ use App\Http\Controllers\GlAccountsController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TempProductController;
 use App\Http\Controllers\TempSaleController;
+use App\Http\Controllers\CustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -175,5 +176,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("approve-batch-sales", [OrderController::class, "approveBatchSales"]);
     Route::post("get-cash-book", [GlAccountsController::class, "getCashBook"]);
     Route::post("get-item-sales-report", [ReportController::class, "getItemSalesReport"]);
+    Route::post("create-customer", [CustomerController::class, "createCustomer"]);
+    Route::post("get-customers", [CustomerController::class, "getCustomers"]);
 
 });

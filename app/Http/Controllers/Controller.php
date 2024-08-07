@@ -464,6 +464,45 @@ class Controller extends BaseController
         }
 
 
+//        receivalbe
+        $rcbl = DB::table('gl_accounts')
+            ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+            ->where('institution_id', $instId)
+            ->where('acct_type', 'ASSET')
+            ->where('gl_no', '1303001')
+            ->first();
+
+        $isRcblExisting =  CntrlParameter::where(["institution_id"=>$instId, "param_value" => strrev($rcbl->replaced_acct_no)])->exists();
+        if(!$isRcblExisting){
+            $newSti= new CntrlParameter();
+            $newSti->param_name = "Account Receivable AR";
+            $newSti->param_cd="AR";
+            $newSti->param_value=strrev($rcbl->replaced_acct_no);
+            $newSti->institution_id=$instId;
+            $newSti->created_on=now();
+            $newSti->save();
+        }
+
+//        payable
+        $pybl = DB::table('gl_accounts')
+            ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+            ->where('institution_id', $instId)
+            ->where('acct_type', 'LIABILITY')
+            ->where('gl_no', '2202001')
+            ->first();
+
+        $isPyblExisting =  CntrlParameter::where(["institution_id"=>$instId, "param_value" => strrev($pybl->replaced_acct_no)])->exists();
+        if(!$isPyblExisting){
+            $newSti= new CntrlParameter();
+            $newSti->param_name = "Account Payable AP";
+            $newSti->param_cd="AP";
+            $newSti->param_value=strrev($pybl->replaced_acct_no);
+            $newSti->institution_id=$instId;
+            $newSti->created_on=now();
+            $newSti->save();
+        }
+
+
 
         DB::commit();
         return true;

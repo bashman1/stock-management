@@ -21,6 +21,15 @@ const extraTax= ref(0);
 
 const totalInclusiveTax= ref(0);
 const totalExclusiveTax= ref(0);
+const showCreateCustomerModal= ref(false);
+const customerFormError=ref({});
+const customerName=ref(null);
+const customerEmail=ref(null);
+const customerAddress=ref(null);
+const customerContact=ref(null);
+const customerDesc=ref(null);
+const customerData=ref([]);
+
 
 const VAT = ref([
     {id:1, name:"18%", amount:0, total:0},
@@ -116,12 +125,15 @@ const onSubmitOrder = () => {
         discount: Number(discount?.value),
         amountPaid: Number(amountTOPay?.value),
         itemCount: selectedProduct?.value.length,
-        tranDate: new Date(),
+        tranDate: saleDate.value,
         items: selectedProduct?.value,
         status: "Active",
         vat:  Number(extraTax.value),
         vatInc:  totalInclusiveTax.value,
-        vatEx: totalExclusiveTax.value
+        vatEx: totalExclusiveTax.value,
+        payment_method:payBy?.value.value,
+        address:billingAddress.value,
+        customer_id:customer?.value?.id
     }
 
     commonService.genericRequest('create-order', 'post', true, postData).then((response) => {
@@ -199,6 +211,71 @@ const computeVAT = () => {
     });
 }
 
+const toggleCustomerModal=(action)=>{
+    showCreateCustomerModal.value=action;
+}
+
+const onCustomerInputBlur=(value, key)=>{
+    customerFormError.value[key]= commonService.validateFormField(value);
+}
+
+const onSubmitCustomer = () => {
+    customerFormError.value.customerName = commonService.validateFormField(customerName.value);
+
+    let invalid = commonService.validateRequiredFields(customerFormError.value);
+
+    if(invalid){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
+    let postData ={
+        name: customerName.value,
+        // country_id: supplierCountry.value.id,
+        // website:supplierWeb.value,
+        address: customerAddress.value,
+        email:customerEmail.value,
+        phone_number:customerContact.value,
+        description: customerDesc.value,
+        status: "Active",
+    }
+
+    commonService.genericRequest('create-customer', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getCustomers();
+            toggleCustomerModal(false);
+            customerName.value=null;
+            // supplierCountry.value=null;
+            // supplierWeb.value=null;
+            customerAddress.value=null;
+            customerEmail.value=null;
+            customerContact.value=null;
+            customerDesc.value=null;
+
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
+const getCustomers=()=>{
+    commonService.genericRequest('get-customers', 'post', true, {}).then((response) => {
+        if (response.status) {
+            customerData.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const onCustomerChange =(event)=>{
+    if (event.value.address){
+        billingAddress.value=event.value.address
+    }
+}
+
 
 /**
  *
@@ -207,18 +284,18 @@ const computeVAT = () => {
 // const productService = new ProductService();
 const products = ref([]);
 
-    const payBy = ref({id:1, name:'Cash'})
+    const payBy = ref({id:1, name: "Cash", value:"CASH"})
     const billingAddress =ref(null);
     const customer =ref(null);
-    const saleDate =ref(null);
+    const saleDate =ref(new Date());
     const newTotal = ref(0);
     const paidAmount = ref(0);
 
 
 const paymentOptions = ref([
-    {id:1, name:'Cash'},
-    {id:2, name:'Bank'},
-    {id:3, name:'Credit'},
+    {id:1, name: "Cash", value:"CASH"},
+    {id:2, name: "Bank", value:"BANK"},
+    {id:3, name: "Credit", value:"CREDIT"},
 ])
 
 const initializeProducts=()=>{
@@ -369,6 +446,7 @@ onBeforeMount(() => {
 onMounted(() => {
     getProducts();
     getInstitutionDetails();
+    getCustomers()
     products.value = initializeProducts();
 });
 
@@ -379,24 +457,24 @@ onMounted(() => {
 
 
                     <div class="field col-12 md:col-3">
-                        <div class="p-inputgroup">
+<!--                        <div class="p-inputgroup">-->
                             <span class="p-float-label">
-                                <Dropdown id="gauge" :options="paymentOptions" filter v-model="payBy" optionLabel="name">
+                                <Dropdown id="paymentMethod" :options="paymentOptions" filter v-model="payBy" optionLabel="name">
                                 </Dropdown>
                                 <label for="paymentMethod">Payment methods</label>
                             </span>
-                            <Button @click="toggleGaugeModal(true)" icon="pi pi-plus" />
-                        </div>
+<!--                            <Button @click="toggleGaugeModal(true)" icon="pi pi-plus" />-->
+<!--                        </div>-->
                     </div>
 
                     <div class="field col-12 md:col-3">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
-                                <Dropdown id="gauge" :options="productGaugeList" filter v-model="customer" optionLabel="name">
+                                <Dropdown id="customer" @change="onCustomerChange" :options="customerData" filter v-model="customer" optionLabel="name">
                                 </Dropdown>
                                 <label for="Customer">Select customer</label>
                             </span>
-                            <Button @click="toggleGaugeModal(true)" icon="pi pi-plus" />
+                            <Button @click="toggleCustomerModal(true)" icon="pi pi-plus" />
                         </div>
                     </div>
 
@@ -734,7 +812,49 @@ onMounted(() => {
 
 
         <!-- Start of Modals-->
+        <Dialog header="Create new customer" v-model:visible="showCreateCustomerModal" :style="{ width: '75vw' }"
+                :modal="true" class="p-fluid">
+            <p style="padding-top: 20px;">
+                <div class="grid p-fluid">
+                    <div class="field col-12 md:col-6">
+                    <span class="p-float-label">
+                        <InputText type="text" id="customerName" @blur="onCustomerInputBlur(customerName, 'customerName')" v-model="customerName"  :class="{ 'p-invalid': customerFormError?.customerName }"/> <!-- class="p-invalid"-->
+                        <label for="supplierName">Name</label>
+                    </span>
+                    </div>
+                    <div class="field col-12 md:col-6">
+                    <span class="p-float-label">
+                        <InputText type="text" id="supplierEmail" v-model="customerEmail" /> <!-- class="p-invalid"-->
+                        <label for="supplierEmail">Email</label>
+                    </span>
+                    </div>
+                    <div class="field col-12 md:col-6">
+                    <span class="p-float-label">
+                        <InputText type="text" id="supplierAddress" v-model="customerAddress" /> <!-- class="p-invalid"-->
+                        <label for="supplierAddress">Address</label>
+                    </span>
+                    </div>
 
+                    <div class="field col-12 md:col-6">
+                    <span class="p-float-label">
+                        <InputText type="text" id="supplierContact" v-model="customerContact" /> <!-- class="p-invalid"-->
+                        <label for="supplierContact">Phone Number</label>
+                    </span>
+                    </div>
+                    <div class="field col-12 md:col-12">
+                    <span class="p-float-label">
+                        <Textarea inputId="supplierDesc" rows="7" v-model="customerDesc"></Textarea>
+                        <label for="supplierDesc">More Info</label>
+                    </span>
+                    </div>
+                </div>
+            </p>
+            <template #footer>
+                <Button label="Cancel" @click="toggleCustomerModal(false)" icon="pi pi-times"
+                        class="p-button-outlined p-button-danger mr-2 mb-2" />
+                <Button @click="onSubmitCustomer" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+            </template>
+        </Dialog>
         <!-- /End of the modals -->
 
     </div>

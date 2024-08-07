@@ -39,6 +39,9 @@ class OrderController extends Controller
         $order->customer_id = $request->customerId;
         $order->tran_date = $request->tranDate ;
         $order->status = $request->status ;
+        $order->customer_id = $request->customer_id ;
+        $order->address = $request->address ;
+        $order->payment_method = $request->payment_method ;
         $order->payment_status = $request->Paid ;
         $order->institution_id = $userData->institution_id;
         $order->branch_id = $userData->branch_id ;
@@ -62,9 +65,22 @@ class OrderController extends Controller
             }
         }
 
-
         $branch = Branch::where(['id'=>$userData->branch_id, 'institution_id'=>$userData->institution_id])->first();
-        $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
+
+
+        $cl = null;
+        if (isset($request->payment_method)){
+            if ($request->payment_method == "BANK"){
+                $cl = CntrlParameter::where(['param_cd' => 'CGL', 'institution_id' => $userData->institution_id])->first();
+            }elseif ($request->payment_method == "CREDIT"){
+                $cl = CntrlParameter::where(['param_cd' => 'AP', 'institution_id' => $userData->institution_id])->first();
+            }else{
+                $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+            }
+        }else{
+            $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+        }
+//        $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
         $sti = CntrlParameter::where(['param_cd'=>'SL', 'institution_id'=>$userData->institution_id])->first();
         $vat = CntrlParameter::where(['param_cd'=>'TAX', 'institution_id'=>$userData->institution_id])->first();
 
