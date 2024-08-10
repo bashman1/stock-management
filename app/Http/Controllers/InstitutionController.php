@@ -143,7 +143,43 @@ class InstitutionController extends Controller
             DB::rollback();
             return $this->genericResponse(false, $th->getMessage(), 500, $th->getMessage());
         }
+    }
 
+
+    public function createBranch(Request $request){
+        DB::beginTransaction();
+        $branch = new Branch();
+        $branch->name=$request->name;
+        $branch->address=$request->address;
+        $branch->city_id=$request->city_id;
+        $branch->street=$request->street;
+        $branch->code=$this->generateBranchCode();
+        $branch->p_o_box=$request->p_o_box;
+        $branch->institution_id=$request->institution_id;
+        $branch->description=$request->description;
+        $branch->status=$request->status;
+        $branch->is_main=$request->is_main;
+        $branch->created_on=now();
+        $branch->save();
+        DB::commit();
+        return $this->genericResponse(true, "Branch created successfully", 201, $branch);
+    }
+
+
+    public function getBranches(Request $request){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+        $queryString ="SELECT B.id, B.name, B.institution_id, B.address, B.city_id, B.street, B.p_o_box,
+            B.description, B.status, B.is_main, B.created_by, B.updated_by, B.created_on,
+            B.updated_on, B.created_at, B.updated_at, B.code, I.name AS institution_name FROM branches B
+            LEFT JOIN institutions I ON I.id = B.institution_id ";
+
+        if ($isNotAdmin) {
+            $queryString .= " WHERE B.institution_id = $userData->institution_id";
+        }
+        $queryString .= " ORDER BY B.id DESC ";
+        $branches = DB::select($queryString);
+        return $this->genericResponse(true, "", 200, $branches);
     }
 
     public function getInstitutions()

@@ -541,6 +541,15 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/create-branch',
+                    name: 'CreateBranch',
+                    component: () => import('@/views/pages/institution-management/CreateBranch.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+
+                },
 
             //     CashBook.vue
 

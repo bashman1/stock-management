@@ -179,5 +179,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("create-customer", [CustomerController::class, "createCustomer"]);
     Route::post("get-customers", [CustomerController::class, "getCustomers"]);
     Route::post("download-collections-csv", [CollectionController::class, "downLoadOfficerReport"]);
+    Route::post("create-branch", [InstitutionController::class,"createBranch"]);
+    Route::post("get-branches", [InstitutionController::class,"getBranches"]);
 
 });
