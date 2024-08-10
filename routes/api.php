@@ -178,5 +178,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-item-sales-report", [ReportController::class, "getItemSalesReport"]);
     Route::post("create-customer", [CustomerController::class, "createCustomer"]);
     Route::post("get-customers", [CustomerController::class, "getCustomers"]);
+    Route::post("download-collections-csv", [CollectionController::class, "downLoadOfficerReport"]);
 
 });

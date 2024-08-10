@@ -51,12 +51,12 @@ onMounted(() => {
 
 <template>
     <div className="card">
-        <h5>{{ roleDetails?.role?.name }}</h5>
+        <h5 class="text-500">{{ roleDetails?.role?.name }}</h5>
 
         <div class="grid">
             <div class="col-12 md:col-3" v-for="permission in roleDetails?.permissions" :key="permission.id">
                 <div class="field-checkbox mb-0">
-                    <label>
+                    <label class="text-900">
                         <input id="my-checkbox" type="checkbox" @change="onChangeSwitch($event, permission)"
                             :checked="isActive(permission)" class="large-checkbox" />
                         {{ permission.name }}

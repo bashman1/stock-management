@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\OfficerExport;
 use App\Models\Collection;
 use App\Models\InstitutionConfig;
 use App\Models\Member;
@@ -13,6 +14,7 @@ use App\Models\SavingsAccount;
 use Illuminate\Support\Facades\DB;
 use App\Services\CommissionConfigService;
 use App\Models\ComissionConfig;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CollectionController extends Controller
 {
@@ -51,6 +53,21 @@ class CollectionController extends Controller
 
     public function getOfficerCollection()
     {
+        $transaction = $this->getOfficersCollectionData();
+
+        return $this->genericResponse(true, "Collected successfully", 201, $transaction);
+    }
+
+
+    public function downLoadOfficerReport(Request $request)
+    {
+        $transaction = $this->getOfficersCollectionData();
+
+        return Excel::download(new OfficerExport($transaction), "collection.csv");
+
+    }
+
+    public function getOfficersCollectionData(){
         $userData = auth()->user();
         $isNotAdmin = $this->isNotAdmin();
 
@@ -66,12 +83,8 @@ class CollectionController extends Controller
         if ($isNotAdmin) {
             $queryString .= " WHERE T.institution_id = $userData->institution_id AND T.branch_id = $userData->branch_id AND T.user_id = $userData->id";
         }
-
         $queryString .= " ORDER BY T.id DESC";
-
-        $transaction = DB::select($queryString);
-
-        return $this->genericResponse(true, "Collected successfully", 201, $transaction);
+        return DB::select($queryString);
     }
 
 
@@ -79,7 +92,7 @@ class CollectionController extends Controller
     {
         $receiptData = DB::select("SELECT T.id, T.amount, T.description, T.tran_date, T.member_number, T.member_id,
             T.institution_id, T.branch_id, T.user_id, T.tran_id, T.status, T.created_by, T.created_at,
-            I.name AS institution_name, I.ref_no, B.name AS branch_name,
+            I.name AS institution_name, I.ref_no, B.name AS branch_name, I.currency, I.receipt_note,
             CONCAT(M.first_name,' ',M.last_name,' ', M.other_name) AS member_name,
             CONCAT(U.first_name,' ',U.last_name,' ', U.other_name) AS user_name
             FROM temp_collections T INNER JOIN institutions I ON T.institution_id=I.id
@@ -208,6 +221,17 @@ class CollectionController extends Controller
     public function getApprovedTransactions()
     {
         try {
+            $transaction = $this->getApprovedTransactionsData();
+            return $this->genericResponse(true, "Approved transactions", 200, $transaction);
+        } catch (\Throwable $th) {
+            //throw $th;
+            return $this->genericResponse(false, "Process failed", 400, $th);
+        }
+    }
+
+
+    public function getApprovedTransactionsData(){
+        try {
             $userData = auth()->user();
             $isNotAdmin = $this->isNotAdmin();
             $queryString="SELECT T.*, CONCAT(M.first_name,' ',M.last_name, ' ',M.other_name) AS member_name,
@@ -223,7 +247,7 @@ class CollectionController extends Controller
             $queryString.=" ORDER BY T.id DESC";
             $transaction = DB::select($queryString);
 
-            return $this->genericResponse(true, "Approved transactions", 200, $transaction);
+            return $transaction;
         } catch (\Throwable $th) {
             //throw $th;
             return $this->genericResponse(false, "Process failed", 400, $th);

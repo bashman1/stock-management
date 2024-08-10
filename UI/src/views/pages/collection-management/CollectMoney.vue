@@ -21,9 +21,9 @@ const membersData = ref(null);
 const membersId  = ref(null);
 const selectedMember = ref(null);
 const transactionType=ref([
-    {label:"Cash Deposit", value: "DP"},
-    {label: "Shares Purchase", value: "SP"},
-    {label: "Loan Repayment", value: "LN"}
+    {label:"Cash Deposit", value: "CASH_DEPOSIT"},
+    {label: "Shares Purchase", value: "SHARES_PURCHASE"},
+    {label: "Loan Repayment", value: "LOAN_REPAYMENT"}
 ])
 const formError = ref({});
 
@@ -84,6 +84,7 @@ const onSubmit=()=>{
         tran_date:(!tDate.value)?new Date():tDate.value,
         description:description.value,
         member_id:membersId.value,
+        transaction_type: tType.value.value,
     }
     commonService.genericRequest('collect-deposit', 'post', true, postData).then((response)=>{
         if(response.status){

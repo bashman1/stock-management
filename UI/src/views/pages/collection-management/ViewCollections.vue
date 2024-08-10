@@ -22,6 +22,27 @@ const getOfficerTransactions = () => {
     })
 }
 
+
+const exportCSV=()=>{
+    try {
+        // isDownloading.value = true;
+        commonService
+            .genericRequest('download-collections-csv', 'post', true, {status: 'Active'}, true)
+            .then((blob) => {
+                const fileURL = window.URL.createObjectURL(new Blob([blob]));
+                const fileLink = document.createElement('a');
+                fileLink.href = fileURL;
+                fileLink.setAttribute('download', 'officer-collection.csv');
+                document.body.appendChild(fileLink);
+                fileLink.click();
+            });
+    } catch (error) {
+        console.log(error);
+    } finally {
+        // isDownloading.value = false;
+    }
+}
+
 const showModal = (data) => {
     commonService.genericRequest('get-transaction-receipt/' + data.tran_id, 'get', true, {}).then((response) => {
         if (response.status) {
@@ -267,14 +288,14 @@ onMounted(() => {
             <div class="field col-12 md:col-12">
                 <Toolbar class="mb-4">
                     <template v-slot:start>
-                        <div class="my-2">
+                        <div class="my-2 text-900" >
                             Amount Collected: {{commonService.commaSeparator(commonService.sumOfAmount(transactions))}}
                         </div>
                     </template>
 
                     <template v-slot:end>
                         <!--                        <FileUpload mode="basic" accept="image/*" :maxFileSize="1000000" label="Import" chooseLabel="Import" class="mr-2 inline-block" />-->
-                        <!--                        <Button label="Export" icon="pi pi-upload" class="p-button-help" @click="exportCSV($event)" />-->
+                        <Button label="Export CSV" icon="pi pi-file-excel" class="p-button-success" @click="exportCSV" />
                     </template>
                 </Toolbar>
                 <DataTable :value="transactions" :paginator="true" class="p-datatable-gridlines" :rows="10" dataKey="id"
