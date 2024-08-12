@@ -21,9 +21,9 @@ const membersData = ref(null);
 const membersId  = ref(null);
 const selectedMember = ref(null);
 const transactionType=ref([
-    {label:"Cash Deposit", value: "CASH_DEPOSIT"},
-    {label: "Shares Purchase", value: "SHARES_PURCHASE"},
-    {label: "Loan Repayment", value: "LOAN_REPAYMENT"}
+    // {label:"Cash Deposit", value: "CASH_DEPOSIT"},
+    // {label: "Shares Purchase", value: "SHARES_PURCHASE"},
+    // {label: "Loan Repayment", value: "LOAN_REPAYMENT"}
 ])
 const formError = ref({});
 
@@ -41,6 +41,22 @@ const getMembers=(keyWord)=>{
         }
     })
 }
+
+
+const getTransactionCodes=()=>{
+    let postData={
+        status:"Active",
+    }
+    commonService.genericRequest('get-transaction-codes', 'post', true, postData).then((response)=>{
+        if(response.status){
+            transactionType.value = response.data
+        }else{
+
+        }
+    })
+}
+
+// get-transaction-codes
 
 const checkValue=()=>{
     getMembers(searchKey.value)
@@ -80,11 +96,11 @@ const onSubmit=()=>{
         member_number:mNumber.value,
         member_contact:mContact.value,
         amount:tranAmt.value,
-        tran_type:tType.value.value,
+        tran_type:tType?.value?.tran_code,
         tran_date:(!tDate.value)?new Date():tDate.value,
         description:description.value,
         member_id:membersId.value,
-        transaction_type: tType.value.value,
+        transaction_type: tType?.value?.tran_code,
     }
     commonService.genericRequest('collect-deposit', 'post', true, postData).then((response)=>{
         if(response.status){
@@ -101,7 +117,7 @@ const onInputBlur=(value, key)=>{
 }
 
 onMounted(() => {
-    // getMembers();
+    getTransactionCodes();
 });
 </script>
 
@@ -172,7 +188,7 @@ onMounted(() => {
             </div>
             <div class="field col-12 md:col-4" v-if="selectedMember">
                 <span class="p-float-label">
-                        <Dropdown id="transactionType" @blur="onInputBlur(tType, 'tType')" :class="{ 'p-invalid': formError?.tType }" :options="transactionType" v-model="tType" optionLabel="label"></Dropdown>
+                        <Dropdown id="transactionType" @blur="onInputBlur(tType, 'tType')" :class="{ 'p-invalid': formError?.tType }" :options="transactionType" v-model="tType" optionLabel="tran_description"></Dropdown>
                         <label for="transactionType">Transact type</label>
                     </span>
             </div>

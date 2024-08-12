@@ -14,6 +14,7 @@ use App\Models\SavingsAccount;
 use Illuminate\Support\Facades\DB;
 use App\Services\CommissionConfigService;
 use App\Models\ComissionConfig;
+use App\Models\TransactionCode;
 use Maatwebsite\Excel\Facades\Excel;
 
 class CollectionController extends Controller
@@ -33,6 +34,8 @@ class CollectionController extends Controller
         $tranIdRef->current = $tranIdRef->current + $tranIdRef->step;
         $tranIdRef->save();
 
+        $transactionCode = TransactionCode::where('tran_code',$request->transaction_type)->first();
+
         $collect = new TempCollection();
         $collect->amount = $request->amount;
         $collect->description = $request->description;
@@ -41,6 +44,8 @@ class CollectionController extends Controller
         $collect->member_id = $request->member_id;
         $collect->institution_id = $userData->institution_id;
         $collect->branch_id = $userData->branch_id;
+        $collect->tran_cd = $request->transaction_type;
+        $collect->tran_indicator = isset($transactionCode->tran_indicator) ? $transactionCode->tran_indicator :'';
         $collect->user_id = $userData->id;
         $collect->tran_id = $tranId;
         $collect->status = "Pending";
@@ -153,8 +158,8 @@ class CollectionController extends Controller
                     $collection->user_id = $userData->id;
                     $collection->tran_id = $approveTmpTran->tran_id;
                     $collection->status = "Active";
-                    // $collection->tran_cd = $approveTmpTran->tran_cd;
-                    // $collection->tran_indicator = $approveTmpTran->tran_indicator;
+                    $collection->tran_cd = $approveTmpTran->tran_cd;
+                    $collection->tran_indicator = $approveTmpTran->tran_indicator;
                     $collection->temp_collection_id = $approveTmpTran->id;
                     $collection->created_by = $userData->id;
                     $collection->created_on = now();
@@ -250,6 +255,16 @@ class CollectionController extends Controller
             return $transaction;
         } catch (\Throwable $th) {
             //throw $th;
+            return $this->genericResponse(false, "Process failed", 400, $th);
+        }
+    }
+
+    public function getTransactionCode(Request $request){
+        try {
+            $transactionCodes = TransactionCode::where("status", $request->status)->get();
+            return $this->genericResponse(true, "Transactions codes", 200, $transactionCodes);
+
+        }catch (\Throwable $th) {
             return $this->genericResponse(false, "Process failed", 400, $th);
         }
     }
