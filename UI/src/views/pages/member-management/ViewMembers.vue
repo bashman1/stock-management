@@ -40,7 +40,7 @@ onMounted(() => {
 
                     <Column field="name" header="Name" style="min-width: 10rem">
                         <template #body="{ data }">
-                            {{ data.first_name+" "+data.last_name+" "+data.other_name }}
+                            {{ data.first_name+" "+data.last_name+" "+data.other_name?data.other_name:'' }}
                         </template>
                     </Column>
                     <Column header="Gender" style="min-width: 10rem">
