@@ -15,7 +15,7 @@ const branches = ref(null);
 
 
 const getInstitution = () => {
-    commonService.genericRequest('get-branches', 'get', true, {}).then((response) => {
+    commonService.genericRequest('get-branches', 'post', true, {}).then((response) => {
         if (response.status) {
             branches.value = response.data
         } else {
@@ -35,7 +35,7 @@ onMounted(() => {
         <div class="col-12">
             <div class="card">
                 <h5>View Branches</h5>
-                <DataTable :value="institution" :paginator="true" class="p-datatable-gridlines" :rows="10" dataKey="id"
+                <DataTable :value="branches" :paginator="true" class="p-datatable-gridlines" :rows="10" dataKey="id"
                     :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
 
                     <Column field="name" header="Name" style="min-width: 10rem">
@@ -43,9 +43,9 @@ onMounted(() => {
                             {{ data.name }}
                         </template>
                     </Column>
-                    <Column header="Type" style="min-width: 10rem">
+                    <Column header="Institution" style="min-width: 10rem">
                         <template #body="{ data }">
-                            {{ data.type_name }}
+                            {{ data.institution_name }}
                         </template>
                     </Column>
                     <Column header="Description" style="min-width: 12rem">
@@ -58,15 +58,9 @@ onMounted(() => {
                             {{ data.status }}
                         </template>
                     </Column>
-                     <Column header="Reference" style="min-width: 10rem">
+                     <Column header="Address" style="min-width: 10rem">
                         <template #body="{ data }">
-                            {{ data.ref_no }}
-                        </template>
-                    </Column>
-
-                    <Column header="Created By" style="min-width: 10rem">
-                        <template #body="{ data }">
-                            {{ data.created_by }}
+                            {{ data.address }}
                         </template>
                     </Column>
                     <Column header="Date" style="min-width: 10rem">

@@ -9,10 +9,13 @@ use App\Models\InstitutionBank;
 use App\Models\InstitutionContact;
 use Illuminate\Http\Request;
 use App\Models\MemberNoConfig;
+use App\Models\Product;
+use App\Models\stock;
 use Illuminate\Support\Facades\DB;
 // use Illuminate\Support\Facades\DB;
 use App\Services\SavingAccountProductService;
 use App\Services\CommissionConfigService;
+use Carbon\Carbon;
 
 class InstitutionController extends Controller
 {
@@ -161,6 +164,25 @@ class InstitutionController extends Controller
         $branch->is_main=$request->is_main;
         $branch->created_on=now();
         $branch->save();
+
+        $products = Product::where("institution_id", $request->institution_id)->get();
+
+        foreach ($products as $value) {
+            $stock = new stock();
+            $stock->product_id = $value["id"];
+            $stock->purchase_price = 0;
+            $stock->selling_price = 0;
+            $stock->min_quantity = 0;
+            $stock->max_quantity = 0;
+            $stock->quantity = 0;
+            $stock->institution_id =$request->institution_id;
+            $stock->branch_id = $branch->id;
+            $stock->user_id = auth()->user()->id;
+            $stock->created_by = auth()->user()->id;
+            $stock->created_on = Carbon::now();
+            $stock->save();
+        }
+
         DB::commit();
         return $this->genericResponse(true, "Branch created successfully", 201, $branch);
     }

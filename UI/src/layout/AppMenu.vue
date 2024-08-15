@@ -115,6 +115,18 @@ if (commonService.checkPermissions('CanViewInstitution')) {
     },);
 }
 
+if (commonService.checkPermissions('CanCreateBranch')) {
+    institutionMenu.value.items.push({ label: 'Create Branch', icon: 'pi pi-fw pi-circle', to: '/create-branch' });
+}
+
+if (commonService.checkPermissions('ViewBranches')) {
+    institutionMenu.value.items.push({
+        label: 'View Branches',
+        icon: 'pi pi-fw pi-circle',
+        to: '/view-branches'
+    },);
+}
+
 if (commonService.checkPermissions('CreateUser')) {
     userMenu.value.items.push({
         label: 'Create User',

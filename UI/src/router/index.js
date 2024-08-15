@@ -550,6 +550,15 @@ const router = createRouter({
                     },
 
                 },
+                {
+                    path: '/view-branches',
+                    name: 'ViewBranches',
+                    component: () => import('@/views/pages/institution-management/ViewBranches.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+
+                },
 
             //     CashBook.vue
 
