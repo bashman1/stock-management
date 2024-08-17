@@ -5,7 +5,7 @@ import CommonService from '@/service/CommonService'
 
 const commonService = new CommonService();
 
-export const isAuthenticated = ref(commonService.checkingAuthentication());
+// export const isAuthenticated = ref(commonService.checkingAuthentication());
 // export const isAuthenticated = ref(commonService.loggedIn);
 
 const router = createRouter({
@@ -602,7 +602,8 @@ router.beforeEach((to, from, next) => {
     // Check if the route requires authentication
     if (to.meta.requiresAuth) {
         // If the user is authenticated, allow navigation
-        if (isAuthenticated.value) {
+        // if (isAuthenticated.value) { //old implementation which was only working onInit
+        if (commonService.checkingAuthentication()) { // new implementation
             next();
         } else {
             // If not authenticated, redirect to the login page

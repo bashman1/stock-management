@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger("product_id");
             $table->double('qty', 8, 2);
             $table->string("status");
+            $table->double('selling_price', 8, 2);
             $table->unsignedBigInteger("institution_id");
             $table->unsignedBigInteger("branch_id");
             $table->unsignedBigInteger('created_by')->nullable();

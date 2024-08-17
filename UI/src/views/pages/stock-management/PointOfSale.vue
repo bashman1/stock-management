@@ -88,6 +88,15 @@ const updateQty = (event, data) => {
     });
 }
 
+const updatePrice = (event, data)=>{
+    selectedProduct.value = selectedProduct.value.map(product => {
+        if (product.id === data.id) {
+            return { ...product, price: Number(event.target.value) };
+        }
+        return product;
+    });
+}
+
 const increaseReduce = (data, action) => {
     selectedProduct.value = selectedProduct.value.map(product => {
         if (product.id === data.id) {
@@ -505,9 +514,9 @@ onMounted(() => {
 
                         <!-- <div class="field col-12 md:col-12"> -->
                         <!-- <p>Items available in the stock.</p> -->
-                        <DataTable :value="selectedProduct" size="small" :rows="20" dataKey="id" :rowHover="true"
+                        <DataTable :value="selectedProduct" :size="'small'" :rows="20" dataKey="id" :rowHover="true"
                             filterDisplay="menu" responsiveLayout="scroll">
-                            <Column field="name" header="Name" style="max-width: 10rem">
+                            <Column field="name" header="Name" style="max-width: 10rem; padding:0">
                                 <template #body="{ data }" >
                         <Dropdown id="subCategory" change="" :options="productList" filter v-if="!data.id"
                          optionLabel="name" @change="OnSelectItem($event.value)">
@@ -515,19 +524,15 @@ onMounted(() => {
                                     {{ data.name }}
                                 </template>
                             </Column>
-                            <Column field="price" header="Price" style="max-width: 10rem">
-                                <template #body="{ data }">
-                                    {{ commonService.commaSeparator(data.price) }}
-                                </template>
-                            </Column>
-                            <Column field="quantity" header="Qty" style="min-width: 10rem">
+
+                            <Column field="quantity" header="Qty" style="min-width: 10rem; padding:0">
                                 <template #body="{ data }">
 
                                     <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')" v-if="data.id"
                                     style="font-size: 1rem; margin-left:3px; cursor:pointer"></i>
                                     <!-- <Button icon="pi pi-minus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
                                     <InputText type="text" @change="updateQty($event, data)" :value="data.quantity" v-if="data.id"
-                                        style="width: 60px; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
+                                        style="width: 100px; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
                                         placeholder="Qty"></InputText>
                                     <!-- {{ data.quantity }} -->
                                     <i class="pi pi-plus" @click="increaseReduce(data, 'Add')" v-if="data.id"
@@ -536,12 +541,20 @@ onMounted(() => {
                                     <!-- <Button icon="pi pi-plus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
                                 </template>
                             </Column>
-                            <Column field="subtotal" header="Sub Total" style="max-width: 10rem">
+                            <Column field="price" header="Price" style="max-width: 10rem; padding:0">
+                                <template #body="{ data }">
+                                      <InputText type="text" @change="updatePrice($event, data)" :value="data.price" v-if="data.id"
+                                        style="width: 80%; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
+                                        placeholder="Qty"></InputText>
+                                    <!-- {{ commonService.commaSeparator(data.price) }} -->
+                                </template>
+                            </Column>
+                            <Column field="subtotal" header="Sub Total" style="max-width: 10rem; padding:0">
                                 <template #body="{ data }">
                                     {{ data.id?commonService.commaSeparator(data.quantity * data.price):'' }}
                                 </template>
                             </Column>
-                            <Column headerStyle="max-width:10rem;">
+                            <Column headerStyle="max-width:10rem; padding:0">
                                 <template #body="{ data }">
                                     <Button icon="pi pi-trash" class="p-button-rounded p-button-danger mr-2" v-if="data.id"
                                         @click="OnSelectRemoveItem(data)" />

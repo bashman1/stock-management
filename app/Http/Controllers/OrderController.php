@@ -187,6 +187,7 @@ class OrderController extends Controller
             $items->order_id = $order->id;
             $items->product_id = $value['id'];
             $items->qty = $value['quantity'];
+            $items->selling_price = $value['price'];
             $items->status = $request->status;
             $items->institution_id = $userData->institution_id;
             $items->branch_id = $userData->institution_id;
@@ -200,6 +201,7 @@ class OrderController extends Controller
             $debitGoodsForSale=$creditRequest;
 
             $amount = $stock->purchase_price * $value['quantity'];
+            // $amount = $stock->purchase_price * $value['quantity'];
 
             $creditStock->acct_no = $stInGl;
             $creditStock->acct_type = $stInGlType->acct_type;
