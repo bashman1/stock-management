@@ -305,28 +305,4 @@ class UserController extends Controller
     }
 
 
-    // public function resetPassword(Request $request){
-    //     try {
-    //         DB::beginTransaction();
-
-    //         $user = User::find($request->userId);
-    //         if(!isset($user)){
-    //             return $this->genericResponse(false,  "User not found", 404, $user);
-    //         }
-    //         if(!bcrypt($request->oldPassword) === $user->password){
-    //             return $this->genericResponse(false,  "Invalid old password", 401, $user);
-    //         }
-    //         if($request->newPassword != $request->confirmPassword){
-    //             return $this->genericResponse(false,  "New password and confirm password do not match", 401, $user);
-    //         }
-    //         $user->password = bcrypt($request->newPassword);
-    //         $user->save();
-    //         DB::commit();
-    //         return $this->genericResponse(true, "Password reset successfully.", 200,  $user);
-    //     } catch (\Throwable $th) {
-    //         DB::rollBack();
-    //         return $this->genericResponse(false,  $th->getMessage(), 500,  $th);
-    //     }
-    // }
-
 }
