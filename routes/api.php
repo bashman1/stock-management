@@ -30,6 +30,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TempProductController;
 use App\Http\Controllers\TempSaleController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CustomerReceivableController;
+use App\Http\Controllers\PayableController;
 
 /*
 |--------------------------------------------------------------------------
@@ -182,5 +184,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("create-branch", [InstitutionController::class,"createBranch"]);
     Route::post("get-branches", [InstitutionController::class,"getBranches"]);
     Route::post("get-transaction-codes", [CollectionController::class,"getTransactionCode"]);
+    Route::post('get-receivables', [CustomerReceivableController::class, "getReceivables"]);
+    Route::post("get-payable", [PayableController::class, "getPayable"]);
 
 });

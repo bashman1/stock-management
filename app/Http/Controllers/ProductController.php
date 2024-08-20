@@ -131,6 +131,25 @@ class ProductController extends Controller
 
             $postTran = $this->postTransaction($tran);
 
+
+            if($request->payment_method == "CREDIT"){
+                $payable = (array)[
+                    "ref_no"=> $refNo,
+                    "tran_id"=>$postTran->tran_id,
+                    "supplier_id"=> $request->supplier_id,
+                    "product_id"=>$product->id,
+                    "manufacturer_id"=>$request->manufacturer_id,
+                    "amount"=> $postTran->tran_amount,
+                    "amount_paid"=>0,
+                    "status"=>"Active",
+                    "institution_id"=>$userData->institution_id,
+                    "branch_id"=>$userData->branch_id,
+                    "created_by" => $userData->id,
+                    "created_on"=> Carbon::now(),
+                ];
+                $this->createPayable($payable);
+            }
+
             $debitRequest = (object) [
                 "acct_no" => $sgl,
                 "acct_type" => $stock->acct_type,

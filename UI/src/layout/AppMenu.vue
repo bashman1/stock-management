@@ -78,6 +78,13 @@ const pointOfSaleMenu = ref(
         to: '/point-of-sale'
     }
 )
+// const chartOfAccountMenu = ref(
+//     {
+//         label: 'Chart Of Accounts',
+//         icon: 'pi pi-bitcoin',
+//         items: []
+//     }
+// )
 
 const salesMenu = ref(
     {
@@ -92,6 +99,22 @@ const chartOfAccountMenu = ref(
     {
         label: 'Chart Of Accounts',
         icon: 'pi pi-bitcoin',
+        items: []
+    }
+)
+
+const payableReceivable = ref(
+    {
+        label: 'Payable/Receivable',
+        icon: 'pi pi-wallet',
+        items: []
+    }
+)
+
+const accountMenu = ref(
+    {
+        label: 'Account',
+        icon: 'pi pi-user',
         items: []
     }
 )
@@ -435,6 +458,37 @@ if(commonService.checkPermissions('ViewCashBook')){
 }
 
 
+if(commonService.checkPermissions('ViewReceivables')){
+    payableReceivable.value.items.push(
+        {
+            label: 'Receivable',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-receivables'
+        }
+    )
+}
+
+if(commonService.checkPermissions('ViewPayables')){
+    payableReceivable.value.items.push(
+        {
+            label: 'Payable',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-payable'
+        }
+    )
+}
+
+if(commonService.checkPermissions('ViewInstitutionProfile')){
+    accountMenu.value.items.push(
+        {
+            label: 'Institution Profile',
+            icon: 'pi pi-fw pi-circle',
+            to: '/institution-profile/'+commonService.getStorage().userData?.institution_id
+        }
+    )
+}
+
+
 
 
 
@@ -484,9 +538,15 @@ if (chartOfAccountMenu?.value?.items?.length > 0) {
     model.value[0].items.push(chartOfAccountMenu.value);
 }
 
+if (payableReceivable?.value?.items?.length > 0) {
+    model.value[0].items.push(payableReceivable.value);
+}
+
+if (accountMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(accountMenu.value);
+}
+
 model.value[0].items.push(logOut.value);
-
-
 
 </script>
 

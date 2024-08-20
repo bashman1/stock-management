@@ -48,25 +48,25 @@ class CommonController extends Controller
             ");
 
             $collectionGraph=DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '12 MONTH')::date, NOW()::date, '1 month'::interval)
+            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN collections c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             AND c.institution_id = $userData->institution_id AND c.branch_id=$userData->branch_id
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
 
             $membersGraph =DB::select("SELECT COALESCE(COUNT(m.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '12 MONTH')::date, NOW()::date, '1 month'::interval)
+            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN members m ON date_trunc('MONTH', m.created_at) = date_trunc('MONTH', gs.month)
             AND m.institution_id = $userData->institution_id AND m.branch_id=$userData->branch_id
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month) ");
 
             $productsGraph =DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '12 MONTH')::date, NOW()::date, '1 month'::interval)
+            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN products c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             AND c.institution_id = $userData->institution_id
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
 
             $salesGraph =DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '12 MONTH')::date, NOW()::date, '1 month'::interval)
+            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN orders c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             AND c.institution_id = $userData->institution_id AND c.branch_id=$userData->branch_id
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
@@ -110,22 +110,22 @@ class CommonController extends Controller
             -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  AND reversal_flag = 'N') AS today_sales_value
             ");
             $collectionGraph=DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '12 MONTH')::date, NOW()::date, '1 month'::interval)
+            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN collections c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
 
             $membersGraph =DB::select("SELECT COALESCE(COUNT(m.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '12 MONTH')::date, NOW()::date, '1 month'::interval)
+            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN members m ON date_trunc('MONTH', m.created_at) = date_trunc('MONTH', gs.month)
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month) ");
 
             $productsGraph =DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '12 MONTH')::date, NOW()::date, '1 month'::interval)
+            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN products c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
 
             $salesGraph =DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '12 MONTH')::date, NOW()::date, '1 month'::interval)
+            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN orders c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
 

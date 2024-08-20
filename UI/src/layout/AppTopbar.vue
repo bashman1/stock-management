@@ -13,10 +13,12 @@ const op2 = ref(null);
 const router = useRouter();
 const commonService = new CommonService();
 const toast = useToast();
+const storageData = ref({})
 
 
 onMounted(() => {
     bindOutsideClickListener();
+    getStorageData();
 });
 
 onBeforeUnmount(() => {
@@ -81,6 +83,11 @@ const logOut = () => {
     })
 }
 
+const getStorageData=()=>{
+    // alert(JSON.stringify(commonService.getStorage()))
+    storageData.value = commonService.getStorage()
+}
+
 
 </script>
 
@@ -96,18 +103,24 @@ const logOut = () => {
             <i class="pi pi-bars"></i>
         </button>
 
+        <span class="block text-500 font-bold text-xl ml-3">{{ "User: "+ storageData?.userData?.first_name+" "+storageData?.userData?.last_name+" "+storageData?.userData?.other_name +" | Role: "+ storageData?.userData?.role_name+" | Business: "+ storageData?.userData?.institution_name+" | Branch: "+storageData?.userData?.branch_name }}</span>
+
         <button class="p-link layout-topbar-menu-button layout-topbar-button" @click="onTopBarMenuButton()">
             <i class="pi pi-ellipsis-v"></i>
         </button>
 
         <div class="layout-topbar-menu" :class="topbarMenuClasses">
-            <button @click="onTopBarMenuButton()" class="p-link layout-topbar-button">
+            <!-- <button @click="onTopBarMenuButton()" class="p-link layout-topbar-button">
                 <i class="pi pi-calendar"></i>
                 <span>Calendar</span>
-            </button>
-            <button @click="onTopBarMenuButton()" class="p-link layout-topbar-button">
+            </button> -->
+            <!-- <button @click="onTopBarMenuButton()" class="p-link layout-topbar-button">
                 <i class="pi pi-user"></i>
                 <span>Profile</span>
+            </button> -->
+            <button @click="logOut()" class="p-link layout-topbar-button">
+                <i class="pi pi-sign-out"></i>
+                <span>Log out</span>
             </button>
             <OverlayPanel ref="op2" appendTo="body" :showCloseIcon="true" id="overlay_panel" style="width: 450px">
                             <!-- <DataTable :value="products" v-model:selection="selectedProduct" selectionMode="single" :paginator="true" :rows="5" @row-select="onProductSelect" responsiveLayout="scroll">

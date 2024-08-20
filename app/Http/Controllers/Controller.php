@@ -18,7 +18,9 @@ use App\Models\GlBalances;
 use App\Models\GlCat;
 use App\Models\GlSubCat;
 use App\Models\CntrlParameter;
+use App\Models\CustomerReceivable;
 use App\Models\GlHistory;
+use App\Models\Payable;
 use App\Models\Transaction;
 
 // use Illuminate\Support\Str;
@@ -654,4 +656,16 @@ class Controller extends BaseController
         $branch = Branch::find(auth()->user()->branch_id);
         return str_replace("***", $branch->code, $cntrl->param_value);
     }
+
+
+    public function createReceivable($receivable){
+        $response = CustomerReceivable::create($receivable);
+        return $response;
+    }
+
+    public function createPayable($payable){
+        $response = Payable::create($payable);
+        return $response;
+    }
+
 }

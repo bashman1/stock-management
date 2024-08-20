@@ -559,6 +559,40 @@ const router = createRouter({
                     },
 
                 },
+                {
+                    path: '/view-receivables',
+                    name: 'ViewReceivables',
+                    component: () => import('@/views/pages/stock-management/Receivables.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-payable',
+                    name: 'ViewPayable',
+                    component: () => import('@/views/pages/stock-management/Payables.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/institution-profile/:id',
+                    name: 'InstitutionProfile',
+                    component: () => import('@/views/pages/institution-management/InstitutionProfile.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/user-profile/:id',
+                    name: 'UserProfile',
+                    component: () => import('@/views/pages/user-management/UserProfile.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+
+
 
             //     CashBook.vue
 

@@ -235,15 +235,18 @@ class InstitutionController extends Controller
         I.created_on, I.updated_on, I.created_at, I.updated_at, I.is_tax_enabled, I.tin,
         T.name AS type_name, C.name AS city_name, CONCAT(U.first_name,' ', U.last_name,' ',U.other_name),
         K.name AS contact_name, K.phone_number AS contact_phone_number, K.email AS contact_email,
-        K.website, B.bank_id, B.acct_name, B.acct_number FROM institutions I
+        K.website, B.bank_id, B.acct_name, B.acct_number, A.name AS bank_name FROM institutions I
         INNER JOIN institution_type_refs T ON I.institution_type_id = T.id
         LEFT JOIN city_refs C ON C.id = I.city_id
         LEFT JOIN users U ON U.id = I.created_by
         LEFT JOIN institution_contacts K ON K.institution_id = I.id
-        LEFT JOIN institution_banks B ON B.institution_id = I.id";
+        LEFT JOIN institution_banks B ON B.institution_id = I.id
+        LEFT JOIN bank_refs A ON A.id = B.bank_id ";
 
         $queryString .= " WHERE I.status=  '$request->status'  AND I.id = $request->institutionId";
         $institutionDetails = DB::select($queryString);
+        $branches = Branch::where("institution_id", $request->institutionId)->get();
+        $institutionDetails[0]->branches = $branches;
         return $this->genericResponse(true, "institution created successfully", 201, $institutionDetails);
     }
 

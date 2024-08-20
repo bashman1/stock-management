@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
+use App\Models\Institution;
 use App\Models\User;
 use App\Models\LoginSession;
 use Illuminate\Http\Request;
@@ -65,6 +67,21 @@ class UserController extends Controller
             }
             $userData = auth()->user();
 
+            if (isset($userData->institution_id)){
+                $institution = Institution::find($userData->institution_id);
+                $branch = Branch::find($userData->branch_id);
+
+                $userData->institution_name=$institution->name;
+                $userData->branch_name=$branch->name;
+
+            }else{
+                $userData->institution_name=null;
+                $userData->branch_name=null;
+            }
+
+            $role = Role::find($userData->role_id);
+            $userData->role_name=$role->name;
+
             $token = auth()->user()->createToken("auth_token");
 
             $loggedInSession = LoginSession::where('user_id', $userData->id)->first();
@@ -75,6 +92,7 @@ class UserController extends Controller
                 $loggedInSession->created_on = now();
                 $loggedInSession->status = "Logged In Successfully";
             }
+
             $loggedInSession->logged_in_at=now();
             $loggedInSession->token=now();
             $loggedInSession->save();

@@ -514,9 +514,9 @@ onMounted(() => {
 
                         <!-- <div class="field col-12 md:col-12"> -->
                         <!-- <p>Items available in the stock.</p> -->
-                        <DataTable :value="selectedProduct" :size="'small'" :rows="20" dataKey="id" :rowHover="true"
+                        <DataTable :value="selectedProduct" :size="'small'" stripedRows :rows="20" dataKey="id" :rowHover="true"
                             filterDisplay="menu" responsiveLayout="scroll">
-                            <Column field="name" header="Name" style="max-width: 10rem; padding:0">
+                            <Column field="name" header="Name" style="max-width: 10rem;">
                                 <template #body="{ data }" >
                         <Dropdown id="subCategory" change="" :options="productList" filter v-if="!data.id"
                          optionLabel="name" @change="OnSelectItem($event.value)">
@@ -525,7 +525,7 @@ onMounted(() => {
                                 </template>
                             </Column>
 
-                            <Column field="quantity" header="Qty" style="min-width: 10rem; padding:0">
+                            <Column field="quantity" header="Qty" style="min-width: 10rem; ">
                                 <template #body="{ data }">
 
                                     <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')" v-if="data.id"
@@ -541,7 +541,7 @@ onMounted(() => {
                                     <!-- <Button icon="pi pi-plus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
                                 </template>
                             </Column>
-                            <Column field="price" header="Price" style="max-width: 10rem; padding:0">
+                            <Column field="price" header="Price" style="max-width: 10rem;">
                                 <template #body="{ data }">
                                       <InputText type="text" @change="updatePrice($event, data)" :value="data.price" v-if="data.id"
                                         style="width: 80%; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
@@ -549,12 +549,12 @@ onMounted(() => {
                                     <!-- {{ commonService.commaSeparator(data.price) }} -->
                                 </template>
                             </Column>
-                            <Column field="subtotal" header="Sub Total" style="max-width: 10rem; padding:0">
+                            <Column field="subtotal" header="Sub Total" style="max-width: 10rem;">
                                 <template #body="{ data }">
                                     {{ data.id?commonService.commaSeparator(data.quantity * data.price):'' }}
                                 </template>
                             </Column>
-                            <Column headerStyle="max-width:10rem; padding:0">
+                            <Column headerStyle="max-width:10rem;">
                                 <template #body="{ data }">
                                     <Button icon="pi pi-trash" class="p-button-rounded p-button-danger mr-2" v-if="data.id"
                                         @click="OnSelectRemoveItem(data)" />
@@ -595,14 +595,11 @@ onMounted(() => {
         </DataTable> -->
     </div>
                 </div>
-
-
-
-                <div class="col-12 md:col-1">
-                    <!-- <Button label="Add" @click="addColumns" icon="pi pi-plus" iconPos="left" class="mr-2 mb-2"></Button> -->
-                </div>
                  <div class="col-12 md:col-1">
                     <Button label="Clear" @click="clearColumns" icon="pi pi-minus" iconPos="left" class=" p-button-danger mr-2 mb-2" />
+                </div>
+                <div class="col-12 md:col-1">
+
                 </div>
 
                 <div class="col-12 md:col-4"></div>

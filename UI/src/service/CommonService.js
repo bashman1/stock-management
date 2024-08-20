@@ -623,11 +623,11 @@ export default class CommonService {
     getMonthsStartingFromCurrent = () => {
         const today = new Date();
         const currentMonthIndex = today.getMonth(); // Get the index of the current month (0-based)
-        const monthsLebel = [
+        const monthsLabel = [
             'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
         ];
         // Use modulo operator to calculate the index for each month
-        const rotatedMonths = Array.from({ length: 12 }, (_, i) => monthsLebel[(currentMonthIndex + 12 - i) % 12]);
+        const rotatedMonths = Array.from({ length: 12 }, (_, i) => monthsLabel[(currentMonthIndex + 12 - i) % 12]);
         return rotatedMonths.reverse();
     }
 
@@ -642,6 +642,7 @@ export default class CommonService {
         array.forEach(element => {
             formattedArray.push(element[key]);
         });
+
         return formattedArray;
     }
 

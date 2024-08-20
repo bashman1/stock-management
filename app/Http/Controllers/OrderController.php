@@ -11,6 +11,7 @@ use App\Models\GlAccounts;
 use App\Models\CntrlParameter;
 use App\Models\Institution;
 use App\Models\TempSale;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -73,7 +74,7 @@ class OrderController extends Controller
             if ($request->payment_method == "BANK"){
                 $cl = CntrlParameter::where(['param_cd' => 'CGL', 'institution_id' => $userData->institution_id])->first();
             }elseif ($request->payment_method == "CREDIT"){
-                $cl = CntrlParameter::where(['param_cd' => 'AP', 'institution_id' => $userData->institution_id])->first();
+                $cl = CntrlParameter::where(['param_cd' => 'AR', 'institution_id' => $userData->institution_id])->first();
             }else{
                 $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
             }
@@ -178,6 +179,26 @@ class OrderController extends Controller
         ];
         $debit = $this->postGlDR($debitRequest);
         $credit = $this->postGlCR($creditRequest);
+
+
+
+        if($request->payment_method == "CREDIT"){
+            $receivable = (array)[
+                "ref_no"=>$order->ref_no,
+                "receipt_no"=>$order->receipt_no,
+                "tran_id"=>$order->tran_id,
+                "customer_id"=>$request->customer_id,
+                "amount"=> $request->total,
+                "amount_paid"=>0,
+                "status"=>"Active",
+                "institution_id"=>$userData->institution_id,
+                "branch_id"=>$userData->branch_id ,
+                "created_by"=>$userData->id ,
+                "created_on"=> Carbon::now()
+            ];
+             $this->createReceivable($receivable);
+        }
+
         if($institution->is_tax_enabled){
             $VATcredit = $this->postGlCR($taxCreditRequest);
         }
