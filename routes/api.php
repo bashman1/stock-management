@@ -186,5 +186,9 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-transaction-codes", [CollectionController::class,"getTransactionCode"]);
     Route::post('get-receivables', [CustomerReceivableController::class, "getReceivables"]);
     Route::post("get-payable", [PayableController::class, "getPayable"]);
+    Route::post("assign-user-branches", [UserController::class, "assignBranchesToUsers"]);
+    Route::post("get-assigned-user-branches", [UserController::class, "getUserBranches"]);
+    Route::post("switch-branches", [UserController::class, "switchBranch"]);
+    Route::post("reset-password", [UserController::class, "resetPassword"]);
 
 });

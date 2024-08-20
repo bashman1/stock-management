@@ -489,6 +489,18 @@ if(commonService.checkPermissions('ViewInstitutionProfile')){
 }
 
 
+if(commonService.checkPermissions('ViewUserProfile')){
+    accountMenu.value.items.push(
+        {
+            label: 'User Profile',
+            icon: 'pi pi-fw pi-circle',
+            to: '/user-profile/'+commonService.getStorage().userData?.id
+        }
+    )
+}
+
+
+
 
 
 

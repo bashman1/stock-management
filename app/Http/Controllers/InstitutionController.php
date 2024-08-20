@@ -246,7 +246,9 @@ class InstitutionController extends Controller
         $queryString .= " WHERE I.status=  '$request->status'  AND I.id = $request->institutionId";
         $institutionDetails = DB::select($queryString);
         $branches = Branch::where("institution_id", $request->institutionId)->get();
+
         $institutionDetails[0]->branches = $branches;
+        $institutionDetails[0]->users = $this->getUsersByInstitution($request->institutionId);
         return $this->genericResponse(true, "institution created successfully", 201, $institutionDetails);
     }
 

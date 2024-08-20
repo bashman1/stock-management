@@ -8,8 +8,10 @@ use App\Models\User;
 use App\Models\LoginSession;
 use Illuminate\Http\Request;
 use App\Models\Role;
+use App\Models\UserBranch;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -46,6 +48,7 @@ class UserController extends Controller
             $user->user_category =  $request->user_category;
             $user->institution_id = $request->institution_id;
             $user->branch_id =  $request->branch_id;
+            $user->original_branch_id = $request->branch_id;
 
             $user->save();
             return $this->genericResponse(true, "User created successfully", 201, $user);
@@ -154,7 +157,8 @@ class UserController extends Controller
             LEFT JOIN users V ON V.id = U.created_by
             WHERE U.id = $request->userId ";
             if($isNotAdmin){
-                    $queryString.=" AND U.institution_id = $userData->institution_id AND U.branch_id=$userData->branch_id ";
+                    // $queryString.=" AND U.institution_id = $userData->institution_id AND U.branch_id=$userData->branch_id ";
+                    $queryString.=" AND U.institution_id = $userData->institution_id ";
             }
             $queryString.=" ORDER BY U.id DESC ";
             $users = DB::select($queryString);
@@ -170,4 +174,159 @@ class UserController extends Controller
         $user->revoke();
         return $this->genericResponse(true, "Users logged out successfully", 200, []);
     }
+
+
+    public function assignBranchesToUsers(Request $request){
+        try {
+            $userData = auth()->user();
+            DB::beginTransaction();
+            $clearExisting = UserBranch::where(["user_id"=> $request->user, "status"=> "Active"])->get();
+
+            foreach ($clearExisting as $key => $value) {
+                $value->update([
+                    "status" => "Deleted",
+                    "updated_by" => $userData->id, // Optional: if you have an `updated_by` field
+                    "updated_on" => Carbon::now(), // Optional: if you want to track the update time
+                ]);
+            }
+
+            foreach ($request->branches as $key => $value) {
+                $existing = UserBranch::where(["user_id"=> $request->user, "branch_id"=> $value["id"]])->first();
+                if(isset($existing)){
+                    $existing->update([
+                        "status" => "Active",
+                        "updated_by" => $userData->id, // Optional: if you have an `updated_by` field
+                        "updated_on" => Carbon::now(), // Optional: if you want to track the update time
+                    ]);
+                }else{
+                    UserBranch::create([
+                        "user_id"=> $request->user,
+                        "branch_id"=> $value["id"],
+                        "status"=>"Active",
+                        "institution_id"=>$value["institution_id"],
+                        "created_by"=>$userData->id,
+                        "created_on"=>Carbon::now(),
+                    ]);
+                }
+            }
+            DB::commit();
+            return $this->genericResponse(true, "Users branch assigned successfully", 200, []);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->genericResponse(false,  $th->getMessage(), 500,  $th);
+        }
+    }
+
+    public function getUserBranches(Request $request){
+        try {
+            $userBranches = DB::select("SELECT U.*, B.name FROM user_branches U INNER JOIN branches B ON U.branch_id = B.id WHERE U.user_id = $request->user_id AND  U.status = '$request->status' ");
+        //    $userBranches = UserBranch::where(['user_id'=> $request->user_id, 'status'=>$request->status])->get();
+           return $this->genericResponse(true, "Users branch fetched successfully", 200, $userBranches);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false,  $th->getMessage(), 500,  $th);
+        }
+    }
+
+    public function switchBranch(Request $request){
+        try {
+            DB::beginTransaction();
+                $user = User::find($request->userId);
+                if(isset($user)){
+                    if($user->original_branch_id){
+                        $user->branch_id=$request->branchId;
+                    }else{
+                        $user->original_branch_id=$user->branch_id;
+                        $user->branch_id=$request->branchId;
+                    }
+                    $user->update();
+
+                    if (isset($user->institution_id)){
+                        $institution = Institution::find($user->institution_id);
+                        $branch = Branch::find($user->branch_id);
+
+                        $user->institution_name=$institution->name;
+                        $user->branch_name=$branch->name;
+                    }else{
+                        $user->institution_name=null;
+                        $user->branch_name=null;
+                    }
+
+                    $role = Role::find($user->role_id);
+                    $user->role_name=$role->name;
+
+                    $permissions = DB::select("SELECT R.id, R.role_id, R.permission_id, P.name, P.description, P.is_admin, P.status
+                    FROM role_permissions R INNER JOIN permissions P ON R.permission_id = P.id
+                    WHERE R.role_id= " . $user->role_id . " ");
+
+                    $user->role = $role;
+                    $user->permissions = $permissions;
+                }else{
+                    return $this->genericResponse(false,  "User not found", 404, $user);
+                }
+            DB::commit();
+            return $this->genericResponse(true, "Branch switched successfully.", 200,  $user);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->genericResponse(false,  $th->getMessage(), 500,  $th);
+        }
+    }
+
+    public function resetPassword(Request $request) {
+        try {
+            DB::beginTransaction();
+
+            // Find the user by userId
+            $user = User::find($request->userId);
+            if (!$user) {
+                return $this->genericResponse(false, "User not found", 404, null);
+            }
+
+            // Check if the provided old password matches the hashed password in the database
+            // if (!Hash::check($request->oldPassword, $user->password)) {
+            //     return $this->genericResponse(false, "Invalid old password", 401, null);
+            // }
+
+            // Ensure new password and confirm password match
+            if ($request->newPassword !== $request->confirmPassword) {
+                return $this->genericResponse(false, "New password and confirm password do not match", 401, null);
+            }
+
+            // Update the user's password
+            $user->password = bcrypt($request->newPassword);
+            $user->save();
+
+            DB::commit();
+            return $this->genericResponse(true, "Password reset successfully.", 200, $user);
+
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->genericResponse(false, $th->getMessage(), 500, $th);
+        }
+    }
+
+
+    // public function resetPassword(Request $request){
+    //     try {
+    //         DB::beginTransaction();
+
+    //         $user = User::find($request->userId);
+    //         if(!isset($user)){
+    //             return $this->genericResponse(false,  "User not found", 404, $user);
+    //         }
+    //         if(!bcrypt($request->oldPassword) === $user->password){
+    //             return $this->genericResponse(false,  "Invalid old password", 401, $user);
+    //         }
+    //         if($request->newPassword != $request->confirmPassword){
+    //             return $this->genericResponse(false,  "New password and confirm password do not match", 401, $user);
+    //         }
+    //         $user->password = bcrypt($request->newPassword);
+    //         $user->save();
+    //         DB::commit();
+    //         return $this->genericResponse(true, "Password reset successfully.", 200,  $user);
+    //     } catch (\Throwable $th) {
+    //         DB::rollBack();
+    //         return $this->genericResponse(false,  $th->getMessage(), 500,  $th);
+    //     }
+    // }
+
 }

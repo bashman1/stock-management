@@ -668,4 +668,24 @@ class Controller extends BaseController
         return $response;
     }
 
+
+    public function getUsersByInstitution($institutionId){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+
+        $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email,
+        U.status, U.user_type, U.user_category, U.street, U.p_o_box, U.description, U.role_id, U.institution_id, U.branch_id, U.created_at,
+        U.created_on,U.updated_at, C.name AS city, R.name AS role, I.name AS institution, B.name AS branch,
+        CONCAT(V.first_name,' ', V.last_name,' ', V.other_name) as created_by
+        FROM users U LEFT JOIN city_refs C ON C.id =U.city_id
+        INNER JOIN roles R ON R.id = U.role_id
+        INNER JOIN institutions I ON I.id = U.institution_id
+        INNER JOIN branches B ON B.id = U.branch_id
+        LEFT JOIN users V ON V.id = U.created_by";
+        if($isNotAdmin){
+              $queryString.=" WHERE  U.institution_id =$institutionId  AND U.institution_id = $userData->institution_id ";
+        }
+        $queryString.=" ORDER BY U.id DESC ";
+        return DB::select($queryString);
+    }
 }
