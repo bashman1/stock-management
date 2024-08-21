@@ -99,11 +99,12 @@ class CollectionController extends Controller
             T.institution_id, T.branch_id, T.user_id, T.tran_id, T.status, T.created_by, T.created_at,
             I.name AS institution_name, I.ref_no, B.name AS branch_name, I.currency, I.receipt_note,
             CONCAT(M.first_name,' ',M.last_name,' ', M.other_name) AS member_name,
-            CONCAT(U.first_name,' ',U.last_name,' ', U.other_name) AS user_name
+            CONCAT(U.first_name,' ',U.last_name,' ', U.other_name) AS user_name, C.tran_description
             FROM temp_collections T INNER JOIN institutions I ON T.institution_id=I.id
             INNER JOIN branches B ON T.branch_id = B.id
             INNER JOIN members M ON T.member_id = M.id
             INNER JOIN users U ON U.id=T.user_id
+            INNER JOIN transaction_codes C ON C.tran_code = T.tran_cd
             WHERE T.tran_id='$tranId'");
         if (!empty($receiptData)) {
             $receiptData = $receiptData[0];
