@@ -591,6 +591,14 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/vat-payable-report',
+                    name: 'VATPayableReport',
+                    component: () => import('@/views/pages/reports/VatPayable.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
 
 
 

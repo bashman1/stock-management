@@ -549,7 +549,7 @@ onMounted(() => {
                                     <!-- {{ commonService.commaSeparator(data.price) }} -->
                                 </template>
                             </Column>
-                            <Column field="subtotal" header="Sub Total" style="max-width: 10rem;">
+                            <Column field="subtotal" header="Amount" style="max-width: 10rem;">
                                 <template #body="{ data }">
                                     {{ data.id?commonService.commaSeparator(data.quantity * data.price):'' }}
                                 </template>
@@ -600,6 +600,34 @@ onMounted(() => {
                 </div>
                 <div class="col-12 md:col-1">
 
+                </div>
+
+                <div class="col-12 md:col-12">
+                <div class="card" v-if="institutionDetails?.is_tax_enabled && selectedProduct.length>0">
+                <h5>V.A.T 18%</h5><br>
+                <div class="grid">
+                    <div class="field col-12 md:col-12">
+                        <DataTable :value="VAT" size="small" :rows="20" dataKey="id" :rowHover="true"
+                        filterDisplay="menu" responsiveLayout="scroll">
+                        <Column field="name" header="18%" style="max-width: 10rem">
+                            <template #body="{ data }">
+                                {{ data.name }}
+                            </template>
+                        </Column>
+                        <Column field="price" header="Amount" style="max-width: 10rem">
+                            <template #body="{ data }">
+                                {{ commonService.commaSeparator(data.amount) }}
+                            </template>
+                        </Column>
+                        <Column field="subtotal" header="V.A.T" style="max-width: 10rem">
+                            <template #body="{ data }">
+                                {{ commonService.commaSeparator(data.total) }}
+                            </template>
+                        </Column>
+                    </DataTable>
+                    </div>
+                </div>
+            </div>
                 </div>
 
                 <div class="col-12 md:col-4"></div>

@@ -134,7 +134,7 @@ class CommonController extends Controller
             FROM orders O INNER JOIN order_items I ON O.id = I.order_id
             INNER JOIN products P ON P.id = I.product_id
             INNER JOIN stocks S ON P.id = S.product_id
-            WHERE O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id  AND
+            WHERE --O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id  AND
             DATE_PART('day', AGE(S.expiry_date::date, CURRENT_DATE::date)) > 0
             GROUP BY P.name, S.purchase_price, S.selling_price, S.quantity, S.expiry_date
             ORDER BY days_difference ASC

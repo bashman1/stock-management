@@ -668,4 +668,18 @@ class GlAccountsController extends Controller
     }
 
 
+    public function getVATPayableReport(Request $request){
+            "SELECT I.id, I.order_id, I.product_id, I.qty, I.status,
+I.institution_id, I.branch_id, I.created_on, I.created_on, I.created_at,
+COALESCE(I.selling_price, S.selling_price) AS selling_price, O.ref_no, O.receipt_no,
+O.tran_id, O.user_id, O.customer_id, P.name, P.product_no, P.ref_no  as product_ref,
+P.tax_config, S.purchase_price, N.name AS institution_name, N.is_tax_enabled,
+COALESCE(I.qty*I.selling_price, I.qty* S.selling_price ) AS amount
+FROM order_items I INNER JOIN orders O ON O.id = I.order_id
+INNER JOIN products P ON P.id = I.product_id
+INNER JOIN stocks S ON S.product_id = I.product_id
+INNER JOIN institutions N ON N.id =I.institution_id";
+    }
+
+
 }
