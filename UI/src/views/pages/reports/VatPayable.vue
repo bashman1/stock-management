@@ -11,11 +11,11 @@ const commonService = new CommonService();
  const router = useRouter();
 const productsReport = ref(null);
 
-const getProductsReport=()=>{
+const getVatPayableReport=()=>{
     let postData ={
         status: 'Active'
     }
-    commonService.genericRequest('get-sales-report', 'post', true, postData).then((response)=>{
+    commonService.genericRequest('get-vat-payable', 'post', true, postData).then((response)=>{
         if(response.status){
             productsReport.value = response.data
         }else{
@@ -27,7 +27,7 @@ const getProductsReport=()=>{
 
 
  onMounted(() => {
-    getProductsReport();
+    getVatPayableReport();
 });
 
 
@@ -55,37 +55,37 @@ const getProductsReport=()=>{
                 :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
                 <Column field="name" header="Date" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ data.tran_date }}
+                        {{ data.created_at }}
                     </template>
                 </Column>
                 <Column field="name" header="Customer Name" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ data.ref_no }}
+                        {{ data.customer_name }}
                     </template>
                 </Column>
                 <Column field="name" header="Item" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ data.receipt_no }}
+                        {{ data.name }}
                     </template>
                 </Column>
                 <Column field="name" header="Description" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ commonService.commaSeparator(data.total) }}
+                        {{ data.tax_config }}
                     </template>
                 </Column>
                 <Column field="name" header="Total Sales" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ commonService.commaSeparator(data.amount_paid) }}
+                        {{ commonService.commaSeparator(data.amount_after_vat) }}
                     </template>
                 </Column>
                 <Column field="name" header="Total Purchases" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ data.amount_paid - data.total==0?0:commonService.commaSeparator(data.amount_paid - data.total) }}
+                        {{ commonService.commaSeparator(data.total_purchases) }}
                     </template>
                 </Column>
                 <Column field="name" header="Credit Balance" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ data.institution_name }}
+                        {{ commonService.commaSeparator(data.vat) }}
                     </template>
                 </Column>
                 <!-- <Column field="name" header="Branch" style="min-width: 10rem">

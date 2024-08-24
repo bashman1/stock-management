@@ -458,6 +458,17 @@ if(commonService.checkPermissions('ViewCashBook')){
 }
 
 
+if(commonService.checkPermissions('ViewVatPayable')){
+    reportMenu.value.items.push(
+        {
+            label: 'VAT Payable',
+            icon: 'pi pi-fw pi-circle',
+            to: '/vat-payable-report'
+        }
+    )
+}
+
+
 if(commonService.checkPermissions('ViewReceivables')){
     payableReceivable.value.items.push(
         {

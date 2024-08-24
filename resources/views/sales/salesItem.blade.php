@@ -2,6 +2,49 @@
 <html lang="en">
 
 <head>
+
+    <style>
+        @page {
+            margin: 100px 25px; /* Set margin to leave space for the header and footer */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header styles */
+        header {
+            position: fixed;
+            top: -80px;
+            left: 0px;
+            right: 0px;
+            height: 50px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            line-height: 35px;
+        }
+
+        /* Footer styles */
+        footer {
+            position: fixed;
+            bottom: -40px;
+            left: 0px;
+            right: 0px;
+            height: 30px;
+            text-align: center;
+            font-size: 12px;
+            line-height: 20px;
+        }
+
+        /* Main content styles */
+        .content {
+            text-align: left;
+            font-size: 14px;
+        }
+    </style>
+
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
@@ -13,6 +56,16 @@
 </head>
 
 <body>
+
+    <!-- Header content -->
+{{-- <header>
+    Sales Report - {{ now()->format('Y-m-d') }}
+</header> --}}
+
+<!-- Footer content -->
+{{-- <footer>
+    Page: {PAGE_NUM}/{PAGE_COUNT}
+</footer> --}}
 
 
 <div class="margin-top">

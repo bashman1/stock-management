@@ -190,5 +190,5 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-assigned-user-branches", [UserController::class, "getUserBranches"]);
     Route::post("switch-branches", [UserController::class, "switchBranch"]);
     Route::post("reset-password", [UserController::class, "resetPassword"]);
-
+    Route::post("get-vat-payable", [GlAccountsController::class, "getVATPayableReport"]);
 });
