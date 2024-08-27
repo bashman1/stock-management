@@ -51,7 +51,7 @@ const OnSelectItem = (data) => {
 
     console.log(JSON.stringify(data));
 
-    let obj = { id: data.id, price: data.selling_price, quantity: 1, discount: 0, name: data.name, tax_config:data.tax_config };
+    let obj = { id: data.id, price: data.selling_price, quantity: 1, discount: 0, name: data.name, tax_config:data.tax_config, units:[{id:1, ind: "Primary", name:data.unit}, {id:2, ind: "Secondary", name:data.secondary_unit}], selected:{id:1, ind: "Primary", name:data.unit}};
     const foundItem = selectedProduct.value.find(item => item.id === obj.id);
     if (foundItem) {
         foundItem.quantity += obj.quantity;
@@ -525,7 +525,7 @@ onMounted(() => {
                                 </template>
                             </Column>
 
-                            <Column field="quantity" header="Qty" style="min-width: 10rem; ">
+                            <Column field="quantity" header="Qty" style="min-width: 8rem; ">
                                 <template #body="{ data }">
 
                                     <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')" v-if="data.id"
@@ -541,7 +541,21 @@ onMounted(() => {
                                     <!-- <Button icon="pi pi-plus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
                                 </template>
                             </Column>
-                            <Column field="price" header="Price" style="max-width: 10rem;">
+
+                            <Column field="unit" header="Unit" style="max-width: 8rem;">
+                                <template #body="{ data }">
+
+                                <Dropdown v-if="data.id"  id="type" @blur="onInputBlur(prodType, 'prodType')" filter :options="data.units" v-model="data.selected"  :class="{ 'p-invalid': formError?.prodType }" optionLabel="name"
+                                style="width: 80%; margin-left: 1px; margin-right:1px;">
+                                </Dropdown>
+                                      <!-- <InputText type="text" @change="updatePrice($event, data)" :value="data.price" v-if="data.id"
+                                        style="width: 80%; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
+                                        placeholder="Qty"></InputText> -->
+                                    <!-- {{ commonService.commaSeparator(data.price) }} -->
+                                </template>
+                            </Column>
+
+                            <Column field="price" header="Price" style="max-width: 8rem;">
                                 <template #body="{ data }">
                                       <InputText type="text" @change="updatePrice($event, data)" :value="data.price" v-if="data.id"
                                         style="width: 80%; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
@@ -549,12 +563,12 @@ onMounted(() => {
                                     <!-- {{ commonService.commaSeparator(data.price) }} -->
                                 </template>
                             </Column>
-                            <Column field="subtotal" header="Amount" style="max-width: 10rem;">
+                            <Column field="subtotal" header="Amount" style="max-width: 8rem;">
                                 <template #body="{ data }">
                                     {{ data.id?commonService.commaSeparator(data.quantity * data.price):'' }}
                                 </template>
                             </Column>
-                            <Column headerStyle="max-width:10rem;">
+                            <Column headerStyle="width:6rem;">
                                 <template #body="{ data }">
                                     <Button icon="pi pi-trash" class="p-button-rounded p-button-danger mr-2" v-if="data.id"
                                         @click="OnSelectRemoveItem(data)" />

@@ -119,6 +119,10 @@ const paymentMethodOptions=ref([
 
 const paymentMethod=ref( {id:1, name: "Cash", value:"CASH"})
 
+const weight = ref(null);
+const weightUnit = ref(null);
+const weightPrice = ref(null);
+
 
 // ********************************************************
 const openCategoryModal = () => {
@@ -196,9 +200,7 @@ const onSubmit= ()=>{
     formError.value.measurementUnit=commonService.validateFormField(measurementUnit.value);
     formError.value.sellingPrice=commonService.validateFormField(sellingPrice.value);
     formError.value.prodType=commonService.validateFormField(prodType.value);
-
     // formError.value.taxConfig=commonService.validateFormField(taxConfig.value);
-
 
     let invalid = commonService.validateRequiredFields(formError.value);
     if(invalid){
@@ -229,6 +231,9 @@ const onSubmit= ()=>{
         type_id: prodType?.value?.id,
         gauge_id: prodGauge?.value?.id,
         payment_method:paymentMethod?.value.value,
+        secondary_weight: weight?.value,
+        secondary_measurement_unit_id:weightUnit?.value?.id,
+        secondary_price:weightPrice?.value,
     }
 
     commonService.genericRequest('create-product', 'post', true, postData).then((response) => {
@@ -253,6 +258,9 @@ const onSubmit= ()=>{
             expiryDate.value=null;
             prodType.value=null;
             prodGauge.value=null;
+            weight.value=null;
+            weightUnit.value=null;
+            weightPrice.value=null;
             tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'};
             paymentMethod.value={id:1, name: "Cash", value:"CASH"};
         } else {
@@ -777,6 +785,34 @@ onMounted(() => {
                             </span>
                             <Button @click="toggleMeasurementUnitModal(true)" icon="pi pi-plus" />
                         </div>
+                    </div>
+                    <div class="field col-12 md:col-12">
+                        <p class="text-900">Secondary units. Shows the weight of how many secondary units are contained in one primary unit.</p>
+                    </div>
+
+                    <div class="field col-12 md:col-4">
+                        <span class="p-float-label">
+                            <InputText type="text" id="secondaryWeight" v-model="weight" />
+                            <label for="secondaryWeight">Secondary Unit Weight</label>
+                        </span>
+                    </div>
+
+                    <div class="field col-12 md:col-5">
+                        <div class="p-inputgroup">
+                            <span class="p-float-label">
+                                <Dropdown id="secondaryMeasurementUnit" :options="measurementUnitsData" filter v-model="weightUnit"  optionLabel="name">
+                                </Dropdown>
+                                <label for="secondaryMeasurementUnit">Secondary Measurement Unit</label>
+                            </span>
+                            <Button @click="toggleMeasurementUnitModal(true)" icon="pi pi-plus" />
+                        </div>
+                    </div>
+
+                    <div class="field col-12 md:col-3">
+                        <span class="p-float-label">
+                            <InputText type="text" id="secondaryPrice" v-model="weightPrice" />
+                            <label for="secondaryPrice">Secondary Price</label>
+                        </span>
                     </div>
                 </div>
             </div>

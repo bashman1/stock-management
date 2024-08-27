@@ -30,6 +30,9 @@ return new class extends Migration
             $table->string("status")->nullable();
             $table->string('tax_config')->nullable();
             $table->string("ref_no")->nullable();
+            $table->unsignedFloat("secondary_weight")->nullable();
+            $table->unsignedBigInteger("secondary_measurement_unit_id")->nullable();
+            $table->double('secondary_price', 8, 2)->default(0)->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_on')->nullable();

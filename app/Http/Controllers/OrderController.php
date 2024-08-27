@@ -33,9 +33,9 @@ class OrderController extends Controller
         $order->receipt_no = str_replace('TRN', '', $ref) ;
         $order->tran_id = $this->generateUuid() ;
         $order->item_count = $request->itemCount ;
-        $order->total = $request->total ;
-        $order->discount = $request->discount ;
-        $order->amount_paid = $request->amountPaid ;
+        $order->total =  (double) $request->total ;
+        $order->discount =  (double) $request->discount ;
+        $order->amount_paid =  (double) $request->amountPaid ;
         $order->user_id = $userData->id ;
         $order->customer_id = $request->customerId;
         $order->tran_date = $request->tranDate ;
@@ -188,7 +188,7 @@ class OrderController extends Controller
                 "receipt_no"=>$order->receipt_no,
                 "tran_id"=>$order->tran_id,
                 "customer_id"=>$request->customer_id,
-                "amount"=> $request->total,
+                "amount"=>  (double) $request->total,
                 "amount_paid"=>0,
                 "status"=>"Active",
                 "institution_id"=>$userData->institution_id,
@@ -207,15 +207,15 @@ class OrderController extends Controller
             $items = new OrderItem();
             $items->order_id = $order->id;
             $items->product_id = $value['id'];
-            $items->qty = $value['quantity'];
-            $items->selling_price = $value['price'];
+            $items->qty =  (double) $value['quantity'];
+            $items->selling_price =  (double) $value['price'];
             $items->status = $request->status;
             $items->institution_id = $userData->institution_id;
             $items->branch_id = $userData->institution_id;
             $items->created_by = $userData->institution_id;
             $items->created_on = now();
 
-            $stock->quantity = $stock->quantity-$value['quantity'];
+            $stock->quantity =  (double) $stock->quantity-$value['quantity'];
             $stock->save();
 
             $creditStock=$debitRequest;

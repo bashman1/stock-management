@@ -532,7 +532,7 @@ class Controller extends BaseController
         $glHistory = new GlHistory();
         $glHistory->acct_no =$data->acct_no ;
         $glHistory->dr_cr_ind = 'Dr';
-        $glHistory->tran_amount=$data->tran_amt;
+        $glHistory->tran_amount= (double) $data->tran_amt;
         $glHistory->reversal_flag = $data->reversal_flag;
         $glHistory->description = $data->description;
         $glHistory->transaction_date = $data->transaction_date;
@@ -574,7 +574,7 @@ class Controller extends BaseController
         $glHistory = new GlHistory();
         $glHistory->acct_no =$data->acct_no ;
         $glHistory->dr_cr_ind = 'Cr';
-        $glHistory->tran_amount=$data->tran_amt;
+        $glHistory->tran_amount= (double) $data->tran_amt;
         $glHistory->reversal_flag = $data->reversal_flag;
         $glHistory->description = $data->description;
         $glHistory->transaction_date = $data->transaction_date;
@@ -628,7 +628,7 @@ class Controller extends BaseController
         $transaction->contra_acct_type = $transactions->contra_acct_type  ;
         $transaction->description = $transactions->description  ;
         $transaction->dr_cr_ind = $transactions->dr_cr_ind  ;
-        $transaction->tran_amount = $transactions->tran_amount  ;
+        $transaction->tran_amount = (double) $transactions->tran_amount  ;
         $transaction->reversal_flag = $transactions->reversal_flag  ;
         $transaction->tran_date = $transactions->tran_date  ;
         $transaction->tran_cd = $transactions->tran_cd  ;

@@ -68,6 +68,9 @@ class ProductController extends Controller
         $product->type_id = $request->type_id;
         $product->gauge_id = $request->gauge_id;
         $product->ref_no = $refNo;
+        $product->secondary_measurement_unit_id= $request->secondary_measurement_unit_id;
+        $product->secondary_weight= (double) $request->secondary_weight;
+        $product->secondary_price = (double) $request->secondary_price;
         if (isset($institution->is_tax_enabled) && $institution->is_tax_enabled) {
             $product->tax_config = $request->tax_config;
         }
@@ -139,7 +142,7 @@ class ProductController extends Controller
                     "supplier_id"=> $request->supplier_id,
                     "product_id"=>$product->id,
                     "manufacturer_id"=>$request->manufacturer_id,
-                    "amount"=> $postTran->tran_amount,
+                    "amount"=> (double) $postTran->tran_amount,
                     "amount_paid"=>0,
                     "status"=>"Active",
                     "institution_id"=>$userData->institution_id,
@@ -241,13 +244,13 @@ class ProductController extends Controller
 
         // $history = new stockHistory();
 
-        $stock->purchase_price = $request->purchase_price;
-        $stock->selling_price = $request->selling_price;
+        $stock->purchase_price =  (double) $request->purchase_price;
+        $stock->selling_price = (double) $request->selling_price;
         $stock->discount = $request->discount;
         $stock->product_id = $product->id;
-        $stock->quantity = $request->quantity;
-        $stock->min_quantity = $request->min_quantity;
-        $stock->max_quantity = $request->max_quantity;
+        $stock->quantity = (double) $request->quantity;
+        $stock->min_quantity =(double) $request->min_quantity;
+        $stock->max_quantity = (double) $request->max_quantity;
         $stock->institution_id = $userData->institution_id;
         $stock->stock_date = $request->date;
         $stock->manufactured_date = $request->manufactured_date;
@@ -258,14 +261,14 @@ class ProductController extends Controller
         $stock->status = $request->status;
         $stock->save();
 
-        $history->purchase_price = $request->purchase_price;
-        $history->selling_price = $request->selling_price;
+        $history->purchase_price = (double) $request->purchase_price;
+        $history->selling_price =(double) $request->selling_price;
         $history->discount = $request->discount;
         $history->product_id = $product->id;
         $history->stock_id = $stock->id;
-        $history->quantity = $request->quantity;
-        $history->min_quantity = $request->min_quantity;
-        $history->max_quantity = $request->max_quantity;
+        $history->quantity = (double) $request->quantity;
+        $history->min_quantity = (double) $request->min_quantity;
+        $history->max_quantity = (double) $request->max_quantity;
         $history->institution_id = $userData->institution_id;
         $history->stock_date = $request->date;
         $history->manufactured_date = $request->manufactured_date;
@@ -297,11 +300,11 @@ class ProductController extends Controller
 
             $stocks->updated_by = $userData->id ;
             $stocks->updated_on =Carbon::now() ;
-            $stocks->purchase_price = $request->purchase_price ;
-            $stocks->selling_price = $request->selling_price ;
-            $stocks->quantity = $stocks->quantity+$request->quantity ;
-            $stocks->min_quantity = $request->min_quantity ;
-            $stocks->max_quantity = $request->max_quantity ;
+            $stocks->purchase_price = (double) $request->purchase_price ;
+            $stocks->selling_price = (double) $request->selling_price ;
+            $stocks->quantity = (double) $stocks->quantity+$request->quantity ;
+            $stocks->min_quantity = (double) $request->min_quantity ;
+            $stocks->max_quantity = (double) $request->max_quantity ;
             $stocks->stock_date = $request->date ;
             $stocks->manufactured_date = $request->manufactured_date ;
             $stocks->expiry_date = $request->expiry_date ;
@@ -312,14 +315,14 @@ class ProductController extends Controller
             $history = new stockHistory();
             $history->created_by = $userData->id ;
             $history->created_on =Carbon::now() ;
-            $history->purchase_price = $request->purchase_price ;
-            $history->selling_price = $request->selling_price ;
+            $history->purchase_price = (double) $request->purchase_price ;
+            $history->selling_price = (double) $request->selling_price ;
             $history->discount = $request->discount;
             $history->product_id = $request->productId;
             $history->stock_id = $stocks->id;
-            $history->quantity = $request->quantity ;
-            $history->min_quantity = $request->min_quantity ;
-            $history->max_quantity = $request->max_quantity ;
+            $history->quantity = (double) $request->quantity ;
+            $history->min_quantity = (double) $request->min_quantity ;
+            $history->max_quantity =(double) $request->max_quantity ;
             $history->institution_id = $userData->institution_id ;
             $history->stock_date = $request->date ;
             $history->manufactured_date = $request->manufactured_date ;
@@ -473,17 +476,18 @@ class ProductController extends Controller
         $isNotAdmin = $this->isNotAdmin();
 
         $sqlString = "SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
-        P.institution_id, P.user_id, P.status, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.ref_no, P.updated_at, C.name AS category_name,
-        S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
-        E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name,  P.tax_config
-        FROM products P INNER JOIN product_categories C ON C.id = P.category_id
-        LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
-        LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
-        LEFT JOIN suppliers Q ON P.supplier_id = Q.id
-        LEFT JOIN measurement_units T ON P.measurement_unit_id = T.id
-        INNER JOIN stocks E ON E.product_id = P.id
-        INNER JOIN branches B ON B.id = E.branch_id
-        INNER JOIN institutions I ON I.id =P.institution_id ";
+            P.institution_id, P.user_id, P.status, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.ref_no, P.updated_at, C.name AS category_name,
+            S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
+            E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name,  P.tax_config, Y.name AS secondary_unit, P.secondary_weight, P.secondary_price
+            FROM products P INNER JOIN product_categories C ON C.id = P.category_id
+            LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
+            LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
+            LEFT JOIN suppliers Q ON P.supplier_id = Q.id
+            LEFT JOIN measurement_units T ON P.measurement_unit_id = T.id
+            INNER JOIN stocks E ON E.product_id = P.id
+            INNER JOIN branches B ON B.id = E.branch_id
+            INNER JOIN institutions I ON I.id =P.institution_id
+            LEFT JOIN measurement_units Y ON Y.id = P.secondary_measurement_unit_id ";
         if ($isNotAdmin) {
             $sqlString .= " WHERE E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
         }

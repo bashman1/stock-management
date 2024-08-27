@@ -129,7 +129,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get('get-dashboard-stats', [CommonController::class, "getDashboardStats"]);
 
     Route::get('get-products', [ProductController::class, "getProducts"]);
-
     Route::post('create-product-type', [ProductTypeController::class, "createProductTypes"]);
     Route::get('get-product-types', [ProductTypeController::class, "getProductTypes"]);
 
@@ -154,7 +153,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('download-product-report-csv', [ReportController::class, "downLoadProductCsvReport"]);
     Route::post("download-sales-item-report-csv", [ReportController::class, "downloadSalesItemCSVReport"]);
     Route::post('download-sales-item-report-pdf', [ReportController::class, "downloadSalesItemPDFReport"]);
-
 
     Route::post('get-gl-history', [GlAccountsController::class, "glAcctHistory"]);
     Route::post('get-gl-overview', [GlAccountsController::class, "glAcctOverView"]);
