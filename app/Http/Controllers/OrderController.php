@@ -207,12 +207,13 @@ class OrderController extends Controller
             $items = new OrderItem();
             $items->order_id = $order->id;
             $items->product_id = $value['id'];
-            $items->qty =  (double) $value['quantity'];
+            $items->qty =  (double) $value['quantity'] * (1/$value['selected']['weight']);
             $items->selling_price =  (double) $value['price'];
             $items->status = $request->status;
             $items->institution_id = $userData->institution_id;
             $items->branch_id = $userData->institution_id;
             $items->created_by = $userData->institution_id;
+            $items->measurement_unit_id = $value['selected']['unit_id'];
             $items->created_on = now();
 
             $stock->quantity =  (double) $stock->quantity-$value['quantity'];

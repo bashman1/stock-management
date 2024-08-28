@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string("status");
             $table->double('selling_price', 8, 2);
             $table->unsignedBigInteger("institution_id");
+            $table->unsignedBigInteger("measurement_unit_id")->nullable();
             $table->unsignedBigInteger("branch_id");
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();

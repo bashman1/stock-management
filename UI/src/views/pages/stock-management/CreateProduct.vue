@@ -618,8 +618,6 @@ const getProductDetails=(prodId)=>{
             prodType.value =productTypeList.value.find(cat=>cat.id ==productDetails.value.type_id)
             prodGauge.value =productGaugeList.value.find(cat=>cat.id ==productDetails.value.gauge_id)
             taxConfig.value = taxOptions.value.find(tax=>tax.value ==productDetails.value.tax_config)
-
-
         } else {
             commonService.showError(toast, response.message);
         }

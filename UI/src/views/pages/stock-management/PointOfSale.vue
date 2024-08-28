@@ -49,9 +49,14 @@ const getProducts = () => {
 
 const OnSelectItem = (data) => {
 
-    console.log(JSON.stringify(data));
+    // console.log(JSON.stringify(data));
 
-    let obj = { id: data.id, price: data.selling_price, quantity: 1, discount: 0, name: data.name, tax_config:data.tax_config, units:[{id:1, ind: "Primary", name:data.unit}, {id:2, ind: "Secondary", name:data.secondary_unit}], selected:{id:1, ind: "Primary", name:data.unit}};
+    let obj = { id: data.id, price: Number(data.selling_price), quantity: 1, discount: 0, name: data.name, tax_config:data.tax_config,
+    units:[{id:1, ind: "Primary", name:data.unit, weight:1, price:Number(data.selling_price), unit_id:data?.measurement_unit_id}],
+    selected:{id:1, ind: "Primary", name:data.unit, weight:1, price:Number(data.selling_price), unit_id:data?.measurement_unit_id}};
+    if(data.secondary_unit){
+       obj.units.push({id:2, ind: "Secondary", name:data.secondary_unit, weight:Number(data?.secondary_weight), price:Number(data?.secondary_price), unit_id:data?.secondary_measurement_unit_id});
+    }
     const foundItem = selectedProduct.value.find(item => item.id === obj.id);
     if (foundItem) {
         foundItem.quantity += obj.quantity;
@@ -95,6 +100,7 @@ const updatePrice = (event, data)=>{
         }
         return product;
     });
+    computeVAT();
 }
 
 const increaseReduce = (data, action) => {
@@ -285,6 +291,18 @@ const onCustomerChange =(event)=>{
     }
 }
 
+const onUnitChange=(event, data)=>{
+    // alert(JSON.stringify(event.value))
+    // alert(JSON.stringify(data))
+    selectedProduct.value = selectedProduct.value.map(product => {
+        if (product.id === data.id) {
+            return { ...product, price: Number(event.value.price) };
+        }
+        return product;
+    });
+    computeVAT();
+}
+
 
 /**
  *
@@ -316,8 +334,6 @@ const initializeProducts=()=>{
         {id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()},
     ];
 }
-
-
 
 const columns = ref([
     { field: 'name', header: 'Product/Services' },
@@ -525,7 +541,7 @@ onMounted(() => {
                                 </template>
                             </Column>
 
-                            <Column field="quantity" header="Qty" style="min-width: 8rem; ">
+                            <Column field="quantity" header="Qty" style="max-width: 8rem; ">
                                 <template #body="{ data }">
 
                                     <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')" v-if="data.id"
@@ -545,7 +561,7 @@ onMounted(() => {
                             <Column field="unit" header="Unit" style="max-width: 8rem;">
                                 <template #body="{ data }">
 
-                                <Dropdown v-if="data.id"  id="type" @blur="onInputBlur(prodType, 'prodType')" filter :options="data.units" v-model="data.selected"  :class="{ 'p-invalid': formError?.prodType }" optionLabel="name"
+                                <Dropdown v-if="data.id"  id="type" @change="onUnitChange($event, data)" filter :options="data.units" v-model="data.selected"  optionLabel="name"
                                 style="width: 80%; margin-left: 1px; margin-right:1px;">
                                 </Dropdown>
                                       <!-- <InputText type="text" @change="updatePrice($event, data)" :value="data.price" v-if="data.id"
