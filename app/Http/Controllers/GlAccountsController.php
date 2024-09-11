@@ -505,10 +505,12 @@ class GlAccountsController extends Controller
         $passage = CntrlParameter::where(["param_cd" => "PP", "institution_id" => auth()->user()->institution_id])->first();
         $passageAcctNo = str_replace("***", $branch->code,  $passage->param_value);
 
-        $totalSales = (float) DB::table('gl_histories')
-            ->where('acct_no', $salesAcctNo)
-            ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-            ->sum('tran_amount');
+        // $totalSales = (float) DB::table('gl_histories')
+        //     ->where('acct_no', $salesAcctNo)
+        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        //     ->sum('tran_amount');
+
+        $totalSales = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $salesAcctNo);
 
         $totalReturns = (float) DB::table('gl_histories')
             ->where('acct_no', $returnAcctNo)
