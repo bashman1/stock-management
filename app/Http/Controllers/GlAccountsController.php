@@ -512,10 +512,14 @@ class GlAccountsController extends Controller
 
         $totalSales = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $salesAcctNo);
 
-        $totalReturns = (float) DB::table('gl_histories')
-            ->where('acct_no', $returnAcctNo)
-            ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-            ->sum('tran_amount');
+        // $totalReturns = (float) DB::table('gl_histories')
+        //     ->where('acct_no', $returnAcctNo)
+        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        //     ->sum('tran_amount');
+
+
+        $totalReturns = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $returnAcctNo);
+
 
         $totalOpenStock = (float) DB::table('gl_histories')
             ->where('acct_no', $stockAcctNo)
@@ -527,10 +531,11 @@ class GlAccountsController extends Controller
         //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
         //     ->sum('tran_amount');
 
-        $totalPurchases = (float) DB::table('gl_histories')
-            ->where('acct_no', $purchaseAcctNo)
-            ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-            ->sum('tran_amount');
+        // $totalPurchases = (float) DB::table('gl_histories')
+        //     ->where('acct_no', $purchaseAcctNo)
+        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        //     ->sum('tran_amount');
+        $totalPurchases = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $purchaseAcctNo);
 
         $totalOperatingExpenses = (float) DB::table('gl_histories')
             ->where('acct_no', $operatingExpenseAcctNo)

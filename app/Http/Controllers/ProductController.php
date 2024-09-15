@@ -575,6 +575,10 @@ class ProductController extends Controller
                 'expiry_date'   => $newProduct->expiry_date,
                 'status'   => 'Active',
                 'id'   => null,
+                'secondary_measurement_unit_id'=>null,
+                'secondary_weight'=> null,
+                'secondary_price' => null,
+                'payment_method'=>'CASH'
             ];
 
             $response = $this->createNewProduct($newRequest);
@@ -586,5 +590,26 @@ class ProductController extends Controller
         return $this->genericResponse(true, "Approved Successfully", 200, []);
     }
 
+
+    public function getGlSum($acctNo){
+        $glAcct = GlAccounts::where('acct_no', $acctNo)->first();
+        $totalSaleDR = (float) DB::table('gl_histories')
+        ->where('acct_no', $acctNo)
+        ->where('dr_cr_ind', 'Dr')
+        // ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        ->sum('tran_amount');
+
+        $totalSaleCR = (float) DB::table('gl_histories')
+        ->where('acct_no', $acctNo)
+        ->where('dr_cr_ind', 'Cr')
+        // ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        ->sum('tran_amount');
+
+        if($glAcct->acct_type == 'ASSET' || $glAcct->acct_type=='EXPENSE'){
+
+        }
+
+
+    }
 
 }

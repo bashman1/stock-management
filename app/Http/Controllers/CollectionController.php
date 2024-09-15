@@ -72,25 +72,119 @@ class CollectionController extends Controller
 
     }
 
+
     public function getOfficersCollectionData(){
-        $userData = auth()->user();
-        $isNotAdmin = $this->isNotAdmin();
+    $userData = auth()->user();
+    $isNotAdmin = $this->isNotAdmin();
 
-        $queryString = "SELECT T.*, CONCAT(M.first_name,' ',M.last_name, ' ',M.other_name) AS member_name,
-        I.name AS institution_name, B.name AS branch_name,
-        CONCAT(U.first_name,' ',U.last_name, ' ',U.other_name) AS officer_name
-        FROM temp_collections T
-        INNER JOIN members M ON T.member_id = M.id
-        INNER JOIN institutions I ON I.id = T.institution_id
-        INNER JOIN branches B ON B.id = T.branch_id
-        INNER JOIN users U ON T.user_id = U.id";
+    $query = DB::table('temp_collections as T')
+        ->join('members as M', 'T.member_id', '=', 'M.id')
+        ->join('institutions as I', 'T.institution_id', '=', 'I.id')
+        ->join('branches as B', 'T.branch_id', '=', 'B.id')
+        ->join('users as U', 'T.user_id', '=', 'U.id')
+        ->select(
+            'T.*',
+            // DB::raw("(M.first_name || ' ' || M.last_name || ' ' || COALESCE(M.other_name, '')) AS member_name"),
+            DB::raw("M.first_name || ' ' || M.last_name || ' ' || COALESCE(M.other_name, '') AS member_name"),
 
-        if ($isNotAdmin) {
-            $queryString .= " WHERE T.institution_id = $userData->institution_id AND T.branch_id = $userData->branch_id AND T.user_id = $userData->id";
-        }
-        $queryString .= " ORDER BY T.id DESC";
-        return DB::select($queryString);
+            'I.name as institution_name',
+            'B.name as branch_name',
+            // DB::raw("(U.first_name || ' ' || U.last_name || ' ' || COALESCE(U.other_name, '')) AS officer_name")
+        )
+        ->orderBy('T.id', 'DESC');
+
+    // Apply restrictions if the user is not an admin
+    if ($isNotAdmin) {
+        $query->where('T.institution_id', $userData->institution_id)
+              ->where('T.branch_id', $userData->branch_id)
+              ->where('T.user_id', $userData->id);
     }
+
+    // Return paginated results (100 per page)
+    return $query->paginate(100);
+}
+
+
+    // public function getOfficersCollectionData()
+    // {
+    //     $userData = auth()->user();
+    //     $isNotAdmin = $this->isNotAdmin();
+
+    //     $query = DB::table('temp_collections as T')
+    //         ->join('members as M', 'T.member_id', '=', 'M.id')
+    //         ->join('institutions as I', 'T.institution_id', '=', 'I.id')
+    //         ->join('branches as B', 'T.branch_id', '=', 'B.id')
+    //         ->join('users as U', 'T.user_id', '=', 'U.id')
+    //         ->select(
+    //             'T.*',
+    //             DB::raw("CONCAT(M.first_name, ' ', M.last_name, ' ', M.other_name) AS member_name"),
+    //             'I.name as institution_name',
+    //             'B.name as branch_name',
+    //             DB::raw("CONCAT(U.first_name, ' ', U.last_name, ' ', U.other_name) AS officer_name")
+    //         )
+    //         ->orderBy('T.id', 'DESC');
+
+    //     // Apply restrictions if the user is not an admin
+    //     if ($isNotAdmin) {
+    //         $query->where('T.institution_id', $userData->institution_id)
+    //               ->where('T.branch_id', $userData->branch_id)
+    //               ->where('T.user_id', $userData->id);
+    //     }
+
+    //     // Return paginated results (100 per page)
+    //     return $query->paginate(100);
+    // }
+
+
+//     public function getOfficersCollectionData()
+// {
+//     $userData = auth()->user();
+//     $isNotAdmin = $this->isNotAdmin();
+
+//     $query = DB::table('temp_collections as T')
+//         ->join('members as M', 'T.member_id', '=', 'M.id')
+//         ->join('institutions as I', 'T.institution_id', '=', 'I.id')
+//         ->join('branches as B', 'T.branch_id', '=', 'B.id')
+//         ->join('users as U', 'T.user_id', '=', 'U.id')
+//         ->select(
+//             'T.*',
+//             DB::raw("CONCAT(M.first_name, ' ', M.last_name, ' ', M.other_name) AS member_name"),
+//             'I.name as institution_name',
+//             'B.name as branch_name',
+//             DB::raw("CONCAT(U.first_name, ' ', U.last_name, ' ', U.other_name) AS officer_name")
+//         )
+//         ->orderBy('T.id', 'DESC');
+
+//     // Apply restrictions if the user is not an admin
+//     if ($isNotAdmin) {
+//         $query->where('T.institution_id', $userData->institution_id)
+//               ->where('T.branch_id', $userData->branch_id)
+//               ->where('T.user_id', $userData->id);
+//     }
+
+//     // Return paginated results (100 per page)
+//     return $query->paginate(100);
+// }
+
+    // public function getOfficersCollectionData(){
+    //     $userData = auth()->user();
+    //     $isNotAdmin = $this->isNotAdmin();
+
+    //     $queryString = "SELECT T.*, CONCAT(M.first_name,' ',M.last_name, ' ',M.other_name) AS member_name,
+    //     I.name AS institution_name, B.name AS branch_name,
+    //     CONCAT(U.first_name,' ',U.last_name, ' ',U.other_name) AS officer_name
+    //     FROM temp_collections T
+    //     INNER JOIN members M ON T.member_id = M.id
+    //     INNER JOIN institutions I ON I.id = T.institution_id
+    //     INNER JOIN branches B ON B.id = T.branch_id
+    //     INNER JOIN users U ON T.user_id = U.id";
+
+    //     if ($isNotAdmin) {
+    //         $queryString .= " WHERE T.institution_id = $userData->institution_id AND T.branch_id = $userData->branch_id AND T.user_id = $userData->id";
+    //     }
+    //     $queryString .= " ORDER BY T.id DESC";
+    //     return DB::select($queryString);
+    // }
 
 
     public function getReceiptData($tranId)
