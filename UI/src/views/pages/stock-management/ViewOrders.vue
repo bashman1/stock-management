@@ -44,6 +44,16 @@ const toggleModal = (action) => {
     showProductDetailsModal.value = action;
 }
 
+const printReceipt=()=>{
+    commonService.genericRequest('print-receipt', 'post', true, {}).then((response) => {
+        if (response.status) {
+            orderItems.value = response.data;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
 onMounted(() => {
     getSales();
 });
@@ -181,7 +191,7 @@ onMounted(() => {
             <template #footer>
                 <Button label="Cancel" @click="toggleTypeModal(false)" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
-                <!-- <Button @click="onSubmitType" label="SUBMIT" class="p-button-outlined mr-2 mb-2" /> -->
+                <Button @click="printReceipt" icon="pi pi-print" label="Print" class="p-button-outlined mr-2 mb-2" />
             </template>
         </Dialog>
 
