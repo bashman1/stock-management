@@ -194,7 +194,7 @@ const checkDateFormat=(event)=>{
                     <tr>
                         <th class="text-900">Profit before interest and tax(PBIT)</th>
                         <td class="text-900"></td>
-                        <td class="bold text-900">{{ incomeStatementData?.totalIncome==0?incomeStatementData?.totalIncome:commonService.commaSeparator(incomeStatementData?.totalIncome) }}</td>
+                        <td class="bold text-900">{{ incomeStatementData?.profitBeforeInterestAndTax==0?incomeStatementData?.totalIncome:commonService.commaSeparator(incomeStatementData?.profitBeforeInterestAndTax) }}</td>
                     </tr>
                     <tr>
                         <th> <h5 class="statement-header bold text-900">Finance Costs</h5></th>

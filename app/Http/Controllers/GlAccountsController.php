@@ -521,9 +521,14 @@ class GlAccountsController extends Controller
         $totalReturns = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $returnAcctNo);
 
 
+        // $totalOpenStock = (float) DB::table('gl_histories')
+        //     ->where('acct_no', $stockAcctNo)
+        //     ->where('transaction_date', '<', $request->fromDate)
+        //     ->sum('tran_amount');
+
         $totalOpenStock = (float) DB::table('gl_histories')
             ->where('acct_no', $stockAcctNo)
-            ->where('transaction_date', '<', $request->fromDate)
+            ->where('transaction_date', '<=', $request->fromDate)
             ->sum('tran_amount');
 
         // $totalCloseStock = (double) DB::table('gl_histories')
@@ -537,26 +542,49 @@ class GlAccountsController extends Controller
         //     ->sum('tran_amount');
         $totalPurchases = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $purchaseAcctNo);
 
-        $totalOperatingExpenses = (float) DB::table('gl_histories')
-            ->where('acct_no', $operatingExpenseAcctNo)
-            ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-            ->sum('tran_amount');
+        // $totalOperatingExpenses = (float) DB::table('gl_histories')
+        //     ->where('acct_no', $operatingExpenseAcctNo)
+        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        //     ->sum('tran_amount');
 
-        $totalPassage = (float) DB::table('gl_histories')
-            ->where('acct_no', $passageAcctNo)
-            ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-            ->sum('tran_amount');
+        $totalOperatingExpenses = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $operatingExpenseAcctNo);
 
-        $totalIncome = (float) DB::table('gl_balances')
-            ->where(['acct_type' => 'INCOME', 'institution_id' => $branch->institution_id, 'branch_id' => $branch->id])
-            ->sum('balance');
+        // $totalPassage = (float) DB::table('gl_histories')
+        //     ->where('acct_no', $passageAcctNo)
+        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        //     ->sum('tran_amount');
+
+
+        $totalPassage = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $passageAcctNo);
+
+        // $totalIncome = (float) DB::table('gl_balances')
+        //     ->where(['acct_type' => 'INCOME', 'institution_id' => $branch->institution_id, 'branch_id' => $branch->id])
+        //     ->sum('balance');
+
+        $getIncomeAccounts = GlAccounts::where(['acct_type' => 'INCOME', 'institution_id' => $branch->institution_id, 'branch_id' => $branch->id])->get();
+
+        $totalIncome = 0;
+        foreach ($getIncomeAccounts as $key => $value) {
+            $sum = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $value['acct_no']);
+            $totalIncome = $totalIncome + $sum;
+        }
+
+        // $totalIncome = $this->getGlBalancesAsOf();
 
         //return needs to be purchase return
         $goodsAvailableForSale = ($totalOpenStock + (($totalPurchases + $totalPassage) - $totalReturns));
 
 
         // closing stock is Opening Stock+Purchases−Sales+Sales Returns−Purchase Returns±Adjustments
-        $totalCloseStock = $totalOpenStock + $totalPurchases - $totalSales;
+        // $totalCloseStock = $totalOpenStock + $totalPurchases - $totalSales;
+
+        $totalCloseStock = (float) DB::table('gl_histories')
+            ->where('acct_no', $stockAcctNo)
+            // ->where('transaction_date', '>', $request->fromDate) dr_cr_ind
+            ->where('dr_cr_ind', 'Dr') //dr_cr_ind
+            ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+            ->sum('tran_amount');
+
 
         // cost of sale = goods available for sale - closing stock
         $costOfSales =  $goodsAvailableForSale - $totalCloseStock;
@@ -564,6 +592,8 @@ class GlAccountsController extends Controller
 
 
         $netProfit = $grossProfit - $totalOperatingExpenses;
+
+        $profitBeforeInterestAndTax = $totalIncome - $totalOperatingExpenses;
 
         $response = [
             'totalSales' => $totalSales,
@@ -578,7 +608,8 @@ class GlAccountsController extends Controller
             'totalPassage' => $totalPassage,
             'totalOperatingExpenses' => $totalOperatingExpenses,
             'totalPurchases' => $totalPurchases,
-            'totalIncome' => $totalIncome
+            'totalIncome' => $totalIncome,
+            'profitBeforeInterestAndTax'=>$profitBeforeInterestAndTax,
         ];
 
         return $this->genericResponse(true, 'total sales got', 200, $response);
@@ -599,7 +630,10 @@ class GlAccountsController extends Controller
                 $queryString = "SELECT A.acct_no, A.gl_no, A.description,A.gl_cat_no,
                 A.gl_type_no, A.acct_type, A.status, B.balance
                 FROM gl_accounts A INNER JOIN gl_balances B
-                ON A.acct_no = B.acct_no WHERE B.balance >0 AND A.gl_sub_cat_no = '" . $value['gl_no'] . "' ";
+                ON A.acct_no = B.acct_no WHERE (B.balance >0 OR  B.balance < 0) AND (A.gl_no <> '1305001' AND  A.gl_no <> '1307001') AND
+                A.gl_sub_cat_no = '" . $value['gl_no'] . "' ";
+
+                // 1305001 1307001
                 if ($isNotAdmin) {
                     $queryString .= " AND A.institution_id = $userData->institution_id AND A.branch_id =$userData->branch_id  ";
                 }

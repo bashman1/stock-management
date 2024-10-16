@@ -764,7 +764,6 @@ class Controller extends BaseController
             }
 
             $queryString .= " ORDER BY H.id ASC";
-
             // Use DB::select with bindings to prevent SQL injection
             $bindings = ['acctNo' => $acctNo];
             if (isset($startDate) && isset($endDate)) {
@@ -791,7 +790,6 @@ class Controller extends BaseController
                     }
                 }
             }
-
             return $sum;
         } catch (\Throwable $th) {
             throw $th;
