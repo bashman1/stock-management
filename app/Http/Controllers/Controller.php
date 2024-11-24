@@ -22,6 +22,7 @@ use App\Models\CustomerReceivable;
 use App\Models\GlHistory;
 use App\Models\Payable;
 use App\Models\Transaction;
+// use
 
 // use Illuminate\Support\Str;
 
@@ -47,7 +48,7 @@ class Controller extends BaseController
             "code" => $code,
             "message" => $message,
             "data" => $data
-        ]);
+        ], $code);
     }
 
 
@@ -69,15 +70,20 @@ class Controller extends BaseController
      * @return void
      * @author Bashir <wamulabash1@gmail.com>
      */
-    public function getLetters($input)
+    // public function getLetters($input): string
+    // {
+    //     $words = explode(' ', $input);
+    //     $result = '';
+    //     foreach ($words as $word) {
+    //         $result .= strtoupper(substr($word, 0, min(1, strlen($word))));
+    //     }
+    //     return  substr($result, 0, 2);
+    // }
+    public function getLetters(string $input): string
     {
-        $words = explode(' ', $input);
-        $result = '';
-        foreach ($words as $word) {
-            $result .= strtoupper(substr($word, 0, min(1, strlen($word))));
-        }
-        return  substr($result, 0, 2);
+        return substr(implode('', array_map(fn($word) => strtoupper($word[0] ?? ''), explode(' ', $input))), 0, 2);
     }
+
 
 
     /**
@@ -85,13 +91,17 @@ class Controller extends BaseController
      *
      * @return boolean
      */
-    public function isNotAdmin()
+    // public function isNotAdmin(): bool
+    // {
+    //     $userData = auth()->user();
+    //     if ($userData->institution_id != null) {
+    //         return true;
+    //     }
+    //     return false;
+    // }
+    public function isNotAdmin(): bool
     {
-        $userData = auth()->user();
-        if ($userData->institution_id != null) {
-            return true;
-        }
-        return false;
+        return auth()->user()->institution_id !== null;
     }
 
 
@@ -99,33 +109,52 @@ class Controller extends BaseController
      * Generate branch code
      *
      * @return void
-     */
-    public function generateBranchCode()
+    //  */
+    // public function generateBranchCode(): string
+    // {
+    //     $randomCode = '';
+    //     do {
+    //         $randomCode = (string) $this->randomThreeDigitCode(3);
+    //         $branchCd = Branch::where("code", $randomCode)->first();
+    //     } while ((isset($branchCd) && !empty($branchCd)) ||  strlen($randomCode) != 3);
+
+    //     return strtoupper($randomCode);
+    // }
+
+    public function generateBranchCode(): string
     {
-        $randomCode = '';
         do {
-            $randomCode = (string) $this->randomThreeDigitCode(3);
-            $branchCd = Branch::where("code", $randomCode)->first();
-        } while ((isset($branchCd) && !empty($branchCd)) ||  strlen($randomCode) != 3);
+            $randomCode = str_pad(random_int(0, 999), 3, '0', STR_PAD_LEFT); // Generate a 3-digit code
+            $branchExists = Branch::where('code', $randomCode)->exists();    // Use `exists()` for efficient DB check
+        } while ($branchExists);
 
         return strtoupper($randomCode);
     }
+
 
     /**
      * Generate 3 digit code
      * @return void
      * @author Bashir <wamulabash1@@gmail.com>
      */
-    public function randomThreeDigitCode($length)
+    // public function randomThreeDigitCode($length): string
+    // {
+    //     $charset = 'abcdefghjklmnpqrstuvwxyz23456789';
+    //     $randomCode = '';
+    //     $charsetLength = strlen($charset);
+    //     for ($i = 0; $i < $length; $i++) {
+    //         $randomCode .= $charset[mt_rand(0, $charsetLength - 1)];
+    //     }
+    //     return  $randomCode;
+    // }
+    public function randomThreeDigitCode(int $length): string
     {
         $charset = 'abcdefghjklmnpqrstuvwxyz23456789';
-        $randomCode = '';
         $charsetLength = strlen($charset);
-        for ($i = 0; $i < $length; $i++) {
-            $randomCode .= $charset[mt_rand(0, $charsetLength - 1)];
-        }
-        return  $randomCode;
+
+        return implode('', array_map(fn() => $charset[random_int(0, $charsetLength - 1)], range(1, $length)));
     }
+
 
 
     /**
@@ -133,14 +162,25 @@ class Controller extends BaseController
      *
      * @return void
      */
-    public function generateTranRef()
+    // public function generateTranRef(): string
+    // {
+    //     $tranIdRef = InstitutionConfig::where("type", "tran_id_ref")->first();
+    //     $tranId = $tranIdRef->prefix . '' . $tranIdRef->starting . '' . $tranIdRef->current;
+    //     $tranIdRef->current = $tranIdRef->current + $tranIdRef->step;
+    //     $tranIdRef->save();
+    //     return $tranId;
+    // }
+    public function generateTranRef(): string
     {
-        $tranIdRef = InstitutionConfig::where("type", "tran_id_ref")->first();
-        $tranId = $tranIdRef->prefix . '' . $tranIdRef->starting . '' . $tranIdRef->current;
-        $tranIdRef->current = $tranIdRef->current + $tranIdRef->step;
-        $tranIdRef->save();
+        $tranIdRef = InstitutionConfig::where('type', 'tran_id_ref')->firstOrFail();
+
+        $tranId = sprintf('%s%s%s', $tranIdRef->prefix, $tranIdRef->starting, $tranIdRef->current);
+
+        $tranIdRef->increment('current', $tranIdRef->step);
+
         return $tranId;
     }
+
 
     /**
      * generate the ref number
@@ -148,14 +188,25 @@ class Controller extends BaseController
      * @param [type] $type
      * @return void
      */
-    public function generateRefNumber($type)
+    // public function generateRefNumber($type): string
+    // {
+    //     $refNo = InstitutionConfig::where('type', $type)->first();
+    //     $generatedCode = $refNo->prefix . '' . ($refNo->starting + $refNo->current);
+    //     $refNo->current = $refNo->current + $refNo->step;
+    //     $refNo->save();
+    //     return $generatedCode;
+    // }
+    public function generateRefNumber(string $type): string
     {
-        $refNo = InstitutionConfig::where('type', $type)->first();
-        $generatedCode = $refNo->prefix . '' . ($refNo->starting + $refNo->current);
-        $refNo->current = $refNo->current + $refNo->step;
-        $refNo->save();
+        $refNo = InstitutionConfig::where('type', $type)->firstOrFail();
+
+        $generatedCode = sprintf('%s%d', $refNo->prefix, $refNo->starting + $refNo->current);
+
+        $refNo->increment('current', $refNo->step);
+
         return $generatedCode;
     }
+
 
 
     /**
@@ -163,7 +214,7 @@ class Controller extends BaseController
      *
      * @return void
      */
-    public function generateUuid()
+    public function generateUuid(): string
     {
         return (string) Str::uuid();
     }
@@ -178,7 +229,7 @@ class Controller extends BaseController
      * @return void
      * @author bsh <email>
      */
-    public function createBranchGlAccounts($instId, $branchCd, $branchId)
+    public function createBranchGlAccounts($instId, $branchCd, $branchId): string
     {
         DB::beginTransaction();
         $glTypes = GlAcctBk::all();
@@ -230,7 +281,7 @@ class Controller extends BaseController
      * @return void
      * @author bsh <email>
      */
-    public function setControlParam($instId)
+    public function setControlParam($instId): bool
     {
         DB::beginTransaction();
         $cl = DB::table('gl_accounts')
@@ -535,7 +586,7 @@ class Controller extends BaseController
      * @return void
      * @author bsh <email>
      */
-    public function postGlDR($data)
+    public function postGlDR($data): GlHistory
     {
         DB::beginTransaction();
         $glBalances = GlBalances::where('acct_no', $data->acct_no)->first();
@@ -578,7 +629,7 @@ class Controller extends BaseController
      * @return void
      * @author bsh <email>
      */
-    public function postGlCR($data)
+    public function postGlCR($data): GlHistory
     {
         DB::beginTransaction();
         $glBalances = GlBalances::where('acct_no', $data->acct_no)->first();
@@ -622,14 +673,19 @@ class Controller extends BaseController
      * @return void
      * @author bsh <email>
      */
-    public function generateGlAcctNo($instId, $branchCd, $gl_no)
+    // public function generateGlAcctNo($instId, $branchCd, $gl_no): string
+    // {
+    //     $genAcctNo = "instId-braCd-000-000-glNo";
+    //     $acctNo = str_replace('instId', $instId, $genAcctNo);
+    //     $acctNo = str_replace('braCd', $branchCd, $acctNo);
+    //     $acctNo = str_replace('glNo', $gl_no, $acctNo);
+    //     return $acctNo;
+    // }
+    public function generateGlAcctNo($instId, $branchCd, $gl_no): string
     {
-        $genAcctNo = "instId-braCd-000-000-glNo";
-        $acctNo = str_replace('instId', $instId, $genAcctNo);
-        $acctNo = str_replace('braCd', $branchCd, $acctNo);
-        $acctNo = str_replace('glNo', $gl_no, $acctNo);
-        return $acctNo;
+        return sprintf('%s-%s-000-000-%s', $instId, $branchCd, $gl_no);
     }
+
 
 
     /**
@@ -639,7 +695,7 @@ class Controller extends BaseController
      * @return void
      * @author bsh <email>
      */
-    public function postTransaction($transactions)
+    public function postTransaction($transactions): Transaction
     {
         $transaction = new Transaction();
         DB::beginTransaction();
@@ -672,7 +728,7 @@ class Controller extends BaseController
      * @return void
      * @author bsh <email>
      */
-    public function getControlAcctByCode($code)
+    public function getControlAcctByCode($code): array|string
     {
         $cntrl = CntrlParameter::where(["param_cd" => $code, "institution_id" => auth()->user()->institution_id])->first();
         $branch = Branch::find(auth()->user()->branch_id);
@@ -686,14 +742,14 @@ class Controller extends BaseController
         return $response;
     }
 
-    public function createPayable($payable)
+    public function createPayable($payable): Payable
     {
         $response = Payable::create($payable);
         return $response;
     }
 
 
-    public function getUsersByInstitution($institutionId)
+    public function getUsersByInstitution($institutionId): array
     {
         $userData = auth()->user();
         $isNotAdmin = $this->isNotAdmin();
@@ -715,31 +771,44 @@ class Controller extends BaseController
     }
 
 
-    // public function getGlBalances($startDate, $endDate, $acctNo){
+    // public function getGlBalancesAsOf($startDate, $endDate, $acctNo): float|int
+    // {
     //     try {
+    //         // Use parameterized query to prevent SQL injection
     //         $queryString = "SELECT H.*, B.acct_type
-    //         FROM gl_histories H
-    //         INNER JOIN gl_balances B ON H.acct_no = B.acct_no
-    //         WHERE H.acct_no = '$acctNo' ";
-    //         if(isset($startDate) && isset($endDate)){
-    //             $queryString.=" AND H.transaction_date::date BETWEEN '$startDate' AND '$endDate'";
-    //         }
-    //         $queryString.=" ORDER BY H.id ASC";
+    //                     FROM gl_histories H
+    //                     INNER JOIN gl_balances B ON H.acct_no = B.acct_no
+    //                     WHERE H.acct_no = :acctNo";
 
-    //         $glHistory = DB::select($queryString);
+    //         // Add date filtering if both start and end dates are provided
+    //         if (isset($startDate) && isset($endDate)) {
+    //             $queryString .= " AND H.transaction_date::date BETWEEN :startDate AND :endDate";
+    //         }
+
+    //         $queryString .= " ORDER BY H.id ASC";
+    //         // Use DB::select with bindings to prevent SQL injection
+    //         $bindings = ['acctNo' => $acctNo];
+    //         if (isset($startDate) && isset($endDate)) {
+    //             $bindings['startDate'] = $startDate;
+    //             $bindings['endDate'] = $endDate;
+    //         }
+
+    //         $glHistory = DB::select($queryString, $bindings);
     //         $sum = 0;
-    //         foreach ($glHistory as $key => $value) {
-    //             if($value['acct_type'] == 'ASSET' || $value['acct_type'] == 'EXPENSE'){
-    //                 if($value['dr_cr_ind']== 'Dr'){
-    //                     $sum = $sum + (double) $value['tran_amount'];
-    //                 }else{
-    //                     $sum = $sum - (double) $value['tran_amount'];
+
+    //         foreach ($glHistory as $value) {
+    //             // Use object property notation, as DB::select returns objects
+    //             if ($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') {
+    //                 if ($value->dr_cr_ind == 'Dr') {
+    //                     $sum += (float) $value->tran_amount;
+    //                 } else {
+    //                     $sum -= (float) $value->tran_amount;
     //                 }
-    //             }else{
-    //                 if($value['dr_cr_ind']== 'Cr'){
-    //                     $sum = $sum + (double) $value['tran_amount'];
-    //                 }else{
-    //                     $sum = $sum - (double) $value['tran_amount'];
+    //             } else {
+    //                 if ($value->dr_cr_ind == 'Cr') {
+    //                     $sum += (float) $value->tran_amount;
+    //                 } else {
+    //                     $sum -= (float) $value->tran_amount;
     //                 }
     //             }
     //         }
@@ -749,7 +818,7 @@ class Controller extends BaseController
     //     }
     // }
 
-    public function getGlBalancesAsOf($startDate, $endDate, $acctNo)
+    public function getGlBalancesAsOf($startDate, $endDate, $acctNo): float|int
     {
         try {
             // Use parameterized query to prevent SQL injection
@@ -759,40 +828,42 @@ class Controller extends BaseController
                         WHERE H.acct_no = :acctNo";
 
             // Add date filtering if both start and end dates are provided
-            if (isset($startDate) && isset($endDate)) {
+            if ($startDate && $endDate) {
                 $queryString .= " AND H.transaction_date::date BETWEEN :startDate AND :endDate";
             }
 
             $queryString .= " ORDER BY H.id ASC";
-            // Use DB::select with bindings to prevent SQL injection
-            $bindings = ['acctNo' => $acctNo];
-            if (isset($startDate) && isset($endDate)) {
-                $bindings['startDate'] = $startDate;
-                $bindings['endDate'] = $endDate;
-            }
 
-            $glHistory = DB::select($queryString, $bindings);
+            // Bind the parameters
+            $bindings = [
+                'acctNo' => $acctNo,
+                'startDate' => $startDate,
+                'endDate' => $endDate
+            ];
+
+            // Execute the query and fetch results
+            $glHistory = DB::select($queryString, array_filter($bindings));
+
+            // Initialize the sum
             $sum = 0;
 
+            // Loop through the history and calculate the balance
             foreach ($glHistory as $value) {
-                // Use object property notation, as DB::select returns objects
-                if ($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') {
-                    if ($value->dr_cr_ind == 'Dr') {
-                        $sum += (float) $value->tran_amount;
-                    } else {
-                        $sum -= (float) $value->tran_amount;
-                    }
-                } else {
-                    if ($value->dr_cr_ind == 'Cr') {
-                        $sum += (float) $value->tran_amount;
-                    } else {
-                        $sum -= (float) $value->tran_amount;
-                    }
+                $tranAmount = (float) $value->tran_amount;
+                if (($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') && $value->dr_cr_ind == 'Dr') {
+                    $sum += $tranAmount;
+                } elseif (($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') && $value->dr_cr_ind == 'Cr') {
+                    $sum -= $tranAmount;
+                } elseif (($value->acct_type == 'LIABILITY' || $value->acct_type == 'INCOME') && $value->dr_cr_ind == 'Cr') {
+                    $sum += $tranAmount;
+                } elseif (($value->acct_type == 'LIABILITY' || $value->acct_type == 'INCOME') && $value->dr_cr_ind == 'Dr') {
+                    $sum -= $tranAmount;
                 }
             }
+
             return $sum;
         } catch (\Throwable $th) {
-            throw $th;
+            throw $th; // Rethrow the exception after logging it if needed
         }
     }
 }

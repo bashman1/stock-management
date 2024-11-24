@@ -190,4 +190,5 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("reset-password", [UserController::class, "resetPassword"]);
     Route::post("get-vat-payable", [GlAccountsController::class, "getVATPayableReport"]);
     Route::post("print-receipt", [OrderController::class, "printReceipt"]);
+    Route::post('create-sub-account', [GlAccountsController::class, "createSubAccount"]);
 });

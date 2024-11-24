@@ -223,7 +223,7 @@ const checkDateFormat=(event)=>{
                     <tr>
                         <th class="text-900">Profit before tax (PBT)</th>
                         <td class="text-900"></td>
-                        <td class="bold text-900">{{ incomeStatementData?.totalOperatingExpenses==0?incomeStatementData?.totalOperatingExpenses:commonService.commaSeparator(incomeStatementData?.totalOperatingExpenses) }}</td>
+                        <td class="bold text-900">{{ incomeStatementData?.profitBeforeInterestAndTax==0?incomeStatementData?.profitBeforeInterestAndTax:commonService.commaSeparator(incomeStatementData?.profitBeforeInterestAndTax) }}</td>
                     </tr>
                 </table>
         </div>
