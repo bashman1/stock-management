@@ -137,7 +137,7 @@ onMounted(() => {
                 </Column>
                 <Column field="name" header="Profit Margin" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ commonService.commaSeparator(data.purchase_price - data.selling_price) }}
+                        {{ commonService.commaSeparator(data.selling_price - data.purchase_price) }}
                     </template>
                 </Column>
 

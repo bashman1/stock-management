@@ -599,6 +599,40 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/gl-accounts-hierarchy',
+                    name: 'GlHierarchy',
+                    component: () => import('@/views/pages/chart-of-accounts/GlHierarchy.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/create-default-role',
+                    name: 'CreateDefaultRole',
+                    component: () => import('@/views/pages/user-management/CreateDefaultRole.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-default-roles',
+                    name: 'ViewDefaultRole',
+                    component: () => import('@/views/pages/user-management/ViewDefaultRole.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/assign-default-roles-permission/:id',
+                    name: 'AssignDefaultRolePermission',
+                    component: () => import('@/views/pages/user-management/AssignDefaultRolePermissions.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+
+
 
 
 
@@ -634,6 +668,11 @@ const router = createRouter({
             path: '/auth/error',
             name: 'error',
             component: () => import('@/views/pages/auth/Error.vue')
+        },
+        {
+            path: '/auth/register',
+            name: 'selfRegister',
+            component: () => import('@/views/pages/auth/SelfEnroll.vue')
         },
 
     ]

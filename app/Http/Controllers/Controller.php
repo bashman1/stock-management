@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -19,9 +20,14 @@ use App\Models\GlCat;
 use App\Models\GlSubCat;
 use App\Models\CntrlParameter;
 use App\Models\CustomerReceivable;
+use App\Models\DefaultRole;
+use App\Models\DefaultRolePermission;
 use App\Models\GlHistory;
 use App\Models\Payable;
+use App\Models\RolePermission;
 use App\Models\Transaction;
+use Carbon\Carbon;
+
 // use
 
 // use Illuminate\Support\Str;
@@ -864,6 +870,43 @@ class Controller extends BaseController
             return $sum;
         } catch (\Throwable $th) {
             throw $th; // Rethrow the exception after logging it if needed
+        }
+    }
+
+
+    public function createInstitutionDefaultRole($institutionId){
+        try {
+            DB::beginTransaction();
+            $defaultRole = DefaultRole::where('status', "Active")->get();
+            foreach ($defaultRole as $value) {
+                $role = Role::create([
+                    "name"=> $value["name"],
+                    "type"=> $value["type"],
+                    "institution_id"=> $institutionId,
+                    "status"=>"Active",
+                    "role_type"=>$value["role_type"],
+                    "description"=>$value["description"],
+                    // "created_by"=> auth()->user()->id,
+                    "created_on"=> Carbon::now(),
+                ]);
+
+                $defaultRolePermissions = DefaultRolePermission::where("role_id", $value["id"])->get();
+
+                foreach ($defaultRolePermissions as $defaultRolePermission) {
+                    $rolePermission = RolePermission::create([
+                        "role_id"=>$defaultRolePermission["role_id"],
+                        "permission_id"=>$defaultRolePermission["permission_id"],
+                        // "created_by"=>auth()->user()->id,
+                        "created_on"=>Carbon::now(),
+                    ]);
+                }
+            }
+
+            DB::commit();
+            return $defaultRole;
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            throw $th;
         }
     }
 }

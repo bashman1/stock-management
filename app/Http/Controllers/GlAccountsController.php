@@ -316,11 +316,11 @@ class GlAccountsController extends Controller
         try {
             DB::beginTransaction();
             $postRequest = (object)[
-                "gl_cat_no"=>$request->cat ,
-                "gl_sub_cat_no"=>$request->subCat,
-                "gl_type_no"=>$request->type ,
-                "status"=>$request->status ,
-                "description"=>$request->name ,
+                "gl_cat_no" => $request->cat,
+                "gl_sub_cat_no" => $request->subCat,
+                "gl_type_no" => $request->type,
+                "status" => $request->status,
+                "description" => $request->name,
             ];
             $subAccount = $this->reUsableCreateGlAcct($postRequest);
             DB::commit();
@@ -575,7 +575,7 @@ class GlAccountsController extends Controller
             'totalOperatingExpenses' => $totalOperatingExpenses,
             'totalPurchases' => $totalPurchases,
             'totalIncome' => $totalIncome,
-            'profitBeforeInterestAndTax'=>$profitBeforeInterestAndTax,
+            'profitBeforeInterestAndTax' => $profitBeforeInterestAndTax,
         ];
 
         return $this->genericResponse(true, 'total sales got', 200, $response);
@@ -675,7 +675,8 @@ class GlAccountsController extends Controller
         }
     }
 
-    public function getVATPayable($request){
+    public function getVATPayable($request)
+    {
         try {
             $userData = auth()->user();
             $isNotAdmin = $this->isNotAdmin();
@@ -724,10 +725,10 @@ class GlAccountsController extends Controller
             INNER JOIN institutions N ON N.id = I.institution_id
             LEFT JOIN customers Y ON O.customer_id = Y.id ";
 
-            if($isNotAdmin){
-                    $queryString.=" WHERE I.institution_id = $userData->institution_id AND I.branch_id=$userData->branch_id ";
+            if ($isNotAdmin) {
+                $queryString .= " WHERE I.institution_id = $userData->institution_id AND I.branch_id=$userData->branch_id ";
             }
-            $queryString.=" ORDER BY I.id DESC ";
+            $queryString .= " ORDER BY I.id DESC ";
             return DB::select($queryString);
             // return $this->genericResponse(true, "VAT payable", 200, $vatPayable);
         } catch (\Throwable $th) {
@@ -738,37 +739,37 @@ class GlAccountsController extends Controller
 
 
 
-    public function createSubAccount(Request $request){
+    public function createSubAccount(Request $request)
+    {
         try {
             DB::beginTransaction();
             $userData = auth()->user();
             $glAcct = GlAccounts::where('acct_no', $request->acctNo)->first();
-            if(!isset($glAcct)){
+            if (!isset($glAcct)) {
                 return $this->genericResponse(false, "Account not found", 404, $glAcct);
             }
 
             $postRequest = (object)[
-                "gl_cat_no"=>$glAcct->gl_cat_no ,
-                "gl_sub_cat_no"=>$glAcct->gl_sub_cat_no,
-                "gl_type_no"=>$glAcct->gl_type_no ,
-                "status"=>$glAcct->status ,
-                "description"=>$request->description ,
+                "gl_cat_no" => $glAcct->gl_cat_no,
+                "gl_sub_cat_no" => $glAcct->gl_sub_cat_no,
+                "gl_type_no" => $glAcct->gl_type_no,
+                "status" => $glAcct->status,
+                "description" => $request->description,
             ];
             $subAccount = $this->reUsableCreateGlAcct($postRequest);
 
             $glHierarchy = GlHierarchy::create([
                 "acct_no" => $subAccount->acct_no,
-                "parent_acct_no"=>$request->acctNo,
-                "status"=>$glAcct->status,
-                "institution_id"=>$userData->institution_id,
-                "branch_id"=>$userData->branch_id,
-                "created_by"=>$userData->id,
-                "created_on"=> Carbon::now(),
+                "parent_acct_no" => $request->acctNo,
+                "status" => $glAcct->status,
+                "institution_id" => $userData->institution_id,
+                "branch_id" => $userData->branch_id,
+                "created_by" => $userData->id,
+                "created_on" => Carbon::now(),
             ]);
 
             DB::commit();
             return $this->genericResponse(true, "Ledger account created successfully", 201, $subAccount);
-
         } catch (\Throwable $th) {
             DB::rollBack();
             return $this->genericResponse(false, $th->getMessage(), 500, null);
@@ -777,69 +778,79 @@ class GlAccountsController extends Controller
 
 
     public function reUsableCreateGlAcct($request): GlAccounts
-{
-    try {
-        DB::beginTransaction();
+    {
+        try {
+            DB::beginTransaction();
 
-        $userData = auth()->user();
-        $branch = Branch::find($userData->branch_id);
+            $userData = auth()->user();
+            $branch = Branch::find($userData->branch_id);
 
-        // Check if GL Generate Account exists
-        $genAcct = GlGenerateAccount::where([
-            'gl_cat_no' => $request->gl_cat_no,
-            'gl_sub_cat_no' => $request->gl_sub_cat_no,
-            'gl_type_no' => $request->gl_type_no,
-            'status' => $request->status
-        ])->firstOrFail();
+            // Check if GL Generate Account exists
+            $genAcct = GlGenerateAccount::where([
+                'gl_cat_no' => $request->gl_cat_no,
+                'gl_sub_cat_no' => $request->gl_sub_cat_no,
+                'gl_type_no' => $request->gl_type_no,
+                'status' => $request->status
+            ])->firstOrFail();
 
-        // Generate GL Number
-        $glNo = $genAcct->const + $genAcct->current + $genAcct->step;
-        $genAcct->increment('current', $genAcct->step);
+            // Generate GL Number
+            $glNo = $genAcct->const + $genAcct->current + $genAcct->step;
+            $genAcct->increment('current', $genAcct->step);
 
-        // Generate new account number
-        $newAcctNo = $this->generateGlAcctNo($userData->institution_id, $branch->code, $glNo);
+            // Generate new account number
+            $newAcctNo = $this->generateGlAcctNo($userData->institution_id, $branch->code, $glNo);
 
-        // Check if account or balance already exists
-        if (GlAccounts::where('acct_no', $newAcctNo)->exists() || GlBalances::where('acct_no', $newAcctNo)->exists()) {
-            throw new \Exception("Ledger account already exists.");
+            // Check if account or balance already exists
+            if (GlAccounts::where('acct_no', $newAcctNo)->exists() || GlBalances::where('acct_no', $newAcctNo)->exists()) {
+                throw new \Exception("Ledger account already exists.");
+            }
+
+            // Create new GL Account
+            $glAcct = GlAccounts::create([
+                'gl_no' => $glNo,
+                'acct_no' => $newAcctNo,
+                'description' => $request->description,
+                'gl_cat_no' => $request->gl_cat_no,
+                'gl_sub_cat_no' => $request->gl_sub_cat_no,
+                'gl_type_no' => $request->gl_type_no,
+                'acct_type' => $genAcct->acct_type,
+                'status' => $request->status,
+                'branch_cd' => $branch->code,
+                'institution_id' => $userData->institution_id,
+                'branch_id' => $userData->branch_id,
+                'created_by' => $userData->id,
+                'created_on' => now()
+            ]);
+
+            // Create new GL Balance
+            GlBalances::create([
+                'acct_no' => $newAcctNo,
+                'acct_type' => $genAcct->acct_type,
+                'balance' => 0,
+                'branch_cd' => $branch->code,
+                'status' => $request->status,
+                'institution_id' => $userData->institution_id,
+                'branch_id' => $userData->branch_id,
+                'created_by' => $userData->id,
+                'created_on' => now()
+            ]);
+
+            DB::commit();
+            return $glAcct;
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            throw new \Exception("An unexpected error occurred: " . $th->getMessage());
         }
-
-        // Create new GL Account
-        $glAcct = GlAccounts::create([
-            'gl_no' => $glNo,
-            'acct_no' => $newAcctNo,
-            'description' => $request->description,
-            'gl_cat_no' => $request->gl_cat_no,
-            'gl_sub_cat_no' => $request->gl_sub_cat_no,
-            'gl_type_no' => $request->gl_type_no,
-            'acct_type' => $genAcct->acct_type,
-            'status' => $request->status,
-            'branch_cd' => $branch->code,
-            'institution_id' => $userData->institution_id,
-            'branch_id' => $userData->branch_id,
-            'created_by' => $userData->id,
-            'created_on' => now()
-        ]);
-
-        // Create new GL Balance
-        GlBalances::create([
-            'acct_no' => $newAcctNo,
-            'acct_type' => $genAcct->acct_type,
-            'balance' => 0,
-            'branch_cd' => $branch->code,
-            'status' => $request->status,
-            'institution_id' => $userData->institution_id,
-            'branch_id' => $userData->branch_id,
-            'created_by' => $userData->id,
-            'created_on' => now()
-        ]);
-
-        DB::commit();
-        return $glAcct;
-    } catch (\Throwable $th) {
-        DB::rollBack();
-        throw new \Exception("An unexpected error occurred: " . $th->getMessage());
     }
-}
 
+
+    public function getGlHierarchy(Request $request){
+        try {
+            $userData = auth()->user();
+            $hierarchy = GlHierarchy::where(["institution_id"=> $userData->institution_id, "branch_id"=>$userData->branch_id, "status"=>$request->status])->get();
+            return $this->genericResponse(true, "Chart of accounts hierarchy fetched successfully", 200, $hierarchy);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(), 500, null);
+        }
+    }
 }

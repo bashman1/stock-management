@@ -83,34 +83,9 @@ const updateGlName = () => {
 }
 
 
-// const createSubAcct =(postData)=>{
-
-//     // create-sub-account
-//         commonService.genericRequest('create-sub-account', 'post', true, postData).then((response) => {
-//         if (response.status) {
-//             commonService.showSuccess(toast, response.message);
-//             getGlAccounts();
-//             toggleEditModal(false)
-//         } else {
-//             commonService.showError(toast, response.message);
-//         }
-//     })
-//     // alert('Hello')
-// }
-
-// const debitAccount=(event)=>{
-
-// }
-
-// const creditAccount=(event)=>{
-
-// }
-
 const goToDetails = (event) => {
     router.push("/gl-statement/" + event?.acct_no);
 }
-
-
 
 
 onMounted(() => {

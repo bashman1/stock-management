@@ -31,6 +31,7 @@ use App\Http\Controllers\TempProductController;
 use App\Http\Controllers\TempSaleController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerReceivableController;
+use App\Http\Controllers\DefaultRoleController;
 use App\Http\Controllers\PayableController;
 
 /*
@@ -71,15 +72,19 @@ Route::get('create-gl-bk', [GLBalanceController::class, "generateGlAcctBks"]);
 Route::post('test-momo-api', [MtnPaymentsController::class, "getMOMOAuth"]);
 Route::post('test-chart-accounts', [GlAccountsController::class, "getChartOfAccounts"]);
 
+Route::get('get-institution-types', [InstitutionTypeRefController::class, 'getInstitutionTypes']);
+Route::get('get-city-county-id/{id}', [CityRefController::class, 'getCityByCountryId']);
+Route::get('get-bank-ref', [BankRefController::class, 'getBanks']);
+Route::post("institution-self-registration", [InstitutionController::class, "institutionSelfRegistration"]);
 
 Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('crate-role', [RoleController::class, 'createRole']);
     Route::post('create-city', [CityRefController::class, 'createCity']);
-    Route::get('get-city-county-id/{id}', [CityRefController::class, 'getCityByCountryId']);
+    // Route::get('get-city-county-id/{id}', [CityRefController::class, 'getCityByCountryId']);
     Route::post('create-institution-type', [InstitutionTypeRefController::class, 'InstitutionTypeRefController']);
-    Route::get('get-institution-types', [InstitutionTypeRefController::class, 'getInstitutionTypes']);
+    // Route::get('get-institution-types', [InstitutionTypeRefController::class, 'getInstitutionTypes']);
     Route::post('create-bank-ref', [BankRefController::class, 'createBankRef']);
-    Route::get('get-bank-ref', [BankRefController::class, 'getBanks']);
+    // Route::get('get-bank-ref', [BankRefController::class, 'getBanks']);
     Route::post('get-institution-branches', [InstitutionController::class, 'getBranchesByInstitutionId']);
     Route::post('get-institution-roles', [RoleController::class, 'getInstitutionRoles']);
     Route::post('get-role-type', [RoleController::class, 'getRolesByTypes']);
@@ -191,4 +196,9 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-vat-payable", [GlAccountsController::class, "getVATPayableReport"]);
     Route::post("print-receipt", [OrderController::class, "printReceipt"]);
     Route::post('create-sub-account', [GlAccountsController::class, "createSubAccount"]);
+    Route::post("get-gl-hierarchy", [GlAccountsController::class, "getGlHierarchy"]);
+    Route::post("create-default-role", [DefaultRoleController::class, "createDefaultRole"]);
+    Route::get("get-default-roles", [DefaultRoleController::class, "getDefaultRole"]);
+    Route::get("get-default-role/{id}", [DefaultRoleController::class, "getDefaultRoleById"]);
+    Route::post("assign-default-role-permission", [DefaultRoleController::class, "assignDefaultRolePermission"]);
 });

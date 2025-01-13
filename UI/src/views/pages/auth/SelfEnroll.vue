@@ -3,8 +3,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import CommonService from '@/service/CommonService';
 import { useToast } from 'primevue/usetoast';
-// import { required, email } from '@vuelidate/validators';
-// import { useVuelidate } from '@vuelidate/core';
+import AppConfig from '@/layout/AppConfig.vue';
 
 const toast = useToast();
 
@@ -35,63 +34,12 @@ const validation = ref({})
 const formError = ref({});
 const taxConfig = ref({ id: 1, name: 'Enable tax', value: true });
 const tin = ref(null);
-const isEdit = ref(false);
-const editId = ref(null);
-
-const taxOptions = ref([
-    { id: 1, name: 'Enable tax', value: true },
-    { id: 2, name: 'Disable tax', value: false }
-])
-
-const onSubmit = () => {
-    formError.value.name = commonService.validateFormField(name.value);
-    formError.value.type = commonService.validateFormField(type.value);
-    formError.value.city = commonService.validateFormField(city.value);
-    formError.value.contactName = commonService.validateFormField(contactName.value);
-    formError.value.contactNumber = commonService.validateFormField(contactNumber.value);
-    formError.value.contactEmail = commonService.validateFormField(contactEmail.value);
-    formError.value.bankName = commonService.validateFormField(bankName.value);
-    formError.value.acctName = commonService.validateFormField(acctName.value);
-    formError.value.acctNumber = commonService.validateFormField(acctNumber.value);
-    formError.value.taxConfig = commonService.validateFormField(taxConfig.value);
-
-    let invalid = commonService.validateRequiredFields(formError.value);
-    if (invalid) {
-        commonService.showError(toast, "Please fill in the missing field");
-        return
-    }
-
-    let postData = {
-        id:route.params.id,
-        name: name?.value,
-        type: type?.value?.id,
-        start_date: (!startDate?.value) ? new Date() : startDate?.value,
-        address: address?.value,
-        city: city?.value?.id,
-        street: street?.value,
-        p_o_box: pOBox?.value,
-        description: description?.value,
-        contact_name: contactName?.value,
-        contact_number: contactNumber?.value,
-        contact_email: contactEmail?.value,
-        contact_web: contactWeb?.value,
-        bank_id: bankName?.value?.id,
-        acct_name: acctName?.value,
-        acct_no: acctNumber?.value,
-        tax_config: taxConfig?.value?.value,
-        tin: tin.value,
-        status: 'Active'
-    }
-    commonService.genericRequest('create-institution', 'post', true, postData).then((response) => {
-        if (response.status) {
-            commonService.showSuccess(toast, response.message);
-            commonService.redirect(router, "/view-institutions");
-        } else {
-            commonService.showError(toast, response.message);
-        }
-    })
-}
-
+const fName = ref(null);
+const lName = ref(null);
+const oName = ref(null);
+const email = ref(null);
+const password = ref(null);
+const confirmPassword = ref(null);
 
 const getInstitutionTypes = () => {
     commonService.genericRequest('get-institution-types', 'get', false, {}).then((response) => {
@@ -103,6 +51,7 @@ const getInstitutionTypes = () => {
     })
 }
 
+
 const getCities = () => {
     commonService.genericRequest('get-city-county-id/' + 1, 'get', false, {}).then((response) => {
         if (response.status) {
@@ -112,6 +61,7 @@ const getCities = () => {
         }
     })
 }
+
 
 const getBanks = () => {
     commonService.genericRequest('get-bank-ref', 'get', false, {}).then((response) => {
@@ -136,36 +86,74 @@ const validationCheck = (value, key) => {
     }
 }
 
-const getInstitutionDetails = (id) => {
-    let postData = {
-        institutionId: id,
-        status: 'Active',
-    }
-    commonService.genericRequest('get-institution-profile', 'post', true, postData).then((response) => {
-        if (response.status) {
-            let editData = response?.data[0];
-            name.value = editData?.name;
-            startDate.value = editData?.start_date;
-            address.value = editData.address;
-            city.value = cities.value.find(city=>city.id == editData.city_id);
-            street.value = editData.street;
-            pOBox.value = editData.p_o_box;
-            description.value = editData.description;
-            contactName.value = editData.contact_name;
-            contactNumber.value = editData.contact_phone_number;
-            contactEmail.value = editData.contact_email;
-            contactWeb.value = editData.website;
-            bankName.value =  banks.value.find(bank=>bank.id == editData.bank_id);
-            acctName.value = editData.acct_name;
-            acctNumber.value = editData.acct_number;
-            type.value = instType.value.find(type=>type.id == editData.institution_type_id);
-            taxConfig.value =  taxOptions.value.find(vat=>vat.value ==  editData.is_tax_enabled);
-            tin.value = editData.tin;
-            // address.value = editData.name;
-        } else {
 
+const onSubmit = () => {
+    formError.value.name = commonService.validateFormField(name.value);
+    formError.value.type = commonService.validateFormField(type.value);
+    formError.value.city = commonService.validateFormField(city.value);
+    formError.value.contactName = commonService.validateFormField(contactName.value);
+    formError.value.contactNumber = commonService.validateFormField(contactNumber.value);
+    formError.value.contactEmail = commonService.validateFormField(contactEmail.value);
+    formError.value.bankName = commonService.validateFormField(bankName.value);
+    formError.value.acctName = commonService.validateFormField(acctName.value);
+    formError.value.acctNumber = commonService.validateFormField(acctNumber.value);
+    formError.value.taxConfig = commonService.validateFormField(taxConfig.value);
+    formError.value.fName = commonService.validateFormField(fName.value);
+    formError.value.lName = commonService.validateFormField(lName.value);
+    // formError.value.oName = commonService.validateFormField(oName.value);
+    formError.value.email = commonService.validateFormField(email.value);
+    formError.value.password = commonService.validateFormField(password.value);
+    formError.value.confirmPassword = commonService.validateFormField(confirmPassword.value);
+
+    let invalid = commonService.validateRequiredFields(formError.value);
+    if (invalid) {
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
+    let postData = {
+        id:null,
+        name: name?.value,
+        type: type?.value?.id,
+        start_date: (!startDate?.value) ? new Date() : startDate?.value,
+        address: address?.value,
+        city: city?.value?.id,
+        street: street?.value,
+        p_o_box: pOBox?.value,
+        description: description?.value,
+        contact_name: contactName?.value,
+        contact_number: contactNumber?.value,
+        contact_email: contactEmail?.value,
+        contact_web: contactWeb?.value,
+        bank_id: bankName?.value?.id,
+        acct_name: acctName?.value,
+        acct_no: acctNumber?.value,
+        tax_config: taxConfig?.value?.value,
+        tin: taxConfig.value.name,
+        status: 'Active',
+        first_name: fName.value,
+        last_name: lName.value,
+        other_name: oName.value,
+        email: email.value,
+        password: password.value,
+        confirm_password: confirmPassword.value
+    }
+
+    // console.log("*****************************************")
+    // console.log(postData)
+    commonService.genericRequest('institution-self-registration', 'post', false, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            commonService.redirect(router, "/view-institutions");
+        } else {
+            commonService.showError(toast, response.message);
         }
     })
+}
+
+
+const goToLogin = () =>{
+    router.push("/auth/login");
 }
 
 
@@ -173,21 +161,27 @@ onMounted(() => {
     getInstitutionTypes();
     getCities();
     getBanks();
-    if (route.params.id != null) {
-        editId.value = Number(route.params.id);
-        isEdit.value = true;
-        getInstitutionDetails(route.params.id);
-    }
+
 });
 
-
 </script>
+
 <template>
-    <div>
-        <div class="card">
-            <h5>Create Institution</h5>
-            <div class="grid p-fluid mt-3">
-                <Toast />
+    <div class="py-6 px-6">
+
+        <div class="card p-fluid">
+            <div class="grid p-fluid">
+                <div class="field col-12 md:col-3">
+                    <img src="demo/images/SmarCollectlogo-removebg-preview.png" alt="Sakai logo" class="mb-5 w-20rem flex-shrink-0" />
+                </div>
+                <div class="field col-12 md:col-9" >
+                    <h2 class="text-right mt-6">Please fill in to register</h2>
+                </div>
+
+                <div class="col-12 md:col-12">
+                    <h5>Institution Basic Info</h5>
+                </div>
+
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <InputText type="text" id="instName" v-model="name" @blur="onInputBlur(name, 'name')"
@@ -195,6 +189,7 @@ onMounted(() => {
                         <label for="instName">Institution Name</label>
                     </span>
                 </div>
+
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <Dropdown id="instType" @blur="onInputBlur(type, 'type')" :options="instType" v-model="type"
@@ -208,58 +203,44 @@ onMounted(() => {
                         <label for="instStart">Start Date</label>
                     </span>
                 </div>
-
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
                         <Textarea id="textarea" rows="3" cols="30" v-model="address"></Textarea>
                         <label for="textarea">Address</label>
                     </span>
                 </div>
-
-
-                <div class="field col-12 md:col-4">
+                <div class="field col-12 md:col-3">
                     <span class="p-float-label">
                         <Dropdown id="instCity" :options="cities" v-model="city" @blur="onInputBlur(city, 'city')"
                             :class="{ 'p-invalid': formError?.city }" optionLabel="name"></Dropdown>
                         <label for="instCity">City</label>
                     </span>
                 </div>
-
-                <div class="field col-12 md:col-4">
+                <div class="field col-12 md:col-3">
                     <span class="p-float-label">
                         <InputText type="text" id="instStreet" v-model="street" />
                         <label for="instStreet">Street</label>
                     </span>
                 </div>
-
-                <div class="field col-12 md:col-4">
+                <div class="field col-12 md:col-3">
                     <span class="p-float-label">
                         <InputText type="text" id="instPOBox" v-model="pOBox" />
                         <label for="instPOBox">P.O Box</label>
                     </span>
                 </div>
-
-
-                <div class="field col-12 md:col-4">
+                <!-- <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <Dropdown id="instCity" :options="taxOptions" v-model="taxConfig"
                             @blur="onInputBlur(taxConfig, 'taxConfig')" :class="{ 'p-invalid': formError?.taxConfig }"
                             optionLabel="name"></Dropdown>
                         <label for="instCity">Tax Config</label>
                     </span>
-                </div>
-
-                <div class="field col-12 md:col-4" v-if="taxConfig?.value">
+                </div> -->
+                <div class="field col-12 md:col-3" v-if="taxConfig?.value">
                     <span class="p-float-label">
                         <InputText type="text" id="tin" v-model="tin" />
                         <label for="instPOBox">TIN</label>
                     </span>
-                </div>
-
-                <div class="field col-12 md:col-4">
-                    <h5>Attachment</h5>
-                    <FileUpload mode="basic" name="demo[]" accept="image/*" :maxFileSize="1000000" @uploader="onUpload"
-                        customUpload />
                 </div>
 
                 <div class="field col-12 md:col-12">
@@ -269,13 +250,10 @@ onMounted(() => {
                     </span>
                 </div>
 
+                <div class="col-12 md:col-12">
+                    <h5>Institution Contact Info</h5>
+                </div>
 
-            </div>
-        </div>
-
-        <div class="card">
-            <h5>Institution Contact Info</h5>
-            <div class="grid p-fluid mt-3">
                 <div class="field col-12 md:col-3">
                     <span class="p-float-label">
                         <InputText type="text" id="contactName" v-model="contactName"
@@ -310,12 +288,12 @@ onMounted(() => {
                         <label for="contactWeb">Website</label>
                     </span>
                 </div>
-            </div>
-        </div>
 
-        <div class="card">
-            <h5>Institution Bank Info</h5>
-            <div class="grid p-fluid mt-3">
+
+                <div class="field col-12 md:col-12">
+                    <h5>Institution Bank Info</h5>
+                </div>
+
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <Dropdown id="bankName" :options="banks" v-model="bankName" optionLabel="name"
@@ -324,6 +302,7 @@ onMounted(() => {
                         <label for="bankName">Bank</label>
                     </span>
                 </div>
+
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <InputText type="text" id="acctName" v-model="acctName"
@@ -341,11 +320,89 @@ onMounted(() => {
                     </span>
                 </div>
 
-                <div class="field col-12 md:col-8"></div>
+                <div class="field col-12 md:col-12">
+                    <h5>Institution User Info</h5>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="firstName" v-model="fName" @blur="onInputBlur(fName, 'fName')"
+                            :class="{ 'p-invalid': formError?.fName }" /> <!-- class="p-invalid"-->
+                        <label for="firstName">First Name</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="lastName" v-model="lName" @blur="onInputBlur(lName, 'lName')"
+                            :class="{ 'p-invalid': formError?.lName }" /> <!-- class="p-invalid"-->
+                        <label for="lastName">Last Name</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="otherName" v-model="oName" /> <!-- class="p-invalid"-->
+                        <label for="otherName">Other Names</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="email" v-model="email" @blur="onInputBlur(email, 'email')"
+                            :class="{ 'p-invalid': formError?.email }" /> <!-- class="p-invalid"-->
+                        <label for="email">Email</label>
+                    </span>
+                </div>
+
+                 <div  class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <Password type="text" id="password" v-model="password" @blur="onInputBlur(password, 'password')"
+                            :class="{ 'p-invalid': formError?.password }" />
+                        <label for="password">Password</label>
+                    </span>
+                </div>
+
+                <div  class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <Password type="text" id="confirmPassword" v-model="confirmPassword"
+                            @blur="onInputBlur(confirmPassword, 'confirmPassword')"
+                            :class="{ 'p-invalid': formError?.confirmPassword }" />
+                        <label for="confirmPassword">Confirm Password</label>
+                    </span>
+                </div>
+
+                <!-- <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="phoneNumber" v-model="phoneNumber" />
+                        <label for="phoneNumber">Phone Number</label>
+                    </span>
+                </div> -->
+
+                <!-- <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <Calendar inputId="dob" v-model="dob"></Calendar>
+                        <label for="dob">Date Of Birth</label>
+                    </span>
+                </div> -->
+
+                <!-- <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <Dropdown id="gender" :options="genderOptions" v-model="gender" optionLabel="label"></Dropdown>
+                        <label for="gender">Gender</label>
+                    </span>
+                </div> -->
+
+                <div class="field col-12 md:col-8">
+                    <a class="font-medium no-underline ml-2 text-left cursor-pointer" style="color: var(--primary-color)" @click="goToLogin" >Back To Login</a>
+                </div>
                 <div class="field col-12 md:col-4">
                     <Button @click="onSubmit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
                 </div>
+
+
             </div>
         </div>
     </div>
+    <AppConfig simple />
 </template>

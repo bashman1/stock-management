@@ -672,7 +672,7 @@ onMounted(() => {
                         </span>
                 </div>
                 <div class="col-12 md:col-3">
-                <p class="font-bold text-left text-xl green-color" v-if="amountTOPay && amountTOPay > 0">Change: {{ commonService.commaSeparator(Number(amountTOPay) + Number(discount) - totalPrice(selectedProduct)) }}</p>
+                <p class="font-bold text-left text-xl green-color" v-if="amountTOPay && amountTOPay > 0">Change: {{ commonService.commaSeparator(Number(amountTOPay) + Number(discount) - (totalPrice(selectedProduct)+Number(extraTax))) }}</p>
                 </div>
                 <div class="col-12 md:col-3">
                  <Button @click="onSubmitOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />

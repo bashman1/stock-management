@@ -491,7 +491,7 @@ class ProductController extends Controller
         if ($isNotAdmin) {
             $sqlString .= " WHERE E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
         }
-        $sqlString .= " ORDER BY T.id DESC";
+        $sqlString .= " ORDER BY P.id DESC";
         $products = DB::select($sqlString);
         return $this->genericResponse(true, "Product list", 200, $products);
     }

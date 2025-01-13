@@ -139,6 +139,8 @@ class InstitutionController extends Controller
                 $memberNumberConfig->save();
                 $this->createBranchGlAccounts($institution->id,$branch->code,$branch->id);
                 $this->setControlParam($institution->id);
+
+                $this->createInstitutionDefaultRole($institution->id);
             }
             DB::commit();
             return $this->genericResponse(true, "institution created successfully", 201, $institution);
@@ -296,4 +298,123 @@ class InstitutionController extends Controller
         $institution = Institution::find($userData->institution_id);
         return $this->genericResponse(true, "Institution details", 200, $institution);
     }
+
+
+    public function institutionSelfRegistration(Request $request){
+
+        try{
+            DB::beginTransaction();
+            // $userData = auth()->user();
+
+            $instConfig = InstitutionConfig::where('type', 'institution_ref')->first();
+            $instRef = $instConfig->prefix.''.$instConfig->starting.''.$instConfig->current;
+            $instConfig->current= $instConfig->current + $instConfig->step;
+            $instConfig->save();
+
+            $institution=null;
+            $institution = new Institution();
+            $institution->ref_no=$instRef;
+            $institution->created_on=now();
+            $institution->name=$request->name;
+            $institution->institution_type_id=$request->type;
+            $institution->start_date=$request->start_date;
+            $institution->address=$request->address;
+            $institution->city_id=$request->city;
+            $institution->street=$request->street;
+            $institution->p_o_box=$request->p_o_box;
+            $institution->is_tax_enabled = $request->tax_config;
+            $institution->description=$request->description;
+            $institution->status=$request->status;
+            $institution->tin = $request->tin;
+            $institution->save();
+
+
+            // if(!isset($request->id)){
+                $branch = new Branch();
+                $branch->name='Main';
+                $branch->address=$request->address;
+                $branch->city_id=$request->city;
+                $branch->street=$request->street;
+                $branch->code=$this->generateBranchCode();
+                $branch->p_o_box=$request->p_o_box;
+                $branch->institution_id=$institution->id;
+                $branch->description=$request->description;
+                $branch->status=$request->status;
+                $branch->is_main=true;
+                $branch->created_on=now();
+                $branch->save();
+
+                $bank = new InstitutionBank();
+                $bank->bank_id= $request->bank_id;
+                $bank->acct_name=$request->acct_name;
+                $bank->acct_number=$request->acct_no;
+                $bank->status=$request->status;
+                $bank->branch_id=$branch->id;
+                $bank->institution_id=$institution->id;
+                $bank->created_on=now();
+                $bank->save();
+
+                $contact = new InstitutionContact();
+                $contact->name=$request->contact_name;
+                $contact->phone_number=$request->contact_number;
+                $contact->email=$request->contact_email;
+                $contact->website=$request->contact_web;
+                $contact->status=$request->status;
+                $contact->institution_id=$institution->id;
+                $contact->branch_id=$branch->id;
+                $contact->created_on=now();
+                $contact->save();
+
+                $productRequest=(object)[
+                    "name"=>"Default Savings Product",
+                    "description"=>"Default Savings Product",
+                    "balance"=>0,
+                    "min_balance"=>0,
+                    "withdraw_allowed"=>true,
+                    "overdraw_allowed"=>false,
+                    "currency"=>"UGX",
+                    "is_default"=>true,
+                    "institution_id"=>$institution->id,
+                    "branch_id"=>$branch->id,
+                    "user_id"=>1,
+                    "status"=>"Active"
+                ];
+                $product=$this->savingsProduct->createSavingsProduct($productRequest);
+
+                $commissionRequest=(object)[
+                    "name"=>$request->name,
+                    "amount"=>100,
+                    "commission_type"=>"PER_TRANSACTION",
+                    "institution_id"=>$institution->id,
+                    "branch_id"=>$branch->id,
+                    "user_id"=>1,
+                    "status"=>"Active",
+                    "created_by"=>1,
+                    "created_on"=>now()
+                ];
+                $commission = $this->commissionConfig->createCommissionConfig($commissionRequest);
+
+                $memberNumberConfig = new MemberNoConfig();
+                $memberNumberConfig->prefix = $this->getLetters($institution->name);
+                $memberNumberConfig->institution_id_code = 1000 + $institution->id;
+                $memberNumberConfig->start_from = 1000;
+                $memberNumberConfig->current_value = 0;
+                $memberNumberConfig->institution_id = $institution->id;
+                $memberNumberConfig->created_on = now();
+                $memberNumberConfig->save();
+                $this->createBranchGlAccounts($institution->id,$branch->code,$branch->id);
+                $this->setControlParam($institution->id);
+
+                $this->createInstitutionDefaultRole($institution->id);
+            // }
+            DB::commit();
+            return $this->genericResponse(true, "institution created successfully", 201, $institution);
+        } catch (\Throwable $th) {
+            DB::rollback();
+            return $this->genericResponse(false, $th->getMessage(), 500, $th->getMessage());
+        }
+    }
+
+
+
 }
