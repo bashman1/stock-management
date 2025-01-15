@@ -27,6 +27,8 @@ use App\Models\Payable;
 use App\Models\RolePermission;
 use App\Models\Transaction;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\MailSender;
 
 // use
 
@@ -49,6 +51,7 @@ class Controller extends BaseController
      */
     public function genericResponse($status, $message, $code, $data)
     {
+        $this->sendMail();
         return response()->json([
             "status" => $status,
             "code" => $code,
@@ -908,5 +911,14 @@ class Controller extends BaseController
             DB::rollBack();
             throw $th;
         }
+    }
+
+
+    public function sendMail(){
+        $body="<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. <br/>
+        Possimus, a aspernatur impedit quos recusandae incidunt inventore,
+        aperiam quis consequatur, doloribus repellat asperiores ratione distinctio iste vero ullam! Dolorum, eum ut! </p>";
+        $postData =["subject"=>"Testing Mail", "body"=>$body, "has_attachment"=>null];
+        Mail::to("wamulabash1@gmail.com")->queue(new MailSender($postData));
     }
 }

@@ -785,13 +785,13 @@ onMounted(() => {
                         </div>
                     </div>
                     <div class="field col-12 md:col-12">
-                        <p class="text-900">Secondary units. Shows the weight of how many secondary units are contained in one primary unit.</p>
+                        <p class="text-900">Secondary units represent the weight or quantity of secondary components contained within a single primary unit.</p>
                     </div>
 
                     <div class="field col-12 md:col-4">
                         <span class="p-float-label">
                             <InputText type="text" id="secondaryWeight" v-model="weight" />
-                            <label for="secondaryWeight">Secondary Unit Weight</label>
+                            <label for="secondaryWeight">Secondary Unit</label>
                         </span>
                     </div>
 
