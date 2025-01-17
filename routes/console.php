@@ -2,7 +2,11 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Facades\Log;
 
+// use Illuminate\Console\Scheduling\Schedule;
+// use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 /*
 |--------------------------------------------------------------------------
 | Console Routes
@@ -17,3 +21,9 @@ use Illuminate\Support\Facades\Artisan;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+
+Schedule::call(function () {
+    // DB::table('recent_users')->delete();
+    Log::info('Hello there');
+})->everyMinute();

@@ -51,7 +51,7 @@ class Controller extends BaseController
      */
     public function genericResponse($status, $message, $code, $data)
     {
-        $this->sendMail();
+        // $this->sendMail();
         return response()->json([
             "status" => $status,
             "code" => $code,

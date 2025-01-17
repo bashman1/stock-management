@@ -15,6 +15,10 @@ return new class extends Migration
     {
         Schema::create('out_going_mails', function (Blueprint $table) {
             $table->id();
+            $table->string("subject");
+            $table->text("body");
+
+            $table->timestamp('updated_on')->nullable();
             $table->timestamps();
         });
     }
