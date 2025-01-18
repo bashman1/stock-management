@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Role;
+use App\Models\SystemLog;
 use App\Services\MailSenderService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
@@ -30,6 +31,8 @@ use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\MailSender;
+use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Log;
 
 // use
 
@@ -58,6 +61,11 @@ class Controller extends BaseController
      */
     public function genericResponse($status, $message, $code, $data)
     {
+        Log::info(Request::ip());
+        $log = ["action"=>"Testing",
+        "ip"=>Request::ip(),"http_code"=> $code, "request"=>[], "response"=>$data,
+        "return_status"=>$status,"return_message"=>$message, "created_on"=>now()];
+        $this->setLogs($log);
         return response()->json([
             "status" => $status,
             "code" => $code,
@@ -921,9 +929,11 @@ class Controller extends BaseController
     }
 
 
-
-
-
+    /**
+     * Summary of sendMail
+     * @param mixed $postData
+     * @return void
+     */
     public function sendMail($postData)
     {
         // $body = "<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. <br/>
@@ -934,5 +944,9 @@ class Controller extends BaseController
         // "attachment"=>$body, "created_on"=>Carbon::now(), "attachment_name"=>"Testing Mail Attachment"];
 
         $this->mailSenderService->setOutGoingMails($postData);
+    }
+
+    public function setLogs($log){
+       return SystemLog::create($log);
     }
 }
