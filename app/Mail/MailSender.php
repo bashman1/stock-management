@@ -2,12 +2,14 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+
 use Barryvdh\DomPDF\PDF;
 
 class MailSender extends Mailable
@@ -36,6 +38,7 @@ class MailSender extends Mailable
          * checking for attachment
          */
         if(isset($this->details["has_attachment"])){
+            Log::info('****************** Sending mail with attachment **************************');
             $pdf = app(PDF::class);
             $pdf->loadHTML($this->details["attachment"]);
 

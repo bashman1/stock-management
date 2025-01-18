@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Role;
+use App\Services\MailSenderService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -38,6 +39,12 @@ class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
+    protected $mailSenderService;
+
+    public function __construct(MailSenderService $mailSenderService)
+    {
+        $this->mailSenderService = $mailSenderService; // Correctly assigning the parameter to the property
+    }
 
 
     /**
@@ -51,7 +58,7 @@ class Controller extends BaseController
      */
     public function genericResponse($status, $message, $code, $data)
     {
-        // $this->sendMail();
+        $this->sendMail();
         return response()->json([
             "status" => $status,
             "code" => $code,
@@ -877,30 +884,31 @@ class Controller extends BaseController
     }
 
 
-    public function createInstitutionDefaultRole($institutionId){
+    public function createInstitutionDefaultRole($institutionId)
+    {
         try {
             DB::beginTransaction();
             $defaultRole = DefaultRole::where('status', "Active")->get();
             foreach ($defaultRole as $value) {
                 $role = Role::create([
-                    "name"=> $value["name"],
-                    "type"=> $value["type"],
-                    "institution_id"=> $institutionId,
-                    "status"=>"Active",
-                    "role_type"=>$value["role_type"],
-                    "description"=>$value["description"],
+                    "name" => $value["name"],
+                    "type" => $value["type"],
+                    "institution_id" => $institutionId,
+                    "status" => "Active",
+                    "role_type" => $value["role_type"],
+                    "description" => $value["description"],
                     // "created_by"=> auth()->user()->id,
-                    "created_on"=> Carbon::now(),
+                    "created_on" => Carbon::now(),
                 ]);
 
                 $defaultRolePermissions = DefaultRolePermission::where("role_id", $value["id"])->get();
 
                 foreach ($defaultRolePermissions as $defaultRolePermission) {
                     $rolePermission = RolePermission::create([
-                        "role_id"=>$defaultRolePermission["role_id"],
-                        "permission_id"=>$defaultRolePermission["permission_id"],
+                        "role_id" => $defaultRolePermission["role_id"],
+                        "permission_id" => $defaultRolePermission["permission_id"],
                         // "created_by"=>auth()->user()->id,
-                        "created_on"=>Carbon::now(),
+                        "created_on" => Carbon::now(),
                     ]);
                 }
             }
@@ -914,11 +922,25 @@ class Controller extends BaseController
     }
 
 
-    public function sendMail(){
-        $body="<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. <br/>
+
+
+
+    public function sendMail()
+    {
+        $body = "<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. <br/>
         Possimus, a aspernatur impedit quos recusandae incidunt inventore,
         aperiam quis consequatur, doloribus repellat asperiores ratione distinctio iste vero ullam! Dolorum, eum ut! </p>";
-        $postData =["subject"=>"Testing Mail", "body"=>$body, "has_attachment"=>null];
-        Mail::to("wamulabash1@gmail.com")->queue(new MailSender($postData));
+        $postData = ["subject" => "Testing Mail", "body" => $body, "has_attachment" => true,
+        "to"=>["wamulabash1@gmail.com"], "cc"=>[], "bcc"=>[],
+        "attachment"=>$body, "created_on"=>Carbon::now(), "attachment_name"=>"Testing Mail Attachment"];
+        // Mail::to("wamulabash1@gmail.com")->queue(new MailSender($postData));
+        // Mail::to(["recipient1@example.com", "recipient2@example.com"])
+        //     ->cc([])
+        //     ->bcc([])
+        //     ->queue(new MailSender($postData));
+        // $mailService = new MailSenderService();
+        // $this->mailSenderService->sendMail($postData);
+
+        $this->mailSenderService->setOutGoingMails($postData);
     }
 }

@@ -30,7 +30,6 @@ class SavingAccountProductService{
             throw new $th;
             // return $this->genericResponse(false, "Saving account created successfully", 400, $th);
         }
-
     }
 
 }

@@ -4,6 +4,8 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Log;
+use App\Services\ScheduledTaskService;
+use App\Services\MailSenderService;
 
 // use Illuminate\Console\Scheduling\Schedule;
 // use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -23,7 +25,8 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 
-Schedule::call(function () {
-    // DB::table('recent_users')->delete();
-    Log::info('Hello there');
-})->everyMinute();
+
+/**
+ * automatic background process
+ */
+Schedule::call(new ScheduledTaskService(new MailSenderService))->everyMinute();
