@@ -38,11 +38,9 @@ class ScheduledTaskService
             ->orderBy('id', 'asc')     // Then order by id ascending
             ->take(10)  // Limit the result to 10 records
             ->get();
-
         // Loop through each pending mail and send
         foreach ($pendingMails as $mail) {
             Log::info("Sending mail to: " . implode(', ', $mail->to)); // Log mail recipient(s)
-
             try {
                 // Attempt to send the mail
                 $status = $this->mailSenderService->sendMail($mail);

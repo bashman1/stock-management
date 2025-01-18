@@ -58,7 +58,6 @@ class Controller extends BaseController
      */
     public function genericResponse($status, $message, $code, $data)
     {
-        $this->sendMail();
         return response()->json([
             "status" => $status,
             "code" => $code,
@@ -925,21 +924,14 @@ class Controller extends BaseController
 
 
 
-    public function sendMail()
+    public function sendMail($postData)
     {
-        $body = "<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. <br/>
-        Possimus, a aspernatur impedit quos recusandae incidunt inventore,
-        aperiam quis consequatur, doloribus repellat asperiores ratione distinctio iste vero ullam! Dolorum, eum ut! </p>";
-        $postData = ["subject" => "Testing Mail", "body" => $body, "has_attachment" => true,
-        "to"=>["wamulabash1@gmail.com"], "cc"=>[], "bcc"=>[],
-        "attachment"=>$body, "created_on"=>Carbon::now(), "attachment_name"=>"Testing Mail Attachment"];
-        // Mail::to("wamulabash1@gmail.com")->queue(new MailSender($postData));
-        // Mail::to(["recipient1@example.com", "recipient2@example.com"])
-        //     ->cc([])
-        //     ->bcc([])
-        //     ->queue(new MailSender($postData));
-        // $mailService = new MailSenderService();
-        // $this->mailSenderService->sendMail($postData);
+        // $body = "<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. <br/>
+        // Possimus, a aspernatur impedit quos recusandae incidunt inventore,
+        // aperiam quis consequatur, doloribus repellat asperiores ratione distinctio iste vero ullam! Dolorum, eum ut! </p>";
+        // $postData = ["subject" => "Testing Mail", "body" => $body, "has_attachment" => true,
+        // "to"=>["wamulabash1@gmail.com"], "cc"=>[], "bcc"=>[],
+        // "attachment"=>$body, "created_on"=>Carbon::now(), "attachment_name"=>"Testing Mail Attachment"];
 
         $this->mailSenderService->setOutGoingMails($postData);
     }
