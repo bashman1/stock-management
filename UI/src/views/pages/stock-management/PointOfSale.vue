@@ -30,6 +30,9 @@ const customerContact=ref(null);
 const customerDesc=ref(null);
 const customerData=ref([]);
 
+const showInvoiceModal= ref(false);
+const userData =ref({});
+
 
 const VAT = ref([
     {id:1, name:"18%", amount:0, total:0},
@@ -228,6 +231,11 @@ const computeVAT = () => {
 
 const toggleCustomerModal=(action)=>{
     showCreateCustomerModal.value=action;
+}
+
+
+const toggleInvoiceModel=(action)=>{
+    showInvoiceModal.value=action
 }
 
 const onCustomerInputBlur=(value, key)=>{
@@ -458,10 +466,106 @@ const computeNewSum=()=>{
         console.log(JSON.stringify(sortedProducts));
     }
 
+
+
+
+
 /**
  *
  The end testing code for editable table
  */
+
+ const close = () => {
+    toggleInvoiceModel(false);
+    printInvoice();
+};
+
+
+ const printInvoice=()=>{
+    const printWindow = window.open('', '', 'width=600,height=600');
+    printWindow.document.open();
+    printWindow.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0;">
+    <div style="max-width: 750px; margin: auto; padding: 20px; border: 1px solid #ddd;">
+        <header style="display: flex; justify-content: space-between; align-items: center;">
+            <h1 style="color: #002060; margin: 0;">INVOICE</h1>
+            <div style="width: 80px; height: 80px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;">LOGO</div>
+        </header>
+        <section style="margin: 20px 0;">
+            <div style="display: flex; justify-content: space-between;">
+                <div>
+                    <h3 style="margin: 0;">`+  commonService.getStorage()?.institution_name +`</h3>
+                </div>
+                <div style="text-align: right;">
+                    <p style="margin: 0; color: grey"><strong>Invoice #:</strong> `+  commonService.generateRandomFiveId() +` </p>
+                    <p style="margin: 0;  color: grey"><strong>Invoice Date:</strong> `+  commonService.formatDate(commonService.getCurrentTimestamp()) +` </p>
+
+                </div>
+            </div>
+        </section>
+        <section style="margin: 20px 0;">
+            <div style="display: flex; justify-content: space-between;">
+                <div>
+                    <h4 style="margin: 0;">BILL TO</h4>
+                    <p style="margin: 0; color: grey">`+ customer?.name+`</p>
+
+                    <p style="margin: 0; color: grey">`+  billingAddress +`</p>
+                </div>
+                <div>
+                    <h4 style="margin: 0; color: grey">SHIP TO</h4>
+                    <p style="margin: 0; color: grey">`+ customer?.name +`</p>
+                    <!-- <p style="margin: 0; color: grey">3787 Pineview Drive</p> -->
+                    <p style="margin: 0; color: grey">`+ billingAddress +`</p>
+                </div>
+            </div>
+        </section>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <thead>
+                <tr style="background: #f2f2f2;"  >
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;  color: grey">QTY</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;  color: grey">DESCRIPTION</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;  color: grey">UNIT PRICE</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;  color: grey">AMOUNT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(prod, index) of selectedProduct" :key="prod.id">
+                    <td style="border: 1px solid #ddd; padding: 8px;  color: black"> `+ prod.quantity +`</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: black"> `+ prod.name +`</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black">`+ commonService.commaSeparator(prod.price)+`</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black"> `+commonService.commaSeparator(prod.price * prod.quantity)+`</td>
+                </tr>
+            </tbody>
+            <tfoot>
+
+                <tr>
+                    <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right; color: grey">VAT 18%</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black"> `+ commonService.commaSeparator(VAT[0].total) +`</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right; color: grey"><strong>Total</strong></td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;color: black"><strong>`+ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 +`</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div style="text-align: center; margin: 20px 0;">
+            <p style="margin: 0; color: grey">Thank you</p>
+            <p style="margin: 0; font-size: 0.9em; color: #666;">Payment is due within 15 days</p>
+            <p style="margin: 0; font-size: 0.9em; color: #666;">Please make checks payable to:`+ commonService.getStorage()?.institution_name +`.</p>
+        </div>
+    </div>
+</body>
+</html>`)
+printWindow.document.close();
+    printWindow.print();
+    printWindow.close();
+ }
 
 
 onBeforeMount(() => {
@@ -625,11 +729,12 @@ onMounted(() => {
         </DataTable> -->
     </div>
                 </div>
-                 <div class="col-12 md:col-1">
+                 <div class="col-12 md:col-2">
                     <Button label="Clear" @click="clearColumns" icon="pi pi-minus" iconPos="left" class=" p-button-danger mr-2 mb-2" />
-                </div>
-                <div class="col-12 md:col-1">
 
+                </div>
+                <div class="col-12 md:col-2">
+                    <Button label="Generate Invoice" @click="toggleInvoiceModel(true)" icon="pi pi-file" iconPos="left" class=" p-button-info mr-2 mb-2" />
                 </div>
 
                 <div class="col-12 md:col-12">
@@ -923,7 +1028,107 @@ onMounted(() => {
                 <Button @click="onSubmitCustomer" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
             </template>
         </Dialog>
-        <!-- /End of the modals -->
+
+
+
+        <!-- Invoice generation -->
+        <Dialog header="Generate Invoice" v-model:visible="showInvoiceModal" :style="{ width: '75vw' }"
+                :modal="true" class="p-fluid">
+
+                <!-- template -->
+
+                <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0;">
+    <div style="max-width: 750px; margin: auto; padding: 20px; border: 1px solid #ddd;">
+        <header style="display: flex; justify-content: space-between; align-items: center;">
+            <h1 style="color: #002060; margin: 0;">INVOICE</h1>
+            <div style="width: 80px; height: 80px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;">LOGO</div>
+        </header>
+        <section style="margin: 20px 0;">
+            <div style="display: flex; justify-content: space-between;">
+                <div>
+                    <h3 style="margin: 0;">{{ commonService.getStorage()?.institution_name }}</h3>
+                    <!-- <p style="margin: 0;  color: grey">1912 Harvest Lane</p> -->
+                    <!-- <p style="margin: 0;  color: grey">New York, NY 12210</p> -->
+                </div>
+                <div style="text-align: right;">
+                    <p style="margin: 0; color: grey"><strong>Invoice #:</strong> {{ commonService.generateRandomFiveId()}} </p>
+                    <p style="margin: 0;  color: grey"><strong>Invoice Date:</strong> {{ commonService.formatDate(commonService.getCurrentTimestamp()) }} </p>
+                    <!-- <p style="margin: 0;  color: grey"><strong>P.O.#:</strong> 2312/2019</p> -->
+                    <p style="margin: 0; color: grey"><strong>Due Date:</strong> 26/02/2019</p>
+                </div>
+            </div>
+        </section>
+        <section style="margin: 20px 0;">
+            <div style="display: flex; justify-content: space-between;">
+                <div>
+                    <h4 style="margin: 0;">BILL TO</h4>
+                    <p style="margin: 0; color: grey">{{customer?.name}}</p>
+                    <!-- <p style="margin: 0; color: grey">2 Court Square</p> -->
+                    <p style="margin: 0; color: grey">{{ billingAddress }}</p>
+                </div>
+                <div>
+                    <h4 style="margin: 0; color: grey">SHIP TO</h4>
+                    <p style="margin: 0; color: grey">{{customer?.name}}</p>
+                    <!-- <p style="margin: 0; color: grey">3787 Pineview Drive</p> -->
+                    <p style="margin: 0; color: grey">{{ billingAddress }}</p>
+                </div>
+            </div>
+        </section>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <thead>
+                <tr style="background: #f2f2f2;"  >
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;  color: grey">QTY</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;  color: grey">DESCRIPTION</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;  color: grey">UNIT PRICE</th>
+                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;  color: grey">AMOUNT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(prod, index) of selectedProduct" :key="prod.id">
+                    <td style="border: 1px solid #ddd; padding: 8px;  color: black">{{prod.quantity}}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: black">{{prod.name}}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black">{{commonService.commaSeparator(prod.price)}}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black">{{commonService.commaSeparator(prod.price * prod.quantity)}}</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <!-- <tr>
+                    <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right; color: grey">Subtotal</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;  color: black">145.00</td>
+                </tr> -->
+                <tr>
+                    <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right; color: grey">VAT 18%</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black">{{commonService.commaSeparator(VAT[0].total)}}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right; color: grey"><strong>Total</strong></td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;color: black"><strong>{{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div style="text-align: center; margin: 20px 0;">
+            <p style="margin: 0; color: grey">Thank you</p>
+            <p style="margin: 0; font-size: 0.9em; color: #666;">Payment is due within 15 days</p>
+            <p style="margin: 0; font-size: 0.9em; color: #666;">Please make checks payable to: {{ commonService.getStorage()?.institution_name }}.</p>
+        </div>
+    </div>
+</body>
+</html>
+
+
+                <!-- /template -->
+                <template #footer>
+                    <Button label="print" @click="close" icon="pi pi-print" class="p-button-outlined" />
+                </template>
+            </Dialog>
+
 
     </div>
 </template>

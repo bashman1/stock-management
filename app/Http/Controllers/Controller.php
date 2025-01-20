@@ -59,11 +59,11 @@ class Controller extends BaseController
      * @return void
      * @author Bashir <wamulabash1@gmail.com.com>
      */
-    public function genericResponse($status, $message, $code, $data)
+    public function genericResponse($status, $message, $code, $data, $action=null, $request=null)
     {
         Log::info(Request::ip());
-        $log = ["action"=>"Testing",
-        "ip"=>Request::ip(),"http_code"=> $code, "request"=>[], "response"=>$data,
+        $log = ["action"=>$action,
+        "ip"=>Request::ip(),"http_code"=> $code, "request"=>$request, "response"=>$data,
         "return_status"=>$status,"return_message"=>$message, "created_on"=>now()];
         $this->setLogs($log);
         return response()->json([
@@ -928,7 +928,6 @@ class Controller extends BaseController
         }
     }
 
-
     /**
      * Summary of sendMail
      * @param mixed $postData
@@ -946,6 +945,11 @@ class Controller extends BaseController
         $this->mailSenderService->setOutGoingMails($postData);
     }
 
+    /**
+     * Summary of setLogs
+     * @param mixed $log
+     * @return TModel
+     */
     public function setLogs($log){
        return SystemLog::create($log);
     }
