@@ -52,6 +52,13 @@ const getInstitutionTypes = () => {
 }
 
 
+const logoUrl = computed(() => {
+    // return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
+    // return `demo/images/Smart-Collect-logo-black-removebg.png`;
+    return `demo/images/SmarCollectlogo-removebg-preview.png`;
+});
+
+
 const getCities = () => {
     commonService.genericRequest('get-city-county-id/' + 1, 'get', false, {}).then((response) => {
         if (response.status) {
@@ -172,7 +179,7 @@ onMounted(() => {
         <div class="card p-fluid">
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-3">
-                    <img src="demo/images/SmarCollectlogo-removebg-preview.png" alt="Sakai logo" class="mb-5 w-20rem flex-shrink-0" />
+                    <img :src="logoUrl" alt="Sakai logo" class="mb-5 w-20rem flex-shrink-0" />
                 </div>
                 <div class="field col-12 md:col-9" >
                     <h2 class="text-right mt-6">Please fill in to register</h2>
