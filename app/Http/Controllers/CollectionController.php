@@ -53,14 +53,14 @@ class CollectionController extends Controller
         $collect->created_on = now();
         $collect->save();
 
-        return $this->genericResponse(true, "Collected successfully", 201, $collect);
+        return $this->genericResponse(true, "Collected successfully", 201, $collect, "fieldCollect", $request);
     }
 
     public function getOfficerCollection()
     {
         $transaction = $this->getOfficersCollectionData();
 
-        return $this->genericResponse(true, "Collected successfully", 201, $transaction);
+        return $this->genericResponse(true, "Collections fetched successfully", 201, $transaction, "getOfficerCollection", []);
     }
 
 
@@ -203,7 +203,7 @@ class CollectionController extends Controller
         if (!empty($receiptData)) {
             $receiptData = $receiptData[0];
         }
-        return $this->genericResponse(true, "Receipt retrieved successfully", 200, $receiptData);
+        return $this->genericResponse(true, "Receipt retrieved successfully", 200, $receiptData, "getReceiptData", $tranId);
     }
 
 
@@ -227,7 +227,7 @@ class CollectionController extends Controller
         }
         $queryString.=" ORDER BY T.id DESC";
         $transactions = DB::select($queryString);
-        return $this->genericResponse(true, "Collected successfully", 201, $transactions);
+        return $this->genericResponse(true, "Collected successfully", 201, $transactions, "getPendingTransactions", $status);
     }
 
 
@@ -309,11 +309,11 @@ class CollectionController extends Controller
                 }
             }
             DB::commit();
-            return $this->genericResponse(true, "Transaction $request->action successfully", 201, []);
+            return $this->genericResponse(true, "Transaction $request->action successfully", 201, [], "approveTransactions", $request);
         } catch (\Throwable $th) {
             DB::rollback();
             // throw new $th;
-            return $this->genericResponse(false, "Transaction $request->action failed", 400, $th);
+            return $this->genericResponse(false, "Transaction $request->action failed", 400, $th, "approveTransactions", $request);
         }
     }
 
@@ -322,10 +322,10 @@ class CollectionController extends Controller
     {
         try {
             $transaction = $this->getApprovedTransactionsData();
-            return $this->genericResponse(true, "Approved transactions", 200, $transaction);
+            return $this->genericResponse(true, "Approved transactions", 200, $transaction, "getApprovedTransactions", []);
         } catch (\Throwable $th) {
             //throw $th;
-            return $this->genericResponse(false, "Process failed", 400, $th);
+            return $this->genericResponse(false, "Process failed", 400, $th, "getApprovedTransactions", []);
         }
     }
 
@@ -357,10 +357,10 @@ class CollectionController extends Controller
     public function getTransactionCode(Request $request){
         try {
             $transactionCodes = TransactionCode::where("status", $request->status)->get();
-            return $this->genericResponse(true, "Transactions codes", 200, $transactionCodes);
+            return $this->genericResponse(true, "Transactions codes", 200, $transactionCodes, "getTransactionCode", $request);
 
         }catch (\Throwable $th) {
-            return $this->genericResponse(false, "Process failed", 400, $th);
+            return $this->genericResponse(false, "Process failed", 400, $th, "getTransactionCode", $request);
         }
     }
 }

@@ -143,10 +143,10 @@ class InstitutionController extends Controller
                 $this->createInstitutionDefaultRole($institution->id);
             }
             DB::commit();
-            return $this->genericResponse(true, "institution created successfully", 201, $institution);
+            return $this->genericResponse(true, "institution created successfully", 201, $institution, "createInstitution", $request);
         } catch (\Throwable $th) {
             DB::rollback();
-            return $this->genericResponse(false, $th->getMessage(), 500, $th->getMessage());
+            return $this->genericResponse(false, $th->getMessage(), 500, $th->getMessage(), "createInstitution", $request);
         }
     }
 
@@ -186,7 +186,7 @@ class InstitutionController extends Controller
         }
 
         DB::commit();
-        return $this->genericResponse(true, "Branch created successfully", 201, $branch);
+        return $this->genericResponse(true, "Branch created successfully", 201, $branch, "createBranch", $request);
     }
 
 
@@ -203,7 +203,7 @@ class InstitutionController extends Controller
         }
         $queryString .= " ORDER BY B.id DESC ";
         $branches = DB::select($queryString);
-        return $this->genericResponse(true, "", 200, $branches);
+        return $this->genericResponse(true, "", 200, $branches, "getBranches", $request);
     }
 
     public function getInstitutions()
@@ -222,9 +222,9 @@ class InstitutionController extends Controller
                 ->where('I.status', 'Active')
                 ->orderBy("I.id","DESC")
                 ->get();
-            return $this->genericResponse(true, "institution created successfully", 201, $institutions);
+            return $this->genericResponse(true, "institution created successfully", 201, $institutions, "getInstitutions", []);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 500, $th);
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "getInstitutions", []);
         }
     }
 
@@ -251,12 +251,12 @@ class InstitutionController extends Controller
 
         $institutionDetails[0]->branches = $branches;
         $institutionDetails[0]->users = $this->getUsersByInstitution($request->institutionId);
-        return $this->genericResponse(true, "institution created successfully", 201, $institutionDetails);
+        return $this->genericResponse(true, "institution created successfully", 201, $institutionDetails, "getInstitutionProfile", $request);
     }
 
     public function getBranchesByInstitutionId(Request $request){
         $branches = Branch::where(['status'=>$request->status, 'institution_id'=>$request->institutionId])->get();
-        return $this->genericResponse(true, "Fetched institution branches", 200, $branches);
+        return $this->genericResponse(true, "Fetched institution branches", 200, $branches, "getBranchesByInstitutionId", $request);
     }
 
 
@@ -269,7 +269,7 @@ class InstitutionController extends Controller
                 $branch->save();
             }
         }
-        return $this->genericResponse(true, "Branch codes created successfully", 200, $branches);
+        return $this->genericResponse(true, "Branch codes created successfully", 200, $branches, "generateMissingCodesForBranches", []);
     }
 
     public function generateMissingLedgers(){
@@ -280,7 +280,7 @@ class InstitutionController extends Controller
             $results=$this->createBranchGlAccounts($value['institution_id'],$value['code'],$value['id']);
             array_push($myArray, $results);
         }
-        return $this->genericResponse(true, "Branch codes created successfully", 200, $myArray);
+        return $this->genericResponse(true, "Branch codes created successfully", 200, $myArray, "generateMissingLedgers", []);
     }
 
     public function generateMissingCntrlParameter(){
@@ -290,13 +290,13 @@ class InstitutionController extends Controller
             $results=$this->setControlParam($value['id']);
             array_push($myArray, $results);
         }
-        return $this->genericResponse(true, "Control parameter set successfully", 200, $myArray);
+        return $this->genericResponse(true, "Control parameter set successfully", 200, $myArray, "generateMissingCntrlParameter", []);
     }
 
     public function getInstitutionDetails(){
         $userData = auth()->user();
         $institution = Institution::find($userData->institution_id);
-        return $this->genericResponse(true, "Institution details", 200, $institution);
+        return $this->genericResponse(true, "Institution details", 200, $institution, "getInstitutionDetails", []);
     }
 
 
@@ -408,10 +408,10 @@ class InstitutionController extends Controller
                 $this->createInstitutionDefaultRole($institution->id);
             // }
             DB::commit();
-            return $this->genericResponse(true, "institution created successfully", 201, $institution);
+            return $this->genericResponse(true, "institution created successfully", 201, $institution, "institutionSelfRegistration", $request);
         } catch (\Throwable $th) {
             DB::rollback();
-            return $this->genericResponse(false, $th->getMessage(), 500, $th->getMessage());
+            return $this->genericResponse(false, $th->getMessage(), 500, $th->getMessage(), "institutionSelfRegistration", $request);
         }
     }
 

@@ -28,6 +28,6 @@ class CustomerReceivableController extends Controller
         }
         $queryString.=" ORDER BY C.id DESC";
         $receivables = DB::select($queryString);
-        return $this->genericResponse(true, "Receivables fetched successfully", 200, $receivables);
+        return $this->genericResponse(true, "Receivables fetched successfully", 200, $receivables, "getReceivables", []);
     }
 }

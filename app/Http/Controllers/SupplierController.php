@@ -25,12 +25,12 @@ class SupplierController extends Controller
         $supplier->created_on = now() ;
         $supplier->save();
 
-        return $this->genericResponse(true, "Supplier created successfully", 201, $supplier);
+        return $this->genericResponse(true, "Supplier created successfully", 201, $supplier, "createSupplier", $request);
     }
 
     public function getSuppliers(){
         $userData = auth()->user();
         $suppliers= Supplier::where(["status"=>"Active", "institution_id"=>$userData->institution_id])->get();
-        return $this->genericResponse(true, "Supplier fetched successfully", 200, $suppliers);
+        return $this->genericResponse(true, "Supplier fetched successfully", 200, $suppliers, "getSuppliers", []);
     }
 }

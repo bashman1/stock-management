@@ -22,19 +22,19 @@ class DefaultRoleController extends Controller
                 "created_on"=>Carbon::now(),
             ]);
             DB::commit();
-            return $this->genericResponse(true, "Default role created successfully", 201, $defaultRole);
+            return $this->genericResponse(true, "Default role created successfully", 201, $defaultRole, "createDefaultRole", $request);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return $this->genericResponse(false, $th->getMessage(), 500, $th);
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "createDefaultRole", $request);
         }
     }
 
     public function getDefaultRole(){
         try {
             $defaultRole = DefaultRole::where('status', 'Active')->get();
-            return $this->genericResponse(true, "Default role fetched successfully", 200, $defaultRole);
+            return $this->genericResponse(true, "Default role fetched successfully", 200, $defaultRole, "getDefaultRole", []);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 500, []);
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "getDefaultRole", []);
         }
     }
 
@@ -45,9 +45,9 @@ class DefaultRoleController extends Controller
             $permissions = Permissions::where(["status" => "Active"])->get();
             return $this->genericResponse(true, "Role details", 200, [
                 "role" => $defaultRole, "rolePermissions" => $defaultsRolePermission, "permissions" => $permissions
-            ]);
+            ], "getDefaultRoleById", $id);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 500, []);
+            return $this->genericResponse(false, $th->getMessage(), 500, [], "getDefaultRoleById", $id);
         }
     }
 
@@ -65,9 +65,9 @@ class DefaultRoleController extends Controller
                 $assignDefaultRolePermission =  DefaultRolePermission::where(["role_id" => $request->roleId, "permission_id"=> $request->permissionId])->first();
                 $assignDefaultRolePermission->delete();
             }
-            return $this->genericResponse(true, 201, "Permissions assigned successfully", $assignDefaultRolePermission);
+            return $this->genericResponse(true, 201, "Permissions assigned successfully", $assignDefaultRolePermission, "assignDefaultRolePermission", $request);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 500, []);
+            return $this->genericResponse(false, $th->getMessage(), 500, [], "assignDefaultRolePermission", $request);
         }
     }
 

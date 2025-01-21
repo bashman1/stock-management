@@ -10,6 +10,6 @@ class CountryRefController extends Controller
 
     public function getCountries(){
         $countries = CountryRef::where("status", "Active")->get();
-        return $this->genericResponse(true, "Countries fetched Successfully", 200, $countries);
+        return $this->genericResponse(true, "Countries fetched Successfully", 200, $countries, "getCountries", []);
     }
 }

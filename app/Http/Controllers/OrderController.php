@@ -23,7 +23,7 @@ class OrderController extends Controller
     public function createOrder(Request $request){
         $response = $this->newSale($request);
 
-        return $this->genericResponse(true, "Order submitted successfully", 201, $response);
+        return $this->genericResponse(true, "Order submitted successfully", 201, $response, "createOrder", $request);
     }
 
     public function newSale($request){
@@ -261,7 +261,7 @@ class OrderController extends Controller
         $queryString.=" ORDER BY O.id DESC";
 
         $orders = DB::select($queryString);
-        return $this->genericResponse(true, "Collected successfully", 200, $orders);
+        return $this->genericResponse(true, "Collected successfully", 200, $orders, "getOrders", []);
     }
 
     public function getOderDetails($orderId){
@@ -277,7 +277,7 @@ class OrderController extends Controller
         INNER JOIN orders Q ON Q.id = O.order_id
         INNER JOIN users U ON Q.user_id = U.id WHERE  O.order_id = $orderId";
         $orderDetails = DB::select($queryString);
-        return $this->genericResponse(true, "Order details fetched successfully", 200, $orderDetails);
+        return $this->genericResponse(true, "Order details fetched successfully", 200, $orderDetails, "getOderDetails", $orderId);
     }
 
     public function approveBatchSales(Request $request){
@@ -314,7 +314,7 @@ class OrderController extends Controller
         ];
         $response = $this->newSale($newSale);
         DB::commit();
-        return $this->genericResponse(true, "Approved Successfully", 200,  $response);
+        return $this->genericResponse(true, "Approved Successfully", 200,  $response, "approveBatchSales", $request);
     }
 
 

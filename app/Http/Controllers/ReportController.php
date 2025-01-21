@@ -58,7 +58,7 @@ class ReportController extends Controller
         }
         $sqlString .= " ORDER BY P.id DESC";
         $products = DB::select($sqlString);
-        return $this->genericResponse(true, "Product list", 200, $products);
+        return $this->genericResponse(true, "Product list", 200, $products, "getInventoryReport", $request);
     }
 
     /**
@@ -72,7 +72,7 @@ class ReportController extends Controller
 
         $orders = $this->reportService->salesReport($request);
 
-        return $this->genericResponse(true, "Product list", 200, $orders);
+        return $this->genericResponse(true, "Product list", 200, $orders, "getSalesReport", $request);
     }
 
 
@@ -93,7 +93,7 @@ class ReportController extends Controller
         }
         $sqlString .= " ORDER BY H.id DESC";
         $stockHistory = DB::select($sqlString);
-        return $this->genericResponse(true, "Product list", 200, $stockHistory);
+        return $this->genericResponse(true, "Product list", 200, $stockHistory, "getInventoryHistoryReport", $request);
     }
 
     public function getSalesHistoryReport(Request $request)
@@ -117,7 +117,7 @@ class ReportController extends Controller
         $sqlString .= " ORDER BY O.id DESC";
         $salesHistory = DB::select($sqlString);
         //return $this->genericResponse(true, "Product list", 200, ['institution_id'=>$userData->institution_id, 'branch_id'=>$userData->branch_id]);
-        return $this->genericResponse(true, "Product list", 200, $salesHistory);
+        return $this->genericResponse(true, "Product list", 200, $salesHistory, "getSalesHistoryReport", $request);
     }
 
 
@@ -176,7 +176,7 @@ class ReportController extends Controller
 
     public function getItemSalesReport(Request $request){
         $salesReport = $this->getItemSalesData($request);
-        return $this->genericResponse(true, "Sales list", 200, $salesReport);
+        return $this->genericResponse(true, "Sales list", 200, $salesReport, "getItemSalesReport", $request);
     }
 
     public function getItemSalesData($request){

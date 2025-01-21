@@ -24,7 +24,7 @@ class RoleController extends Controller
             $role->created_by = $userData->id;
             $role->created_on =now();
             $role->save();
-            return $this->genericResponse(true, "Role crated successfully", 201, $role);
+            return $this->genericResponse(true, "Role crated successfully", 201, $role, "createRole", $request);
         // } catch (\Exception $th) {
             // return $this->genericResponse(false, "Role creation  Failed", 500, $th);
         // }
@@ -36,7 +36,7 @@ class RoleController extends Controller
             $roles =  Role::orderBy("id", "desc")->get();
             return $this->genericResponse(true, "Roles retrieved successfully", 200, $roles);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, "Role retrieval  Failed", 500, $th);
+            return $this->genericResponse(false, "Role retrieval  Failed", 500, $th, "getAllRoles", []);
         }
     }
 
@@ -53,14 +53,14 @@ class RoleController extends Controller
         $permissions = Permissions::where(["status" => "Active"])->get();
         return $this->genericResponse(true, "Role details", 200, [
             "role" => $role, "rolePermissions" => $rolePermissions, "permissions" => $permissions
-        ]);
+        ], "getRoleById", $id);
     }
 
 
     public function getPermissions(){
         // try {
             $permissions= Permissions::where('status', 'Active')->orderBy('id', 'asc')->get();
-            return $this->genericResponse(true, "Roles retrieved successfully", 200, $permissions);
+            return $this->genericResponse(true, "Roles retrieved successfully", 200, $permissions, "getPermissions", []);
         // } catch (\Throwable $th) {
         //     return $this->genericResponse(false, "Role retrieval  Failed", 500, $th);
         // }
@@ -81,19 +81,19 @@ class RoleController extends Controller
                 $assignRolePermissions =  RolePermission::where(["role_id" => $request->roleId, "permission_id"=> $request->permissionId])->first();
                 $assignRolePermissions->delete();
             }
-            return $this->genericResponse(true, 201, "Permissions assigned successfully", $assignRolePermissions);
+            return $this->genericResponse(true, 201, "Permissions assigned successfully", $assignRolePermissions, "assignRolePermission", $request);
 
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, "Role retrieval  Failed", 500, $th);
+            return $this->genericResponse(false, "Role retrieval  Failed", 500, $th, "assignRolePermission", $request);
         }
     }
 
     public function getInstitutionRoles(Request $request){
         try {
             $roles =  Role::where(['institution_id'=>$request->institutionId, 'status'=>$request->status])->get();
-            return $this->genericResponse(true, "Roles retrieved successfully", 200, $roles);
+            return $this->genericResponse(true, "Roles retrieved successfully", 200, $roles, "getInstitutionRoles", $request);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, "Role retrieval  Failed", 500, $th);
+            return $this->genericResponse(false, "Role retrieval  Failed", 500, $th, "getInstitutionRoles", $request);
         }
     }
 
@@ -102,9 +102,9 @@ class RoleController extends Controller
 
         try {
             $roles =  Role::where(['role_type'=>$request->roleType, 'status'=>$request->status])->get();
-            return $this->genericResponse(true, "Roles retrieved successfully", 200, $roles);
+            return $this->genericResponse(true, "Roles retrieved successfully", 200, $roles, "getRolesByTypes", $request);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, "Role retrieval  Failed", 500, $th);
+            return $this->genericResponse(false, "Role retrieval  Failed", 500, $th, "getRolesByTypes", $request);
         }
 
     }

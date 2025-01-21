@@ -60,7 +60,7 @@ class GlAccountsController extends Controller
             }
             $chartOfAccounts[] = $catData;
         }
-        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $chartOfAccounts);
+        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $chartOfAccounts, "getChartOfAccounts", $request);
     }
 
 
@@ -81,7 +81,7 @@ class GlAccountsController extends Controller
         }
 
         $glCat = DB::table('gl_cats')->select('*')->where($conditions)->get();
-        return $this->genericResponse(true, "Ledger category fetched successfully", 200, $glCat);
+        return $this->genericResponse(true, "Ledger category fetched successfully", 200, $glCat, "getLedgerCat", $request);
     }
 
 
@@ -104,7 +104,7 @@ class GlAccountsController extends Controller
             $conditions['description'] = ["ilike %'" . $request->description . "'%"];
         }
         $glSubCat = DB::table('gl_sub_cats')->select('*')->where($conditions)->get();
-        return $this->genericResponse(true, "Ledger sub category fetched successfully", 200, $glSubCat);
+        return $this->genericResponse(true, "Ledger sub category fetched successfully", 200, $glSubCat, "getLedgerSubCat", $request);
     }
 
     public function getLedgerType(Request $request)
@@ -130,7 +130,7 @@ class GlAccountsController extends Controller
         }
 
         $glType = DB::table('gl_types')->select('*')->where($conditions)->get();
-        return $this->genericResponse(true, "Ledger Types fetched successfully", 200, $glType);
+        return $this->genericResponse(true, "Ledger Types fetched successfully", 200, $glType, "getLedgerType", $request);
     }
 
     public function glAccounts()
@@ -154,7 +154,7 @@ class GlAccountsController extends Controller
         }
         $queryString .= " ORDER BY G.gl_no ASC ";
         $glAccounts = DB::select($queryString);
-        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $glAccounts);
+        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $glAccounts, "glAccounts", []);
     }
 
 
@@ -213,14 +213,14 @@ class GlAccountsController extends Controller
             ->join('gl_balances as K', 'K.acct_no', '=', 'G.acct_no')
             ->where($conditions)->get();
 
-        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $results);
+        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $results, "searchGl", $request);
     }
 
 
     public function getLedgerCategories()
     {
         $cat = GlCat::all();
-        return $this->genericResponse(true, "Chart of accounts categories fetched successfully", 200, $cat);
+        return $this->genericResponse(true, "Chart of accounts categories fetched successfully", 200, $cat, "getLedgerCategories", []);
     }
 
 
@@ -233,14 +233,14 @@ class GlAccountsController extends Controller
         ]);
         $glAcct = GlAccounts::where('acct_no', $request->acctNo)->first();
         if (!isset($glAcct)) {
-            return $this->genericResponse(false, "Ledger account not found", 400, $glAcct);
+            return $this->genericResponse(false, "Ledger account not found", 400, $glAcct, "updateGlAcct", $request);
         }
         $glAcct->description = $request->description;
         $glAcct->updated_by = $userData->id;
         $glAcct->updated_on = now();
         $glAcct->save();
 
-        return $this->genericResponse(true, "Ledger account updated successfully", 201, $glAcct);
+        return $this->genericResponse(true, "Ledger account updated successfully", 201, $glAcct, "updateGlAcct", $request);
     }
 
 
@@ -307,7 +307,7 @@ class GlAccountsController extends Controller
         $debit = $this->postGlDR($debitRequest);
         $credit = $this->postGlCR($creditRequest);
         DB::commit();
-        return $this->genericResponse(true, "Ledger account updated successfully", 201, ['debit' => $debitRequest, 'credit' => $creditRequest]);
+        return $this->genericResponse(true, "Ledger account updated successfully", 201, ['debit' => $debitRequest, 'credit' => $creditRequest], "debitCreditGl", $request);
     }
 
 
@@ -324,10 +324,10 @@ class GlAccountsController extends Controller
             ];
             $subAccount = $this->reUsableCreateGlAcct($postRequest);
             DB::commit();
-            return $this->genericResponse(true, "Ledger account created successfully", 201, $subAccount);
+            return $this->genericResponse(true, "Ledger account created successfully", 201, $subAccount, "createGlAcct", $request);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return $this->genericResponse(false, $th->getMessage(), 500, null);
+            return $this->genericResponse(false, $th->getMessage(), 500, null, "createGlAcct", $request);
         }
     }
 
@@ -369,7 +369,7 @@ class GlAccountsController extends Controller
             $newValue->balance = $balance;
             $tempArray[] = $newValue;
         }
-        return $this->genericResponse(true, "Gl accounts history fetched successfully", 201, $tempArray);
+        return $this->genericResponse(true, "Gl accounts history fetched successfully", 201, $tempArray, "glAcctHistory", $request);
     }
 
     public function glAcctOverView(Request $request)
@@ -394,7 +394,7 @@ class GlAccountsController extends Controller
             }
         }
 
-        return $this->genericResponse(true, "Gl accounts overview fetched successfully", 201, $tempArray);
+        return $this->genericResponse(true, "Gl accounts overview fetched successfully", 201, $tempArray, "glAcctOverView", $request);
     }
 
 
@@ -425,7 +425,7 @@ class GlAccountsController extends Controller
             $queryString .= " ORDER BY B.id ASC ";
             $glBalances = DB::select($queryString);
             $tempArray[] = $total;
-            return $this->genericResponse(true, "Gl accounts balances fetched successfully", 201, $tempArray);
+            return $this->genericResponse(true, "Gl accounts balances fetched successfully", 201, $tempArray, "getGlBalances", $request);
         }
     }
 
@@ -441,9 +441,9 @@ class GlAccountsController extends Controller
                 $conditions['institution_id'] = $userData->institution_id;
             }
             $cntrlParam = CntrlParameter::where($conditions)->get();
-            return $this->genericResponse(true, "Control accounts", 200, $cntrlParam);
+            return $this->genericResponse(true, "Control accounts", 200, $cntrlParam, "getCntrlParamGl", []);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 400, $th);
+            return $this->genericResponse(false, $th->getMessage(), 400, $th, "getCntrlParamGl", []);
         }
     }
 
@@ -578,7 +578,7 @@ class GlAccountsController extends Controller
             'profitBeforeInterestAndTax' => $profitBeforeInterestAndTax,
         ];
 
-        return $this->genericResponse(true, 'total sales got', 200, $response);
+        return $this->genericResponse(true, 'total sales got', 200, $response, "generateIncomeStatement", $request);
         // } catch (\Throwable $th) {
         //     return $this->genericResponse(false, $th->getMessage(), 400, $th);
         // }
@@ -611,9 +611,9 @@ class GlAccountsController extends Controller
                     array_push($tempArray, $value);
                 }
             }
-            return $this->genericResponse(true, 'Balance sheet', 200, $tempArray);
+            return $this->genericResponse(true, 'Balance sheet', 200, $tempArray, "getBalanceSheet", $request);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 400, $th);
+            return $this->genericResponse(false, $th->getMessage(), 400, $th,"getBalanceSheet", $request);
         }
     }
 
@@ -661,7 +661,7 @@ class GlAccountsController extends Controller
             }
         }
 
-        return $this->genericResponse(true, "Cash book fetched successfully", 200, $tempArray);
+        return $this->genericResponse(true, "Cash book fetched successfully", 200, $tempArray, "getCashBook", $request);
     }
 
 
@@ -669,9 +669,9 @@ class GlAccountsController extends Controller
     {
         try {
             $vatPayable = $this->getVATPayable($request);
-            return $this->genericResponse(true, "VAT payable", 200, $vatPayable);
+            return $this->genericResponse(true, "VAT payable", 200, $vatPayable, "getVATPayableReport", $request);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 500, null);
+            return $this->genericResponse(false, $th->getMessage(), 500, $th,"getVATPayableReport", $request);
         }
     }
 
@@ -769,10 +769,10 @@ class GlAccountsController extends Controller
             ]);
 
             DB::commit();
-            return $this->genericResponse(true, "Ledger account created successfully", 201, $subAccount);
+            return $this->genericResponse(true, "Ledger account created successfully", 201, $subAccount, "createSubAccount", $request);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return $this->genericResponse(false, $th->getMessage(), 500, null);
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "createSubAccount", $request);
         }
     }
 
@@ -848,9 +848,9 @@ class GlAccountsController extends Controller
         try {
             $userData = auth()->user();
             $hierarchy = GlHierarchy::where(["institution_id"=> $userData->institution_id, "branch_id"=>$userData->branch_id, "status"=>$request->status])->get();
-            return $this->genericResponse(true, "Chart of accounts hierarchy fetched successfully", 200, $hierarchy);
+            return $this->genericResponse(true, "Chart of accounts hierarchy fetched successfully", 200, $hierarchy, "getGlHierarchy", $request);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 500, null);
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "getGlHierarchy", $request);
         }
     }
 }

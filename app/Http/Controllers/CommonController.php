@@ -142,6 +142,6 @@ class CommonController extends Controller
         }
 
         return $this->genericResponse(true, "Stats", 200, ["count"=>$data, "collectionGraph"=>$collectionGraph, "membersGraph"=>$membersGraph,
-            "productsGraph"=>$productsGraph, "salesGraph"=>$salesGraph, "bestSellingProduct"=>$bestSellingProduct, "productAboutToExpire"=>$productAboutToExpire]);
+            "productsGraph"=>$productsGraph, "salesGraph"=>$salesGraph, "bestSellingProduct"=>$bestSellingProduct, "productAboutToExpire"=>$productAboutToExpire], "getDashboardStats", []);
     }
 }

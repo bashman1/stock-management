@@ -19,7 +19,7 @@ class MemberController extends Controller
         $request->branch_id= $userData->branch_id;
         $request->user_id= $userData->id;
         $member=$this->newMember($request);
-        return $this->genericResponse(true, "Member crated successfully", 201, $member);
+        return $this->genericResponse(true, "Member crated successfully", 201, $member, "createMember", $request);
     }
 
     public function getMembers(){
@@ -30,7 +30,7 @@ class MemberController extends Controller
         }
 
         $members = Member::when($isNotAdmin, function($query) use ($userData) { return $query->where("institution_id", $userData->institution_id );})->orderBy("id", "desc")->get();
-        return $this->genericResponse(true, "Member retrieved successfully", 201, $members);
+        return $this->genericResponse(true, "Member retrieved successfully", 201, $members, "getMembers", []);
     }
 
     public function newMember($request){
@@ -92,7 +92,7 @@ class MemberController extends Controller
                 $newMember->save();
             }
         }
-        return $this->genericResponse(true, "Approved Successfully", 200, []);
+        return $this->genericResponse(true, "Approved Successfully", 200, [], "approveBulkMembers", $request);
     }
 
     public function getMembersByInstitution(Request $request){
@@ -102,6 +102,6 @@ class MemberController extends Controller
             OR M.last_name ILIKE '%".$request->searchKey."%' OR M.other_name ILIKE '%".$request->searchKey."%' OR
             M.alt_member_number ILIKE '%".$request->searchKey."%' OR M.member_number ILIKE '%".$request->searchKey."%')
             AND M.institution_id=$userData->institution_id AND status='".$request->status."' ");
-        return $this->genericResponse(true, "Approved Successfully", 200, $members);
+        return $this->genericResponse(true, "Approved Successfully", 200, $members, "getMembersByInstitution", $request);
     }
 }

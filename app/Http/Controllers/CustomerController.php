@@ -27,13 +27,13 @@ class CustomerController extends Controller
        $customer->created_on = Carbon::now() ;
        $customer->save();
        DB::commit();
-       return $this->genericResponse(true, "Customer created successfully", 201, $customer);
+       return $this->genericResponse(true, "Customer created successfully", 201, $customer, "createCustomer", $request);
    }
 
    public function getCustomers(Request $request)
    {
        $userData = auth()->user();
        $customers = Customer::where('institution_id', $userData->institution_id)->get();
-       return $this->genericResponse(true, "Customers", 200, $customers);
+       return $this->genericResponse(true, "Customers", 200, $customers, "getCustomers", $request);
    }
 }

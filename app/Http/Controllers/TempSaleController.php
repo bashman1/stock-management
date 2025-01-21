@@ -28,7 +28,7 @@ class TempSaleController extends Controller
 
         $path = $request->file;
         $response= Excel::import(new SalesImport($batch->id), $path);
-        return $this->genericResponse(true, "uploaded successfully", 200, $response);
+        return $this->genericResponse(true, "uploaded successfully", 200, $response, "uploadSales", $request);
     }
 
 
@@ -52,7 +52,7 @@ class TempSaleController extends Controller
             ->select('M.*', 'I.name AS institution_name')
             ->get();
 
-        return $this->genericResponse(true, "Member batches", 200, $batches);
+        return $this->genericResponse(true, "Member batches", 200, $batches, "getSalesBatches", $request);
     }
 
     public function getBatchProducts(Request $request){
@@ -63,7 +63,7 @@ class TempSaleController extends Controller
             ->where(["T.status"=>$request->status, "T.batch_id"=>$request->batchId])
             ->get();
 //        $members = TempProduct::where(["status"=>$request->status, "batch_id"=>$request->batchId])->get();
-        return $this->genericResponse(true, "Pending members", 200, $sales);
+        return $this->genericResponse(true, "Pending members", 200, $sales, "getBatchProducts", $request);
     }
 
 }

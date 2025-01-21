@@ -24,7 +24,7 @@ class ProductController extends Controller
     {
         $response = $this->createNewProduct($request);
 
-        return $this->genericResponse(true, $response->message, 201, $response->product);
+        return $this->genericResponse(true, $response->message, 201, $response->product, "createProduct", $request);
     }
 
 
@@ -293,7 +293,7 @@ class ProductController extends Controller
 
             $product= Product::where(['id'=>$request->productId, "institution_id"=>$userData->institution_id])->first();
             if(!isset($product)){
-                return $this->genericResponse(false, "Product not found", 400, $product);
+                return $this->genericResponse(false, "Product not found", 400, $product, "restock", $request);
             }
 
             $stocks =  stock::where(["product_id"=>$request->productId, "institution_id"=>$userData->institution_id, "branch_id"=>$userData->branch_id])->first();
@@ -463,7 +463,7 @@ class ProductController extends Controller
 
             // {"quantity":"4567","min_quantity":"1","max_quantity":"1","measurement_unit_id":9,"purchase_price":"1000","manufactured_date":"2024-06-29T21:00:00.000Z","expiry_date":"2024-06-28T21:00:00.000Z","selling_price":"2000","date":"2020-12-31T21:00:00.000Z"}
             DB::commit();
-            return $this->genericResponse(true, "Product restock successfully", 201, $stocks);
+            return $this->genericResponse(true, "Product restock successfully", 201, $stocks, "restock", $request);
         // } catch (\Throwable $th) {
 
         //     throw  new $th;
@@ -493,7 +493,7 @@ class ProductController extends Controller
         }
         $sqlString .= " ORDER BY P.id DESC";
         $products = DB::select($sqlString);
-        return $this->genericResponse(true, "Product list", 200, $products);
+        return $this->genericResponse(true, "Product list", 200, $products, "getProducts", []);
     }
 
     public function getProductDetails(Request $request)
@@ -542,7 +542,7 @@ class ProductController extends Controller
         $sqlString .= " ORDER BY P.id DESC";
         $product = DB::select($sqlString);
 
-        return $this->genericResponse(true, "Product list", 200, $product);
+        return $this->genericResponse(true, "Product list", 200, $product, "getProductDetails", $request);
     }
 
 
@@ -587,7 +587,7 @@ class ProductController extends Controller
                 $newProduct->save();
             }
         }
-        return $this->genericResponse(true, "Approved Successfully", 200, []);
+        return $this->genericResponse(true, "Approved Successfully", 200, [], "approveBulkProducts", $request);
     }
 
 

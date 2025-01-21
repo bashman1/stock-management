@@ -51,7 +51,7 @@ class UserController extends Controller
             $user->original_branch_id = $request->branch_id;
 
             $user->save();
-            return $this->genericResponse(true, "User created successfully", 201, $user);
+            return $this->genericResponse(true, "User created successfully", 201, $user, "createUser", $request);
         // } catch (\Throwable $th) {
         //     return $this->genericResponse(false, "User creation  Failed", 500, []);
         // }
@@ -66,7 +66,7 @@ class UserController extends Controller
             ]);
 
             if (!auth()->attempt($login_data)) {
-                return $this->genericResponse(false, "Invalid credentials", 404, ["login" => auth()->attempt($login_data)]);
+                return $this->genericResponse(false, "Invalid credentials", 404, ["login" => auth()->attempt($login_data)], "login", $request);
             }
             $userData = auth()->user();
 
@@ -108,7 +108,7 @@ class UserController extends Controller
             $userData->role = $role;
             $userData->permissions = $permissions;
 
-            return $this->genericResponse(true, "Logged in successfully", 200, ["token" => $token, "user_data" => $userData]);
+            return $this->genericResponse(true, "Logged in successfully", 200, ["token" => $token, "user_data" => $userData], "login", $request);
         // } catch (\Exception $e) {
         //     return $this->genericResponse(false, "User creation  Failed", 500, $e->getMessage());
         // }
@@ -134,9 +134,9 @@ class UserController extends Controller
             }
             $queryString.=" ORDER BY U.id DESC ";
             $users = DB::select($queryString);
-            return $this->genericResponse(true, "Users retrieved successfully", 200, $users);
+            return $this->genericResponse(true, "Users retrieved successfully", 200, $users, "getUsers", []);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, "User creation  Failed", 500, []);
+            return $this->genericResponse(false, "User creation  Failed", 500, [], "getUsers", []);
         }
     }
 
@@ -162,17 +162,17 @@ class UserController extends Controller
             }
             $queryString.=" ORDER BY U.id DESC ";
             $users = DB::select($queryString);
-            return $this->genericResponse(true, "Users retrieved successfully", 200, $users);
+            return $this->genericResponse(true, "Users retrieved successfully", 200, $users, "getUserDetails", $request);
 
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, "User details could not be retrieved", 500, []);
+            return $this->genericResponse(false, "User details could not be retrieved", 500, [], "getUserDetails", $request);
         }
     }
 
     public function logOut(){
         $user = auth()->user()->token();
         $user->revoke();
-        return $this->genericResponse(true, "Users logged out successfully", 200, []);
+        return $this->genericResponse(true, "Users logged out successfully", 200, [], "logOut", []);
     }
 
 
@@ -210,10 +210,10 @@ class UserController extends Controller
                 }
             }
             DB::commit();
-            return $this->genericResponse(true, "Users branch assigned successfully", 200, []);
+            return $this->genericResponse(true, "Users branch assigned successfully", 200, [], "assignBranchesToUsers", $request);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return $this->genericResponse(false,  $th->getMessage(), 500,  $th);
+            return $this->genericResponse(false,  $th->getMessage(), 500,  $th, "assignBranchesToUsers", $request);
         }
     }
 
@@ -221,9 +221,9 @@ class UserController extends Controller
         try {
             $userBranches = DB::select("SELECT U.*, B.name FROM user_branches U INNER JOIN branches B ON U.branch_id = B.id WHERE U.user_id = $request->user_id AND  U.status = '$request->status' ");
         //    $userBranches = UserBranch::where(['user_id'=> $request->user_id, 'status'=>$request->status])->get();
-           return $this->genericResponse(true, "Users branch fetched successfully", 200, $userBranches);
+           return $this->genericResponse(true, "Users branch fetched successfully", 200, $userBranches, "getUserBranches", $request);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false,  $th->getMessage(), 500,  $th);
+            return $this->genericResponse(false,  $th->getMessage(), 500,  $th, "getUserBranches", $request);
         }
     }
 
@@ -261,13 +261,13 @@ class UserController extends Controller
                     $user->role = $role;
                     $user->permissions = $permissions;
                 }else{
-                    return $this->genericResponse(false,  "User not found", 404, $user);
+                    return $this->genericResponse(false,  "User not found", 404, $user, "switchBranch", $request);
                 }
             DB::commit();
-            return $this->genericResponse(true, "Branch switched successfully.", 200,  $user);
+            return $this->genericResponse(true, "Branch switched successfully.", 200,  $user, "switchBranch", $request);
         } catch (\Throwable $th) {
             DB::rollBack();
-            return $this->genericResponse(false,  $th->getMessage(), 500,  $th);
+            return $this->genericResponse(false,  $th->getMessage(), 500,  $th, "switchBranch", $request);
         }
     }
 
@@ -278,7 +278,7 @@ class UserController extends Controller
             // Find the user by userId
             $user = User::find($request->userId);
             if (!$user) {
-                return $this->genericResponse(false, "User not found", 404, null);
+                return $this->genericResponse(false, "User not found", 404, null, "resetPassword", $request);
             }
 
             // Check if the provided old password matches the hashed password in the database
@@ -288,7 +288,7 @@ class UserController extends Controller
 
             // Ensure new password and confirm password match
             if ($request->newPassword !== $request->confirmPassword) {
-                return $this->genericResponse(false, "New password and confirm password do not match", 401, null);
+                return $this->genericResponse(false, "New password and confirm password do not match", 401, null , "resetPassword", $request);
             }
 
             // Update the user's password
@@ -296,11 +296,11 @@ class UserController extends Controller
             $user->save();
 
             DB::commit();
-            return $this->genericResponse(true, "Password reset successfully.", 200, $user);
+            return $this->genericResponse(true, "Password reset successfully.", 200, $user,  "resetPassword", $request);
 
         } catch (\Throwable $th) {
             DB::rollBack();
-            return $this->genericResponse(false, $th->getMessage(), 500, $th);
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "resetPassword", $request);
         }
     }
 

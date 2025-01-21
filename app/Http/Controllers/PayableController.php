@@ -31,6 +31,6 @@ class PayableController extends Controller
         }
         $queryString .= " ORDER BY P.id DESC";
         $payable = DB::select($queryString);
-        return $this->genericResponse(true, "Receivables fetched successfully", 200, $payable);
+        return $this->genericResponse(true, "Receivables fetched successfully", 200, $payable, "getPayable", $request);
     }
 }
