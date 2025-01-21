@@ -63,8 +63,8 @@ class Controller extends BaseController
     {
         Log::info(Request::ip());
         $log = ["action"=>$action,
-        "ip"=>Request::ip(),"http_code"=> $code, "request"=>$request, "response"=>$data,
-        "return_status"=>$status,"return_message"=>$message, "created_on"=>now()];
+        "ip"=>Request::ip(),"http_code"=> $code, "request"=>$request ?$request->all(): $request, "response"=>$data,
+        "return_status"=>$status,"return_message"=>$message, "user_id"=> auth()->user()?auth()->user()->id:null, "institution_id"=>auth()->user()?auth()->user()->institution_id:null, "branch_id"=>auth()->user()?auth()->user()->branch_id:null, "created_on"=>now()];
         $this->setLogs($log);
         return response()->json([
             "status" => $status,

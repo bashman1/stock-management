@@ -21,6 +21,9 @@ return new class extends Migration
             $table->json("request")->nullable();
             $table->json("response")->nullable();
             $table->text("status")->default("Success");
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedBigInteger('institution_id')->nullable();
+            $table->unsignedBigInteger('branch_id')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_on')->nullable();

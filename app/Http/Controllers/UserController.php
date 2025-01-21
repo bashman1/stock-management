@@ -66,7 +66,7 @@ class UserController extends Controller
             ]);
 
             if (!auth()->attempt($login_data)) {
-                return $this->genericResponse(false, "Invalid credentials", 404, ["login" => auth()->attempt($login_data)], "login", $request);
+                return $this->genericResponse(false, "Invalid credentials", 404, ["login" => auth()->attempt($login_data)], "login", $request->all());
             }
             $userData = auth()->user();
 

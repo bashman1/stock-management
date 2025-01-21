@@ -20,7 +20,10 @@ class SystemLog extends Model
         'updated_on',
         'http_code',
         'return_message',
-        'return_status'
+        'return_status',
+        'user_id',
+        'institution_id',
+        'branch_id',
     ];
 
     protected $casts = [
