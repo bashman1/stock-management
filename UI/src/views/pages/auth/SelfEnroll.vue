@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import CommonService from '@/service/CommonService';
 import { useToast } from 'primevue/usetoast';
@@ -189,7 +189,7 @@ onMounted(() => {
                     <h5>Institution Basic Info</h5>
                 </div>
 
-                <div class="field col-12 md:col-4">
+                <div class="field col-12 md:col-6">
                     <span class="p-float-label">
                         <InputText type="text" id="instName" v-model="name" @blur="onInputBlur(name, 'name')"
                             :class="{ 'p-invalid': formError?.name }" /> <!-- class="p-invalid"-->
@@ -197,39 +197,39 @@ onMounted(() => {
                     </span>
                 </div>
 
-                <div class="field col-12 md:col-4">
+                <div class="field col-12 md:col-6">
                     <span class="p-float-label">
                         <Dropdown id="instType" @blur="onInputBlur(type, 'type')" :options="instType" v-model="type"
                             :class="{ 'p-invalid': formError?.type }" optionLabel="name"></Dropdown>
                         <label for="instType">Institution Type</label>
                     </span>
                 </div>
-                <div class="field col-12 md:col-4">
+                <!-- <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <Calendar id="instStart" v-model="startDate"></Calendar>
                         <label for="instStart">Start Date</label>
                     </span>
-                </div>
+                </div> -->
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
                         <Textarea id="textarea" rows="3" cols="30" v-model="address"></Textarea>
                         <label for="textarea">Address</label>
                     </span>
                 </div>
-                <div class="field col-12 md:col-3">
+                <div class="field col-12 md:col-6">
                     <span class="p-float-label">
                         <Dropdown id="instCity" :options="cities" v-model="city" @blur="onInputBlur(city, 'city')"
                             :class="{ 'p-invalid': formError?.city }" optionLabel="name"></Dropdown>
                         <label for="instCity">City</label>
                     </span>
                 </div>
-                <div class="field col-12 md:col-3">
+                <!-- <div class="field col-12 md:col-3">
                     <span class="p-float-label">
                         <InputText type="text" id="instStreet" v-model="street" />
                         <label for="instStreet">Street</label>
                     </span>
-                </div>
-                <div class="field col-12 md:col-3">
+                </div> -->
+                <div class="field col-12 md:col-6">
                     <span class="p-float-label">
                         <InputText type="text" id="instPOBox" v-model="pOBox" />
                         <label for="instPOBox">P.O Box</label>
@@ -243,12 +243,12 @@ onMounted(() => {
                         <label for="instCity">Tax Config</label>
                     </span>
                 </div> -->
-                <div class="field col-12 md:col-3" v-if="taxConfig?.value">
+                <!-- <div class="field col-12 md:col-3" v-if="taxConfig?.value">
                     <span class="p-float-label">
                         <InputText type="text" id="tin" v-model="tin" />
                         <label for="instPOBox">TIN</label>
                     </span>
-                </div>
+                </div> -->
 
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
@@ -257,44 +257,43 @@ onMounted(() => {
                     </span>
                 </div>
 
-                <div class="col-12 md:col-12">
+                <!-- <div class="col-12 md:col-12">
                     <h5>Institution Contact Info</h5>
-                </div>
+                </div> -->
 
-                <div class="field col-12 md:col-3">
+                <!-- <div class="field col-12 md:col-3">
                     <span class="p-float-label">
                         <InputText type="text" id="contactName" v-model="contactName"
                             @blur="onInputBlur(contactName, 'contactName')"
                             :class="{ 'p-invalid': formError?.contactName }" />
                         <label for="contactName">Contact Person Name</label>
                     </span>
-                </div>
+                </div> -->
 
-                <div class="field col-12 md:col-3">
+                <!-- <div class="field col-12 md:col-3">
                     <span class="p-float-label">
-                        <!-- <InputText type="text" id="contactNumber" v-model="contactNumber" /> -->
                         <InputText id="basic" v-model="contactNumber"
                             @blur="onInputBlur(contactNumber, 'contactNumber')"
                             :class="{ 'p-invalid': formError?.contactNumber }" />
                         <label for="contactNumber">Phone Number</label>
                     </span>
-                </div>
+                </div> -->
 
-                <div class="field col-12 md:col-3">
+                <!-- <div class="field col-12 md:col-3">
                     <span class="p-float-label">
                         <InputText type="text" id="contactEmail" v-model="contactEmail"
                             @blur="onInputBlur(contactEmail, 'contactEmail')"
                             :class="{ 'p-invalid': formError?.contactEmail }" />
                         <label for="contactEmail">Email</label>
                     </span>
-                </div>
+                </div> -->
 
-                <div class="field col-12 md:col-3">
+                <!-- <div class="field col-12 md:col-3">
                     <span class="p-float-label">
                         <InputText type="text" id="contactWeb" v-model="contactWeb" />
                         <label for="contactWeb">Website</label>
                     </span>
-                </div>
+                </div> -->
 
 
                 <div class="field col-12 md:col-12">
@@ -314,7 +313,7 @@ onMounted(() => {
                     <span class="p-float-label">
                         <InputText type="text" id="acctName" v-model="acctName"
                             @blur="onInputBlur(acctName, 'acctName')" :class="{ 'p-invalid': formError?.acctName }" />
-                        <label for="acctName">Account Name</label>
+                        <label for="acctName">Account Title</label>
                     </span>
                 </div>
 
@@ -354,7 +353,7 @@ onMounted(() => {
                     </span>
                 </div>
 
-                <div class="field col-12 md:col-4">
+                <div class="field col-12 md:col-6">
                     <span class="p-float-label">
                         <InputText type="text" id="email" v-model="email" @blur="onInputBlur(email, 'email')"
                             :class="{ 'p-invalid': formError?.email }" /> <!-- class="p-invalid"-->
@@ -362,7 +361,16 @@ onMounted(() => {
                     </span>
                 </div>
 
-                 <div  class="field col-12 md:col-4">
+                <div class="field col-12 md:col-6">
+                    <span class="p-float-label">
+                        <InputText id="basic" v-model="contactNumber"
+                            @blur="onInputBlur(contactNumber, 'contactNumber')"
+                            :class="{ 'p-invalid': formError?.contactNumber }" />
+                        <label for="contactNumber">Phone Number</label>
+                    </span>
+                </div>
+
+                 <div  class="field col-12 md:col-6">
                     <span class="p-float-label">
                         <Password type="text" id="password" v-model="password" @blur="onInputBlur(password, 'password')"
                             :class="{ 'p-invalid': formError?.password }" />
@@ -370,7 +378,7 @@ onMounted(() => {
                     </span>
                 </div>
 
-                <div  class="field col-12 md:col-4">
+                <div  class="field col-12 md:col-6">
                     <span class="p-float-label">
                         <Password type="text" id="confirmPassword" v-model="confirmPassword"
                             @blur="onInputBlur(confirmPassword, 'confirmPassword')"
