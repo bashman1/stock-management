@@ -21,7 +21,7 @@ import { ref, onMounted } from 'vue';
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.6); /* Black with 60% opacity */
+  background-color: rgba(0, 0, 0, 0.3); /* Black with 60% opacity */
   display: flex;
   justify-content: center; /* Horizontally center */
   align-items: center; /* Vertically center */
