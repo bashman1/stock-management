@@ -487,9 +487,10 @@ class ProductController extends Controller
             INNER JOIN stocks E ON E.product_id = P.id
             INNER JOIN branches B ON B.id = E.branch_id
             INNER JOIN institutions I ON I.id =P.institution_id
-            LEFT JOIN measurement_units Y ON Y.id = P.secondary_measurement_unit_id ";
+            LEFT JOIN measurement_units Y ON Y.id = P.secondary_measurement_unit_id
+            WHERE P.status = 'Active'";
         if ($isNotAdmin) {
-            $sqlString .= " WHERE E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
+            $sqlString .= " AND E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
         }
         $sqlString .= " ORDER BY P.id DESC";
         $products = DB::select($sqlString);
@@ -609,7 +610,26 @@ class ProductController extends Controller
 
         }
 
+    }
 
+    public function archiveProduct(Request $request){
+        try {
+            $message = '';
+            if($request->status == 'Archived'){
+                $message = 'product archived successfully';
+            }else if ($request->status == 'Active'){
+                $message = 'product activated successfully';
+            }
+            $product = Product::find($request->productId);
+            if(!isset($product)){
+                return $this->genericResponse(false, 'Product not found', 404, [], "archiveProduct", $request);
+            }
+            $product->status = $request->status;
+            $product->save();
+            return $this->genericResponse(true, $message, 201, $product, "archiveProduct", $request);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "archiveProduct", $request);
+        }
     }
 
 }

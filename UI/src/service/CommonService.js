@@ -1,7 +1,9 @@
+import { actions, state } from '../../store';
+
 export default class CommonService {
     //  baseUrl = "http://localhost:8000/api/";
-    baseUrl = "https://prod.smartcollect.co.ug/api/";   //prod environment
-    // baseUrl = "https://test.smartcollect.co.ug/api/";   //test environment
+    // baseUrl = "https://prod.smartcollect.co.ug/api/";   //prod environment
+    baseUrl = "https://test.smartcollect.co.ug/api/";   //test environment
 //    baseUrl = "../api/";
 
     // loggedIn = this.checkingAuthentication();
@@ -46,6 +48,7 @@ export default class CommonService {
      * @author Bash
      */
     postToServer = (url, method, postData) => {
+        actions.setLoader(true)
         return fetch(url, {
             method: method,
             headers: {
@@ -58,9 +61,11 @@ export default class CommonService {
                 return res.json();
             })
             .then(json => {
+                actions.setLoader(false);
                 return json;
             })
             .catch(err => {
+                actions.setLoader(false);
                 console.log(err);
             });
     };
@@ -74,6 +79,7 @@ export default class CommonService {
      * @author Bash
      */
     postToServerWithToken = (url, method, postData) => {
+        actions.setLoader(true)
         return fetch(url, {
             method: method,
             headers: {
@@ -87,14 +93,17 @@ export default class CommonService {
                 return res.json();
             })
             .then(json => {
+                actions.setLoader(false);
                 return json;
             })
             .catch(err => {
+                actions.setLoader(false);
                 console.log(err);
             });
     };
 
     getFileFromTheServer = (url, method, postData) => {
+        actions.setLoader(true)
         return fetch(url, {
             method: method,
             headers: {
@@ -110,10 +119,11 @@ export default class CommonService {
                 return res.blob();
             })
             .then(blob => {
-
+                actions.setLoader(false);
                 return blob;
             })
             .catch(err => {
+                actions.setLoader(false);
                 console.log(err);
             });
     };
@@ -150,6 +160,7 @@ export default class CommonService {
 
     postFormDataToServerWithToken = (url, method, formData) => {
         console.log(formData)
+        actions.setLoader(true)
         return new Promise((resolve, reject) => {
             fetch(url, {
                 method: 'post',
@@ -167,12 +178,15 @@ export default class CommonService {
                         throw new Error('Network response was not ok');
                     }
                     // Resolve with the response data.
+
                     return response.json();
                 })
                 .then((data) => {
+                    actions.setLoader(false);
                     resolve(data);
                 })
                 .catch((error) => {
+                    actions.setLoader(false);
                     reject(error);
                 });
         });
@@ -188,6 +202,7 @@ export default class CommonService {
    * @author Bash
    */
     getFromServer = (url, method) => {
+        actions.setLoader(true)
         return fetch(url, {
             method: method,
             headers: {
@@ -199,9 +214,11 @@ export default class CommonService {
                 return res.json();
             })
             .then(json => {
+                actions.setLoader(false);
                 return json;
             })
             .catch(err => {
+                actions.setLoader(false);
                 console.log(err);
             });
     };
@@ -214,6 +231,7 @@ export default class CommonService {
      * @author Bash
      */
     getFromServerWithToken = (url, method) => {
+        actions.setLoader(true)
         return fetch(url, {
             method: method,
             headers: {
@@ -226,9 +244,11 @@ export default class CommonService {
                 return res.json();
             })
             .then(json => {
+                actions.setLoader(false);
                 return json;
             })
             .catch(err => {
+                actions.setLoader(false);
                 console.log(err);
             });
     };
@@ -299,6 +319,7 @@ export default class CommonService {
         // }
         const formData = new FormData();
         formData.append('file', image);
+        actions.setLoader(true)
         try {
             const response = await fetch(this.baseUrl + "" + url, {
                 method: 'POST',
@@ -310,10 +331,12 @@ export default class CommonService {
             if (!response.ok) {
                 throw new Error('Upload failed');
             }
+            actions.setLoader(false);
             const data = await response.json();
             return data
             // console.log(data.message);
         } catch (error) {
+            actions.setLoader(false);
             console.error(error.message);
         }
     }
@@ -561,7 +584,6 @@ export default class CommonService {
                     word = tens[Math.floor(tempNumber / (10 * Math.pow(1000, i)))] + '-' + first[Math.floor(tempNumber / Math.pow(1000, i)) % 10] + mad[i] + ' ' + word;
                 }
             }
-
             tempNumber = number % (Math.pow(1000, i + 1));
             if (Math.floor(tempNumber / (100 * Math.pow(1000, i))) !== 0) word = first[Math.floor(tempNumber / (100 * Math.pow(1000, i)))] + 'hunderd ' + word;
         }

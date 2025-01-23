@@ -61,7 +61,6 @@ class Controller extends BaseController
      */
     public function genericResponse($status, $message, $code, $data, $action=null, $request=null)
     {
-        Log::info(Request::ip());
 
         $log = ["action"=>$action,
         "ip"=>Request::ip(),"http_code"=> $code, "request"=>$request instanceof Request ? $request->all(): $request, "response"=>$data,

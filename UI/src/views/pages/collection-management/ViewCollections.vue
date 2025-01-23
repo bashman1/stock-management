@@ -273,9 +273,6 @@ onMounted(() => {
                     <div class="item-price">{{ receipt?.created_at }}</div>
                 </div>
 
-
-
-
                 <p class="thank-you">Thank you for saving with {{ receipt?.institution_name }}</p>
                 <p class="thank-you">Have a great day.</p>
             </div>
