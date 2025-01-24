@@ -31,8 +31,10 @@ use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\MailSender;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Request as IpRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Models\User;
 
 // use
 
@@ -63,7 +65,7 @@ class Controller extends BaseController
     {
 
         $log = ["action"=>$action,
-        "ip"=>Request::ip(),"http_code"=> $code, "request"=>$request instanceof Request ? $request->all(): $request, "response"=>$data,
+        "ip"=>IpRequest::ip(),"http_code"=> $code, "request"=>$request instanceof Request ? $request->all(): $request, "response"=>$data,
         "return_status"=>$status,"return_message"=>$message, "user_id"=> auth()->user()?auth()->user()->id:null, "institution_id"=>auth()->user()?auth()->user()->institution_id:null, "branch_id"=>auth()->user()?auth()->user()->branch_id:null, "created_on"=>now()];
         $this->setLogs($log);
 
@@ -254,7 +256,7 @@ class Controller extends BaseController
      * @return void
      * @author bsh <email>
      */
-    public function createBranchGlAccounts($instId, $branchCd, $branchId): string
+    public function createBranchGlAccounts($instId, $branchCd, $branchId)
     {
         DB::beginTransaction();
         $glTypes = GlAcctBk::all();
@@ -897,6 +899,8 @@ class Controller extends BaseController
     {
         try {
             DB::beginTransaction();
+            $index = 0;
+            $userRole = null;
             $defaultRole = DefaultRole::where('status', "Active")->get();
             foreach ($defaultRole as $value) {
                 $role = Role::create([
@@ -909,6 +913,10 @@ class Controller extends BaseController
                     // "created_by"=> auth()->user()->id,
                     "created_on" => Carbon::now(),
                 ]);
+
+                if($index == 0){
+                    $userRole = $role;
+                }
 
                 $defaultRolePermissions = DefaultRolePermission::where("role_id", $value["id"])->get();
 
@@ -923,7 +931,7 @@ class Controller extends BaseController
             }
 
             DB::commit();
-            return $defaultRole;
+            return $userRole;
         } catch (\Throwable $th) {
             DB::rollBack();
             throw $th;
@@ -954,5 +962,42 @@ class Controller extends BaseController
      */
     public function setLogs($log){
        return SystemLog::create($log);
+    }
+
+
+    public function newUser($request){
+        $user = null;
+        if(isset($request->id)){
+            $user = User::find($request->id);
+            $user->updated_at = Carbon::now();
+        }else{
+            $user = new User();
+            $user->created_by = 1;
+            $user->created_on = now();
+            $user->password = bcrypt($request->password);
+        }
+
+        $user->first_name = $request->first_name;
+        $user->last_name = $request->last_name;
+        $user->other_name = $request->other_name;
+        $user->email = $request->email;
+        $user->phone_number = $request->phone_number;
+        $user->gender = $request->gender;
+        $user->date_of_birth = $request->date_of_birth;
+        $user->address = $request->address;
+        $user->city_id = $request->city_id;
+        $user->status = $request->status;
+        $user->street = $request->street;
+        $user->p_o_box = $request->p_o_box;
+        $user->description = $request->description;
+        $user->role_id =  $request->role_id;
+        $user->user_type = $request->user_type;
+        $user->user_category =  $request->user_category;
+        $user->institution_id = $request->institution_id;
+        $user->branch_id =  $request->branch_id;
+        $user->original_branch_id = $request->branch_id;
+
+        $user->save();
+        return $user;
     }
 }

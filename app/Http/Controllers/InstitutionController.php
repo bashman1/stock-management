@@ -277,7 +277,7 @@ class InstitutionController extends Controller
         $myArray = array();
         foreach ($branches as $value) {
             $branch=Branch::find($value["id"]);
-            $results=$this->createBranchGlAccounts($value['institution_id'],$value['code'],$value['id']);
+            $results = $this->createBranchGlAccounts($value['institution_id'],$value['code'],$value['id']);
             array_push($myArray, $results);
         }
         return $this->genericResponse(true, "Branch codes created successfully", 200, $myArray, "generateMissingLedgers", []);
@@ -405,7 +405,16 @@ class InstitutionController extends Controller
                 $this->createBranchGlAccounts($institution->id,$branch->code,$branch->id);
                 $this->setControlParam($institution->id);
 
-                $this->createInstitutionDefaultRole($institution->id);
+                $role = $this->createInstitutionDefaultRole($institution->id);
+                // $request->role_id = $role->id;
+                $request->merge(['role_id' => $role->id]);
+                $request->merge(['institution_id' => $institution->id]);
+                $request->merge(['branch_id' => $branch->id]);
+                $request->merge(['original_branch_id' => $branch->id]);
+                $request->merge(['user_type' => 'Institution']);
+                $request->merge(['user_category' => 'InstitutionAdmin']);
+
+                $this->newUser($request);
             // }
             DB::commit();
             return $this->genericResponse(true, "institution created successfully", 201, $institution, "institutionSelfRegistration", $request);

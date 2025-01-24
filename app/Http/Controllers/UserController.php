@@ -19,38 +19,38 @@ class UserController extends Controller
 
     public function createUser(Request $request){
         // try {
-            $user = null;
-            if(isset($request->id)){
-                $user = User::find($request->id);
-                $user->updated_at = Carbon::now();
-            }else{
-                $user = new User();
-                $user->created_by = 1;
-                $user->created_on = now();
-                $user->password = bcrypt($request->password);
-            }
+            $user = $this->newUser($request);
+            // if(isset($request->id)){
+            //     $user = User::find($request->id);
+            //     $user->updated_at = Carbon::now();
+            // }else{
+            //     $user = new User();
+            //     $user->created_by = 1;
+            //     $user->created_on = now();
+            //     $user->password = bcrypt($request->password);
+            // }
 
-            $user->first_name = $request->first_name;
-            $user->last_name = $request->last_name;
-            $user->other_name = $request->other_name;
-            $user->email = $request->email;
-            $user->phone_number = $request->phone_number;
-            $user->gender = $request->gender;
-            $user->date_of_birth = $request->date_of_birth;
-            $user->address = $request->address;
-            $user->city_id = $request->city_id;
-            $user->status = $request->status;
-            $user->street = $request->street;
-            $user->p_o_box = $request->p_o_box;
-            $user->description = $request->description;
-            $user->role_id =  $request->role_id;
-            $user->user_type = $request->user_type;
-            $user->user_category =  $request->user_category;
-            $user->institution_id = $request->institution_id;
-            $user->branch_id =  $request->branch_id;
-            $user->original_branch_id = $request->branch_id;
+            // $user->first_name = $request->first_name;
+            // $user->last_name = $request->last_name;
+            // $user->other_name = $request->other_name;
+            // $user->email = $request->email;
+            // $user->phone_number = $request->phone_number;
+            // $user->gender = $request->gender;
+            // $user->date_of_birth = $request->date_of_birth;
+            // $user->address = $request->address;
+            // $user->city_id = $request->city_id;
+            // $user->status = $request->status;
+            // $user->street = $request->street;
+            // $user->p_o_box = $request->p_o_box;
+            // $user->description = $request->description;
+            // $user->role_id =  $request->role_id;
+            // $user->user_type = $request->user_type;
+            // $user->user_category =  $request->user_category;
+            // $user->institution_id = $request->institution_id;
+            // $user->branch_id =  $request->branch_id;
+            // $user->original_branch_id = $request->branch_id;
 
-            $user->save();
+            // $user->save();
             return $this->genericResponse(true, "User created successfully", 201, $user, "createUser", $request);
         // } catch (\Throwable $th) {
         //     return $this->genericResponse(false, "User creation  Failed", 500, []);
@@ -70,9 +70,17 @@ class UserController extends Controller
             }
             $userData = auth()->user();
 
+            if ($userData->status != 'Active'){
+                return $this->genericResponse(false, "User account not activated", 404, ["login" => auth()->attempt($login_data)], "login", $request->all());
+            }
+
             if (isset($userData->institution_id)){
                 $institution = Institution::find($userData->institution_id);
                 $branch = Branch::find($userData->branch_id);
+
+                if ($institution->status != 'Active'){
+                    return $this->genericResponse(false, "Business not activated", 404, ["login" => auth()->attempt($login_data)], "login", $request->all());
+                }
 
                 $userData->institution_name=$institution->name;
                 $userData->branch_name=$branch->name;

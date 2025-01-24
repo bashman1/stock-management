@@ -98,9 +98,9 @@ const onSubmit = () => {
     formError.value.name = commonService.validateFormField(name.value);
     formError.value.type = commonService.validateFormField(type.value);
     formError.value.city = commonService.validateFormField(city.value);
-    formError.value.contactName = commonService.validateFormField(contactName.value);
+    // formError.value.contactName = commonService.validateFormField(contactName.value);
     formError.value.contactNumber = commonService.validateFormField(contactNumber.value);
-    formError.value.contactEmail = commonService.validateFormField(contactEmail.value);
+    // formError.value.contactEmail = commonService.validateFormField(contactEmail.value);
     formError.value.bankName = commonService.validateFormField(bankName.value);
     formError.value.acctName = commonService.validateFormField(acctName.value);
     formError.value.acctNumber = commonService.validateFormField(acctNumber.value);
@@ -128,16 +128,17 @@ const onSubmit = () => {
         street: street?.value,
         p_o_box: pOBox?.value,
         description: description?.value,
-        contact_name: contactName?.value,
+        contact_name: fName.value+' '+lName.value+' '+oName.value,
         contact_number: contactNumber?.value,
-        contact_email: contactEmail?.value,
+        // contact_email: contactEmail?.value,
+        contact_email: email?.value,
         contact_web: contactWeb?.value,
         bank_id: bankName?.value?.id,
         acct_name: acctName?.value,
         acct_no: acctNumber?.value,
         tax_config: taxConfig?.value?.value,
         tin: taxConfig.value.name,
-        status: 'Active',
+        status: 'Pending',
         first_name: fName.value,
         last_name: lName.value,
         other_name: oName.value,
