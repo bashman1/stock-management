@@ -16,9 +16,9 @@
 {{-- Virce Business Support<br/> --}}
 {{-- For any further details, contact us on 0778773698 or email us on customerservice@virce.co.ug --}}
 {{-- </p> --}}
-<p>Copyright © {{date("Y")}} All rights Reserved. Smart Collect is a product of Smart Collect Corporation</p>
+{{-- <p>Copyright © {{date("Y")}} All rights Reserved. Smart Collect is a product of Smart Collect Corporation</p> --}}
+<p>Thank you for choosing Smart Collect. We’re looking forward to helping your business grow!</p>
 
-
-Thanks,<br>
+Best regards,<br>
 {{ config('app.name') }}
 @endcomponent

@@ -29,7 +29,7 @@ class ScheduledTaskService
         $pendingMails = OutGoingMail::where('status', 'Active')
             ->where('sent', false)
             ->where(function ($query) {
-                $query->where('retry_after', '>=', now())
+                $query->where('retry_after', '<=', now())
                     ->orWhereNull('retry_after');
             })
             ->where('failure_count', '<', 6)  // Ensure failure count is less than 5
@@ -57,10 +57,10 @@ class ScheduledTaskService
                     // If failed, schedule for retry later
                     $mail->update([
                         'failed_at' => Carbon::now(),
-                        'retry_after' => ($mail->failure_count + 1 >= 3) ? Carbon::now()->addMinutes(10):$mail->retry_after,
+                        'retry_after' => ($mail->failure_count + 1 >= 3) ? Carbon::now()->addMinutes(30):$mail->retry_after,
                         'failure_reason' => $status['error'], // Add specific failure reason if available
                         'failure_count' => $mail->failure_count + 1,
-                        'status' => ($mail->failure_count + 1 >= 5) ? 'Failed' : $mail->status, // Set status to 'Failed' if failure_count is 5 or more
+                        // 'status' => ($mail->failure_count + 1 >= 5) ? 'Failed' : $mail->status, // Set status to 'Failed' if failure_count is 5 or more
                     ]);
                     Log::error("Mail failed to send to: " . implode(', ', $mail->to));
                 }

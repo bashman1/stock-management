@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\OutGoingMail;
 use App\Models\Role;
 use App\Models\SystemLog;
 use App\Services\MailSenderService;
@@ -952,7 +953,10 @@ class Controller extends BaseController
         // "to"=>["wamulabash1@gmail.com"], "cc"=>[], "bcc"=>[],
         // "attachment"=>$body, "created_on"=>Carbon::now(), "attachment_name"=>"Testing Mail Attachment"];
 
-        $this->mailSenderService->setOutGoingMails($postData);
+        // $this->mailSenderService->setOutGoingMails($postData);
+        DB::beginTransaction();
+        $outGoingMails = OutGoingMail::create($postData);
+        DB::commit();
     }
 
     /**
@@ -1000,4 +1004,71 @@ class Controller extends BaseController
         $user->save();
         return $user;
     }
+
+
+    /**
+     * Summary of sendAdminsNotification
+     * @param mixed $mailAndSubject
+     * @return void
+     */
+    public function sendAdminsNotification(object $mailAndSubject): void
+{
+    try {
+        // Fetch active admin emails
+        $receivers = User::where('user_type', 'Admin')
+            ->where('status', 'Active')
+            ->pluck('email')
+            ->toArray();
+
+        // Prepare the email payload
+        $sendMail = [
+            "subject" => $mailAndSubject->subject ?? 'No Subject',
+            "body" => $mailAndSubject->body ?? 'No Body',
+            "has_attachment" => false,
+            "to" => $receivers,
+            "cc" => [],
+            "bcc" => [],
+            "attachment" => null,
+            "created_on" => Carbon::now(),
+            "attachment_name" => null,
+        ];
+
+        // Send the email
+        $this->sendMail($sendMail);
+    } catch (\Throwable $th) {
+        // Log the exception for debugging
+        Log::error('Failed to send admin notifications', [
+            'error' => $th->getMessage(),
+            'trace' => $th->getTraceAsString(),
+        ]);
+
+        // Optionally re-throw the exception
+        throw $th;
+    }
+}
+
+    // public function sendAdminsNotification($mailAndSubject){
+    //     try {
+    //         $users = User::where(['user_type'=>"Admin", 'status'=>'Active'])->get();
+    //         $receivers = [];
+    //         foreach ($users as $key => $value) {
+    //             array_push($receivers, $value['email']);
+    //         }
+    //         $sendMail = [
+    //             "subject" => $mailAndSubject->subject,
+    //             "body" => $mailAndSubject->body,
+    //             "has_attachment" => false,
+    //             "to" => $receivers,
+    //             "cc" => [],
+    //             "bcc" => [],
+    //             "attachment" => null,
+    //             "created_on" => Carbon::now(),
+    //             "attachment_name" => null
+    //         ];
+    //         $this->setOutGoingMails($sendMail);
+    //     } catch (\Throwable $th) {
+    //         throw $th;
+    //     }
+    // }
+
 }
