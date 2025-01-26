@@ -969,7 +969,7 @@ class Controller extends BaseController
 
     public function newUser($request){
         $user = null;
-        if(isset($request->id)){
+        if($request && isset($request->id) && !empty($request->id)){
             $user = User::find($request->id);
             $user->updated_at = Carbon::now();
         }else{
