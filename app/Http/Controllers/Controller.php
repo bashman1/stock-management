@@ -920,7 +920,6 @@ class Controller extends BaseController
                 }
 
                 $defaultRolePermissions = DefaultRolePermission::where("role_id", $value["id"])->get();
-
                 foreach ($defaultRolePermissions as $defaultRolePermission) {
                     $rolePermission = RolePermission::create([
                         "role_id" => $defaultRolePermission["role_id"],
@@ -930,7 +929,6 @@ class Controller extends BaseController
                     ]);
                 }
             }
-
             DB::commit();
             return $userRole;
         } catch (\Throwable $th) {
@@ -1032,7 +1030,6 @@ class Controller extends BaseController
             "created_on" => Carbon::now(),
             "attachment_name" => null,
         ];
-
         // Send the email
         $this->sendMail($sendMail);
     } catch (\Throwable $th) {
@@ -1041,34 +1038,10 @@ class Controller extends BaseController
             'error' => $th->getMessage(),
             'trace' => $th->getTraceAsString(),
         ]);
-
         // Optionally re-throw the exception
         throw $th;
     }
 }
 
-    // public function sendAdminsNotification($mailAndSubject){
-    //     try {
-    //         $users = User::where(['user_type'=>"Admin", 'status'=>'Active'])->get();
-    //         $receivers = [];
-    //         foreach ($users as $key => $value) {
-    //             array_push($receivers, $value['email']);
-    //         }
-    //         $sendMail = [
-    //             "subject" => $mailAndSubject->subject,
-    //             "body" => $mailAndSubject->body,
-    //             "has_attachment" => false,
-    //             "to" => $receivers,
-    //             "cc" => [],
-    //             "bcc" => [],
-    //             "attachment" => null,
-    //             "created_on" => Carbon::now(),
-    //             "attachment_name" => null
-    //         ];
-    //         $this->setOutGoingMails($sendMail);
-    //     } catch (\Throwable $th) {
-    //         throw $th;
-    //     }
-    // }
 
 }
