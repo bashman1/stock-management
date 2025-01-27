@@ -40,7 +40,12 @@ class ScheduledTaskService
             ->get();
         // Loop through each pending mail and send
         foreach ($pendingMails as $mail) {
-            Log::info("Sending mail to: " . implode(', ', $mail->to)); // Log mail recipient(s)
+            // Log::info("Sending mail to: " . implode(', ', $mail->to)); // Log mail recipient(s)
+            if (is_array($mail->to)) {
+                Log::info("Sending mail to: " . implode(', ', $mail->to));
+            } else {
+                Log::info("Sending mail to: " . $mail->to);
+            }
             try {
                 // Attempt to send the mail
                 $status = $this->mailSenderService->sendMail($mail);
