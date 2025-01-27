@@ -1026,9 +1026,9 @@ class Controller extends BaseController
             "to" => $receivers,
             "cc" => [],
             "bcc" => [],
-            "attachment" => null,
+            "attachment" => "",
             "created_on" => Carbon::now(),
-            "attachment_name" => null,
+            "attachment_name" => "",
         ];
         // Send the email
         $this->sendMail($sendMail);

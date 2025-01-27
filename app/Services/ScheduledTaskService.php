@@ -57,7 +57,7 @@ class ScheduledTaskService
                         'sent_at' => Carbon::now(),
                         'status'=>'Sent',
                     ]);
-                    Log::info("Mail sent successfully to: " . implode(', ', $mail->to));
+                    Log::info("Mail sent successfully to: " . implode(', ', (array)$mail->to));
                 } else {
                     // If failed, schedule for retry later
                     $mail->update([
@@ -67,7 +67,7 @@ class ScheduledTaskService
                         'failure_count' => $mail->failure_count + 1,
                         // 'status' => ($mail->failure_count + 1 >= 5) ? 'Failed' : $mail->status, // Set status to 'Failed' if failure_count is 5 or more
                     ]);
-                    Log::error("Mail failed to send to: " . implode(', ', $mail->to));
+                    Log::error("Mail failed to send to: " . implode(', ', (array)$mail->to));
                 }
             } catch (\Exception $e) {
                 // Catch any exception that occurs during the send operation
@@ -76,7 +76,7 @@ class ScheduledTaskService
                     'retry_after' => Carbon::now()->addMinutes(10),
                     'failure_reason' => $e->getMessage(),
                 ]);
-                Log::error("Exception while sending mail to: " . implode(', ', $mail->to) . " - " . $e->getMessage());
+                Log::error("Exception while sending mail to: " . implode(', ', (array)$mail->to) . " - " . $e->getMessage());
             }
         }
         Log::info('Finished sending mail');

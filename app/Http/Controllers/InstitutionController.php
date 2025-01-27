@@ -460,9 +460,9 @@ class InstitutionController extends Controller
                 "to" => $user->email,
                 "cc" => [],
                 "bcc" => [],
-                "attachment" => null,
+                "attachment" => "",
                 "created_on" => Carbon::now(),
-                "attachment_name" => null
+                "attachment_name" => ""
             ];
 
             $this->sendMail($sendMail);
