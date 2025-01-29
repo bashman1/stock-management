@@ -62,12 +62,22 @@ class Controller extends BaseController
      * @return void
      * @author Bashir <wamulabash1@gmail.com.com>
      */
-    public function genericResponse($status, $message, $code, $data, $action=null, $request=null)
+    public function genericResponse($status, $message, $code, $data, $action = null, $request = null)
     {
 
-        $log = ["action"=>$action,
-        "ip"=>IpRequest::ip(),"http_code"=> $code, "request"=>$request instanceof Request ? $request->all(): $request, "response"=>$data,
-        "return_status"=>$status,"return_message"=>$message, "user_id"=> auth()->user()?auth()->user()->id:null, "institution_id"=>auth()->user()?auth()->user()->institution_id:null, "branch_id"=>auth()->user()?auth()->user()->branch_id:null, "created_on"=>now()];
+        $log = [
+            "action" => $action,
+            "ip" => IpRequest::ip(),
+            "http_code" => $code,
+            "request" => $request instanceof Request ? $request->all() : $request,
+            "response" => $data,
+            "return_status" => $status,
+            "return_message" => $message,
+            "user_id" => auth()->user() ? auth()->user()->id : null,
+            "institution_id" => auth()->user() ? auth()->user()->institution_id : null,
+            "branch_id" => auth()->user() ? auth()->user()->branch_id : null,
+            "created_on" => now()
+        ];
         $this->setLogs($log);
 
 
@@ -915,7 +925,7 @@ class Controller extends BaseController
                     "created_on" => Carbon::now(),
                 ]);
 
-                if($index == 0){
+                if ($index == 0) {
                     $userRole = $role;
                 }
 
@@ -962,17 +972,19 @@ class Controller extends BaseController
      * @param mixed $log
      * @return TModel
      */
-    public function setLogs($log){
-       return SystemLog::create($log);
+    public function setLogs($log)
+    {
+        return SystemLog::create($log);
     }
 
 
-    public function newUser($request){
+    public function newUser($request)
+    {
         $user = null;
-        if($request && isset($request->id) && !empty($request->id)){
+        if ($request && isset($request->id) && !empty($request->id)) {
             $user = User::find($request->id);
             $user->updated_at = Carbon::now();
-        }else{
+        } else {
             $user = new User();
             $user->created_by = 1;
             $user->created_on = now();
@@ -1010,38 +1022,36 @@ class Controller extends BaseController
      * @return void
      */
     public function sendAdminsNotification(object $mailAndSubject): void
-{
-    try {
-        // Fetch active admin emails
-        $receivers = User::where('user_type', 'Admin')
-            ->where('status', 'Active')
-            ->pluck('email')
-            ->toArray();
+    {
+        try {
+            // Fetch active admin emails
+            $receivers = User::where('user_type', 'Admin')
+                ->where('status', 'Active')
+                ->pluck('email')
+                ->toArray();
 
-        // Prepare the email payload
-        $sendMail = [
-            "subject" => $mailAndSubject->subject ?? 'No Subject',
-            "body" => $mailAndSubject->body ?? 'No Body',
-            "has_attachment" => false,
-            "to" => $receivers,
-            "cc" => [],
-            "bcc" => [],
-            "attachment" => "",
-            "created_on" => Carbon::now(),
-            "attachment_name" => "",
-        ];
-        // Send the email
-        $this->sendMail($sendMail);
-    } catch (\Throwable $th) {
-        // Log the exception for debugging
-        Log::error('Failed to send admin notifications', [
-            'error' => $th->getMessage(),
-            'trace' => $th->getTraceAsString(),
-        ]);
-        // Optionally re-throw the exception
-        throw $th;
+            // Prepare the email payload
+            $sendMail = [
+                "subject" => $mailAndSubject->subject ?? 'No Subject',
+                "body" => $mailAndSubject->body ?? 'No Body',
+                "has_attachment" => false,
+                "to" => $receivers,
+                "cc" => [],
+                "bcc" => [],
+                "attachment" => "",
+                "created_on" => Carbon::now(),
+                "attachment_name" => "",
+            ];
+            // Send the email
+            $this->sendMail($sendMail);
+        } catch (\Throwable $th) {
+            // Log the exception for debugging
+            Log::error('Failed to send admin notifications', [
+                'error' => $th->getMessage(),
+                'trace' => $th->getTraceAsString(),
+            ]);
+            // Optionally re-throw the exception
+            throw $th;
+        }
     }
-}
-
-
 }

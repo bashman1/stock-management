@@ -251,6 +251,47 @@ class InstitutionController extends Controller
     }
 
 
+    public function getInstitutionsByStatus($status)
+    {
+        try {
+            // $institutions = Institution::orderBy('id', 'desc')->get();
+            $institutions = DB::table('institutions as I')
+                ->select(
+                    'I.id',
+                    'I.name',
+                    'I.ref_no',
+                    'I.institution_type_id',
+                    'I.start_date',
+                    'I.address',
+                    'I.city_id',
+                    'I.street',
+                    'I.p_o_box',
+                    'I.description',
+                    'I.status',
+                    'I.created_by',
+                    'I.updated_by',
+                    'I.created_on',
+                    'I.updated_on',
+                    'I.created_at',
+                    'I.updated_at',
+                    'I.is_tax_enabled',
+                    'I.tin',
+                    'T.name as type_name',
+                    'C.name as city_name'
+                )
+                ->join('institution_type_refs as T', 'I.institution_type_id', '=', 'T.id')
+                ->leftJoin('city_refs as C', 'C.id', '=', 'I.city_id')
+                ->leftJoin('users as U', 'U.id', '=', 'I.created_by')
+                ->where('I.status', $status)
+                ->orderBy("I.id", "DESC")
+                ->get();
+            return $this->genericResponse(true, "institution created successfully", 201, $institutions, "getInstitutions", []);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "getInstitutions", []);
+        }
+    }
+
+
     public function getInstitutionProfile(Request $request)
     {
         $userData = auth()->user();
@@ -304,7 +345,7 @@ class InstitutionController extends Controller
         foreach ($branches as $value) {
             $branch = Branch::find($value["id"]);
             $results = $this->createBranchGlAccounts($value['institution_id'], $value['code'], $value['id']);
-            array_push($myArray, $results);
+            array_push($myArray, (object)$results);
         }
         return $this->genericResponse(true, "Branch codes created successfully", 200, $myArray, "generateMissingLedgers", []);
     }
@@ -315,7 +356,7 @@ class InstitutionController extends Controller
         $institutions = Institution::all();
         foreach ($institutions as $key => $value) {
             $results = $this->setControlParam($value['id']);
-            array_push($myArray, $results);
+            array_push($myArray, (object)$results);
         }
         return $this->genericResponse(true, "Control parameter set successfully", 200, $myArray, "generateMissingCntrlParameter", []);
     }
@@ -485,6 +526,28 @@ class InstitutionController extends Controller
         } catch (\Throwable $th) {
             DB::rollback();
             return $this->genericResponse(false, $th->getMessage(), 500, $th->getMessage(), "institutionSelfRegistration", $request);
+        }
+    }
+
+
+
+    public function approveInstitution(Request $request){
+        try {
+            DB::beginTransaction();
+            $updateCount = DB::table('institutions')
+                ->where('id', $request->id)
+                ->update([
+                    'status' => 'Active',
+                ]);
+            if ($updateCount === 0) {
+                return $this->genericResponse(false, "Institution not found", 404, [], "approveInstitution", $request);
+            }
+            DB::commit();
+            return $this->genericResponse(true, "Institution approved successfully", 200, $updateCount, "approveInstitution", $request);
+        } catch (\Throwable $th) {
+            //throw $th;
+            DB::rollback();
+            return $this->genericResponse(false, $th->getMessage(), 500, $th->getMessage(), "approveInstitution", $request);
         }
     }
 }

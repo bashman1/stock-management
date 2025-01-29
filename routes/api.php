@@ -109,6 +109,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('create-institution', [InstitutionController::class, 'createInstitution']);
     Route::get('get-roles', [RoleController::class, 'getAllRoles']);
     Route::get('get-institutions', [InstitutionController::class, 'getInstitutions']);
+    Route::get('get-institutions/{status}', [InstitutionController::class, 'getInstitutionsByStatus']);
     Route::get('get-users', [UserController::class, 'getUsers']);
     Route::get('get-members', [MemberController::class,'getMembers']);
     Route::get('get-role/{id}', [RoleController::class, 'getRoleById']);
@@ -201,4 +202,5 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get("get-default-roles", [DefaultRoleController::class, "getDefaultRole"]);
     Route::get("get-default-role/{id}", [DefaultRoleController::class, "getDefaultRoleById"]);
     Route::post("assign-default-role-permission", [DefaultRoleController::class, "assignDefaultRolePermission"]);
+    Route::post('approve-institution', [InstitutionController::class, "approveInstitution"]);
 });

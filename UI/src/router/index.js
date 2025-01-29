@@ -631,16 +631,14 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
-
-
-
-
-
-            //     CashBook.vue
-
-
-
-
+                {
+                    path: '/approve-business',
+                    name: 'ApproveInstitution',
+                    component: () => import('@/views/pages/institution-management/ApproveInstitutions.vue'),
+                    meta:{
+                        requiresAuth: true, // This route requires authentication
+                    }
+                },
             ]
         },
         {

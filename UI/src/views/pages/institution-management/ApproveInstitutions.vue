@@ -12,9 +12,20 @@ const institution = ref(null);
 const commonService = new CommonService();
 
 const getAllInstitutions = () => {
-    commonService.genericRequest('get-institutions', 'get', true, {}).then((response) => {
+    commonService.genericRequest('get-institutions/Pending', 'get', true, {}).then((response) => {
         if (response.status) {
             institution.value = response.data;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const approveInstitution=(data)=>{
+    commonService.genericRequest('approve-institution', 'post', true, data).then((response) => {
+        if (response.status) {
+            getAllInstitutions();
+            commonService.showSuccess(toast, response.message);
         } else {
             commonService.showError(toast, response.message);
         }
@@ -34,7 +45,7 @@ onMounted(() => {
     <div class="grid">
         <div class="col-12">
             <div class="card">
-                <h5>View Institutions</h5>
+                <h5>Approve Institution</h5>
                 <DataTable :value="institution" :paginator="true" class="p-datatable-gridlines" :rows="10" dataKey="id"
                     :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
 
@@ -77,8 +88,8 @@ onMounted(() => {
                     <Column headerStyle="min-width:10rem;">
                         <template #body="{ data }">
                             <Button icon="pi pi-eye" @click="editInstitution(data)" class="p-button-primary mr-2"  v-tooltip="'View institution details'" />
-                            <Button icon="pi pi-pencil" @click="editInstitution(data)" class="p-button-success mr-2"  v-tooltip="'Edit institution details'" />
-                            <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="editInstitution(data)"  v-tooltip="'Archive institution'" />
+                            <Button icon="pi pi-verified" @click="approveInstitution(data)" class="p-button-success mr-2"  v-tooltip="'Approve Institution'" />
+                            <!-- <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="editInstitution(data)"  v-tooltip="'Archive institution'" /> -->
                         </template>
                     </Column>
 
