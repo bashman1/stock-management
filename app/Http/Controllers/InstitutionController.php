@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Models\MemberNoConfig;
 use App\Models\Product;
 use App\Models\stock;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 // use Illuminate\Support\Facades\DB;
 use App\Services\SavingAccountProductService;
@@ -534,6 +535,7 @@ class InstitutionController extends Controller
     public function approveInstitution(Request $request){
         try {
             DB::beginTransaction();
+            $userData = auth()->user();
             $updateCount = DB::table('institutions')
                 ->where('id', $request->id)
                 ->update([
@@ -542,10 +544,37 @@ class InstitutionController extends Controller
             if ($updateCount === 0) {
                 return $this->genericResponse(false, "Institution not found", 404, [], "approveInstitution", $request);
             }
+
+            $body = "<p>Congratulations! We are delighted to inform you that your business, $request->name, has been successfully approved on Smart Collect.
+                Your business is now live and ready to operate, offering you greater visibility and exciting opportunities to connect with potential customers.</p>
+                <p>Use the link below to log in and manage your business profile:</p>
+                <p><a href='https://www.smartcollect.co.ug/#/auth/login'>Smart Collect</a></p>
+                ";
+
+                $receivers = User::where('institution_id', $request->id)
+                ->where('status', 'Active')
+                ->pluck('email')
+                ->toArray();
+
+                $sendMail = [
+                    "subject" => "Business Approved on Smart Collect",
+                    "body" => $body,
+                    "has_attachment" => false,
+                    "to" => $receivers,
+                    "cc" => [],
+                    "bcc" => [],
+                    "attachment" => "",
+                    "created_on" => Carbon::now(),
+                    "attachment_name" => ""
+                ];
+                $this->sendMail($sendMail);
+                $adminBody ="<p>We are pleased to inform you that the business $request->name has been successfully approved by $userData->first_name  $userData->last_name  $userData->other_name on Smart Collect.</p>";
+                $adminMessage =(object)["subject" =>"Business Approval on Smart Collect", "body" => $adminBody];
+                $this->sendAdminsNotification($adminMessage);
+
             DB::commit();
             return $this->genericResponse(true, "Institution approved successfully", 200, $updateCount, "approveInstitution", $request);
         } catch (\Throwable $th) {
-            //throw $th;
             DB::rollback();
             return $this->genericResponse(false, $th->getMessage(), 500, $th->getMessage(), "approveInstitution", $request);
         }
