@@ -481,6 +481,7 @@ class InstitutionController extends Controller
             $request->merge(['branch_id' => $branch->id]);
             $request->merge(['original_branch_id' => $branch->id]);
             $request->merge(['user_type' => 'Institution']);
+            $request->merge(['status' => 'Active']);
             $request->merge(['user_category' => 'InstitutionAdmin']);
 
             $user = $this->newUser($request);
