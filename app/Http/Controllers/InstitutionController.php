@@ -428,7 +428,7 @@ class InstitutionController extends Controller
             $contact->phone_number = $request->contact_number;
             $contact->email = $request->contact_email;
             $contact->website = $request->contact_web;
-            $contact->status = $request->status;
+            $contact->status = 'Active';
             $contact->institution_id = $institution->id;
             $contact->branch_id = $branch->id;
             $contact->created_on = now();
@@ -482,6 +482,9 @@ class InstitutionController extends Controller
             $request->merge(['original_branch_id' => $branch->id]);
             $request->merge(['user_type' => 'Institution']);
             $request->merge(['status' => 'Active']);
+            $request->merge(['phone_number' => $request->contact_number]);
+            // phone_number = $request->contact_number;
+
             $request->merge(['user_category' => 'InstitutionAdmin']);
 
             $user = $this->newUser($request);
