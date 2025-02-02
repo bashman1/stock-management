@@ -138,6 +138,14 @@ if (commonService.checkPermissions('CanViewInstitution')) {
     },);
 }
 
+if (commonService.checkPermissions('ApproveInstitution')) {
+    institutionMenu.value.items.push({
+        label: 'Approve Institutions',
+        icon: 'pi pi-fw pi-circle',
+        to: '/approve-business'
+    },);
+}
+
 if (commonService.checkPermissions('CanCreateBranch')) {
     institutionMenu.value.items.push({ label: 'Create Branch', icon: 'pi pi-fw pi-circle', to: '/create-branch' });
 }
@@ -183,6 +191,26 @@ if (commonService.checkPermissions('ViewRoles')) {
         }
     );
 }
+
+if (commonService.checkPermissions('CreateDefaultRoles')) {
+    userMenu.value.items.push(
+        {
+            label: 'Create Default Role',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-default-role'
+        }
+    );
+}
+if (commonService.checkPermissions('ViewDefaultRoles')) {
+    userMenu.value.items.push(
+        {
+            label: 'View Default Roles',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-default-roles'
+        }
+    );
+}
+
 if (commonService.checkPermissions('CreateMember')) {
     memberMenu.value.items.push(
         {
