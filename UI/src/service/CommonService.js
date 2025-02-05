@@ -664,7 +664,6 @@ export default class CommonService {
         array.forEach(element => {
             formattedArray.push(element[key]);
         });
-
         return formattedArray;
     }
 

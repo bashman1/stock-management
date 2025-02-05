@@ -101,9 +101,9 @@ const onSubmit = () => {
     // formError.value.contactName = commonService.validateFormField(contactName.value);
     formError.value.contactNumber = commonService.validateFormField(contactNumber.value);
     // formError.value.contactEmail = commonService.validateFormField(contactEmail.value);
-    formError.value.bankName = commonService.validateFormField(bankName.value);
-    formError.value.acctName = commonService.validateFormField(acctName.value);
-    formError.value.acctNumber = commonService.validateFormField(acctNumber.value);
+    // formError.value.bankName = commonService.validateFormField(bankName.value);
+    // formError.value.acctName = commonService.validateFormField(acctName.value);
+    // formError.value.acctNumber = commonService.validateFormField(acctNumber.value);
     formError.value.taxConfig = commonService.validateFormField(taxConfig.value);
     formError.value.fName = commonService.validateFormField(fName.value);
     formError.value.lName = commonService.validateFormField(lName.value);

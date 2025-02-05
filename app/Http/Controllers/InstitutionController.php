@@ -414,9 +414,10 @@ class InstitutionController extends Controller
             $branch->save();
 
             $bank = new InstitutionBank();
-            $bank->bank_id = $request->bank_id;
-            $bank->acct_name = $request->acct_name;
-            $bank->acct_number = $request->acct_no;
+            // $bank->bank_id = isset($request->bank_id) ? $request->bank_id: 1;
+            $bank->bank_id = $request->bank_id ?? 1;
+            $bank->acct_name = $request->acct_name ?? ' ';
+            $bank->acct_number = $request->acct_no ?? ' ';
             $bank->status = $request->status;
             $bank->branch_id = $branch->id;
             $bank->institution_id = $institution->id;
