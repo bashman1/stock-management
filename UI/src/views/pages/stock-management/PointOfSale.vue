@@ -11,32 +11,32 @@ const commonService = new CommonService();
 const router = useRouter();
 
 const productList = ref(null);
-const selectedProduct = ref([{ id:null, price: null, quantity: null, discount: null, name: '', tax_config:null }]);
+const selectedProduct = ref([{ id: null, price: null, quantity: null, discount: null, name: '', tax_config: null }]);
 const amountTOPay = ref(0);
 const discount = ref(0);
 const balance = ref(0);
 const filters = ref({});
 const institutionDetails = ref({});
-const extraTax= ref(0);
+const extraTax = ref(0);
 
-const totalInclusiveTax= ref(0);
-const totalExclusiveTax= ref(0);
-const showCreateCustomerModal= ref(false);
-const customerFormError=ref({});
-const customerName=ref(null);
-const customerEmail=ref(null);
-const customerAddress=ref(null);
-const customerContact=ref(null);
-const customerDesc=ref(null);
-const customerData=ref([]);
+const totalInclusiveTax = ref(0);
+const totalExclusiveTax = ref(0);
+const showCreateCustomerModal = ref(false);
+const customerFormError = ref({});
+const customerName = ref(null);
+const customerEmail = ref(null);
+const customerAddress = ref(null);
+const customerContact = ref(null);
+const customerDesc = ref(null);
+const customerData = ref([]);
 
-const showInvoiceModal= ref(false);
-const userData =ref({});
+const showInvoiceModal = ref(false);
+const userData = ref({});
 
 
 const VAT = ref([
-    {id:1, name:"18%", amount:0, total:0},
-    {id:2, name:"Exempted", amount:0, total:0},
+    { id: 1, name: "18%", amount: 0, total: 0 },
+    { id: 2, name: "Exempted", amount: 0, total: 0 },
 ])
 
 // **************************************************************************
@@ -54,11 +54,13 @@ const OnSelectItem = (data) => {
 
     // console.log(JSON.stringify(data));
 
-    let obj = { id: data.id, price: Number(data.selling_price), quantity: 1, discount: 0, name: data.name, tax_config:data.tax_config,
-    units:[{id:1, ind: "Primary", name:data.unit, weight:1, price:Number(data.selling_price), unit_id:data?.measurement_unit_id}],
-    selected:{id:1, ind: "Primary", name:data.unit, weight:1, price:Number(data.selling_price), unit_id:data?.measurement_unit_id}};
-    if(data.secondary_unit){
-       obj.units.push({id:2, ind: "Secondary", name:data.secondary_unit, weight:Number(data?.secondary_weight), price:Number(data?.secondary_price), unit_id:data?.secondary_measurement_unit_id});
+    let obj = {
+        id: data.id, price: Number(data.selling_price), quantity: 1, discount: 0, name: data.name, tax_config: data.tax_config,
+        units: [{ id: 1, ind: "Primary", name: data.unit, weight: 1, price: Number(data.selling_price), unit_id: data?.measurement_unit_id }],
+        selected: { id: 1, ind: "Primary", name: data.unit, weight: 1, price: Number(data.selling_price), unit_id: data?.measurement_unit_id }
+    };
+    if (data.secondary_unit) {
+        obj.units.push({ id: 2, ind: "Secondary", name: data.secondary_unit, weight: Number(data?.secondary_weight), price: Number(data?.secondary_price), unit_id: data?.secondary_measurement_unit_id });
     }
     const foundItem = selectedProduct.value.find(item => item.id === obj.id);
     if (foundItem) {
@@ -68,12 +70,12 @@ const OnSelectItem = (data) => {
 
         let index = selectedProduct.value.length - 1;
 
-// Insert the object at the calculated index
+        // Insert the object at the calculated index
         selectedProduct.value.splice(index, 0, obj);
 
         // selectedProduct.value= selectedProduct.value.reverse();
     }
-    if(institutionDetails?.value?.is_tax_enabled){
+    if (institutionDetails?.value?.is_tax_enabled) {
         computeVAT()
     }
 
@@ -96,7 +98,7 @@ const updateQty = (event, data) => {
     });
 }
 
-const updatePrice = (event, data)=>{
+const updatePrice = (event, data) => {
     selectedProduct.value = selectedProduct.value.map(product => {
         if (product.id === data.id) {
             return { ...product, price: Number(event.target.value) };
@@ -146,12 +148,12 @@ const onSubmitOrder = () => {
         tranDate: saleDate.value,
         items: selectedProduct?.value,
         status: "Active",
-        vat:  Number(extraTax.value),
-        vatInc:  totalInclusiveTax.value,
+        vat: Number(extraTax.value),
+        vatInc: totalInclusiveTax.value,
         vatEx: totalExclusiveTax.value,
-        payment_method:payBy?.value.value,
-        address:billingAddress.value,
-        customer_id:customer?.value?.id
+        payment_method: payBy?.value.value,
+        address: billingAddress.value,
+        customer_id: customer?.value?.id
     }
 
     commonService.genericRequest('create-order', 'post', true, postData).then((response) => {
@@ -167,7 +169,7 @@ const onSubmitOrder = () => {
 }
 
 
-const getInstitutionDetails=()=>{
+const getInstitutionDetails = () => {
     commonService.genericRequest('get-institution-details', 'get', true, {}).then((response) => {
         if (response.status) {
             institutionDetails.value = response.data
@@ -229,17 +231,17 @@ const computeVAT = () => {
     });
 }
 
-const toggleCustomerModal=(action)=>{
-    showCreateCustomerModal.value=action;
+const toggleCustomerModal = (action) => {
+    showCreateCustomerModal.value = action;
 }
 
 
-const toggleInvoiceModel=(action)=>{
-    showInvoiceModal.value=action
+const toggleInvoiceModel = (action) => {
+    showInvoiceModal.value = action
 }
 
-const onCustomerInputBlur=(value, key)=>{
-    customerFormError.value[key]= commonService.validateFormField(value);
+const onCustomerInputBlur = (value, key) => {
+    customerFormError.value[key] = commonService.validateFormField(value);
 }
 
 const onSubmitCustomer = () => {
@@ -247,18 +249,18 @@ const onSubmitCustomer = () => {
 
     let invalid = commonService.validateRequiredFields(customerFormError.value);
 
-    if(invalid){
+    if (invalid) {
         commonService.showError(toast, "Please fill in the missing field");
         return
     }
 
-    let postData ={
+    let postData = {
         name: customerName.value,
         // country_id: supplierCountry.value.id,
         // website:supplierWeb.value,
         address: customerAddress.value,
-        email:customerEmail.value,
-        phone_number:customerContact.value,
+        email: customerEmail.value,
+        phone_number: customerContact.value,
         description: customerDesc.value,
         status: "Active",
     }
@@ -268,13 +270,13 @@ const onSubmitCustomer = () => {
             commonService.showSuccess(toast, response.message);
             getCustomers();
             toggleCustomerModal(false);
-            customerName.value=null;
+            customerName.value = null;
             // supplierCountry.value=null;
             // supplierWeb.value=null;
-            customerAddress.value=null;
-            customerEmail.value=null;
-            customerContact.value=null;
-            customerDesc.value=null;
+            customerAddress.value = null;
+            customerEmail.value = null;
+            customerContact.value = null;
+            customerDesc.value = null;
 
         } else {
             commonService.showError(toast, response.message);
@@ -283,7 +285,7 @@ const onSubmitCustomer = () => {
 }
 
 
-const getCustomers=()=>{
+const getCustomers = () => {
     commonService.genericRequest('get-customers', 'post', true, {}).then((response) => {
         if (response.status) {
             customerData.value = response.data
@@ -293,13 +295,13 @@ const getCustomers=()=>{
     })
 }
 
-const onCustomerChange =(event)=>{
-    if (event.value.address){
-        billingAddress.value=event.value.address
+const onCustomerChange = (event) => {
+    if (event.value.address) {
+        billingAddress.value = event.value.address
     }
 }
 
-const onUnitChange=(event, data)=>{
+const onUnitChange = (event, data) => {
     // alert(JSON.stringify(event.value))
     // alert(JSON.stringify(data))
     selectedProduct.value = selectedProduct.value.map(product => {
@@ -319,27 +321,27 @@ const onUnitChange=(event, data)=>{
 // const productService = new ProductService();
 const products = ref([]);
 
-    const payBy = ref({id:1, name: "Cash", value:"CASH"})
-    const billingAddress =ref(null);
-    const customer =ref(null);
-    const saleDate =ref(new Date());
-    const newTotal = ref(0);
-    const paidAmount = ref(0);
+const payBy = ref({ id: 1, name: "Cash", value: "CASH" })
+const billingAddress = ref(null);
+const customer = ref(null);
+const saleDate = ref(new Date());
+const newTotal = ref(0);
+const paidAmount = ref(0);
 
 
 const paymentOptions = ref([
-    {id:1, name: "Cash", value:"CASH"},
-    {id:2, name: "Bank", value:"BANK"},
-    {id:3, name: "Credit", value:"CREDIT"},
+    { id: 1, name: "Cash", value: "CASH" },
+    { id: 2, name: "Bank", value: "BANK" },
+    { id: 3, name: "Credit", value: "CREDIT" },
 ])
 
-const initializeProducts=()=>{
+const initializeProducts = () => {
     return [
-        {id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()},
-        {id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()},
-        {id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()},
-        {id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()},
-        {id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()},
+        { id: null, name: '', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID() },
+        { id: null, name: '', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID() },
+        { id: null, name: '', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID() },
+        { id: null, name: '', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID() },
+        { id: null, name: '', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID() },
     ];
 }
 
@@ -384,10 +386,10 @@ const onCellEditComplete = (event) => {
 
     switch (field) {
         case 'quantity':
-            if (isPositiveInteger(newValue)){
+            if (isPositiveInteger(newValue)) {
                 data[field] = newValue;
                 data.amount = data[field] * data.rate;
-            }else{
+            } else {
                 event.preventDefault();
                 // alert(newValue)
                 data[field] = 1;
@@ -402,69 +404,69 @@ const onCellEditComplete = (event) => {
         case 'name':
             data[field] = newValue
         default:
-            if ( newValue && typeof newValue === 'string' && newValue.trim().length > 0) data[field] = newValue;
+            if (newValue && typeof newValue === 'string' && newValue.trim().length > 0) data[field] = newValue;
             else event.preventDefault();
             break;
     }
 };
 
 
-const onDropdownChange=(uuid, name)=>{
-let index = products.value.findIndex(element => element.uuid === uuid);
-let value = products.value[index];
-console.log('---------------------------------------------------------')
-console.log(name)
+const onDropdownChange = (uuid, name) => {
+    let index = products.value.findIndex(element => element.uuid === uuid);
+    let value = products.value[index];
+    console.log('---------------------------------------------------------')
+    console.log(name)
     value.name = name.name;
     value.id = name.id;
     value.description = name.description;
     value.quantity = 1;
     value.rate = name.selling_price;
     value.amount = value.quantity * value.rate;
-products.value[index] = value;
+    products.value[index] = value;
 }
 
 
-const getIndex=(uuid)=>{
+const getIndex = (uuid) => {
     return products.value.findIndex(element => element.uuid === uuid);
 }
 
-const onCellEditInit=(event)=>{
+const onCellEditInit = (event) => {
     /** add a new raw **/
-if((event.index+ 1)==products.value.length){
- addRow()
-}
-}
-
-
-const addRow=()=>{
-    products.value.push({id: null, name:'', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID()})
-}
-
-const clearColumns=()=>{
-    selectedProduct.value = [{ id:null, price: null, quantity: null, discount: null, name: '', tax_config:null }];
-// products.value = initializeProducts();
-}
-
-const addColumns=()=>{
-products.value = products.value.concat(initializeProducts());
+    if ((event.index + 1) == products.value.length) {
+        addRow()
+    }
 }
 
 
-const computeNewSum=()=>{
-    let total=0;
+const addRow = () => {
+    products.value.push({ id: null, name: '', description: '', quantity: null, rate: null, amount: null, uuid: commonService.generateUUID() })
+}
+
+const clearColumns = () => {
+    selectedProduct.value = [{ id: null, price: null, quantity: null, discount: null, name: '', tax_config: null }];
+    // products.value = initializeProducts();
+}
+
+const addColumns = () => {
+    products.value = products.value.concat(initializeProducts());
+}
+
+
+const computeNewSum = () => {
+    let total = 0;
     products.value.forEach(element => {
         total = total + (element.quantity * element.rate);
     });
-   newTotal.value =total;
+    newTotal.value = total;
 }
 
 
-    const onSubmitNewOrder=()=>{
-        console.log('****************************************************************')
+const onSubmitNewOrder = () => {
+    console.log('****************************************************************')
 
-        let sortedProducts = products.value.find(obj => obj.id != null);
-        console.log(JSON.stringify(sortedProducts));
-    }
+    let sortedProducts = products.value.find(obj => obj.id != null);
+    console.log(JSON.stringify(sortedProducts));
+}
 
 
 
@@ -475,13 +477,13 @@ const computeNewSum=()=>{
  The end testing code for editable table
  */
 
- const close = () => {
+const close = () => {
     toggleInvoiceModel(false);
     printInvoice();
 };
 
 
- const printInvoice=()=>{
+const printInvoice = () => {
     const printWindow = window.open('', '', 'width=600,height=600');
     printWindow.document.open();
     printWindow.document.write(`<!DOCTYPE html>
@@ -500,11 +502,11 @@ const computeNewSum=()=>{
         <section style="margin: 20px 0;">
             <div style="display: flex; justify-content: space-between;">
                 <div>
-                    <h3 style="margin: 0;">`+  commonService.getStorage()?.institution_name +`</h3>
+                    <h3 style="margin: 0;">`+ commonService.getStorage()?.institution_name + `</h3>
                 </div>
                 <div style="text-align: right;">
-                    <p style="margin: 0; color: grey"><strong>Invoice #:</strong> `+  commonService.generateRandomFiveId() +` </p>
-                    <p style="margin: 0;  color: grey"><strong>Invoice Date:</strong> `+  commonService.formatDate(commonService.getCurrentTimestamp()) +` </p>
+                    <p style="margin: 0; color: grey"><strong>Invoice #:</strong> `+ commonService.generateRandomFiveId() + ` </p>
+                    <p style="margin: 0;  color: grey"><strong>Invoice Date:</strong> `+ commonService.formatDate(commonService.getCurrentTimestamp()) + ` </p>
 
                 </div>
             </div>
@@ -513,15 +515,15 @@ const computeNewSum=()=>{
             <div style="display: flex; justify-content: space-between;">
                 <div>
                     <h4 style="margin: 0;">BILL TO</h4>
-                    <p style="margin: 0; color: grey">`+ customer?.name+`</p>
+                    <p style="margin: 0; color: grey">`+ customer?.name + `</p>
 
-                    <p style="margin: 0; color: grey">`+  billingAddress +`</p>
+                    <p style="margin: 0; color: grey">`+ billingAddress + `</p>
                 </div>
                 <div>
                     <h4 style="margin: 0; color: grey">SHIP TO</h4>
-                    <p style="margin: 0; color: grey">`+ customer?.name +`</p>
+                    <p style="margin: 0; color: grey">`+ customer?.name + `</p>
                     <!-- <p style="margin: 0; color: grey">3787 Pineview Drive</p> -->
-                    <p style="margin: 0; color: grey">`+ billingAddress +`</p>
+                    <p style="margin: 0; color: grey">`+ billingAddress + `</p>
                 </div>
             </div>
         </section>
@@ -536,36 +538,36 @@ const computeNewSum=()=>{
             </thead>
             <tbody>
                 <tr v-for="(prod, index) of selectedProduct" :key="prod.id">
-                    <td style="border: 1px solid #ddd; padding: 8px;  color: black"> `+ prod.quantity +`</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; color: black"> `+ prod.name +`</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black">`+ commonService.commaSeparator(prod.price)+`</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black"> `+commonService.commaSeparator(prod.price * prod.quantity)+`</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;  color: black"> `+ prod.quantity + `</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; color: black"> `+ prod.name + `</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black">`+ commonService.commaSeparator(prod.price) + `</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black"> `+ commonService.commaSeparator(prod.price * prod.quantity) + `</td>
                 </tr>
             </tbody>
             <tfoot>
 
                 <tr>
                     <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right; color: grey">VAT 18%</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black"> `+ commonService.commaSeparator(VAT[0].total) +`</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black"> `+ commonService.commaSeparator(VAT[0].total) + `</td>
                 </tr>
                 <tr>
                     <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right; color: grey"><strong>Total</strong></td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;color: black"><strong>`+ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 +`</strong></td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;color: black"><strong>`+ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 + `</strong></td>
                 </tr>
             </tfoot>
         </table>
         <div style="text-align: center; margin: 20px 0;">
             <p style="margin: 0; color: grey">Thank you</p>
             <p style="margin: 0; font-size: 0.9em; color: #666;">Payment is due within 15 days</p>
-            <p style="margin: 0; font-size: 0.9em; color: #666;">Please make checks payable to:`+ commonService.getStorage()?.institution_name +`.</p>
+            <p style="margin: 0; font-size: 0.9em; color: #666;">Please make checks payable to:`+ commonService.getStorage()?.institution_name + `.</p>
         </div>
     </div>
 </body>
 </html>`)
-printWindow.document.close();
+    printWindow.document.close();
     printWindow.print();
     printWindow.close();
- }
+}
 
 
 onBeforeMount(() => {
@@ -585,446 +587,239 @@ onMounted(() => {
     <div class="grid p-fluid">
 
 
-                    <div class="field col-12 md:col-3">
-<!--                        <div class="p-inputgroup">-->
-                            <span class="p-float-label">
-                                <Dropdown id="paymentMethod" :options="paymentOptions" filter v-model="payBy" optionLabel="name">
-                                </Dropdown>
-                                <label for="paymentMethod">Payment methods</label>
-                            </span>
-<!--                            <Button @click="toggleGaugeModal(true)" icon="pi pi-plus" />-->
-<!--                        </div>-->
-                    </div>
+        <div class="field col-12 md:col-3">
+            <!--                        <div class="p-inputgroup">-->
+            <span class="p-float-label">
+                <Dropdown id="paymentMethod" :options="paymentOptions" filter v-model="payBy" optionLabel="name">
+                </Dropdown>
+                <label for="paymentMethod">Payment methods</label>
+            </span>
+            <!--                            <Button @click="toggleGaugeModal(true)" icon="pi pi-plus" />-->
+            <!--                        </div>-->
+        </div>
 
-                    <div class="field col-12 md:col-3">
-                        <div class="p-inputgroup">
-                            <span class="p-float-label">
-                                <Dropdown id="customer" @change="onCustomerChange" :options="customerData" filter v-model="customer" optionLabel="name">
-                                </Dropdown>
-                                <label for="Customer">Select customer</label>
-                            </span>
-                            <Button @click="toggleCustomerModal(true)" icon="pi pi-plus" />
-                        </div>
-                    </div>
+        <div class="field col-12 md:col-3">
+            <div class="p-inputgroup">
+                <span class="p-float-label">
+                    <Dropdown id="customer" @change="onCustomerChange" :options="customerData" filter v-model="customer"
+                        optionLabel="name">
+                    </Dropdown>
+                    <label for="Customer">Select customer</label>
+                </span>
+                <Button @click="toggleCustomerModal(true)" icon="pi pi-plus" />
+            </div>
+        </div>
 
-                    <div class="field col-12 md:col-3">
-                        <span class="p-float-label">
-                            <InputText type="text" id="productId" v-model="billingAddress" /> <!-- class="p-invalid"-->
-                            <label for="productId">Billing address</label>
-                        </span>
-                    </div>
+        <div class="field col-12 md:col-3">
+            <span class="p-float-label">
+                <InputText type="text" id="productId" v-model="billingAddress" /> <!-- class="p-invalid"-->
+                <label for="productId">Billing address</label>
+            </span>
+        </div>
 
-                                      <div class="field col-12 md:col-3">
-                        <span class="p-float-label">
-                            <Calendar id="date" v-model="saleDate"></Calendar>
-                            <label for="date">Sales Date</label>
-                        </span>
-                    </div>
-
-
-    <!-- start testing editable table -->
-                <div class="col-12 md:col-3"></div>
-                <div class="col-12 md:col-3"></div>
-                <div class="col-12 md:col-3"></div>
-                <div class="col-12 md:col-3"> <p class="font-bold text-right text-6xl green-color">Total: {{  totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}</p></div>
-
-                <div class="col-12 md:col-12">
-                    <div class="card">
+        <div class="field col-12 md:col-3">
+            <span class="p-float-label">
+                <Calendar id="date" v-model="saleDate"></Calendar>
+                <label for="date">Sales Date</label>
+            </span>
+        </div>
 
 
-                        <!-- <div class="field col-12 md:col-12"> -->
-                        <!-- <p>Items available in the stock.</p> -->
-                        <DataTable :value="selectedProduct" :size="'small'" stripedRows :rows="20" dataKey="id" :rowHover="true"
-                            filterDisplay="menu" responsiveLayout="scroll">
-                            <Column field="name" header="Name" style="max-width: 10rem;">
-                                <template #body="{ data }" >
-                        <Dropdown id="subCategory" change="" :options="productList" filter v-if="!data.id"
-                         optionLabel="name" @change="OnSelectItem($event.value)">
-                                </Dropdown>
-                                    {{ data.name }}
-                                </template>
-                            </Column>
+        <!-- start testing editable table -->
+        <div class="col-12 md:col-3"></div>
+        <div class="col-12 md:col-3"></div>
+        <div class="col-12 md:col-3"></div>
+        <div class="col-12 md:col-3">
+            <p class="font-bold text-right text-6xl green-color">Total: {{ totalPrice(selectedProduct) ?
+                commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}
+            </p>
+        </div>
 
-                            <Column field="quantity" header="Qty" style="max-width: 8rem; ">
-                                <template #body="{ data }">
+        <div class="col-12 md:col-12">
+            <div class="card">
 
-                                    <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')" v-if="data.id"
-                                    style="font-size: 1rem; margin-left:3px; cursor:pointer"></i>
-                                    <!-- <Button icon="pi pi-minus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
-                                    <InputText type="text" @change="updateQty($event, data)" :value="data.quantity" v-if="data.id"
-                                        style="width: 100px; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
-                                        placeholder="Qty"></InputText>
-                                    <!-- {{ data.quantity }} -->
-                                    <i class="pi pi-plus" @click="increaseReduce(data, 'Add')" v-if="data.id"
-                                    style="font-size: 1rem; margin-right:3px; cursor:pointer"></i>
 
-                                    <!-- <Button icon="pi pi-plus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
-                                </template>
-                            </Column>
+                <!-- <div class="field col-12 md:col-12"> -->
+                <!-- <p>Items available in the stock.</p> -->
+                <DataTable :value="selectedProduct" :size="'small'" stripedRows :rows="20" dataKey="id" :rowHover="true"
+                    filterDisplay="menu" responsiveLayout="scroll">
+                    <Column field="name" header="Name" style="max-width: 10rem;">
+                        <template #body="{ data }">
+                            <Dropdown id="subCategory" change="" :options="productList" filter v-if="!data.id"
+                                optionLabel="name" @change="OnSelectItem($event.value)">
+                            </Dropdown>
+                            {{ data.name }}
+                        </template>
+                    </Column>
 
-                            <Column field="unit" header="Unit" style="max-width: 8rem;">
-                                <template #body="{ data }">
+                    <Column field="quantity" header="Qty" style="max-width: 8rem; ">
+                        <template #body="{ data }">
 
-                                <Dropdown v-if="data.id"  id="type" @change="onUnitChange($event, data)" filter :options="data.units" v-model="data.selected"  optionLabel="name"
+                            <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')" v-if="data.id"
+                                style="font-size: 1rem; margin-left:3px; cursor:pointer"></i>
+                            <!-- <Button icon="pi pi-minus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
+                            <InputText type="text" @change="updateQty($event, data)" :value="data.quantity"
+                                v-if="data.id"
+                                style="width: 100px; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
+                                placeholder="Qty"></InputText>
+                            <!-- {{ data.quantity }} -->
+                            <i class="pi pi-plus" @click="increaseReduce(data, 'Add')" v-if="data.id"
+                                style="font-size: 1rem; margin-right:3px; cursor:pointer"></i>
+
+                            <!-- <Button icon="pi pi-plus" class="p-button-rounded p-button-text mr-2 mb-2" /> -->
+                        </template>
+                    </Column>
+
+                    <Column field="unit" header="Unit" style="max-width: 8rem;">
+                        <template #body="{ data }">
+
+                            <Dropdown v-if="data.id" id="type" @change="onUnitChange($event, data)" filter
+                                :options="data.units" v-model="data.selected" optionLabel="name"
                                 style="width: 80%; margin-left: 1px; margin-right:1px;">
-                                </Dropdown>
-                                      <!-- <InputText type="text" @change="updatePrice($event, data)" :value="data.price" v-if="data.id"
+                            </Dropdown>
+                            <!-- <InputText type="text" @change="updatePrice($event, data)" :value="data.price" v-if="data.id"
                                         style="width: 80%; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
                                         placeholder="Qty"></InputText> -->
-                                    <!-- {{ commonService.commaSeparator(data.price) }} -->
-                                </template>
-                            </Column>
+                            <!-- {{ commonService.commaSeparator(data.price) }} -->
+                        </template>
+                    </Column>
 
-                            <Column field="price" header="Price" style="max-width: 8rem;">
-                                <template #body="{ data }">
-                                      <InputText type="text" @change="updatePrice($event, data)" :value="data.price" v-if="data.id"
-                                        style="width: 80%; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
-                                        placeholder="Qty"></InputText>
-                                    <!-- {{ commonService.commaSeparator(data.price) }} -->
-                                </template>
-                            </Column>
-                            <Column field="subtotal" header="Amount" style="max-width: 8rem;">
-                                <template #body="{ data }">
-                                    {{ data.id?commonService.commaSeparator(data.quantity * data.price):'' }}
-                                </template>
-                            </Column>
-                            <Column headerStyle="width:6rem;">
-                                <template #body="{ data }">
-                                    <Button icon="pi pi-trash" class="p-button-rounded p-button-danger mr-2" v-if="data.id"
-                                        @click="OnSelectRemoveItem(data)" />
-                                </template>
-                            </Column>
-                        </DataTable>
-                    <!-- </div> -->
+                    <Column field="price" header="Price" style="max-width: 8rem;">
+                        <template #body="{ data }">
+                            <InputText type="text" @change="updatePrice($event, data)" :value="data.price"
+                                v-if="data.id"
+                                style="width: 80%; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
+                                placeholder="Qty"></InputText>
+                            <!-- {{ commonService.commaSeparator(data.price) }} -->
+                        </template>
+                    </Column>
+                    <Column field="subtotal" header="Amount" style="max-width: 8rem;">
+                        <template #body="{ data }">
+                            {{ data.id ? commonService.commaSeparator(data.quantity * data.price) : '' }}
+                        </template>
+                    </Column>
+                    <Column headerStyle="width:6rem;">
+                        <template #body="{ data }">
+                            <Button icon="pi pi-trash" class="p-button-rounded p-button-danger mr-2" v-if="data.id"
+                                @click="OnSelectRemoveItem(data)" />
+                        </template>
+                    </Column>
+                </DataTable>
+                <!-- </div> -->
+            </div>
+        </div>
+        <div class="col-12 md:col-2">
+            <Button label="Clear" @click="clearColumns" icon="pi pi-minus" iconPos="left"
+                class=" p-button-danger mr-2 mb-2" />
 
+        </div>
+        <div class="col-12 md:col-2">
+            <Button label="Generate Invoice" @click="toggleInvoiceModel(true)" icon="pi pi-file" iconPos="left"
+                class=" p-button-info mr-2 mb-2" />
+        </div>
 
-        <!-- <DataTable :value="products" stripedRows showGridlines editMode="cell" @cell-edit-complete="onCellEditComplete" @cell-edit-init="onCellEditInit"
-            :pt="{
-                table: { style: 'min-width: 30rem' },
-                column: {
-                    bodycell: ({ state }) => ({
-                        class: [{ 'pt-0 pb-0': state['d_editing'] }]
-                    })
-                }
-            }"
-        >
-            <Column v-for="(col, colIndex) of columns" :key="col.field" :field="col.field" :header="col.header" style="width: 15%">
-                <template #body="{ data, field }">
-                    {{ field === 'price' ? formatCurrency(data[field]) : data[field] }}
-                </template>
-                <template #editor="{ data, field }">
-                    <template v-if="field == 'name'">
-                        <Dropdown id="subCategory" change="" :options="productList" filter
-                        v-model="data[field]" optionLabel="name" @change="onDropdownChange(data.uuid, data.name)">
-                                </Dropdown>
-                    </template>
-                    <template v-else-if="field === 'description'">
-                        <InputText v-model="data[field]" fluid />
-                    </template>
-                    <template v-else>
-                        <InputNumber v-model="data[field]" fluid />
-                    </template>
-                </template>
-            </Column>
-        </DataTable> -->
-    </div>
-                </div>
-                 <div class="col-12 md:col-2">
-                    <Button label="Clear" @click="clearColumns" icon="pi pi-minus" iconPos="left" class=" p-button-danger mr-2 mb-2" />
-
-                </div>
-                <div class="col-12 md:col-2">
-                    <Button label="Generate Invoice" @click="toggleInvoiceModel(true)" icon="pi pi-file" iconPos="left" class=" p-button-info mr-2 mb-2" />
-                </div>
-
-                <div class="col-12 md:col-12">
-                <div class="card" v-if="institutionDetails?.is_tax_enabled && selectedProduct.length>0">
+        <div class="col-12 md:col-12">
+            <div class="card" v-if="institutionDetails?.is_tax_enabled && selectedProduct.length > 0">
                 <h5>V.A.T 18%</h5><br>
                 <div class="grid">
                     <div class="field col-12 md:col-12">
                         <DataTable :value="VAT" size="small" :rows="20" dataKey="id" :rowHover="true"
-                        filterDisplay="menu" responsiveLayout="scroll">
-                        <Column field="name" header="18%" style="max-width: 10rem">
-                            <template #body="{ data }">
-                                {{ data.name }}
-                            </template>
-                        </Column>
-                        <Column field="price" header="Amount" style="max-width: 10rem">
-                            <template #body="{ data }">
-                                {{ commonService.commaSeparator(data.amount) }}
-                            </template>
-                        </Column>
-                        <Column field="subtotal" header="V.A.T" style="max-width: 10rem">
-                            <template #body="{ data }">
-                                {{ commonService.commaSeparator(data.total) }}
-                            </template>
-                        </Column>
-                    </DataTable>
-                    </div>
-                </div>
-            </div>
-                </div>
-
-                <div class="col-12 md:col-4"></div>
-                <div class="col-12 md:col-3"></div>
-                <div class="col-12 md:col-3"> <p class="font-bold text-right text-xl green-color">Total: {{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}</p></div>
-
-                <div class="col-12 md:col-3"></div>
-                <div class="col-12 md:col-3">
-                        <span class="p-float-label">
-                            <InputText type="text" id="discount" v-model="amountTOPay" /> <!-- class="p-invalid"-->
-                            <label for="productId">Amount</label>
-                        </span>
-                </div>
-                <div class="col-12 md:col-3">
-                <p class="font-bold text-left text-xl green-color" v-if="amountTOPay && amountTOPay > 0">Change: {{ commonService.commaSeparator(Number(amountTOPay) + Number(discount) - (totalPrice(selectedProduct)+Number(extraTax))) }}</p>
-                </div>
-                <div class="col-12 md:col-3">
-                 <Button @click="onSubmitOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
-                    <!-- <Button @click="onSubmitNewOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" /> -->
-                </div>
-
-                <!-- end testing editable table -->
-
-
-        <!-- <div class="col-12 md:col-7">
-            <div class="card">
-                <h5>Point Of Sale</h5><br>
-                <div class="grid">
-                    <div class="col-12 md:col-12">
-                        <p>Items available in the stock.</p>
-                        <DataTable :value="productList" :paginator="true"  size="small" class="p-datatable-gridlines" :rows="50"
-                            dataKey="id" :filters="filters" :rowHover="true" filterDisplay="menu"
-                            responsiveLayout="scroll">
-                            <template #header>
-                                <div
-                                    class="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
-
-                                    <span class="block mt-2 md:mt-0 p-input-icon-left">
-                                        <i class="pi pi-search" />
-                                        <InputText v-model="filters['global'].value" placeholder="Search..." />
-                                    </span>
-                                </div>
-                            </template>
-                            <Column field="name" header="Product" style="min-width: 10rem">
-                                <template #body="{ data }">
-                                    {{ data.name }}
-                                </template>
-                            </Column>
-
-                            <Column field="name" header="Category" style="min-width: 10rem">
-                                <template #body="{ data }">
-                                    {{ data.category_name }}
-                                </template>
-                            </Column>
-
-                            <Column field="name" header="Price" style="max-width: 10rem">
-                                <template #body="{ data }">
-                                    {{ commonService.commaSeparator(data.selling_price) }}
-                                </template>
-                            </Column>
-                            <Column field="name" header="Quantity" style="max-width: 15rem">
-                                <template #body="{ data }">
-                                    {{ data.quantity + ' ' + data.unit }}
-                                </template>
-                            </Column>
-                            <Column header="Manufacturer" style="min-width: 10rem">
-                                <template #body="{ data }">
-                                    {{ data.manufacturer }}
-                                </template>
-                            </Column>
-
-                            <Column header="Date" style="min-width: 10rem">
-                                <template #body="{ data }">
-                                    {{ data.created_at }}
-                                </template>
-                            </Column>
-                            <Column headerStyle="max-width:10rem;">
-                                <template #body="{ data }">
-                                    <Button icon="pi pi-check" class="p-button-success mr-2"  v-tooltip="'Select product'"
-                                        @click="OnSelectItem(data)" />
-                                </template>
-                            </Column>
-                        </DataTable>
-
-                    </div>
-                </div>
-            </div>
-        </div> -->
-
-
-        <!-- <div class="col-12 md:col-5">
-            <div class="card">
-                <h5>Selected Items</h5><br>
-                <div class="grid">
-                    <div class="field col-12 md:col-12">
-                        <DataTable :value="selectedProduct" size="small" :rows="20" dataKey="id" :rowHover="true"
                             filterDisplay="menu" responsiveLayout="scroll">
-                            <Column field="name" header="Name" style="max-width: 10rem">
+                            <Column field="name" header="18%" style="max-width: 10rem">
                                 <template #body="{ data }">
                                     {{ data.name }}
                                 </template>
                             </Column>
-                            <Column field="price" header="Price" style="max-width: 10rem">
+                            <Column field="price" header="Amount" style="max-width: 10rem">
                                 <template #body="{ data }">
-                                    {{ commonService.commaSeparator(data.price) }}
+                                    {{ commonService.commaSeparator(data.amount) }}
                                 </template>
                             </Column>
-                            <Column field="quantity" header="Qty" style="min-width: 10rem">
+                            <Column field="subtotal" header="V.A.T" style="max-width: 10rem">
                                 <template #body="{ data }">
-
-                                    <i class="pi pi-minus" @click="increaseReduce(data, 'Subtract')"
-                                    style="font-size: 1rem; margin-left:3px; cursor:pointer"></i>
-                                    <InputText type="text" @change="updateQty($event, data)" :value="data.quantity"
-                                        style="width: 60px; padding:5px; margin-left: 1px; margin-right:1px; text-align:center"
-                                        placeholder="Qty"></InputText>
-                                    <i class="pi pi-plus" @click="increaseReduce(data, 'Add')"
-                                    style="font-size: 1rem; margin-right:3px; cursor:pointer"></i>
-                                </template>
-                            </Column>
-                            <Column field="subtotal" header="Sub Total" style="max-width: 10rem">
-                                <template #body="{ data }">
-                                    {{ commonService.commaSeparator(data.quantity * data.price) }}
-                                </template>
-                            </Column>
-                            <Column headerStyle="max-width:10rem;">
-                                <template #body="{ data }">
-                                    <Button icon="pi pi-trash" class="p-button-rounded p-button-danger mr-2"
-                                        @click="OnSelectRemoveItem(data)" />
+                                    {{ commonService.commaSeparator(data.total) }}
                                 </template>
                             </Column>
                         </DataTable>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="card" v-if="institutionDetails?.is_tax_enabled && selectedProduct.length>0">
-                <h5>V.A.T 18%</h5><br>
-                <div class="grid">
-                    <div class="field col-12 md:col-12">
-                        <DataTable :value="VAT" size="small" :rows="20" dataKey="id" :rowHover="true"
-                        filterDisplay="menu" responsiveLayout="scroll">
-                        <Column field="name" header="18%" style="max-width: 10rem">
-                            <template #body="{ data }">
-                                {{ data.name }}
-                            </template>
-                        </Column>
-                        <Column field="price" header="Amount" style="max-width: 10rem">
-                            <template #body="{ data }">
-                                {{ commonService.commaSeparator(data.amount) }}
-                            </template>
-                        </Column>
-                        <Column field="subtotal" header="V.A.T" style="max-width: 10rem">
-                            <template #body="{ data }">
-                                {{ commonService.commaSeparator(data.total) }}
-                            </template>
-                        </Column>
-                    </DataTable>
-                    </div>
-                </div>
-            </div>
+        <div class="col-12 md:col-4"></div>
+        <div class="col-12 md:col-3"></div>
+        <div class="col-12 md:col-3">
+            <p class="font-bold text-right text-xl green-color">Total: {{ totalPrice(selectedProduct) ?
+                commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}
+            </p>
+        </div>
 
+        <div class="col-12 md:col-3"></div>
+        <div class="col-12 md:col-3">
+            <span class="p-float-label">
+                <InputText type="text" id="discount" v-model="amountTOPay" /> <!-- class="p-invalid"-->
+                <label for="productId">Amount</label>
+            </span>
+        </div>
+        <div class="col-12 md:col-3">
+            <p class="font-bold text-left text-xl green-color" v-if="amountTOPay && amountTOPay > 0">Change: {{
+                commonService.commaSeparator(Number(amountTOPay) + Number(discount) -
+                    (totalPrice(selectedProduct)+Number(extraTax))) }}</p>
+        </div>
+        <div class="col-12 md:col-3">
+            <Button @click="onSubmitOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+            <!-- <Button @click="onSubmitNewOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" /> -->
+        </div>
 
-            <div class="card">
-                <h5>Total </h5><br>
-                <div class="grid">
-                    <div class="field col-12 md:col-4">
-                        <span class="p-float-label green-color">
-                            Amount To Pay
-                        </span>
-                    </div>
-                    <div class="field col-12 md:col-8">
-                        <span class="p-float-label green-color">
-                            {{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) -
-                            Number(discount) + Number(extraTax)) : 0 }}
-                        </span>
-                    </div>
-                    <div class="field col-12 md:col-4">
-                        <span class="p-float-label green-color">
-                            Discount
-                        </span>
-                    </div>
-                    <div class="field col-12 md:col-8">
-                        <span class="p-float-label">
-                            <InputText type="text" id="discount" v-model="discount" />
-                            <label for="discount">Discount Amount</label>
-                        </span>
-                    </div>
-                    <div class="field col-12 md:col-4">
-                        <span class="p-float-label green-color">
-                            Amount Paid
-                        </span>
-                    </div>
-                    <div class="field col-12 md:col-8">
-                        <span class="p-float-label">
-                            <InputText type="text" id="discount" v-model="amountTOPay" />
-                            <label for="discount">Amount</label>
-                        </span>
-                    </div>
-                    <div class="field col-12 md:col-4">
-                        <span class="p-float-label green-color">
-                            Change
-                        </span>
-                    </div>
-                    <div class="field col-12 md:col-8">
-                        <span class="p-float-label green-color" v-if="amountTOPay && amountTOPay > 0">
-                            {{
-                            commonService.commaSeparator(Number(amountTOPay) + Number(discount) - totalPrice(selectedProduct))
-                            }}
-                        </span>
-                        <span class="p-float-label" v-if="!amountTOPay || amountTOPay==0">0</span>
-                    </div>
-
-                    <div class="field col-12 md:col-8"></div>
-                    <div class="field col-12 md:col-4">
-                        <Button @click="onSubmitOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
-                    </div>
-                </div>
-            </div>
-        </div> -->
+        <!-- end testing editable table -->
 
 
         <!-- Start of Modals-->
         <Dialog header="Create new customer" v-model:visible="showCreateCustomerModal" :style="{ width: '75vw' }"
-                :modal="true" class="p-fluid">
+            :modal="true" class="p-fluid">
             <p style="padding-top: 20px;">
-                <div class="grid p-fluid">
-                    <div class="field col-12 md:col-6">
+            <div class="grid p-fluid">
+                <div class="field col-12 md:col-6">
                     <span class="p-float-label">
-                        <InputText type="text" id="customerName" @blur="onCustomerInputBlur(customerName, 'customerName')" v-model="customerName"  :class="{ 'p-invalid': customerFormError?.customerName }"/> <!-- class="p-invalid"-->
+                        <InputText type="text" id="customerName"
+                            @blur="onCustomerInputBlur(customerName, 'customerName')" v-model="customerName"
+                            :class="{ 'p-invalid': customerFormError?.customerName }" />
+                        <!-- class="p-invalid"-->
                         <label for="supplierName">Name</label>
                     </span>
-                    </div>
-                    <div class="field col-12 md:col-6">
+                </div>
+                <div class="field col-12 md:col-6">
                     <span class="p-float-label">
                         <InputText type="text" id="supplierEmail" v-model="customerEmail" /> <!-- class="p-invalid"-->
                         <label for="supplierEmail">Email</label>
                     </span>
-                    </div>
-                    <div class="field col-12 md:col-6">
+                </div>
+                <div class="field col-12 md:col-6">
                     <span class="p-float-label">
-                        <InputText type="text" id="supplierAddress" v-model="customerAddress" /> <!-- class="p-invalid"-->
+                        <InputText type="text" id="supplierAddress" v-model="customerAddress" />
+                        <!-- class="p-invalid"-->
                         <label for="supplierAddress">Address</label>
                     </span>
-                    </div>
+                </div>
 
-                    <div class="field col-12 md:col-6">
+                <div class="field col-12 md:col-6">
                     <span class="p-float-label">
-                        <InputText type="text" id="supplierContact" v-model="customerContact" /> <!-- class="p-invalid"-->
+                        <InputText type="text" id="supplierContact" v-model="customerContact" />
+                        <!-- class="p-invalid"-->
                         <label for="supplierContact">Phone Number</label>
                     </span>
-                    </div>
-                    <div class="field col-12 md:col-12">
+                </div>
+                <div class="field col-12 md:col-12">
                     <span class="p-float-label">
                         <Textarea inputId="supplierDesc" rows="7" v-model="customerDesc"></Textarea>
                         <label for="supplierDesc">More Info</label>
                     </span>
-                    </div>
                 </div>
+            </div>
             </p>
             <template #footer>
                 <Button label="Cancel" @click="toggleCustomerModal(false)" icon="pi pi-times"
-                        class="p-button-outlined p-button-danger mr-2 mb-2" />
+                    class="p-button-outlined p-button-danger mr-2 mb-2" />
                 <Button @click="onSubmitCustomer" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
             </template>
         </Dialog>
@@ -1032,103 +827,196 @@ onMounted(() => {
 
 
         <!-- Invoice generation -->
-        <Dialog header="Generate Invoice" v-model:visible="showInvoiceModal" :style="{ width: '75vw' }"
-                :modal="true" class="p-fluid">
+        <Dialog header="Generate Invoice" v-model:visible="showInvoiceModal" :style="{ width: '75vw' }" :modal="true"
+            class="p-fluid">
 
-                <!-- template -->
+            <!-- template -->
 
-                <!DOCTYPE html>
-<html lang="en">
+            <!DOCTYPE html>
+<html lang='en'>
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice</title>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Invoice</title>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0;">
-    <div style="max-width: 750px; margin: auto; padding: 20px; border: 1px solid #ddd;">
-        <header style="display: flex; justify-content: space-between; align-items: center;">
-            <h1 style="color: #002060; margin: 0;">INVOICE</h1>
-            <div style="width: 80px; height: 80px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;">LOGO</div>
-        </header>
-        <section style="margin: 20px 0;">
-            <div style="display: flex; justify-content: space-between;">
-                <div>
-                    <h3 style="margin: 0;">{{ commonService.getStorage()?.institution_name }}</h3>
-                    <!-- <p style="margin: 0;  color: grey">1912 Harvest Lane</p> -->
-                    <!-- <p style="margin: 0;  color: grey">New York, NY 12210</p> -->
-                </div>
-                <div style="text-align: right;">
-                    <p style="margin: 0; color: grey"><strong>Invoice #:</strong> {{ commonService.generateRandomFiveId()}} </p>
-                    <p style="margin: 0;  color: grey"><strong>Invoice Date:</strong> {{ commonService.formatDate(commonService.getCurrentTimestamp()) }} </p>
-                    <!-- <p style="margin: 0;  color: grey"><strong>P.O.#:</strong> 2312/2019</p> -->
-                    <p style="margin: 0; color: grey"><strong>Due Date:</strong> 26/02/2019</p>
-                </div>
-            </div>
-        </section>
-        <section style="margin: 20px 0;">
-            <div style="display: flex; justify-content: space-between;">
-                <div>
-                    <h4 style="margin: 0;">BILL TO</h4>
-                    <p style="margin: 0; color: grey">{{customer?.name}}</p>
-                    <!-- <p style="margin: 0; color: grey">2 Court Square</p> -->
-                    <p style="margin: 0; color: grey">{{ billingAddress }}</p>
-                </div>
-                <div>
-                    <h4 style="margin: 0; color: grey">SHIP TO</h4>
-                    <p style="margin: 0; color: grey">{{customer?.name}}</p>
-                    <!-- <p style="margin: 0; color: grey">3787 Pineview Drive</p> -->
-                    <p style="margin: 0; color: grey">{{ billingAddress }}</p>
-                </div>
-            </div>
-        </section>
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <thead>
-                <tr style="background: #f2f2f2;"  >
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;  color: grey">QTY</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;  color: grey">DESCRIPTION</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;  color: grey">UNIT PRICE</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;  color: grey">AMOUNT</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="(prod, index) of selectedProduct" :key="prod.id">
-                    <td style="border: 1px solid #ddd; padding: 8px;  color: black">{{prod.quantity}}</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; color: black">{{prod.name}}</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black">{{commonService.commaSeparator(prod.price)}}</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black">{{commonService.commaSeparator(prod.price * prod.quantity)}}</td>
-                </tr>
-            </tbody>
-            <tfoot>
-                <!-- <tr>
-                    <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right; color: grey">Subtotal</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;  color: black">145.00</td>
-                </tr> -->
-                <tr>
-                    <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right; color: grey">VAT 18%</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black">{{commonService.commaSeparator(VAT[0].total)}}</td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right; color: grey"><strong>Total</strong></td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;color: black"><strong>{{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}</strong></td>
-                </tr>
-            </tfoot>
-        </table>
-        <div style="text-align: center; margin: 20px 0;">
-            <p style="margin: 0; color: grey">Thank you</p>
-            <p style="margin: 0; font-size: 0.9em; color: #666;">Payment is due within 15 days</p>
-            <p style="margin: 0; font-size: 0.9em; color: #666;">Please make checks payable to: {{ commonService.getStorage()?.institution_name }}.</p>
+
+<body style="background-color: #fff;">
+  <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
+    <header style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
+      <h1 style='color: #002060; margin: 0;'>INVOICE</h1>
+      <div style='width: 80px; height: 80px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;'>LOGO</div>
+    </header>
+
+    <section>
+      <div style='display: flex; justify-content: space-between;'>
+        <div>
+          <p style="color: #666;"><strong>Company Name:</strong> {{ commonService.getStorage()?.institution_name }}</p>
         </div>
+        <div style='text-align: right;'>
+          <p style="color: #666;"><strong>Invoice #:</strong> {{ commonService.generateRandomFiveId() }}</p>
+          <p style="color: #666;"><strong>Date:</strong> {{ commonService.formatDate(commonService.getCurrentTimestamp()) }}</p>
+          <p style="color: #666;"><strong>Due Date:</strong> 26/02/2019</p>
+        </div>
+      </div>
+    </section>
+
+    <section style='margin-top: 20px;'>
+      <div style='display: flex; justify-content: space-between;'>
+        <div>
+          <div style='background: #002060; padding: 5px 10px; font-weight: bold;'>BILL TO</div>
+          <p style="color: #666;">{{ customer?.name }}</p>
+          <!-- <p style="color: #666;">{{ billingAddress }}</p> -->
+        </div>
+        <div>
+          <div style='background: #002060; padding: 5px 10px; font-weight: bold;'>SHIP TO</div>
+          <!-- <p style="color: #666;">{{ customer?.name }}</p> -->
+          <p style="color: #666;">{{ billingAddress }}</p>
+        </div>
+      </div>
+    </section>
+
+    <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
+      <thead>
+        <tr>
+          <th style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #002060; color: #fff;'>QTY</th>
+          <th style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #002060; color: #fff;'>DESCRIPTION</th>
+          <th style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #002060; color: #fff;'>UNIT PRICE</th>
+          <th style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #002060; color: #fff;'>AMOUNT</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for='(prod, index) of selectedProduct' :key='prod.id'>
+          <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>{{ prod.quantity }}</td>
+          <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>{{ prod.name }}</td>
+          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(prod.price) }}</td>
+          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(prod.price * prod.quantity) }}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+            <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>Taxable</td>
+            <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(VAT[0].amount) }}</td>
+          </tr>
+        <tr>
+          <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>VAT 18%</td>
+          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(VAT[0].total) }}</td>
+        </tr>
+        <tr>
+          <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>Total</td>
+          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>{{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div style='margin-top: 20px; border: 1px solid #ddd; padding: 10px; background: #f2f2f2;'>
+      <p style="color: #666;"><strong>Other Comments:</strong></p>
+      <p style="color: #666;">1. Total payment due in 30 days.</p>
+      <p style="color: #666;">2. Please include the invoice number on your check.</p>
     </div>
+
+    <div style='text-align: center; margin-top: 30px;'>
+      <p style='font-size: 0.9em; color: #666;'>Thank you for your business!</p>
+      <p style='font-size: 0.9em; color: #666;'>Payment is due within 15 days.</p>
+      <!-- <p style='font-size: 0.9em; color: #666;'>Please make checks payable to: {{ commonService.getStorage()?.institution_name }}.</p> -->
+    </div>
+  </div>
 </body>
+
 </html>
 
 
-                <!-- /template -->
-                <template #footer>
-                    <Button label="print" @click="close" icon="pi pi-print" class="p-button-outlined" />
-                </template>
-            </Dialog>
+
+            <!-- /template -->
+            <template #footer>
+                <Button label="print" @click="close" icon="pi pi-print" class="p-button-outlined" />
+            </template>
+        </Dialog>
 
 
     </div>
 </template>
+
+<!-- <style>
+.invoice-container {
+    max-width: 750px;
+    font-family: monospace;
+    margin: 20px auto;
+    padding: 30px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.company-logo {
+    width: 80px;
+    height: 80px;
+    background: #ccc;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 80px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+h1 {
+    color: #002060;
+    margin: 0;
+}
+
+.section-title {
+    background: #002060;
+
+    padding: 5px 10px;
+    font-weight: bold;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+    color: #666;
+}
+
+.right-align {
+    text-align: right;
+}
+
+.totals-row {
+    font-weight: bold;
+}
+
+.comments-section {
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    background: #f2f2f2;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.footer p {
+    font-size: 0.9em;
+    color: #666;
+}
+</style> -->
