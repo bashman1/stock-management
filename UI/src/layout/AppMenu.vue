@@ -78,6 +78,13 @@ const pointOfSaleMenu = ref(
         to: '/point-of-sale'
     }
 )
+// const chartOfAccountMenu = ref(
+//     {
+//         label: 'Chart Of Accounts',
+//         icon: 'pi pi-bitcoin',
+//         items: []
+//     }
+// )
 
 const salesMenu = ref(
     {
@@ -92,6 +99,22 @@ const chartOfAccountMenu = ref(
     {
         label: 'Chart Of Accounts',
         icon: 'pi pi-bitcoin',
+        items: []
+    }
+)
+
+const payableReceivable = ref(
+    {
+        label: 'Payable/Receivable',
+        icon: 'pi pi-wallet',
+        items: []
+    }
+)
+
+const accountMenu = ref(
+    {
+        label: 'Account',
+        icon: 'pi pi-user',
         items: []
     }
 )
@@ -112,6 +135,26 @@ if (commonService.checkPermissions('CanViewInstitution')) {
         label: 'View Institutions',
         icon: 'pi pi-fw pi-circle',
         to: '/view-institutions'
+    },);
+}
+
+if (commonService.checkPermissions('ApproveInstitution')) {
+    institutionMenu.value.items.push({
+        label: 'Approve Institutions',
+        icon: 'pi pi-fw pi-circle',
+        to: '/approve-business'
+    },);
+}
+
+if (commonService.checkPermissions('CanCreateBranch')) {
+    institutionMenu.value.items.push({ label: 'Create Branch', icon: 'pi pi-fw pi-circle', to: '/create-branch' });
+}
+
+if (commonService.checkPermissions('ViewBranches')) {
+    institutionMenu.value.items.push({
+        label: 'View Branches',
+        icon: 'pi pi-fw pi-circle',
+        to: '/view-branches'
     },);
 }
 
@@ -148,6 +191,26 @@ if (commonService.checkPermissions('ViewRoles')) {
         }
     );
 }
+
+if (commonService.checkPermissions('CreateDefaultRoles')) {
+    userMenu.value.items.push(
+        {
+            label: 'Create Default Role',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-default-role'
+        }
+    );
+}
+if (commonService.checkPermissions('ViewDefaultRoles')) {
+    userMenu.value.items.push(
+        {
+            label: 'View Default Roles',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-default-roles'
+        }
+    );
+}
+
 if (commonService.checkPermissions('CreateMember')) {
     memberMenu.value.items.push(
         {
@@ -392,12 +455,24 @@ if(commonService.checkPermissions('ViewProductsReport')){
 if(commonService.checkPermissions('ViewSalesReport')){
     reportMenu.value.items.push(
         {
-            label: 'Sales Report',
+            label: 'Sales Transaction Report',
             icon: 'pi pi-fw pi-circle',
             to: '/sales-report'
         }
     )
 }
+
+
+if(commonService.checkPermissions('ViewSalesReport')){
+    reportMenu.value.items.push(
+        {
+            label: 'Sales Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/sales-item-report'
+        }
+    )
+}
+
 
 
 if(commonService.checkPermissions('ViewCashBook')){
@@ -409,6 +484,60 @@ if(commonService.checkPermissions('ViewCashBook')){
         }
     )
 }
+
+
+if(commonService.checkPermissions('ViewVatPayable')){
+    reportMenu.value.items.push(
+        {
+            label: 'VAT Payable',
+            icon: 'pi pi-fw pi-circle',
+            to: '/vat-payable-report'
+        }
+    )
+}
+
+
+if(commonService.checkPermissions('ViewReceivables')){
+    payableReceivable.value.items.push(
+        {
+            label: 'Receivable',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-receivables'
+        }
+    )
+}
+
+if(commonService.checkPermissions('ViewPayables')){
+    payableReceivable.value.items.push(
+        {
+            label: 'Payable',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-payable'
+        }
+    )
+}
+
+if(commonService.checkPermissions('ViewInstitutionProfile')){
+    accountMenu.value.items.push(
+        {
+            label: 'Institution Profile',
+            icon: 'pi pi-fw pi-circle',
+            to: '/institution-profile/'+commonService.getStorage().userData?.institution_id
+        }
+    )
+}
+
+
+if(commonService.checkPermissions('ViewUserProfile')){
+    accountMenu.value.items.push(
+        {
+            label: 'User Profile',
+            icon: 'pi pi-fw pi-circle',
+            to: '/user-profile/'+commonService.getStorage().userData?.id
+        }
+    )
+}
+
 
 
 
@@ -460,9 +589,15 @@ if (chartOfAccountMenu?.value?.items?.length > 0) {
     model.value[0].items.push(chartOfAccountMenu.value);
 }
 
+if (payableReceivable?.value?.items?.length > 0) {
+    model.value[0].items.push(payableReceivable.value);
+}
+
+if (accountMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(accountMenu.value);
+}
+
 model.value[0].items.push(logOut.value);
-
-
 
 </script>
 

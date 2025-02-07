@@ -40,7 +40,7 @@ class MtnPaymentsController extends Controller
 
         $requestPayment = $this->requestToPay($postData);
 
-        return $this->genericResponse(true, "Testing the end point", 200, ['response'=>$requestPayment, 'userDetails'=>$userDetails]);
+        return $this->genericResponse(true, "Testing the end point", 200, ['response'=>$requestPayment, 'userDetails'=>$userDetails], "getMOMOAuth", $request);
     }
 
 
@@ -109,10 +109,10 @@ class MtnPaymentsController extends Controller
 
 
     /**
-     * 
+     *
      */
     public function generateAPIKey($postData){
-    
+
         $url = "https://sandbox.momodeveloper.mtn.com/v1_0/apiuser/".$postData['uuid']."/apikey";
         $curl = curl_init($url);
 
@@ -141,11 +141,11 @@ class MtnPaymentsController extends Controller
     public function generateAccessToken($postData){
         $url = "https://sandbox.momodeveloper.mtn.com/collection/token/";
         $curl = curl_init($url);
-        
+
         curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($curl, CURLOPT_URL, $url);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        
+
         # Request headers
         $headers = array(
             'Cache-Control: no-cache',

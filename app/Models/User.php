@@ -42,7 +42,7 @@ class User extends Authenticatable
         'updated_on',
         'user_type',
         'user_category',
-
+        'original_branch_id'
     ];
 
     /**

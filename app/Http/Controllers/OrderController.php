@@ -11,16 +11,19 @@ use App\Models\GlAccounts;
 use App\Models\CntrlParameter;
 use App\Models\Institution;
 use App\Models\TempSale;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
+use charlieuki\ReceiptPrinter\ReceiptPrinter as ReceiptPrinter;
 
 class OrderController extends Controller
 {
     public function createOrder(Request $request){
         $response = $this->newSale($request);
 
-        return $this->genericResponse(true, "Order submitted successfully", 201, $response);
+        return $this->genericResponse(true, "Order submitted successfully", 201, $response, "createOrder", $request);
     }
 
     public function newSale($request){
@@ -32,13 +35,16 @@ class OrderController extends Controller
         $order->receipt_no = str_replace('TRN', '', $ref) ;
         $order->tran_id = $this->generateUuid() ;
         $order->item_count = $request->itemCount ;
-        $order->total = $request->total ;
-        $order->discount = $request->discount ;
-        $order->amount_paid = $request->amountPaid ;
+        $order->total =  (double) $request->total ;
+        $order->discount =  (double) $request->discount ;
+        $order->amount_paid =  (double) $request->amountPaid ;
         $order->user_id = $userData->id ;
         $order->customer_id = $request->customerId;
         $order->tran_date = $request->tranDate ;
         $order->status = $request->status ;
+        $order->customer_id = $request->customer_id ;
+        $order->address = $request->address ;
+        $order->payment_method = $request->payment_method ;
         $order->payment_status = $request->Paid ;
         $order->institution_id = $userData->institution_id;
         $order->branch_id = $userData->branch_id ;
@@ -62,9 +68,22 @@ class OrderController extends Controller
             }
         }
 
-
         $branch = Branch::where(['id'=>$userData->branch_id, 'institution_id'=>$userData->institution_id])->first();
-        $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
+
+
+        $cl = null;
+        if (isset($request->payment_method)){
+            if ($request->payment_method == "BANK"){
+                $cl = CntrlParameter::where(['param_cd' => 'CGL', 'institution_id' => $userData->institution_id])->first();
+            }elseif ($request->payment_method == "CREDIT"){
+                $cl = CntrlParameter::where(['param_cd' => 'AR', 'institution_id' => $userData->institution_id])->first();
+            }else{
+                $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+            }
+        }else{
+            $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+        }
+//        $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
         $sti = CntrlParameter::where(['param_cd'=>'SL', 'institution_id'=>$userData->institution_id])->first();
         $vat = CntrlParameter::where(['param_cd'=>'TAX', 'institution_id'=>$userData->institution_id])->first();
 
@@ -162,6 +181,26 @@ class OrderController extends Controller
         ];
         $debit = $this->postGlDR($debitRequest);
         $credit = $this->postGlCR($creditRequest);
+
+
+
+        if($request->payment_method == "CREDIT"){
+            $receivable = (array)[
+                "ref_no"=>$order->ref_no,
+                "receipt_no"=>$order->receipt_no,
+                "tran_id"=>$order->tran_id,
+                "customer_id"=>$request->customer_id,
+                "amount"=>  (double) $request->total,
+                "amount_paid"=>0,
+                "status"=>"Active",
+                "institution_id"=>$userData->institution_id,
+                "branch_id"=>$userData->branch_id ,
+                "created_by"=>$userData->id ,
+                "created_on"=> Carbon::now()
+            ];
+             $this->createReceivable($receivable);
+        }
+
         if($institution->is_tax_enabled){
             $VATcredit = $this->postGlCR($taxCreditRequest);
         }
@@ -170,20 +209,23 @@ class OrderController extends Controller
             $items = new OrderItem();
             $items->order_id = $order->id;
             $items->product_id = $value['id'];
-            $items->qty = $value['quantity'];
+            $items->qty =  (double) $value['quantity'] * (1/$value['selected']['weight']);
+            $items->selling_price =  (double) $value['price'];
             $items->status = $request->status;
             $items->institution_id = $userData->institution_id;
             $items->branch_id = $userData->institution_id;
             $items->created_by = $userData->institution_id;
+            $items->measurement_unit_id = $value['selected']['unit_id'];
             $items->created_on = now();
 
-            $stock->quantity = $stock->quantity-$value['quantity'];
+            $stock->quantity =  (double) $stock->quantity-$value['quantity'];
             $stock->save();
 
             $creditStock=$debitRequest;
             $debitGoodsForSale=$creditRequest;
 
             $amount = $stock->purchase_price * $value['quantity'];
+            // $amount = $stock->purchase_price * $value['quantity'];
 
             $creditStock->acct_no = $stInGl;
             $creditStock->acct_type = $stInGlType->acct_type;
@@ -219,12 +261,12 @@ class OrderController extends Controller
         $queryString.=" ORDER BY O.id DESC";
 
         $orders = DB::select($queryString);
-        return $this->genericResponse(true, "Collected successfully", 200, $orders);
+        return $this->genericResponse(true, "Collected successfully", 200, $orders, "getOrders", []);
     }
 
     public function getOderDetails($orderId){
         $queryString=" SELECT O.id, O.order_id, O.product_id,O.qty, O.status,O.institution_id, O.branch_id, O.created_at, P.name,
-        P.product_no, S.selling_price AS price, I.name AS institution_name, B.name AS branch_name, Q.ref_no,
+        P.product_no, COALESCE(O.selling_price ,S.selling_price)  AS price, I.name AS institution_name, B.name AS branch_name, Q.ref_no,
         Q.receipt_no, Q.tran_id, Q.item_count, Q.total, Q.discount, Q.amount_paid, Q.tran_date, Q.payment_status,
         CONCAT(U.first_name,' ',U.last_name,' ',U.other_name) AS user_name, B.address AS branch_address,
         I.address AS institution_address FROM order_items O
@@ -235,7 +277,7 @@ class OrderController extends Controller
         INNER JOIN orders Q ON Q.id = O.order_id
         INNER JOIN users U ON Q.user_id = U.id WHERE  O.order_id = $orderId";
         $orderDetails = DB::select($queryString);
-        return $this->genericResponse(true, "Order details fetched successfully", 200, $orderDetails);
+        return $this->genericResponse(true, "Order details fetched successfully", 200, $orderDetails, "getOderDetails", $orderId);
     }
 
     public function approveBatchSales(Request $request){
@@ -272,7 +314,82 @@ class OrderController extends Controller
         ];
         $response = $this->newSale($newSale);
         DB::commit();
-        return $this->genericResponse(true, "Approved Successfully", 200,  $response);
+        return $this->genericResponse(true, "Approved Successfully", 200,  $response, "approveBatchSales", $request);
+    }
+
+
+    public function printReceipt(){
+
+                // Set params
+                $mid = '123123456';
+                $store_name = 'YOURMART';
+                $store_address = 'Mart Address';
+                $store_phone = '1234567890';
+                $store_email = 'yourmart@email.com';
+                $store_website = 'yourmart.com';
+                $tax_percentage = 18;
+                $transaction_id = 'TX123ABC456';
+
+                // Set items
+                $items = [
+                    [
+                        'name' => 'French Fries (tera)',
+                        'qty' => 2,
+                        'price' => 65000,
+                    ],
+                    [
+                        'name' => 'Roasted Milk Tea (large)',
+                        'qty' => 1,
+                        'price' => 24000,
+                    ],
+                    [
+                        'name' => 'Honey Lime (large)',
+                        'qty' => 3,
+                        'price' => 10000,
+                    ],
+                    [
+                        'name' => 'Jasmine Tea (grande)',
+                        'qty' => 3,
+                        'price' => 8000,
+                    ],
+                ];
+
+                // Init printer
+                $printer = new ReceiptPrinter;
+                $printer->init(
+                    config('receiptprinter.connector_type'),
+                    config('receiptprinter.connector_descriptor')
+                );
+
+                // Set store info
+                $printer->setStore($mid, $store_name, $store_address, $store_phone, $store_email, $store_website);
+
+                // Add items
+                foreach ($items as $item) {
+                    $printer->addItem(
+                        $item['name'],
+                        $item['qty'],
+                        $item['price']
+                    );
+                }
+                // Set tax
+                $printer->setTax($tax_percentage);
+
+                // Calculate total
+                $printer->calculateSubTotal();
+                $printer->calculateGrandTotal();
+
+                // Set transaction ID
+                $printer->setTransactionID($transaction_id);
+
+                // Set qr code
+                $printer->setQRcode([
+                    'tid' => $transaction_id,
+                ]);
+
+                // Print receipt
+                $printer->printReceipt();
+
     }
 
 }

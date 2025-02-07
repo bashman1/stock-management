@@ -16,13 +16,13 @@ class BankRefController extends Controller
         // $bank->created_by = $request->created_by ;
         $bank->created_on = now();
         $bank->save();
-        return $this->genericResponse(true, "Bank created successfully", 201, $bank);
+        return $this->genericResponse(true, "Bank created successfully", 201, $bank, "createBankRef",$request);
     }
 
 
 
     public function getBanks(){
         $banks =  BankRef::all();
-        return $this->genericResponse(true, "City created successfully", 200, $banks);
+        return $this->genericResponse(true, "Banks fetched successfully", 200, $banks, "getBanks", []);
     }
 }

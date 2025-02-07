@@ -19,7 +19,8 @@ const checked = ref(false);
 
 const logoUrl = computed(() => {
     // return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
-    return `demo/images/Smart-Collect-logo-black-removebg.png`;
+    // return `demo/images/Smart-Collect-logo-black-removebg.png`;
+    return `demo/images/SmarCollectlogo-removebg-preview.png`;
 });
 
 
@@ -51,6 +52,10 @@ const redirectToHome = ()=>{
     router.push("/admin");
 }
 
+const goToSelfRegistration = ()=>{
+    router.push("/auth/register");
+}
+
 </script>
 
 
@@ -78,9 +83,11 @@ const redirectToHome = ()=>{
 
                         <div class="flex align-items-center justify-content-between mb-5 gap-5">
                             <div class="flex align-items-center">
-                                <!-- <Checkbox v-model="checked" id="rememberme1" binary class="mr-2"></Checkbox>
-                                <label for="rememberme1">Remember me</label> -->
+                            <a class="font-medium no-underline ml-2 text-left cursor-pointer" style="color: var(--primary-color)" @click="goToSelfRegistration" >Self enroll</a>
+                                <!-- <Checkbox v-model="checked" id="rememberme1" binary class="mr-2"></Checkbox> -->
+                                <!-- <label for="rememberme1">Remember me</label> -->
                             </div>
+                            <!-- <a class="font-medium no-underline ml-2 text-left cursor-pointer" style="color: var(--primary-color)">Forgot password?</a> -->
                             <a class="font-medium no-underline ml-2 text-right cursor-pointer" style="color: var(--primary-color)">Forgot password?</a>
                         </div>
                         <Button @click="login" label="Sign In" class="w-full p-3 text-xl"></Button>

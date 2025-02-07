@@ -26,6 +26,7 @@ return new class extends Migration
             $table->unsignedBigInteger("customer_id")->nullable();
             $table->timestamp('tran_date')->nullable();
             $table->string("status")->nullable();
+            $table->string("address")->nullable();
             $table->string("payment_status")->nullable();
             $table->unsignedBigInteger("institution_id");
             $table->unsignedBigInteger("branch_id");

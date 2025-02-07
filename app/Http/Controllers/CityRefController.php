@@ -17,13 +17,13 @@ class CityRefController extends Controller
         $city->status = $request->status;
         $city->created_on = now();
         $city->save();
-        
-        return $this->genericResponse(true, "City created successfully", 201, $city);
+
+        return $this->genericResponse(true, "City created successfully", 201, $city, "createCity", $request);
     }
 
 
     public function getCityByCountryId($country_id){
         $cities = CityRef::where('country_id', $country_id)->get();
-        return $this->genericResponse(true, "Cities retrieved successfully", 200, $cities);
+        return $this->genericResponse(true, "Cities retrieved successfully", 200, $cities, "getCityByCountryId", $country_id);
     }
 }

@@ -129,12 +129,12 @@ onMounted(() => {
                     <tbody>
                         <template v-for="(gl, index) in glOverView" :key="index">
                             <tr>
-                                <th colspan="3" class="bold">{{ gl.acct_type +' - '+gl.description}}</th>
+                                <th colspan="3" class="bold text-900">{{ gl.acct_type +' - '+gl.description}}</th>
                             </tr>
                             <tr v-for="(acct, i) in gl.list" :key="i">
-                                <td class="left-align" :class="{'bold':acct.description=='Total'}">{{ acct.description }}</td>
-                                <td>{{ commonService.commaSeparator(acct.balance) }}</td>
-                                <td class="bold">{{ commonService.commaSeparator(acct.total) }}</td>
+                                <td class="left-align text-900" :class="{'bold':acct.description=='Total'}">{{ acct.description }}</td>
+                                <td class="text-900">{{ commonService.commaSeparator(acct.balance) }}</td>
+                                <td class="bold text-900">{{ commonService.commaSeparator(acct.total) }}</td>
                             </tr>
                         </template>
                     </tbody>

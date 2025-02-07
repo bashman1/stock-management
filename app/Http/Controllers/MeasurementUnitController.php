@@ -21,13 +21,13 @@ class MeasurementUnitController extends Controller
         $unit->created_on = now();
         $unit->save();
 
-        return $this->genericResponse(true, "Measurement unit created successfully", 201, $unit);
+        return $this->genericResponse(true, "Measurement unit created successfully", 201, $unit, "createMeasurementUnit", $request);
     }
 
     public function getMeasurementUnit(){
         $userData = auth()->user();
         $unit = measurementUnit::where(["status"=>"Active", "institution_id"=>$userData->institution_id])->get();
-        return $this->genericResponse(true, "Measurement unit fetched successfully", 200, $unit);
+        return $this->genericResponse(true, "Measurement unit fetched successfully", 200, $unit, "getMeasurementUnit", []);
     }
 
 }

@@ -15,13 +15,13 @@ class InstitutionTypeRefController extends Controller
         // $type->created_by = $request->created_by;
         $type-> created_on= now();
         $type->save();
-        return $this->genericResponse(true, "Institution Type Created successfully", 201, $type);
+        return $this->genericResponse(true, "Institution Type Created successfully", 201, $type, "createInstitutionType", $request);
     }
 
 
     public function getInstitutionTypes(){
         $types = InstitutionTypeRef::all();
-        return $this->genericResponse(true, "Institution Type retrieved successfully", 200, $types);
+        return $this->genericResponse(true, "Institution Type retrieved successfully", 200, $types, "getInstitutionTypes", []);
     }
 
 }

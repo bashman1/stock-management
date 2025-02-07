@@ -15,6 +15,7 @@ const description = ref(null);
 const acctNo = ref(null);
 const formError = ref({});
 const debitSelected = ref(null);
+const isAdd = ref(false);
 
 const getGlAccounts = () => {
     commonService.genericRequest('get-gl-accounts', 'get', true, {}).then((response) => {
@@ -33,8 +34,16 @@ const onInputBlur = (value, key) => {
 const updateGl = (event) => {
     description.value = event.description
     acctNo.value = event.acct_no
+    isAdd.value = false;
     toggleEditModal(true)
+}
 
+
+const addSubAccount = (event)=>{
+    description.value = 'Sub account for '+event.description
+    isAdd.value = true;
+    acctNo.value = event.acct_no
+    toggleEditModal(true)
 }
 
 const toggleEditModal = (action) => {
@@ -42,10 +51,12 @@ const toggleEditModal = (action) => {
 }
 
 const updateGlName = () => {
+
+
     formError.value.description = commonService.validateFormField(description.value);
     let invalid = commonService.validateRequiredFields(formError.value);
     if (invalid) {
-        commonService.showError(toast, "Please fill in the missing field");
+        commonService.showError(toast, "Please fill in the missing field");   // GlHierarchy
         return
     }
 
@@ -53,7 +64,14 @@ const updateGlName = () => {
         description:description.value,
         acctNo: acctNo.value
     }
-    commonService.genericRequest('update-gl-account', 'post', true, postData).then((response) => {
+
+    let url = "update-gl-account"
+
+    if (isAdd.value){
+        url = "create-sub-account"
+    }
+
+    commonService.genericRequest(url, 'post', true, postData).then((response) => {
         if (response.status) {
             commonService.showSuccess(toast, response.message);
             getGlAccounts();
@@ -64,17 +82,11 @@ const updateGlName = () => {
     })
 }
 
-const debitAccount=(event)=>{
-
-}
-
-const creditAccount=(event)=>{
-
-}
 
 const goToDetails = (event) => {
     router.push("/gl-statement/" + event?.acct_no);
 }
+
 
 onMounted(() => {
     getGlAccounts();
@@ -116,6 +128,7 @@ onMounted(() => {
                 <template #body="{ data }">
                         <Button icon="pi pi-eye" @click="goToDetails(data)" class="p-button-primary mr-2"  v-tooltip="'Gl. account statement'"/>
                         <Button icon="pi pi-pencil" @click="updateGl(data)" class="p-button-success mr-2" v-tooltip="'Update gl account description'" />
+                        <Button icon="pi pi-plus" @click="addSubAccount(data)" class="p-button-info mr-2" v-tooltip="'Create sub account'" />
                 </template>
             </Column>
         </DataTable>

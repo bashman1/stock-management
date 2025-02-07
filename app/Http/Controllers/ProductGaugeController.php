@@ -21,13 +21,13 @@ class ProductGaugeController extends Controller
         $gauge->created_on =now() ;
         $gauge->save() ;
 
-        return $this->genericResponse(true, "Product gauge created successfully", 201, $gauge);
+        return $this->genericResponse(true, "Product gauge created successfully", 201, $gauge, "createGauge", $request);
     }
 
     public function getGauges(){
         $userData = auth()->user();
         $gauge = ProductGauge::where(["status"=>"Active", "institution_id"=>$userData->institution_id])->get();
-        return $this->genericResponse(true, "Product gauge fetched successfully", 200, $gauge);
+        return $this->genericResponse(true, "Product gauge fetched successfully", 200, $gauge, "getGauges", []);
 
     }
 }

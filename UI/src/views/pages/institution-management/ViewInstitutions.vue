@@ -34,7 +34,7 @@ onMounted(() => {
     <div class="grid">
         <div class="col-12">
             <div class="card">
-                <h5>Roles</h5>
+                <h5>View Institutions</h5>
                 <DataTable :value="institution" :paginator="true" class="p-datatable-gridlines" :rows="10" dataKey="id"
                     :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
 

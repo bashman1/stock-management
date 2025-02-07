@@ -115,7 +115,7 @@ onMounted(() => {
                         {{ data.category_name }}
                     </template>
                 </Column>
-                <Column field="name" header="Quantity" style="min-width: 10rem">
+                <Column field="name" header="Stock Available" style="min-width: 10rem">
                     <template #body="{ data }">
                         {{ commonService.commaSeparator(data.quantity) }}
                     </template>
@@ -133,6 +133,11 @@ onMounted(() => {
                 <Column field="name" header="Selling Price" style="min-width: 10rem">
                     <template #body="{ data }">
                         {{ commonService.commaSeparator(data.selling_price) }}
+                    </template>
+                </Column>
+                <Column field="name" header="Profit Margin" style="min-width: 10rem">
+                    <template #body="{ data }">
+                        {{ commonService.commaSeparator(data.selling_price - data.purchase_price) }}
                     </template>
                 </Column>
 

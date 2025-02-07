@@ -97,133 +97,133 @@ const checkDateFormat=(event)=>{
 
                 <table class="income-statement">
                     <tr>
-                        <th class="bold"> <h5 class="statement-header bold">Particulars</h5></th>
-                        <td class="bold">Amount</td>
-                        <td class="bold">Amount</td>
+                        <th class="bold"> <h5 class="statement-header bold text-900">Particulars</h5></th>
+                        <td class="bold text-900">Amount</td>
+                        <td class="bold text-900">Amount</td>
                     </tr>
                     <tr>
-                        <th>Sales</th>
-                        <td></td>
-                        <td>{{ incomeStatementData?.totalSales==0?incomeStatementData?.totalSales:commonService.commaSeparator(incomeStatementData?.totalSales) }}</td>
+                        <th class="text-900">Sales</th>
+                        <td class="text-900"></td>
+                        <td class="text-900">{{ incomeStatementData?.totalSales==0?incomeStatementData?.totalSales:commonService.commaSeparator(incomeStatementData?.totalSales) }}</td>
                     </tr>
                     <tr>
-                        <th>Return in Wards</th>
-                        <td></td>
-                        <td>{{ incomeStatementData?.totalReturnIn==0?incomeStatementData?.totalReturnIn:commonService.commaSeparator(incomeStatementData?.totalReturnIn) }}</td>
+                        <th class="text-900">Return in Wards</th>
+                        <td class="text-900"></td>
+                        <td class="text-900">{{ incomeStatementData?.totalReturnIn==0?incomeStatementData?.totalReturnIn:commonService.commaSeparator(incomeStatementData?.totalReturnIn) }}</td>
                     </tr>
                     <tr>
-                        <th>Net sales</th>
-                        <td></td>
-                        <td class="bold">{{ incomeStatementData?.netSales==0?incomeStatementData?.netSales:commonService.commaSeparator(incomeStatementData?.netSales) }}</td>
+                        <th class="text-900">Net sales</th>
+                        <td class="text-900"></td>
+                        <td class="bold text-900">{{ incomeStatementData?.netSales==0?incomeStatementData?.netSales:commonService.commaSeparator(incomeStatementData?.netSales) }}</td>
                     </tr>
                     <tr>
-                        <th> <h5 class="statement-header bold">Cost Of Sales</h5></th>
-                        <td></td>
-                        <td></td>
+                        <th> <h5 class="statement-header bold text-900">Cost Of Sales</h5></th>
+                        <td class="text-900"></td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>opening stock</th>
-                        <td>{{ incomeStatementData?.openingStock==0?incomeStatementData?.openingStock:commonService.commaSeparator(incomeStatementData?.openingStock) }}</td>
-                        <td></td>
+                        <th class="text-900">opening stock</th>
+                        <td class="text-900">{{ incomeStatementData?.openingStock==0?incomeStatementData?.openingStock:commonService.commaSeparator(incomeStatementData?.openingStock) }}</td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Purchases</th>
-                        <td>{{ incomeStatementData?.totalPurchases==0?incomeStatementData?.totalPurchases:commonService.commaSeparator(incomeStatementData?.totalPurchases) }}</td>
-                        <td></td>
+                        <th class="text-900">Purchases</th>
+                        <td class="text-900">{{ incomeStatementData?.totalPurchases==0?incomeStatementData?.totalPurchases:commonService.commaSeparator(incomeStatementData?.totalPurchases) }}</td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Return in wards/ purchase return</th>
-                        <td>{{ incomeStatementData?.totalReturnIn==0?incomeStatementData?.totalReturnIn:commonService.commaSeparator(incomeStatementData?.totalReturnIn) }}</td>
-                        <td></td>
+                        <th class="text-900">Return in wards/ purchase return</th>
+                        <td class="text-900">{{ incomeStatementData?.totalReturnIn==0?incomeStatementData?.totalReturnIn:commonService.commaSeparator(incomeStatementData?.totalReturnIn) }}</td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Passage/ carriage</th>
-                        <td>{{ incomeStatementData?.totalPassage==0?incomeStatementData?.totalPassage:commonService.commaSeparator(incomeStatementData?.totalPassage) }}</td>
-                        <td></td>
+                        <th class="text-900">Passage/ carriage</th>
+                        <td class="text-900">{{ incomeStatementData?.totalPassage==0?incomeStatementData?.totalPassage:commonService.commaSeparator(incomeStatementData?.totalPassage) }}</td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Goods available for sale</th>
-                        <td class="bold">{{ incomeStatementData?.goodAvailableForSale==0?incomeStatementData?.goodAvailableForSale:commonService.commaSeparator(incomeStatementData?.goodAvailableForSale) }}</td>
-                        <td></td>
+                        <th class="text-900">Goods available for sale</th>
+                        <td class="bold text-900">{{ incomeStatementData?.goodAvailableForSale==0?incomeStatementData?.goodAvailableForSale:commonService.commaSeparator(incomeStatementData?.goodAvailableForSale) }}</td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Closing stock</th>
-                        <td>{{ incomeStatementData?.closingStock==0?incomeStatementData?.closingStock:commonService.commaSeparator(incomeStatementData?.closingStock) }}</td>
-                        <td></td>
+                        <th class="text-900">Closing stock</th>
+                        <td class="text-900">{{ incomeStatementData?.closingStock==0?incomeStatementData?.closingStock:commonService.commaSeparator(incomeStatementData?.closingStock) }}</td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Cost of sales</th>
-                        <td></td>
-                        <td class="bold">{{ incomeStatementData?.costOfSales==0?incomeStatementData?.costOfSales:commonService.commaSeparator(incomeStatementData?.costOfSales) }}</td>
+                        <th class="text-900">Cost of sales</th>
+                        <td class="text-900"></td>
+                        <td class="bold text-900">{{ incomeStatementData?.costOfSales==0?incomeStatementData?.costOfSales:commonService.commaSeparator(incomeStatementData?.costOfSales) }}</td>
                     </tr>
                     <tr>
-                        <th>Gross Profit</th>
-                        <td></td>
-                        <td class="bold">{{ incomeStatementData?.grossProfit==0?incomeStatementData?.grossProfit:commonService.commaSeparator(incomeStatementData?.grossProfit) }}</td>
+                        <th class="text-900">Gross Profit</th>
+                        <td class="text-900"></td>
+                        <td class="bold text-900">{{ incomeStatementData?.grossProfit==0?incomeStatementData?.grossProfit:commonService.commaSeparator(incomeStatementData?.grossProfit) }}</td>
                     </tr>
                     <tr>
-                        <th> <h5 class="statement-header bold">Other Incomes</h5></th>
-                        <td></td>
-                        <td></td>
+                        <th> <h5 class="statement-header bold text-900">Other Incomes</h5></th>
+                        <td class="text-900"></td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Discount received</th>
-                        <td>0</td>
-                        <td></td>
+                        <th class="text-900">Discount received</th>
+                        <td class="text-900">0</td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Profit on deposable of NCA</th>
-                        <td>0</td>
-                        <td></td>
+                        <th class="text-900">Profit on deposable of NCA</th>
+                        <td class="text-900">0</td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Total income</th>
-                        <td></td>
-                        <td class="bold">{{ incomeStatementData?.totalIncome==0?incomeStatementData?.totalIncome:commonService.commaSeparator(incomeStatementData?.totalIncome) }}</td>
+                        <th class="text-900">Total income</th>
+                        <td class="text-900"></td>
+                        <td class="bold text-900">{{ incomeStatementData?.totalIncome==0?incomeStatementData?.totalIncome:commonService.commaSeparator(incomeStatementData?.totalIncome) }}</td>
                     </tr>
                     <tr>
-                        <th> <h5 class="statement-header bold">Operating Expenses</h5></th>
-                        <td></td>
-                        <td></td>
+                        <th> <h5 class="statement-header bold text-900">Operating Expenses</h5></th>
+                        <td class="text-900"></td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Total operating expenses</th>
-                        <td></td>
-                        <td class="bold">{{ incomeStatementData?.totalOperatingExpenses==0?incomeStatementData?.totalOperatingExpenses:commonService.commaSeparator(incomeStatementData?.totalOperatingExpenses) }}</td>
+                        <th class="text-900">Total operating expenses</th>
+                        <td class="text-900"></td>
+                        <td class="bold text-900">{{ incomeStatementData?.totalOperatingExpenses==0?incomeStatementData?.totalOperatingExpenses:commonService.commaSeparator(incomeStatementData?.totalOperatingExpenses) }}</td>
                     </tr>
                     <tr>
-                        <th>Profit before interest and tax(PBIT)</th>
-                        <td></td>
-                        <td class="bold">{{ incomeStatementData?.totalIncome==0?incomeStatementData?.totalIncome:commonService.commaSeparator(incomeStatementData?.totalIncome) }}</td>
+                        <th class="text-900">Profit before interest and tax(PBIT)</th>
+                        <td class="text-900"></td>
+                        <td class="bold text-900">{{ incomeStatementData?.profitBeforeInterestAndTax==0?incomeStatementData?.totalIncome:commonService.commaSeparator(incomeStatementData?.profitBeforeInterestAndTax) }}</td>
                     </tr>
                     <tr>
-                        <th> <h5 class="statement-header bold">Finance Costs</h5></th>
-                        <td></td>
-                        <td></td>
+                        <th> <h5 class="statement-header bold text-900">Finance Costs</h5></th>
+                        <td class="text-900"></td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Interest on external loan</th>
+                        <th class="text-900">Interest on external loan</th>
 
                         <!-- <td>{{ incomeStatementData?.totalOperatingExpenses==0?incomeStatementData?.totalOperatingExpenses:commonService.commaSeparator(incomeStatementData?.totalOperatingExpenses) }}</td> -->
-                        <td>0</td>
-                        <td></td>
+                        <td class="text-900">0</td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Interest to URL</th>
+                        <th class="text-900">Interest to URL</th>
 
                         <!-- <td >{{ incomeStatementData?.totalOperatingExpenses==0?incomeStatementData?.totalOperatingExpenses:commonService.commaSeparator(incomeStatementData?.totalOperatingExpenses) }}</td> -->
-                        <td>0</td>
-                        <td></td>
+                        <td class="text-900">0</td>
+                        <td class="text-900"></td>
                     </tr>
                     <tr>
-                        <th>Total finance costs</th>
-                        <td></td>
-                        <td class="bold">{{ incomeStatementData?.totalOperatingExpenses==0?incomeStatementData?.totalOperatingExpenses:commonService.commaSeparator(incomeStatementData?.totalOperatingExpenses) }}</td>
+                        <th class="text-900">Total finance costs</th>
+                        <td class="text-900"></td>
+                        <td class="bold text-900">{{ incomeStatementData?.totalOperatingExpenses==0?incomeStatementData?.totalOperatingExpenses:commonService.commaSeparator(incomeStatementData?.totalOperatingExpenses) }}</td>
                     </tr>
                     <tr>
-                        <th>Profit before tax (PBT)</th>
-                        <td></td>
-                        <td class="bold">{{ incomeStatementData?.totalOperatingExpenses==0?incomeStatementData?.totalOperatingExpenses:commonService.commaSeparator(incomeStatementData?.totalOperatingExpenses) }}</td>
+                        <th class="text-900">Profit before tax (PBT)</th>
+                        <td class="text-900"></td>
+                        <td class="bold text-900">{{ incomeStatementData?.profitBeforeInterestAndTax==0?incomeStatementData?.profitBeforeInterestAndTax:commonService.commaSeparator(incomeStatementData?.profitBeforeInterestAndTax) }}</td>
                     </tr>
                 </table>
         </div>

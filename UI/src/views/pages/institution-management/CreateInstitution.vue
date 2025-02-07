@@ -94,7 +94,7 @@ const onSubmit = () => {
 
 
 const getInstitutionTypes = () => {
-    commonService.genericRequest('get-institution-types', 'get', true, {}).then((response) => {
+    commonService.genericRequest('get-institution-types', 'get', false, {}).then((response) => {
         if (response.status) {
             instType.value = response.data
         } else {
@@ -104,7 +104,7 @@ const getInstitutionTypes = () => {
 }
 
 const getCities = () => {
-    commonService.genericRequest('get-city-county-id/' + 1, 'get', true, {}).then((response) => {
+    commonService.genericRequest('get-city-county-id/' + 1, 'get', false, {}).then((response) => {
         if (response.status) {
             cities.value = response.data
         } else {
@@ -114,7 +114,7 @@ const getCities = () => {
 }
 
 const getBanks = () => {
-    commonService.genericRequest('get-bank-ref', 'get', true, {}).then((response) => {
+    commonService.genericRequest('get-bank-ref', 'get', false, {}).then((response) => {
         if (response.status) {
             banks.value = response.data
         } else {

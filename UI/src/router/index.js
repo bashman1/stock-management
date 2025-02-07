@@ -5,7 +5,7 @@ import CommonService from '@/service/CommonService'
 
 const commonService = new CommonService();
 
-export const isAuthenticated = ref(commonService.checkingAuthentication());
+// export const isAuthenticated = ref(commonService.checkingAuthentication());
 // export const isAuthenticated = ref(commonService.loggedIn);
 
 const router = createRouter({
@@ -533,12 +533,112 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/sales-item-report',
+                    name: 'SalesItemReport',
+                    component: () => import('@/views/pages/reports/SalesItemReport.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/create-branch',
+                    name: 'CreateBranch',
+                    component: () => import('@/views/pages/institution-management/CreateBranch.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
 
-            //     CashBook.vue
+                },
+                {
+                    path: '/view-branches',
+                    name: 'ViewBranches',
+                    component: () => import('@/views/pages/institution-management/ViewBranches.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
 
-
-
-
+                },
+                {
+                    path: '/view-receivables',
+                    name: 'ViewReceivables',
+                    component: () => import('@/views/pages/stock-management/Receivables.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-payable',
+                    name: 'ViewPayable',
+                    component: () => import('@/views/pages/stock-management/Payables.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/institution-profile/:id',
+                    name: 'InstitutionProfile',
+                    component: () => import('@/views/pages/institution-management/InstitutionProfile.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/user-profile/:id',
+                    name: 'UserProfile',
+                    component: () => import('@/views/pages/user-management/UserProfile.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/vat-payable-report',
+                    name: 'VATPayableReport',
+                    component: () => import('@/views/pages/reports/VatPayable.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/gl-accounts-hierarchy',
+                    name: 'GlHierarchy',
+                    component: () => import('@/views/pages/chart-of-accounts/GlHierarchy.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/create-default-role',
+                    name: 'CreateDefaultRole',
+                    component: () => import('@/views/pages/user-management/CreateDefaultRole.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-default-roles',
+                    name: 'ViewDefaultRole',
+                    component: () => import('@/views/pages/user-management/ViewDefaultRole.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/assign-default-roles-permission/:id',
+                    name: 'AssignDefaultRolePermission',
+                    component: () => import('@/views/pages/user-management/AssignDefaultRolePermissions.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/approve-business',
+                    name: 'ApproveInstitution',
+                    component: () => import('@/views/pages/institution-management/ApproveInstitutions.vue'),
+                    meta:{
+                        requiresAuth: true, // This route requires authentication
+                    }
+                },
             ]
         },
         {
@@ -567,6 +667,11 @@ const router = createRouter({
             name: 'error',
             component: () => import('@/views/pages/auth/Error.vue')
         },
+        {
+            path: '/auth/register',
+            name: 'selfRegister',
+            component: () => import('@/views/pages/auth/SelfEnroll.vue')
+        },
 
     ]
 });
@@ -576,7 +681,8 @@ router.beforeEach((to, from, next) => {
     // Check if the route requires authentication
     if (to.meta.requiresAuth) {
         // If the user is authenticated, allow navigation
-        if (isAuthenticated.value) {
+        // if (isAuthenticated.value) { //old implementation which was only working onInit
+        if (commonService.checkingAuthentication()) { // new implementation
             next();
         } else {
             // If not authenticated, redirect to the login page

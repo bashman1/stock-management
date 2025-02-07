@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SalesItemReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\ProductCsvExport;
+use App\Models\Institution;
+use App\Models\InstitutionContact;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Services\ReportsService;
@@ -55,7 +58,7 @@ class ReportController extends Controller
         }
         $sqlString .= " ORDER BY P.id DESC";
         $products = DB::select($sqlString);
-        return $this->genericResponse(true, "Product list", 200, $products);
+        return $this->genericResponse(true, "Product list", 200, $products, "getInventoryReport", $request);
     }
 
     /**
@@ -69,7 +72,7 @@ class ReportController extends Controller
 
         $orders = $this->reportService->salesReport($request);
 
-        return $this->genericResponse(true, "Product list", 200, $orders);
+        return $this->genericResponse(true, "Product list", 200, $orders, "getSalesReport", $request);
     }
 
 
@@ -90,7 +93,7 @@ class ReportController extends Controller
         }
         $sqlString .= " ORDER BY H.id DESC";
         $stockHistory = DB::select($sqlString);
-        return $this->genericResponse(true, "Product list", 200, $stockHistory);
+        return $this->genericResponse(true, "Product list", 200, $stockHistory, "getInventoryHistoryReport", $request);
     }
 
     public function getSalesHistoryReport(Request $request)
@@ -114,7 +117,7 @@ class ReportController extends Controller
         $sqlString .= " ORDER BY O.id DESC";
         $salesHistory = DB::select($sqlString);
         //return $this->genericResponse(true, "Product list", 200, ['institution_id'=>$userData->institution_id, 'branch_id'=>$userData->branch_id]);
-        return $this->genericResponse(true, "Product list", 200, $salesHistory);
+        return $this->genericResponse(true, "Product list", 200, $salesHistory, "getSalesHistoryReport", $request);
     }
 
 
@@ -148,7 +151,7 @@ class ReportController extends Controller
 
     public function downLoadSalesPdfReport(Request $request)
     {
-      
+
 
         $sales = $this->reportService->salesReport($request);
 
@@ -164,11 +167,124 @@ class ReportController extends Controller
         }
     }
 
-
     public function downLoadSalesCsvReport()
     {
         //TODO get products belonging to a store
 
         return Excel::download(new ProductCsvExport, 'users.csv');
     }
+
+    public function getItemSalesReport(Request $request){
+        $salesReport = $this->getItemSalesData($request);
+        return $this->genericResponse(true, "Sales list", 200, $salesReport, "getItemSalesReport", $request);
+    }
+
+    public function getItemSalesData($request){
+        $userData = auth()->user();
+        $isNotAdmin = $this->isNotAdmin();
+        $sqlString = "SELECT O.id, O.order_id, O.product_id, O.qty AS quantity, O.status, O.institution_id, O.branch_id,
+            O.created_by, O.updated_by, O.updated_on, O.created_at, O.updated_at, P.name AS product_name,
+            P.description, P.product_no, P.ref_no, Q.ref_no AS transaction_ref, Q.receipt_no, Q.tran_id,
+            S.selling_price, S.purchase_price, M.name as measurement_unit FROM order_items O
+            INNER JOIN products P ON O.product_id = P.id
+            INNER JOIN orders Q ON Q.id = O.order_id
+            INNER JOIN stocks S ON S.branch_id = O.branch_id AND S.product_id = O.product_id
+            INNER JOIN measurement_units  M ON M.id = P.measurement_unit_id ";
+        $sqlString .= " WHERE O.status = '$request->status' ";
+        if ($isNotAdmin) {
+            $sqlString .= " AND O.institution_id = $userData->institution_id AND O.branch_id = $userData->branch_id";
+        }
+        $sqlString .= " ORDER BY O.id DESC";
+        return DB::select($sqlString);
+    }
+
+    public function downloadSalesItemCSVReport(Request $request){
+        $request->status = 'Active';
+        $salesReport = $this->getItemSalesData($request);
+        return Excel::download(new SalesItemReport($salesReport), "sales.csv");
+    }
+
+    // public function downloadSalesItemPDFReport(Request $request){
+    //     $request->status = 'Active';
+    //     $sales = $this->getItemSalesData($request);
+    //     if (count($sales) > 0) {
+    //         Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+
+    //         $pdf = Pdf::loadView('sales.salesItem', compact('sales'));
+    //         // $pdf->getDomPDF()->set_option("enable_php", true);
+    //         $pdf->setBasePath(public_path());
+    //         $pdf->setPaper('A4', 'landscape');
+    //         $pdf->setBasePath(public_path());
+
+    //         //adding page number
+    //         $pdf->render();
+    //         $dompdf = $pdf->getDomPDF();
+
+    //         // Add header (custom text at the top of each page)
+    //         $canvas = $dompdf->getCanvas();
+    //         $font = $dompdf->getFontMetrics()->getFont('Helvetica', 'normal');
+    //         $canvas->page_text(270, 10, "Sales Report Header", $font, 12, [0, 0, 0]);
+
+    //         // Add page numbers to the footer (bottom of each page)
+    //         // $canvas->page_text(520, 820, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);  //portrait
+    //         $canvas->page_text(700, 550, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);     //landscape
+    //         // end of adding page number
+
+    //         return $pdf->stream('sales_report' . '.pdf');
+    //     }
+    // }
+
+
+    public function downloadSalesItemPDFReport(Request $request)
+{
+    $request->status = 'Active';
+    $sales = $this->getItemSalesData($request);
+
+    $userData = auth()->user();
+    $institution = Institution::find($userData->institution_id);
+    $institutionContact = InstitutionContact::where("institution_id", $userData->institution_id)->first();
+
+    if (count($sales) > 0) {
+        // Set options and load the view
+        Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+        $pdf = Pdf::loadView('sales.salesItem', compact('sales'));
+
+        // Set paper size and orientation
+        $pdf->setBasePath(public_path());
+        $pdf->setPaper('A4', 'landscape');
+
+        // Render the PDF to access the DomPDF canvas
+        $pdf->render();
+        $dompdf = $pdf->getDomPDF();
+        $canvas = $dompdf->getCanvas();
+        $font = $dompdf->getFontMetrics()->getFont('Helvetica', 'normal');
+
+        // Add header to each page
+        // $canvas->page_text(30, 30, "Document NameContact Information Address", $font, 10, [0, 0, 0]);
+        $canvas->page_text(350, 15, "Sales Report", $font, 12, [0, 0, 0]);
+
+        $canvas->page_text(30, 10, $institution->name, $font, 10, [0, 0, 0]);
+        $canvas->page_text(30, 20, "Phone number:".$institutionContact->phone_number." Email:".$institutionContact->email, $font, 10, [0, 0, 0]);
+        $canvas->page_text(30, 30, $institution->address, $font, 10, [0, 0, 0]);
+
+
+        // Add footer to each page
+        // Position and add printed by and powered by text
+        $canvas->page_text(30, 550, "Powered by:Smart Collect. Printed by:".$userData->first_name.". ".$userData->last_name." ".$userData->other_name." On:".date('D d M Y'), $font, 10, [0, 0, 0]);
+
+        // Add an image to the footer (left side)
+        // $imagePath = public_path('images/SmarCollectlogo-removebg-preview.png');
+        // $image = $canvas->image($imagePath, 30, 800, 50, 20); // Adjust coordinates and size as needed
+
+        // Add page numbers to the footer (right side)
+        // $canvas->page_text(700, 820, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);
+        $canvas->page_text(700, 550, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);     //landscape
+
+        // Stream the generated PDF
+        return $pdf->stream('sales_report.pdf');
+    }
+}
+
+
+
 }

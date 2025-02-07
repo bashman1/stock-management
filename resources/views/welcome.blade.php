@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {{-- <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1"> --}}
 
-        <title>Laravel</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="Smart Collect is a modern day business management software that enables you track your inventory and cash flows as improving on the productivity of your business">
+        <meta name="keywords" content=" 'smartcollect', 'smart', 'collect', 'stock','stock management', 'inventory'">
+        <title>@yield('title', 'My Laravel Website')</title>
+
+        <title>Smart Collect UG</title>
 
         <!-- Fonts -->
         <link href="https://fonts.bunny.net/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
@@ -120,7 +126,7 @@
                                 Sponsor
                             </a>
                         </div>
-                        
+
                     </div>
 
                     <div class="ml-4 text-center text-sm text-gray-500 sm:text-right sm:ml-0">

@@ -25,6 +25,6 @@ class ComissionController extends Controller
         INNER JOIN users U ON U.id=C.user_id";
 
         $commissions= DB::select($query);
-        return $this->genericResponse(true, "commissions", 200, $commissions);
+        return $this->genericResponse(true, "commissions", 200, $commissions, "getCommissionsEarned", []);
     }
 }

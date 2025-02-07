@@ -111,6 +111,18 @@ const taxExempted=ref([
     {id: 3, name:'Zero Sated Supplies', value: 'TAX_ZERO_RATED'},
 ])
 
+const paymentMethodOptions=ref([
+    {id:1, name: "Cash", value:"CASH"},
+    {id:2, name: "Bank", value:"BANK"},
+    {id:3, name: "Credit", value:"CREDIT"},
+])
+
+const paymentMethod=ref( {id:1, name: "Cash", value:"CASH"})
+
+const weight = ref(null);
+const weightUnit = ref(null);
+const weightPrice = ref(null);
+
 
 // ********************************************************
 const openCategoryModal = () => {
@@ -188,9 +200,7 @@ const onSubmit= ()=>{
     formError.value.measurementUnit=commonService.validateFormField(measurementUnit.value);
     formError.value.sellingPrice=commonService.validateFormField(sellingPrice.value);
     formError.value.prodType=commonService.validateFormField(prodType.value);
-
     // formError.value.taxConfig=commonService.validateFormField(taxConfig.value);
-
 
     let invalid = commonService.validateRequiredFields(formError.value);
     if(invalid){
@@ -220,6 +230,10 @@ const onSubmit= ()=>{
         tax_config: taxConfig?.value?.value,
         type_id: prodType?.value?.id,
         gauge_id: prodGauge?.value?.id,
+        payment_method:paymentMethod?.value.value,
+        secondary_weight: weight?.value,
+        secondary_measurement_unit_id:weightUnit?.value?.id,
+        secondary_price:weightPrice?.value,
     }
 
     commonService.genericRequest('create-product', 'post', true, postData).then((response) => {
@@ -244,7 +258,11 @@ const onSubmit= ()=>{
             expiryDate.value=null;
             prodType.value=null;
             prodGauge.value=null;
-            tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'}
+            weight.value=null;
+            weightUnit.value=null;
+            weightPrice.value=null;
+            tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'};
+            paymentMethod.value={id:1, name: "Cash", value:"CASH"};
         } else {
             commonService.showError(toast, response.message);
         }
@@ -600,8 +618,6 @@ const getProductDetails=(prodId)=>{
             prodType.value =productTypeList.value.find(cat=>cat.id ==productDetails.value.type_id)
             prodGauge.value =productGaugeList.value.find(cat=>cat.id ==productDetails.value.gauge_id)
             taxConfig.value = taxOptions.value.find(tax=>tax.value ==productDetails.value.tax_config)
-
-
         } else {
             commonService.showError(toast, response.message);
         }
@@ -768,6 +784,34 @@ onMounted(() => {
                             <Button @click="toggleMeasurementUnitModal(true)" icon="pi pi-plus" />
                         </div>
                     </div>
+                    <div class="field col-12 md:col-12">
+                        <p class="text-900">Secondary units represent the weight or quantity of secondary components contained within a single primary unit.</p>
+                    </div>
+
+                    <div class="field col-12 md:col-4">
+                        <span class="p-float-label">
+                            <InputText type="text" id="secondaryWeight" v-model="weight" />
+                            <label for="secondaryWeight">Secondary Unit</label>
+                        </span>
+                    </div>
+
+                    <div class="field col-12 md:col-5">
+                        <div class="p-inputgroup">
+                            <span class="p-float-label">
+                                <Dropdown id="secondaryMeasurementUnit" :options="measurementUnitsData" filter v-model="weightUnit"  optionLabel="name">
+                                </Dropdown>
+                                <label for="secondaryMeasurementUnit">Secondary Measurement Unit</label>
+                            </span>
+                            <Button @click="toggleMeasurementUnitModal(true)" icon="pi pi-plus" />
+                        </div>
+                    </div>
+
+                    <div class="field col-12 md:col-3">
+                        <span class="p-float-label">
+                            <InputText type="text" id="secondaryPrice" v-model="weightPrice" />
+                            <label for="secondaryPrice">Secondary Price</label>
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -810,12 +854,12 @@ onMounted(() => {
                         </span>
                     </div>
 
-                    <!-- <div class="field col-12 md:col-6" v-if="institutionDetails?.is_tax_enabled">
+                     <div class="field col-12 md:col-6" >
                         <span class="p-float-label">
-                            <Dropdown id="instCity" :options="taxOptions" v-model="taxableConfigs" @blur="onInputBlur(taxableConfigs, 'taxableConfigs')" :class="{ 'p-invalid': formError?.taxableConfigs }" optionLabel="name"></Dropdown>
-                            <label for="instCity">Tax Config</label>
+                            <Dropdown id="instCity" :options="paymentMethodOptions" v-model="paymentMethod" @blur="onInputBlur(paymentMethod, 'paymentMethod')" :class="{ 'p-invalid': formError?.paymentMethod }" optionLabel="name"></Dropdown>
+                            <label for="instCity">Payment Method</label>
                         </span>
-                    </div> -->
+                    </div>
 
 
                 </div>

@@ -20,13 +20,13 @@ class ProductTypeController extends Controller
         $type->created_by = $userData->id ;
         $type->created_on = now() ;
         $type->save();
-        return $this->genericResponse(true, "Product type created successfully", 201, $type);
+        return $this->genericResponse(true, "Product type created successfully", 201, $type, "createProductTypes", $request);
     }
 
 
     public function getProductTypes(){
         $userData = auth()->user();
         $types = ProductType::where(['status'=>'Active', 'institution_id'=>$userData->institution_id])->get();
-        return $this->genericResponse(true, "Product type fetched successfully", 200, $types);
+        return $this->genericResponse(true, "Product type fetched successfully", 200, $types, "getProductTypes");
     }
 }

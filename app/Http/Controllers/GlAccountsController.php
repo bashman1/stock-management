@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CntrlParameter;
 use App\Models\GlAccounts;
 use App\Models\GlCat;
+use App\Models\GlHierarchy;
 use App\Models\GlHistory;
 use App\Models\GlSubCat;
 use App\Models\GlType;
@@ -59,7 +60,7 @@ class GlAccountsController extends Controller
             }
             $chartOfAccounts[] = $catData;
         }
-        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $chartOfAccounts);
+        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $chartOfAccounts, "getChartOfAccounts", $request);
     }
 
 
@@ -80,7 +81,7 @@ class GlAccountsController extends Controller
         }
 
         $glCat = DB::table('gl_cats')->select('*')->where($conditions)->get();
-        return $this->genericResponse(true, "Ledger category fetched successfully", 200, $glCat);
+        return $this->genericResponse(true, "Ledger category fetched successfully", 200, $glCat, "getLedgerCat", $request);
     }
 
 
@@ -103,7 +104,7 @@ class GlAccountsController extends Controller
             $conditions['description'] = ["ilike %'" . $request->description . "'%"];
         }
         $glSubCat = DB::table('gl_sub_cats')->select('*')->where($conditions)->get();
-        return $this->genericResponse(true, "Ledger sub category fetched successfully", 200, $glSubCat);
+        return $this->genericResponse(true, "Ledger sub category fetched successfully", 200, $glSubCat, "getLedgerSubCat", $request);
     }
 
     public function getLedgerType(Request $request)
@@ -129,7 +130,7 @@ class GlAccountsController extends Controller
         }
 
         $glType = DB::table('gl_types')->select('*')->where($conditions)->get();
-        return $this->genericResponse(true, "Ledger Types fetched successfully", 200, $glType);
+        return $this->genericResponse(true, "Ledger Types fetched successfully", 200, $glType, "getLedgerType", $request);
     }
 
     public function glAccounts()
@@ -153,7 +154,7 @@ class GlAccountsController extends Controller
         }
         $queryString .= " ORDER BY G.gl_no ASC ";
         $glAccounts = DB::select($queryString);
-        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $glAccounts);
+        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $glAccounts, "glAccounts", []);
     }
 
 
@@ -212,14 +213,14 @@ class GlAccountsController extends Controller
             ->join('gl_balances as K', 'K.acct_no', '=', 'G.acct_no')
             ->where($conditions)->get();
 
-        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $results);
+        return $this->genericResponse(true, "Chart of accounts fetched successfully", 201, $results, "searchGl", $request);
     }
 
 
     public function getLedgerCategories()
     {
         $cat = GlCat::all();
-        return $this->genericResponse(true, "Chart of accounts categories fetched successfully", 200, $cat);
+        return $this->genericResponse(true, "Chart of accounts categories fetched successfully", 200, $cat, "getLedgerCategories", []);
     }
 
 
@@ -232,14 +233,14 @@ class GlAccountsController extends Controller
         ]);
         $glAcct = GlAccounts::where('acct_no', $request->acctNo)->first();
         if (!isset($glAcct)) {
-            return $this->genericResponse(false, "Ledger account not found", 400, $glAcct);
+            return $this->genericResponse(false, "Ledger account not found", 400, $glAcct, "updateGlAcct", $request);
         }
         $glAcct->description = $request->description;
         $glAcct->updated_by = $userData->id;
         $glAcct->updated_on = now();
         $glAcct->save();
 
-        return $this->genericResponse(true, "Ledger account updated successfully", 201, $glAcct);
+        return $this->genericResponse(true, "Ledger account updated successfully", 201, $glAcct, "updateGlAcct", $request);
     }
 
 
@@ -306,63 +307,28 @@ class GlAccountsController extends Controller
         $debit = $this->postGlDR($debitRequest);
         $credit = $this->postGlCR($creditRequest);
         DB::commit();
-        return $this->genericResponse(true, "Ledger account updated successfully", 201, ['debit' => $debitRequest, 'credit' => $creditRequest]);
+        return $this->genericResponse(true, "Ledger account updated successfully", 201, ['debit' => $debitRequest, 'credit' => $creditRequest], "debitCreditGl", $request);
     }
 
 
     public function createGlAcct(Request $request)
     {
-        DB::beginTransaction();
-        $userData = auth()->user();
-        $genAcct = GlGenerateAccount::where(['gl_cat_no' => $request->cat, 'gl_sub_cat_no' => $request->subCat, 'gl_type_no' => $request->type, 'status' => $request->status])->first();
-        if (!isset($genAcct)) {
-            return $this->genericResponse(false, "Failed to create a new ledger account", 400, $genAcct);
+        try {
+            DB::beginTransaction();
+            $postRequest = (object)[
+                "gl_cat_no" => $request->cat,
+                "gl_sub_cat_no" => $request->subCat,
+                "gl_type_no" => $request->type,
+                "status" => $request->status,
+                "description" => $request->name,
+            ];
+            $subAccount = $this->reUsableCreateGlAcct($postRequest);
+            DB::commit();
+            return $this->genericResponse(true, "Ledger account created successfully", 201, $subAccount, "createGlAcct", $request);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->genericResponse(false, $th->getMessage(), 500, null, "createGlAcct", $request);
         }
-        $branch = Branch::find($userData->branch_id);
-
-        $glNo = $genAcct->const + $genAcct->current + $genAcct->step;
-        $genAcct->current = $genAcct->current + $genAcct->step;
-        $genAcct->save();
-
-        $newAcctNo = $this->generateGlAcctNo($userData->institution_id, $branch->code, $glNo);
-
-        $checkExistingGlAcct = GlAccounts::where('acct_no', $newAcctNo)->get();
-        // return $checkExistingGlAcct;
-        if (!isset($checkExistingGl)  || !empty($checkExistingGl)) {
-            $glAcct = new GlAccounts();
-            $glAcct->gl_no = $glNo;
-            $glAcct->acct_no = $newAcctNo;
-            $glAcct->description = $request->name;
-            $glAcct->gl_cat_no = $request->cat;
-            $glAcct->gl_sub_cat_no = $request->subCat;
-            $glAcct->gl_type_no = $request->type;
-            $glAcct->acct_type = $genAcct->acct_type;
-            $glAcct->status = $request->status;
-            $glAcct->branch_cd = $branch->code;
-            $glAcct->institution_id = $userData->institution_id;
-            $glAcct->branch_id = $userData->branch_id;
-            $glAcct->created_by = $userData->id;
-            $glAcct->created_on = now();
-            $glAcct->save();
-        }
-
-        $checkExistingGlBal = GlBalances::where('acct_no', $newAcctNo)->get();
-        // return $checkExistingGlBal;
-        if (!isset($checkExistingGlBal) || !empty($checkExistingGlBal)) {
-            $glBal = new GlBalances();
-            $glBal->acct_no =  $newAcctNo;
-            $glBal->acct_type = $genAcct->acct_type;
-            $glBal->balance = 0;
-            $glBal->branch_cd = $branch->code;
-            $glBal->status = $request->status;
-            $glBal->institution_id = $userData->institution_id;
-            $glBal->branch_id = $userData->branch_id;
-            $glBal->created_by = $userData->id;
-            $glBal->created_on = now();
-            $glBal->save();
-        }
-        DB::commit();
-        return $this->genericResponse(true, "Ledger account created successfully", 201, $genAcct);
     }
 
 
@@ -403,7 +369,7 @@ class GlAccountsController extends Controller
             $newValue->balance = $balance;
             $tempArray[] = $newValue;
         }
-        return $this->genericResponse(true, "Gl accounts history fetched successfully", 201, $tempArray);
+        return $this->genericResponse(true, "Gl accounts history fetched successfully", 201, $tempArray, "glAcctHistory", $request);
     }
 
     public function glAcctOverView(Request $request)
@@ -428,7 +394,7 @@ class GlAccountsController extends Controller
             }
         }
 
-        return $this->genericResponse(true, "Gl accounts overview fetched successfully", 201, $tempArray);
+        return $this->genericResponse(true, "Gl accounts overview fetched successfully", 201, $tempArray, "glAcctOverView", $request);
     }
 
 
@@ -459,7 +425,7 @@ class GlAccountsController extends Controller
             $queryString .= " ORDER BY B.id ASC ";
             $glBalances = DB::select($queryString);
             $tempArray[] = $total;
-            return $this->genericResponse(true, "Gl accounts balances fetched successfully", 201, $tempArray);
+            return $this->genericResponse(true, "Gl accounts balances fetched successfully", 201, $tempArray, "getGlBalances", $request);
         }
     }
 
@@ -475,9 +441,9 @@ class GlAccountsController extends Controller
                 $conditions['institution_id'] = $userData->institution_id;
             }
             $cntrlParam = CntrlParameter::where($conditions)->get();
-            return $this->genericResponse(true, "Control accounts", 200, $cntrlParam);
+            return $this->genericResponse(true, "Control accounts", 200, $cntrlParam, "getCntrlParamGl", []);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 400, $th);
+            return $this->genericResponse(false, $th->getMessage(), 400, $th, "getCntrlParamGl", []);
         }
     }
 
@@ -486,153 +452,184 @@ class GlAccountsController extends Controller
     {
         // return $this->genericResponse(true,"",200, ["startDate"=> $request->fromDate, "endDate"=>$request->toDate, "request"=>$request]);
         // try {
-            $sales = CntrlParameter::where(["param_cd" => "SL", "institution_id" => auth()->user()->institution_id])->first();
-            $branch = Branch::find(auth()->user()->branch_id);
-            $salesAcctNo = str_replace("***", $branch->code, $sales->param_value);
+        $sales = CntrlParameter::where(["param_cd" => "SL", "institution_id" => auth()->user()->institution_id])->first();
+        $branch = Branch::find(auth()->user()->branch_id);
+        $salesAcctNo = str_replace("***", $branch->code, $sales->param_value);
 
-            $returnOutwards =CntrlParameter::where(["param_cd" => "ROT", "institution_id" => auth()->user()->institution_id])->first();
-            $returnAcctNo = str_replace("***", $branch->code,  $returnOutwards->param_value);
+        $returnOutwards = CntrlParameter::where(["param_cd" => "ROT", "institution_id" => auth()->user()->institution_id])->first();
+        $returnAcctNo = str_replace("***", $branch->code,  $returnOutwards->param_value);
 
-            $openingStock =CntrlParameter::where(["param_cd" => "STI", "institution_id" => auth()->user()->institution_id])->first();
-            $stockAcctNo = str_replace("***", $branch->code,  $openingStock->param_value);
+        $openingStock = CntrlParameter::where(["param_cd" => "STI", "institution_id" => auth()->user()->institution_id])->first();
+        $stockAcctNo = str_replace("***", $branch->code,  $openingStock->param_value);
 
-            $purchases =CntrlParameter::where(["param_cd" => "PIA", "institution_id" => auth()->user()->institution_id])->first();
-            $purchaseAcctNo = str_replace("***", $branch->code,  $purchases->param_value);
+        $purchases = CntrlParameter::where(["param_cd" => "PIA", "institution_id" => auth()->user()->institution_id])->first();
+        $purchaseAcctNo = str_replace("***", $branch->code,  $purchases->param_value);
 
-            $operatingExpenses =CntrlParameter::where(["param_cd" => "OPE", "institution_id" => auth()->user()->institution_id])->first();
-            $operatingExpenseAcctNo = str_replace("***", $branch->code,  $operatingExpenses->param_value);
+        $operatingExpenses = CntrlParameter::where(["param_cd" => "OPE", "institution_id" => auth()->user()->institution_id])->first();
+        $operatingExpenseAcctNo = str_replace("***", $branch->code,  $operatingExpenses->param_value);
 
-            $passage =CntrlParameter::where(["param_cd" => "PP", "institution_id" => auth()->user()->institution_id])->first();
-            $passageAcctNo = str_replace("***", $branch->code,  $passage->param_value);
+        $passage = CntrlParameter::where(["param_cd" => "PP", "institution_id" => auth()->user()->institution_id])->first();
+        $passageAcctNo = str_replace("***", $branch->code,  $passage->param_value);
 
-            $totalSales = (double) DB::table('gl_histories')
-                ->where('acct_no', $salesAcctNo)
-                ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-                ->sum('tran_amount');
+        // $totalSales = (float) DB::table('gl_histories')
+        //     ->where('acct_no', $salesAcctNo)
+        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        //     ->sum('tran_amount');
 
-            $totalReturns = (double) DB::table('gl_histories')
-                ->where('acct_no', $returnAcctNo)
-                ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-                ->sum('tran_amount');
+        $totalSales = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $salesAcctNo);
 
-            $totalOpenStock = (double) DB::table('gl_histories')
-                ->where('acct_no', $stockAcctNo)
-                ->where('transaction_date', '<', $request->fromDate)
-                ->sum('tran_amount');
-
-            // $totalCloseStock = (double) DB::table('gl_histories')
-            //     ->where('acct_no', $stockAcctNo)
-            //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-            //     ->sum('tran_amount');
-
-            $totalPurchases = (double) DB::table('gl_histories')
-                ->where('acct_no', $purchaseAcctNo)
-                ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-                ->sum('tran_amount');
-
-            $totalOperatingExpenses= (double) DB::table('gl_histories')
-                ->where('acct_no', $operatingExpenseAcctNo)
-                ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-                ->sum('tran_amount');
-
-            $totalPassage= (double) DB::table('gl_histories')
-                ->where('acct_no', $passageAcctNo)
-                ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-                ->sum('tran_amount');
-
-            $totalIncome= (double) DB::table('gl_balances')
-                ->where(['acct_type'=>'INCOME', 'institution_id'=>$branch->institution_id, 'branch_id'=>$branch->id])
-                ->sum('balance');
-
-            //return needs to be purchase return
-            $goodsAvailableForSale=($totalOpenStock+(($totalPurchases+$totalPassage)-$totalReturns));
+        // $totalReturns = (float) DB::table('gl_histories')
+        //     ->where('acct_no', $returnAcctNo)
+        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        //     ->sum('tran_amount');
 
 
-            // closing stock is Opening Stock+Purchases−Sales+Sales Returns−Purchase Returns±Adjustments
-            $totalCloseStock = $totalOpenStock+$totalPurchases-$totalSales;
-
-            // cost of sale = goods available for sale - closing stock
-            $costOfSales =  $goodsAvailableForSale-$totalCloseStock;
-            $grossProfit =  ($totalSales-$totalReturns)-$costOfSales;
+        $totalReturns = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $returnAcctNo);
 
 
-            $netProfit = $grossProfit-$totalOperatingExpenses;
+        // $totalOpenStock = (float) DB::table('gl_histories')
+        //     ->where('acct_no', $stockAcctNo)
+        //     ->where('transaction_date', '<', $request->fromDate)
+        //     ->sum('tran_amount');
 
-            $response =['totalSales'=>$totalSales, 'totalReturnIn'=>$totalReturns, 'netSales'=> $totalSales-$totalReturns,
-            'openingStock'=>$totalOpenStock, 'closingStock'=>$totalCloseStock, 'goodAvailableForSale'=>$goodsAvailableForSale,
-            'costOfSales'=>$costOfSales, 'grossProfit'=>$grossProfit, 'netProfit'=>$netProfit, 'totalPassage'=>$totalPassage,
-            'totalOperatingExpenses'=>$totalOperatingExpenses, 'totalPurchases'=>$totalPurchases, 'totalIncome'=>$totalIncome];
+        $totalOpenStock = (float) DB::table('gl_histories')
+            ->where('acct_no', $stockAcctNo)
+            ->where('transaction_date', '<=', $request->fromDate)
+            ->sum('tran_amount');
 
-            return $this->genericResponse(true,'total sales got', 200, $response);
+        // $totalCloseStock = (double) DB::table('gl_histories')
+        //     ->where('acct_no', $stockAcctNo)
+        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        //     ->sum('tran_amount');
+
+        // $totalPurchases = (float) DB::table('gl_histories')
+        //     ->where('acct_no', $purchaseAcctNo)
+        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        //     ->sum('tran_amount');
+        $totalPurchases = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $purchaseAcctNo);
+
+        // $totalOperatingExpenses = (float) DB::table('gl_histories')
+        //     ->where('acct_no', $operatingExpenseAcctNo)
+        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        //     ->sum('tran_amount');
+
+        $totalOperatingExpenses = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $operatingExpenseAcctNo);
+
+        // $totalPassage = (float) DB::table('gl_histories')
+        //     ->where('acct_no', $passageAcctNo)
+        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        //     ->sum('tran_amount');
+
+
+        $totalPassage = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $passageAcctNo);
+
+        // $totalIncome = (float) DB::table('gl_balances')
+        //     ->where(['acct_type' => 'INCOME', 'institution_id' => $branch->institution_id, 'branch_id' => $branch->id])
+        //     ->sum('balance');
+
+        $getIncomeAccounts = GlAccounts::where(['acct_type' => 'INCOME', 'institution_id' => $branch->institution_id, 'branch_id' => $branch->id])->get();
+
+        $totalIncome = 0;
+        foreach ($getIncomeAccounts as $key => $value) {
+            $sum = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $value['acct_no']);
+            $totalIncome = $totalIncome + $sum;
+        }
+
+        // $totalIncome = $this->getGlBalancesAsOf();
+
+        //return needs to be purchase return
+        $goodsAvailableForSale = ($totalOpenStock + (($totalPurchases + $totalPassage) - $totalReturns));
+
+
+        // closing stock is Opening Stock+Purchases−Sales+Sales Returns−Purchase Returns±Adjustments
+        // $totalCloseStock = $totalOpenStock + $totalPurchases - $totalSales;
+
+        $totalCloseStock = (float) DB::table('gl_histories')
+            ->where('acct_no', $stockAcctNo)
+            // ->where('transaction_date', '>', $request->fromDate) dr_cr_ind
+            ->where('dr_cr_ind', 'Dr') //dr_cr_ind
+            ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+            ->sum('tran_amount');
+
+
+        // cost of sale = goods available for sale - closing stock
+        $costOfSales =  $goodsAvailableForSale - $totalCloseStock;
+        $grossProfit =  ($totalSales - $totalReturns) - $costOfSales;
+
+
+        $netProfit = $grossProfit - $totalOperatingExpenses;
+
+        $profitBeforeInterestAndTax = $totalIncome - $totalOperatingExpenses;
+
+        $response = [
+            'totalSales' => $totalSales,
+            'totalReturnIn' => $totalReturns,
+            'netSales' => $totalSales - $totalReturns,
+            'openingStock' => $totalOpenStock,
+            'closingStock' => $totalCloseStock,
+            'goodAvailableForSale' => $goodsAvailableForSale,
+            'costOfSales' => $costOfSales,
+            'grossProfit' => $grossProfit,
+            'netProfit' => $netProfit,
+            'totalPassage' => $totalPassage,
+            'totalOperatingExpenses' => $totalOperatingExpenses,
+            'totalPurchases' => $totalPurchases,
+            'totalIncome' => $totalIncome,
+            'profitBeforeInterestAndTax' => $profitBeforeInterestAndTax,
+        ];
+
+        return $this->genericResponse(true, 'total sales got', 200, $response, "generateIncomeStatement", $request);
         // } catch (\Throwable $th) {
         //     return $this->genericResponse(false, $th->getMessage(), 400, $th);
         // }
     }
 
 
-    public function getBalanceSheet(Request $request){
+    public function getBalanceSheet(Request $request)
+    {
         try {
             $userData = auth()->user();
             $isNotAdmin = $this->isNotAdmin();
-            $tempArray = Array();
+            $tempArray = array();
             $glSubCat = GlSubCat::all();
             foreach ($glSubCat as $key => $value) {
                 $queryString = "SELECT A.acct_no, A.gl_no, A.description,A.gl_cat_no,
                 A.gl_type_no, A.acct_type, A.status, B.balance
                 FROM gl_accounts A INNER JOIN gl_balances B
-                ON A.acct_no = B.acct_no WHERE B.balance >0 AND A.gl_sub_cat_no = '".$value['gl_no']."' ";
+                ON A.acct_no = B.acct_no WHERE (B.balance >0 OR  B.balance < 0) AND (A.gl_no <> '1305001' AND  A.gl_no <> '1307001') AND
+                A.gl_sub_cat_no = '" . $value['gl_no'] . "' ";
+
+                // 1305001 1307001
                 if ($isNotAdmin) {
                     $queryString .= " AND A.institution_id = $userData->institution_id AND A.branch_id =$userData->branch_id  ";
                 }
                 $queryString .= " ORDER BY A.id ASC ";
                 $glList = DB::select($queryString);
-                array_push($glList, ['description'=>'Total', 'balance'=>null, 'total'=>$this->getTotalLedgerBalances($glList)  ]);
+                array_push($glList, ['description' => 'Total', 'balance' => null, 'total' => $this->getTotalLedgerBalances($glList)]);
                 $value['list'] = $glList;
-                if ($value['acct_type'] != 'INCOME' && $value['acct_type'] != 'EXPENSE'){
+                if ($value['acct_type'] != 'INCOME' && $value['acct_type'] != 'EXPENSE') {
                     array_push($tempArray, $value);
                 }
             }
-            return $this->genericResponse(true,'Balance sheet', 200, $tempArray);
+            return $this->genericResponse(true, 'Balance sheet', 200, $tempArray, "getBalanceSheet", $request);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 400, $th);
+            return $this->genericResponse(false, $th->getMessage(), 400, $th,"getBalanceSheet", $request);
         }
     }
 
 
-    public function getTotalLedgerBalances($acctList){
+    public function getTotalLedgerBalances($acctList)
+    {
         $total = 0;
         foreach ($acctList as $key => $value) {
-           $total =  $total + (double) $value->balance;
+            $total =  $total + (float) $value->balance;
         }
         return $total;
     }
 
-//    public function getCashBook(Request $request){
-//        $userData = auth()->user();
-//        $isNotAdmin = $this->isNotAdmin();
-//        $queryString = "SELECT * FROM cntrl_parameters WHERE status = 'Active' AND (param_cd = 'CL' OR param_cd = 'CGL' OR param_cd = 'PD') ";
-//        if ($isNotAdmin) {
-//            $queryString .= " AND institution_id = $userData->institution_id  ";
-//        }
-//        $queryString .= " ORDER BY id ASC ";
-//        $contraAcct = DB::select($queryString);
-//
-//        $tempArray = [];
-//        foreach ($contraAcct as $acct){
-//            if ($isNotAdmin) {
-//                $branch = Branch::find($userData->branch_id);
-//                $acctNo = str_replace('***', $branch->code, $acct["param_value"]);
-//                $glHistory= GlHistory::where(["acct_no" => $acctNo, "institution_id"=>$userData->institution_id, "branch_id"=>$userData->branch_id]);
-//                foreach ($glHistory as $history){
-//                    $history->ind =  $acct["param_cd"];
-//                    $tempArray[] = $history;
-//                }
-//            }
-//        }
-//        return $this->genericResponse(true, "Cash book fetched successfully", 200, $tempArray);
-//    }
 
-    public function getCashBook(Request $request){
+    public function getCashBook(Request $request)
+    {
         $userData = auth()->user();
         $isNotAdmin = $this->isNotAdmin();
         $queryString = "SELECT * FROM cntrl_parameters WHERE status = 'Active' AND (param_cd = 'CL' OR param_cd = 'CGL' OR param_cd = 'PD') ";
@@ -664,8 +661,196 @@ class GlAccountsController extends Controller
             }
         }
 
-        return $this->genericResponse(true, "Cash book fetched successfully", 200, $tempArray);
+        return $this->genericResponse(true, "Cash book fetched successfully", 200, $tempArray, "getCashBook", $request);
     }
 
 
+    public function getVATPayableReport(Request $request)
+    {
+        try {
+            $vatPayable = $this->getVATPayable($request);
+            return $this->genericResponse(true, "VAT payable", 200, $vatPayable, "getVATPayableReport", $request);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(), 500, $th,"getVATPayableReport", $request);
+        }
+    }
+
+    public function getVATPayable($request)
+    {
+        try {
+            $userData = auth()->user();
+            $isNotAdmin = $this->isNotAdmin();
+            $queryString = "SELECT I.id, I.order_id, I.product_id, I.qty, I.status,
+                I.institution_id, I.branch_id, I.created_on, I.created_at,
+                COALESCE(I.selling_price, S.selling_price) AS selling_price,
+                O.ref_no, O.receipt_no, O.tran_id, O.user_id, O.customer_id,
+                P.name, P.product_no, P.ref_no AS product_ref, P.tax_config,
+                S.purchase_price, N.name AS institution_name, N.is_tax_enabled,
+                S.purchase_price*I.qty AS total_purchases,
+                COALESCE(Y.name, 'Cash') AS customer_name,
+                -- Calculate the amount
+                COALESCE(I.qty * I.selling_price, I.qty * S.selling_price) AS amount,
+                -- Calculate VAT
+                CASE
+                    WHEN P.tax_config = 'TAX_INCLUSIVE' OR P.tax_config = 'TAX_EXCLUSIVE' THEN
+                        COALESCE(0.18 * I.qty * I.selling_price, 0.18 * I.qty * S.selling_price)
+                    WHEN P.tax_config = 'TAX_EXEMPTED' THEN 0
+                    ELSE 0
+                END AS vat,
+                -- Calculate the amount after VAT adjustment
+                CASE
+                    WHEN P.tax_config = 'TAX_INCLUSIVE' THEN
+                        COALESCE(I.qty * I.selling_price, I.qty * S.selling_price) -
+                        CASE
+                            WHEN P.tax_config = 'TAX_INCLUSIVE' OR P.tax_config = 'TAX_EXCLUSIVE' THEN
+                                COALESCE(0.18 * I.qty * I.selling_price, 0.18 * I.qty * S.selling_price)
+                            WHEN P.tax_config = 'TAX_EXEMPTED' THEN 0
+                            ELSE 0
+                        END
+                    WHEN P.tax_config = 'TAX_EXCLUSIVE' THEN
+                        COALESCE(I.qty * I.selling_price, I.qty * S.selling_price) +
+                        CASE
+                            WHEN P.tax_config = 'TAX_INCLUSIVE' OR P.tax_config = 'TAX_EXCLUSIVE' THEN
+                                COALESCE(0.18 * I.qty * I.selling_price, 0.18 * I.qty * S.selling_price)
+                            WHEN P.tax_config = 'TAX_EXEMPTED' THEN 0
+                            ELSE 0
+                        END
+                    WHEN P.tax_config = 'TAX_EXEMPTED' THEN 0
+                    ELSE COALESCE(I.qty * I.selling_price, I.qty * S.selling_price)
+                END AS amount_after_vat
+            FROM order_items I
+            INNER JOIN orders O ON O.id = I.order_id
+            INNER JOIN products P ON P.id = I.product_id
+            INNER JOIN stocks S ON S.product_id = I.product_id AND S.branch_id = I.branch_id
+            INNER JOIN institutions N ON N.id = I.institution_id
+            LEFT JOIN customers Y ON O.customer_id = Y.id ";
+
+            if ($isNotAdmin) {
+                $queryString .= " WHERE I.institution_id = $userData->institution_id AND I.branch_id=$userData->branch_id ";
+            }
+            $queryString .= " ORDER BY I.id DESC ";
+            return DB::select($queryString);
+            // return $this->genericResponse(true, "VAT payable", 200, $vatPayable);
+        } catch (\Throwable $th) {
+            // return $th->getMessage();
+            return $this->genericResponse(false, $th->getMessage(), 500, null);
+        }
+    }
+
+
+
+    public function createSubAccount(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $userData = auth()->user();
+            $glAcct = GlAccounts::where('acct_no', $request->acctNo)->first();
+            if (!isset($glAcct)) {
+                return $this->genericResponse(false, "Account not found", 404, $glAcct);
+            }
+
+            $postRequest = (object)[
+                "gl_cat_no" => $glAcct->gl_cat_no,
+                "gl_sub_cat_no" => $glAcct->gl_sub_cat_no,
+                "gl_type_no" => $glAcct->gl_type_no,
+                "status" => $glAcct->status,
+                "description" => $request->description,
+            ];
+            $subAccount = $this->reUsableCreateGlAcct($postRequest);
+
+            $glHierarchy = GlHierarchy::create([
+                "acct_no" => $subAccount->acct_no,
+                "parent_acct_no" => $request->acctNo,
+                "status" => $glAcct->status,
+                "institution_id" => $userData->institution_id,
+                "branch_id" => $userData->branch_id,
+                "created_by" => $userData->id,
+                "created_on" => Carbon::now(),
+            ]);
+
+            DB::commit();
+            return $this->genericResponse(true, "Ledger account created successfully", 201, $subAccount, "createSubAccount", $request);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "createSubAccount", $request);
+        }
+    }
+
+
+    public function reUsableCreateGlAcct($request): GlAccounts
+    {
+        try {
+            DB::beginTransaction();
+
+            $userData = auth()->user();
+            $branch = Branch::find($userData->branch_id);
+
+            // Check if GL Generate Account exists
+            $genAcct = GlGenerateAccount::where([
+                'gl_cat_no' => $request->gl_cat_no,
+                'gl_sub_cat_no' => $request->gl_sub_cat_no,
+                'gl_type_no' => $request->gl_type_no,
+                'status' => $request->status
+            ])->firstOrFail();
+
+            // Generate GL Number
+            $glNo = $genAcct->const + $genAcct->current + $genAcct->step;
+            $genAcct->increment('current', $genAcct->step);
+
+            // Generate new account number
+            $newAcctNo = $this->generateGlAcctNo($userData->institution_id, $branch->code, $glNo);
+
+            // Check if account or balance already exists
+            if (GlAccounts::where('acct_no', $newAcctNo)->exists() || GlBalances::where('acct_no', $newAcctNo)->exists()) {
+                throw new \Exception("Ledger account already exists.");
+            }
+
+            // Create new GL Account
+            $glAcct = GlAccounts::create([
+                'gl_no' => $glNo,
+                'acct_no' => $newAcctNo,
+                'description' => $request->description,
+                'gl_cat_no' => $request->gl_cat_no,
+                'gl_sub_cat_no' => $request->gl_sub_cat_no,
+                'gl_type_no' => $request->gl_type_no,
+                'acct_type' => $genAcct->acct_type,
+                'status' => $request->status,
+                'branch_cd' => $branch->code,
+                'institution_id' => $userData->institution_id,
+                'branch_id' => $userData->branch_id,
+                'created_by' => $userData->id,
+                'created_on' => now()
+            ]);
+
+            // Create new GL Balance
+            GlBalances::create([
+                'acct_no' => $newAcctNo,
+                'acct_type' => $genAcct->acct_type,
+                'balance' => 0,
+                'branch_cd' => $branch->code,
+                'status' => $request->status,
+                'institution_id' => $userData->institution_id,
+                'branch_id' => $userData->branch_id,
+                'created_by' => $userData->id,
+                'created_on' => now()
+            ]);
+
+            DB::commit();
+            return $glAcct;
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            throw new \Exception("An unexpected error occurred: " . $th->getMessage());
+        }
+    }
+
+
+    public function getGlHierarchy(Request $request){
+        try {
+            $userData = auth()->user();
+            $hierarchy = GlHierarchy::where(["institution_id"=> $userData->institution_id, "branch_id"=>$userData->branch_id, "status"=>$request->status])->get();
+            return $this->genericResponse(true, "Chart of accounts hierarchy fetched successfully", 200, $hierarchy, "getGlHierarchy", $request);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "getGlHierarchy", $request);
+        }
+    }
 }

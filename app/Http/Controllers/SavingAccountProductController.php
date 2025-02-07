@@ -34,9 +34,9 @@ class SavingAccountProductController extends Controller
             // $product->created_by = $request->created_by ;
             // $product->created_on = $request->created_on ;
             // $product->save();
-            return $this->genericResponse(true, "Saving account created successfully", 201, $product);
+            return $this->genericResponse(true, "Saving account created successfully", 201, $product, "createSavingsProduct", $request);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, "Saving account created successfully", 400, $th);
+            return $this->genericResponse(false, "Saving account created successfully", 400, $th, "createSavingsProduct", $request);
         }
     }
 

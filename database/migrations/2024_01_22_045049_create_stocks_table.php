@@ -29,6 +29,7 @@ return new class extends Migration
             $table->unsignedBigInteger("branch_id");
             $table->unsignedBigInteger("user_id");
             $table->string("status")->nullable();
+            $table->string("payment_method")->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_on')->nullable();

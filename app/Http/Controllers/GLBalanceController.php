@@ -11,13 +11,13 @@ use Illuminate\Support\Facades\DB;
 
 class GLBalanceController extends Controller
 {
-  
+
     /**
      * select * from gl_types
-     * loop for each of the type 
-     * get the acct_no convert into a number 
-     * add plus one 
-     * insert into the gl_account_bks 
+     * loop for each of the type
+     * get the acct_no convert into a number
+     * add plus one
+     * insert into the gl_account_bks
      */
 
      public function generateGlAcctBks(){
@@ -42,6 +42,6 @@ class GLBalanceController extends Controller
             $glAcctBk->save();
         }
         DB::commit();
-        return $this->genericResponse(true, "GL acct bk created successfully", 201,[]);
+        return $this->genericResponse(true, "GL acct bk created successfully", 201,[], "generateGlAcctBks", []);
     }
 }

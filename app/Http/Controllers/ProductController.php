@@ -24,7 +24,7 @@ class ProductController extends Controller
     {
         $response = $this->createNewProduct($request);
 
-        return $this->genericResponse(true, $response->message, 201, $response->product);
+        return $this->genericResponse(true, $response->message, 201, $response->product, "createProduct", $request);
     }
 
 
@@ -68,6 +68,9 @@ class ProductController extends Controller
         $product->type_id = $request->type_id;
         $product->gauge_id = $request->gauge_id;
         $product->ref_no = $refNo;
+        $product->secondary_measurement_unit_id= $request->secondary_measurement_unit_id;
+        $product->secondary_weight= (double) $request->secondary_weight;
+        $product->secondary_price = (double) $request->secondary_price;
         if (isset($institution->is_tax_enabled) && $institution->is_tax_enabled) {
             $product->tax_config = $request->tax_config;
         }
@@ -75,8 +78,19 @@ class ProductController extends Controller
 
         if (!isset($isEdit)) {
             $branch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
+            $cl = null;
+            if (isset($request->payment_method)){
+                if ($request->payment_method == "BANK"){
+                    $cl = CntrlParameter::where(['param_cd' => 'CGL', 'institution_id' => $userData->institution_id])->first();
+                }elseif ($request->payment_method == "CREDIT"){
+                    $cl = CntrlParameter::where(['param_cd' => 'AP', 'institution_id' => $userData->institution_id])->first();
+                }else{
+                    $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+                }
+            }else{
+                $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+            }
 
-            $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
             $sti = CntrlParameter::where(['param_cd' => 'STI', 'institution_id' => $userData->institution_id])->first();
 
             $pia = CntrlParameter::where(['param_cd' => 'PIA', 'institution_id' => $userData->institution_id])->first();
@@ -119,6 +133,25 @@ class ProductController extends Controller
             ];
 
             $postTran = $this->postTransaction($tran);
+
+
+            if($request->payment_method == "CREDIT"){
+                $payable = (array)[
+                    "ref_no"=> $refNo,
+                    "tran_id"=>$postTran->tran_id,
+                    "supplier_id"=> $request->supplier_id,
+                    "product_id"=>$product->id,
+                    "manufacturer_id"=>$request->manufacturer_id,
+                    "amount"=> (double) $postTran->tran_amount,
+                    "amount_paid"=>0,
+                    "status"=>"Active",
+                    "institution_id"=>$userData->institution_id,
+                    "branch_id"=>$userData->branch_id,
+                    "created_by" => $userData->id,
+                    "created_on"=> Carbon::now(),
+                ];
+                $this->createPayable($payable);
+            }
 
             $debitRequest = (object) [
                 "acct_no" => $sgl,
@@ -211,34 +244,36 @@ class ProductController extends Controller
 
         // $history = new stockHistory();
 
-        $stock->purchase_price = $request->purchase_price;
-        $stock->selling_price = $request->selling_price;
+        $stock->purchase_price =  (double) $request->purchase_price;
+        $stock->selling_price = (double) $request->selling_price;
         $stock->discount = $request->discount;
         $stock->product_id = $product->id;
-        $stock->quantity = $request->quantity;
-        $stock->min_quantity = $request->min_quantity;
-        $stock->max_quantity = $request->max_quantity;
+        $stock->quantity = (double) $request->quantity;
+        $stock->min_quantity =(double) $request->min_quantity;
+        $stock->max_quantity = (double) $request->max_quantity;
         $stock->institution_id = $userData->institution_id;
         $stock->stock_date = $request->date;
         $stock->manufactured_date = $request->manufactured_date;
         $stock->expiry_date = $request->expiry_date;
+        $stock->payment_method = $request->payment_method;
         $stock->branch_id = $userData->branch_id;
         $stock->user_id = $userData->id;
         $stock->status = $request->status;
         $stock->save();
 
-        $history->purchase_price = $request->purchase_price;
-        $history->selling_price = $request->selling_price;
+        $history->purchase_price = (double) $request->purchase_price;
+        $history->selling_price =(double) $request->selling_price;
         $history->discount = $request->discount;
         $history->product_id = $product->id;
         $history->stock_id = $stock->id;
-        $history->quantity = $request->quantity;
-        $history->min_quantity = $request->min_quantity;
-        $history->max_quantity = $request->max_quantity;
+        $history->quantity = (double) $request->quantity;
+        $history->min_quantity = (double) $request->min_quantity;
+        $history->max_quantity = (double) $request->max_quantity;
         $history->institution_id = $userData->institution_id;
         $history->stock_date = $request->date;
         $history->manufactured_date = $request->manufactured_date;
         $history->expiry_date = $request->expiry_date;
+        $history->payment_method = $request->payment_method;
         $history->branch_id = $userData->branch_id;
         $history->user_id = $userData->id;
         $history->status = $request->status;
@@ -258,18 +293,18 @@ class ProductController extends Controller
 
             $product= Product::where(['id'=>$request->productId, "institution_id"=>$userData->institution_id])->first();
             if(!isset($product)){
-                return $this->genericResponse(false, "Product not found", 400, $product);
+                return $this->genericResponse(false, "Product not found", 400, $product, "restock", $request);
             }
 
             $stocks =  stock::where(["product_id"=>$request->productId, "institution_id"=>$userData->institution_id, "branch_id"=>$userData->branch_id])->first();
 
             $stocks->updated_by = $userData->id ;
             $stocks->updated_on =Carbon::now() ;
-            $stocks->purchase_price = $request->purchase_price ;
-            $stocks->selling_price = $request->selling_price ;
-            $stocks->quantity = $stocks->quantity+$request->quantity ;
-            $stocks->min_quantity = $request->min_quantity ;
-            $stocks->max_quantity = $request->max_quantity ;
+            $stocks->purchase_price = (double) $request->purchase_price ;
+            $stocks->selling_price = (double) $request->selling_price ;
+            $stocks->quantity = (double) $stocks->quantity+$request->quantity ;
+            $stocks->min_quantity = (double) $request->min_quantity ;
+            $stocks->max_quantity = (double) $request->max_quantity ;
             $stocks->stock_date = $request->date ;
             $stocks->manufactured_date = $request->manufactured_date ;
             $stocks->expiry_date = $request->expiry_date ;
@@ -280,14 +315,14 @@ class ProductController extends Controller
             $history = new stockHistory();
             $history->created_by = $userData->id ;
             $history->created_on =Carbon::now() ;
-            $history->purchase_price = $request->purchase_price ;
-            $history->selling_price = $request->selling_price ;
+            $history->purchase_price = (double) $request->purchase_price ;
+            $history->selling_price = (double) $request->selling_price ;
             $history->discount = $request->discount;
             $history->product_id = $request->productId;
             $history->stock_id = $stocks->id;
-            $history->quantity = $request->quantity ;
-            $history->min_quantity = $request->min_quantity ;
-            $history->max_quantity = $request->max_quantity ;
+            $history->quantity = (double) $request->quantity ;
+            $history->min_quantity = (double) $request->min_quantity ;
+            $history->max_quantity =(double) $request->max_quantity ;
             $history->institution_id = $userData->institution_id ;
             $history->stock_date = $request->date ;
             $history->manufactured_date = $request->manufactured_date ;
@@ -300,7 +335,20 @@ class ProductController extends Controller
 
             $branch = Branch::where(['id'=>$userData->branch_id, 'institution_id'=>$userData->institution_id])->first();
 
-            $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
+        $cl = null;
+        if (isset($request->payment_method)){
+            if ($request->payment_method == "BANK"){
+                $cl = CntrlParameter::where(['param_cd' => 'CGL', 'institution_id' => $userData->institution_id])->first();
+            }elseif ($request->payment_method == "CREDIT"){
+                $cl = CntrlParameter::where(['param_cd' => 'AP', 'institution_id' => $userData->institution_id])->first();
+            }else{
+                $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+            }
+        }else{
+            $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+        }
+
+//            $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
             $sti = CntrlParameter::where(['param_cd'=>'STI', 'institution_id'=>$userData->institution_id])->first();
 
             $pia = CntrlParameter::where(['param_cd'=>'PIA', 'institution_id'=>$userData->institution_id])->first();
@@ -415,7 +463,7 @@ class ProductController extends Controller
 
             // {"quantity":"4567","min_quantity":"1","max_quantity":"1","measurement_unit_id":9,"purchase_price":"1000","manufactured_date":"2024-06-29T21:00:00.000Z","expiry_date":"2024-06-28T21:00:00.000Z","selling_price":"2000","date":"2020-12-31T21:00:00.000Z"}
             DB::commit();
-            return $this->genericResponse(true, "Product restock successfully", 201, $stocks);
+            return $this->genericResponse(true, "Product restock successfully", 201, $stocks, "restock", $request);
         // } catch (\Throwable $th) {
 
         //     throw  new $th;
@@ -428,23 +476,25 @@ class ProductController extends Controller
         $isNotAdmin = $this->isNotAdmin();
 
         $sqlString = "SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
-        P.institution_id, P.user_id, P.status, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.ref_no, P.updated_at, C.name AS category_name,
-        S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
-        E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name,  P.tax_config
-        FROM products P INNER JOIN product_categories C ON C.id = P.category_id
-        LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
-        LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
-        LEFT JOIN suppliers Q ON P.supplier_id = Q.id
-        LEFT JOIN measurement_units T ON P.measurement_unit_id = T.id
-        INNER JOIN stocks E ON E.product_id = P.id
-        INNER JOIN branches B ON B.id = E.branch_id
-        INNER JOIN institutions I ON I.id =P.institution_id ";
+            P.institution_id, P.user_id, P.status, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.ref_no, P.updated_at, C.name AS category_name,
+            S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
+            E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name,  P.tax_config, Y.name AS secondary_unit, P.secondary_weight, P.secondary_price, P.secondary_measurement_unit_id
+            FROM products P INNER JOIN product_categories C ON C.id = P.category_id
+            LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
+            LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
+            LEFT JOIN suppliers Q ON P.supplier_id = Q.id
+            LEFT JOIN measurement_units T ON P.measurement_unit_id = T.id
+            INNER JOIN stocks E ON E.product_id = P.id
+            INNER JOIN branches B ON B.id = E.branch_id
+            INNER JOIN institutions I ON I.id =P.institution_id
+            LEFT JOIN measurement_units Y ON Y.id = P.secondary_measurement_unit_id
+            WHERE P.status = 'Active'";
         if ($isNotAdmin) {
-            $sqlString .= " WHERE E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
+            $sqlString .= " AND E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
         }
-        $sqlString .= " ORDER BY T.id DESC";
+        $sqlString .= " ORDER BY P.id DESC";
         $products = DB::select($sqlString);
-        return $this->genericResponse(true, "Product list", 200, $products);
+        return $this->genericResponse(true, "Product list", 200, $products, "getProducts", []);
     }
 
     public function getProductDetails(Request $request)
@@ -493,7 +543,7 @@ class ProductController extends Controller
         $sqlString .= " ORDER BY P.id DESC";
         $product = DB::select($sqlString);
 
-        return $this->genericResponse(true, "Product list", 200, $product);
+        return $this->genericResponse(true, "Product list", 200, $product, "getProductDetails", $request);
     }
 
 
@@ -526,6 +576,10 @@ class ProductController extends Controller
                 'expiry_date'   => $newProduct->expiry_date,
                 'status'   => 'Active',
                 'id'   => null,
+                'secondary_measurement_unit_id'=>null,
+                'secondary_weight'=> null,
+                'secondary_price' => null,
+                'payment_method'=>'CASH'
             ];
 
             $response = $this->createNewProduct($newRequest);
@@ -534,8 +588,48 @@ class ProductController extends Controller
                 $newProduct->save();
             }
         }
-        return $this->genericResponse(true, "Approved Successfully", 200, []);
+        return $this->genericResponse(true, "Approved Successfully", 200, [], "approveBulkProducts", $request);
     }
 
+
+    public function getGlSum($acctNo){
+        $glAcct = GlAccounts::where('acct_no', $acctNo)->first();
+        $totalSaleDR = (float) DB::table('gl_histories')
+        ->where('acct_no', $acctNo)
+        ->where('dr_cr_ind', 'Dr')
+        // ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        ->sum('tran_amount');
+
+        $totalSaleCR = (float) DB::table('gl_histories')
+        ->where('acct_no', $acctNo)
+        ->where('dr_cr_ind', 'Cr')
+        // ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
+        ->sum('tran_amount');
+
+        if($glAcct->acct_type == 'ASSET' || $glAcct->acct_type=='EXPENSE'){
+
+        }
+
+    }
+
+    public function archiveProduct(Request $request){
+        try {
+            $message = '';
+            if($request->status == 'Archived'){
+                $message = 'product archived successfully';
+            }else if ($request->status == 'Active'){
+                $message = 'product activated successfully';
+            }
+            $product = Product::find($request->productId);
+            if(!isset($product)){
+                return $this->genericResponse(false, 'Product not found', 404, [], "archiveProduct", $request);
+            }
+            $product->status = $request->status;
+            $product->save();
+            return $this->genericResponse(true, $message, 201, $product, "archiveProduct", $request);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "archiveProduct", $request);
+        }
+    }
 
 }

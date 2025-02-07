@@ -26,13 +26,13 @@ class ManufacturerController extends Controller
         $manufacturer->created_on = now();
         $manufacturer->save();
 
-        return $this->genericResponse(true, "Manufacturer created successfully", 201, $manufacturer);
+        return $this->genericResponse(true, "Manufacturer created successfully", 201, $manufacturer, "createManufacturer", $request);
     }
 
 
     public function getManufacturers(){
         $userData = auth()->user();
         $manufacturers = Manufacturer::where(["status"=>"Active", "institution_id"=>$userData->institution_id])->get();
-        return $this->genericResponse(true, "Manufacturer fetched successfully", 200, $manufacturers);
+        return $this->genericResponse(true, "Manufacturer fetched successfully", 200, $manufacturers, "getManufacturers", []);
     }
 }

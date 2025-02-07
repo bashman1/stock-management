@@ -22,13 +22,13 @@ class ProductCategoryController extends Controller
         $cat->created_on=now();
         $cat->save();
 
-        return $this->genericResponse(true, "Product category created Successfully", 201, $cat);
+        return $this->genericResponse(true, "Product category created Successfully", 201, $cat, "createProductCategory", $request);
     }
 
     public function getProductCategories(){
         $userData = auth()->user();
         $cat = ProductCategory::where(["status"=>"Active", "institution_id"=>$userData->institution_id])->get();
-        return $this->genericResponse(true, "Product category fetched Successfully", 200, $cat);
+        return $this->genericResponse(true, "Product category fetched Successfully", 200, $cat, "getProductCategories", []);
     }
 
     public function createProductSubCategory(Request $request){
@@ -46,12 +46,12 @@ class ProductCategoryController extends Controller
 
         $subCat->save();
 
-        return $this->genericResponse(true, "Product sub category created Successfully", 201, $subCat);
+        return $this->genericResponse(true, "Product sub category created Successfully", 201, $subCat, "createProductSubCategory", $request);
     }
 
     public function getProductSubCategory(){
         $userData = auth()->user();
         $subCat = ProductSubCategory::where(["status"=>"Active", "institution_id"=>$userData->institution_id])->get();
-        return $this->genericResponse(true, "Product sub category fetched Successfully", 200, $subCat);
+        return $this->genericResponse(true, "Product sub category fetched Successfully", 200, $subCat, "getProductSubCategory", []);
     }
 }
