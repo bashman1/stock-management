@@ -482,94 +482,6 @@ const close = () => {
     printInvoice();
 };
 
-
-const printInvoice = () => {
-    const printWindow = window.open('', '', 'width=600,height=600');
-    printWindow.document.open();
-    printWindow.document.write(`<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0;">
-    <div style="max-width: 750px; margin: auto; padding: 20px; border: 1px solid #ddd;">
-        <header style="display: flex; justify-content: space-between; align-items: center;">
-            <h1 style="color: #002060; margin: 0;">INVOICE</h1>
-            <div style="width: 80px; height: 80px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;">LOGO</div>
-        </header>
-        <section style="margin: 20px 0;">
-            <div style="display: flex; justify-content: space-between;">
-                <div>
-                    <h3 style="margin: 0;">`+ commonService.getStorage()?.institution_name + `</h3>
-                </div>
-                <div style="text-align: right;">
-                    <p style="margin: 0; color: grey"><strong>Invoice #:</strong> `+ commonService.generateRandomFiveId() + ` </p>
-                    <p style="margin: 0;  color: grey"><strong>Invoice Date:</strong> `+ commonService.formatDate(commonService.getCurrentTimestamp()) + ` </p>
-
-                </div>
-            </div>
-        </section>
-        <section style="margin: 20px 0;">
-            <div style="display: flex; justify-content: space-between;">
-                <div>
-                    <h4 style="margin: 0;">BILL TO</h4>
-                    <p style="margin: 0; color: grey">`+ customer?.name + `</p>
-
-                    <p style="margin: 0; color: grey">`+ billingAddress + `</p>
-                </div>
-                <div>
-                    <h4 style="margin: 0; color: grey">SHIP TO</h4>
-                    <p style="margin: 0; color: grey">`+ customer?.name + `</p>
-                    <!-- <p style="margin: 0; color: grey">3787 Pineview Drive</p> -->
-                    <p style="margin: 0; color: grey">`+ billingAddress + `</p>
-                </div>
-            </div>
-        </section>
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-            <thead>
-                <tr style="background: #f2f2f2;"  >
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;  color: grey">QTY</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;  color: grey">DESCRIPTION</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;  color: grey">UNIT PRICE</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;  color: grey">AMOUNT</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="(prod, index) of selectedProduct" :key="prod.id">
-                    <td style="border: 1px solid #ddd; padding: 8px;  color: black"> `+ prod.quantity + `</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; color: black"> `+ prod.name + `</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black">`+ commonService.commaSeparator(prod.price) + `</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black"> `+ commonService.commaSeparator(prod.price * prod.quantity) + `</td>
-                </tr>
-            </tbody>
-            <tfoot>
-
-                <tr>
-                    <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right; color: grey">VAT 18%</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right; color: black"> `+ commonService.commaSeparator(VAT[0].total) + `</td>
-                </tr>
-                <tr>
-                    <td colspan="3" style="border: 1px solid #ddd; padding: 8px; text-align: right; color: grey"><strong>Total</strong></td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;color: black"><strong>`+ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 + `</strong></td>
-                </tr>
-            </tfoot>
-        </table>
-        <div style="text-align: center; margin: 20px 0;">
-            <p style="margin: 0; color: grey">Thank you</p>
-            <p style="margin: 0; font-size: 0.9em; color: #666;">Payment is due within 15 days</p>
-            <p style="margin: 0; font-size: 0.9em; color: #666;">Please make checks payable to:`+ commonService.getStorage()?.institution_name + `.</p>
-        </div>
-    </div>
-</body>
-</html>`)
-    printWindow.document.close();
-    printWindow.print();
-    printWindow.close();
-}
-
-
 onBeforeMount(() => {
     initFilters();
 });
@@ -764,7 +676,7 @@ onMounted(() => {
         <div class="col-12 md:col-3">
             <p class="font-bold text-left text-xl green-color" v-if="amountTOPay && amountTOPay > 0">Change: {{
                 commonService.commaSeparator(Number(amountTOPay) + Number(discount) -
-                    (totalPrice(selectedProduct)+Number(extraTax))) }}</p>
+                    (totalPrice(selectedProduct) + Number(extraTax))) }}</p>
         </div>
         <div class="col-12 md:col-3">
             <Button @click="onSubmitOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
@@ -833,98 +745,126 @@ onMounted(() => {
             <!-- template -->
 
             <!DOCTYPE html>
-<html lang='en'>
+            <html lang='en'>
 
-<head>
-  <meta charset='UTF-8'>
-  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-  <title>Invoice</title>
-</head>
+            <head>
+                <meta charset='UTF-8'>
+                <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                <title>Invoice</title>
+            </head>
 
-<body style="background-color: #fff;">
-  <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
-    <header style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
-      <h1 style='color: #002060; margin: 0;'>INVOICE</h1>
-      <div style='width: 80px; height: 80px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;'>LOGO</div>
-    </header>
+            <body style="background-color: #fff;">
+                <div
+                    style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
+                    <header
+                        style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
+                        <h1 style='color: #002060; margin: 0;'>INVOICE</h1>
+                        <div
+                            style='width: 80px; height: 80px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;'>
+                            LOGO</div>
+                    </header>
 
-    <section>
-      <div style='display: flex; justify-content: space-between;'>
-        <div>
-          <p style="color: #666;"><strong>Company Name:</strong> {{ commonService.getStorage()?.institution_name }}</p>
-        </div>
-        <div style='text-align: right;'>
-          <p style="color: #666;"><strong>Invoice #:</strong> {{ commonService.generateRandomFiveId() }}</p>
-          <p style="color: #666;"><strong>Date:</strong> {{ commonService.formatDate(commonService.getCurrentTimestamp()) }}</p>
-          <p style="color: #666;"><strong>Due Date:</strong> 26/02/2019</p>
-        </div>
-      </div>
-    </section>
+                    <section>
+                        <div style='display: flex; justify-content: space-between;'>
+                            <div>
+                                <p style="color: #666;"><strong>Company Name:</strong> {{
+                                    commonService.getStorage()?.institution_name }}</p>
+                            </div>
+                            <div style='text-align: right;'>
+                                <p style="color: #666;"><strong>Invoice #:</strong> {{
+                                    commonService.generateRandomFiveId() }}
+                                </p>
+                                <p style="color: #666;"><strong>Date:</strong> {{
+                                    commonService.formatDate(commonService.getCurrentTimestamp()) }}</p>
+                                <p style="color: #666;"><strong>Due Date:</strong> 26/02/2019</p>
+                            </div>
+                        </div>
+                    </section>
 
-    <section style='margin-top: 20px;'>
-      <div style='display: flex; justify-content: space-between;'>
-        <div>
-          <div style='background: #002060; padding: 5px 10px; font-weight: bold;'>BILL TO</div>
-          <p style="color: #666;">{{ customer?.name }}</p>
-          <!-- <p style="color: #666;">{{ billingAddress }}</p> -->
-        </div>
-        <div>
-          <div style='background: #002060; padding: 5px 10px; font-weight: bold;'>SHIP TO</div>
-          <!-- <p style="color: #666;">{{ customer?.name }}</p> -->
-          <p style="color: #666;">{{ billingAddress }}</p>
-        </div>
-      </div>
-    </section>
+                    <section style='margin-top: 20px;'>
+                        <div style='display: flex; justify-content: space-between;'>
+                            <div>
+                                <div style='background: #002060; padding: 5px 10px; font-weight: bold;'>BILL TO</div>
+                                <p style="color: #666;">{{ customer?.name }}</p>
+                                <!-- <p style="color: #666;">{{ billingAddress }}</p> -->
+                            </div>
+                            <div>
+                                <div style='background: #002060; padding: 5px 10px; font-weight: bold;'>SHIP TO</div>
+                                <!-- <p style="color: #666;">{{ customer?.name }}</p> -->
+                                <p style="color: #666;">{{ billingAddress }}</p>
+                            </div>
+                        </div>
+                    </section>
 
-    <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
-      <thead>
-        <tr>
-          <th style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #002060; color: #fff;'>QTY</th>
-          <th style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #002060; color: #fff;'>DESCRIPTION</th>
-          <th style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #002060; color: #fff;'>UNIT PRICE</th>
-          <th style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #002060; color: #fff;'>AMOUNT</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for='(prod, index) of selectedProduct' :key='prod.id'>
-          <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>{{ prod.quantity }}</td>
-          <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>{{ prod.name }}</td>
-          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(prod.price) }}</td>
-          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(prod.price * prod.quantity) }}</td>
-        </tr>
-      </tbody>
-      <tfoot>
-        <tr>
-            <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>Taxable</td>
-            <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(VAT[0].amount) }}</td>
-          </tr>
-        <tr>
-          <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>VAT 18%</td>
-          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(VAT[0].total) }}</td>
-        </tr>
-        <tr>
-          <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>Total</td>
-          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>{{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}</td>
-        </tr>
-      </tfoot>
-    </table>
+                    <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
+                        <thead>
+                            <tr>
+                                <th
+                                    style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #002060; color: #fff;'>
+                                    QTY</th>
+                                <th
+                                    style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #002060; color: #fff;'>
+                                    DESCRIPTION</th>
+                                <th
+                                    style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #002060; color: #fff;'>
+                                    UNIT PRICE</th>
+                                <th
+                                    style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #002060; color: #fff;'>
+                                    AMOUNT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for='(prod, index) of selectedProduct' :key='prod.id'>
+                                <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>{{ prod.quantity }}</td>
+                                <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>{{ prod.name }}</td>
+                                <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{
+                                    commonService.commaSeparator(prod.price) }}</td>
+                                <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{
+                                    commonService.commaSeparator(prod.price * prod.quantity) }}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan='3'
+                                    style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>
+                                    Taxable</td>
+                                <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{
+                                    commonService.commaSeparator(VAT[0].amount) }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan='3'
+                                    style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>
+                                    VAT 18%</td>
+                                <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{
+                                    commonService.commaSeparator(VAT[0].total) }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan='3'
+                                    style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>
+                                    Total</td>
+                                <td
+                                    style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>
+                                    {{ totalPrice(selectedProduct) ?
+                                        commonService.commaSeparator(totalPrice(selectedProduct) -
+                                    Number(discount) + Number(extraTax)) : 0 }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
 
-    <div style='margin-top: 20px; border: 1px solid #ddd; padding: 10px; background: #f2f2f2;'>
-      <p style="color: #666;"><strong>Other Comments:</strong></p>
-      <p style="color: #666;">1. Total payment due in 30 days.</p>
-      <p style="color: #666;">2. Please include the invoice number on your check.</p>
-    </div>
+                    <div style='margin-top: 20px; border: 1px solid #ddd; padding: 10px; background: #f2f2f2;'>
+                        <p style="color: #666;"><strong>Other Comments:</strong></p>
+                        <p style="color: #666;">1. Total payment due in 30 days.</p>
+                        <p style="color: #666;">2. Please include the invoice number on your check.</p>
+                    </div>
 
-    <div style='text-align: center; margin-top: 30px;'>
-      <p style='font-size: 0.9em; color: #666;'>Thank you for your business!</p>
-      <p style='font-size: 0.9em; color: #666;'>Payment is due within 15 days.</p>
-      <!-- <p style='font-size: 0.9em; color: #666;'>Please make checks payable to: {{ commonService.getStorage()?.institution_name }}.</p> -->
-    </div>
-  </div>
-</body>
-
-</html>
-
+                    <div style='text-align: center; margin-top: 30px;'>
+                        <p style='font-size: 0.9em; color: #666;'>Thank you for your business!</p>
+                        <p style='font-size: 0.9em; color: #666;'>Payment is due within 15 days.</p>
+                        <!-- <p style='font-size: 0.9em; color: #666;'>Please make checks payable to: {{ commonService.getStorage()?.institution_name }}.</p> -->
+                    </div>
+                </div>
+            </body>
+            </html>
 
 
             <!-- /template -->
