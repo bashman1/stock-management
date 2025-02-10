@@ -639,6 +639,14 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     }
                 },
+                {
+                    path: '/audit-logs',
+                    name: 'SystemLogs',
+                    component: () => import('@/views/pages/logs/ViewLogs.vue'),
+                    meta:{
+                        requiresAuth: true, // This route requires authentication
+                    }
+                },
             ]
         },
         {
