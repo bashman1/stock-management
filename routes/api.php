@@ -33,6 +33,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerReceivableController;
 use App\Http\Controllers\DefaultRoleController;
 use App\Http\Controllers\PayableController;
+use App\Http\Controllers\SystemLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -203,4 +204,5 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get("get-default-role/{id}", [DefaultRoleController::class, "getDefaultRoleById"]);
     Route::post("assign-default-role-permission", [DefaultRoleController::class, "assignDefaultRolePermission"]);
     Route::post('approve-institution', [InstitutionController::class, "approveInstitution"]);
+    Route::get("get-audit-trail", [SystemLogController::class, "getSystemLogs"]);
 });

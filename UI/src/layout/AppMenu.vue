@@ -538,6 +538,16 @@ if(commonService.checkPermissions('ViewUserProfile')){
     )
 }
 
+if(commonService.checkPermissions('ViewSystemLogs')){
+    accountMenu.value.items.push(
+        {
+            label: 'System Logs',
+            icon: 'pi pi-fw pi-circle',
+            to: '/audit-logs'
+        }
+    )
+}
+
 
 
 
