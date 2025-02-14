@@ -310,7 +310,7 @@ class GlAccountsController extends Controller
         $debit = $this->postGlDR($debitRequest);
         $credit = $this->postGlCR($creditRequest);
         DB::commit();
-        return $this->genericResponse(true, "Ledger account updated successfully", 201, ['debit' => $debitRequest, 'credit' => $creditRequest], "debitCreditGl", $request);
+        return $this->genericResponse(true, "Transaction posted successfully", 201, ['debit' => $debitRequest, 'credit' => $creditRequest], "debitCreditGl", $request);
     }
 
 

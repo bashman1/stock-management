@@ -442,6 +442,16 @@ if (commonService.checkPermissions('ViewBalanceSheet')){
     )
 }
 
+if (commonService.checkPermissions('CreateExpenses')){
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'Expenses',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-expense'
+        }
+    )
+}
+
 if(commonService.checkPermissions('ViewProductsReport')){
     reportMenu.value.items.push(
         {
