@@ -171,10 +171,13 @@ class GlAccountsController extends Controller
             $conditions['G.gl_no'] = $request->gl_no;
         }
         if (isset($request->description)) {
-            $conditions['G.description'] = ["ilike %" . $request->description . "%"];
+            $conditions['G.description'] = [" ILIKE %" . $request->description . "%"];
         }
         if (isset($request->acct_no)) {
             $conditions['G.acct_no'] = $request->acct_no;
+        }
+        if(isset($request->gl_type_no)){
+            $conditions['G.gl_type_no'] = $request->gl_type_no;
         }
         if ($isNotAdmin) {
             $conditions['G.institution_id'] = $userData->institution_id;

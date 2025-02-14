@@ -19,7 +19,7 @@ class SystemLogController extends Controller
             $isNotAdmin = $this->isNotAdmin();
 
             // Current page number
-            Log::info("Hello there pagination initialization");
+            // Log::info("Hello there pagination initialization");
             $currentPage = LengthAwarePaginator::resolveCurrentPage();
 
             // Number of items per page
@@ -50,10 +50,10 @@ class SystemLogController extends Controller
             $logs = DB::select($queryString);
 
             // Get the total count without limit/offset
-            $countQuery = "SELECT COUNT(*) as total FROM system_logs S LIMIT 100";
+            $countQuery = "SELECT COUNT(*) as total FROM system_logs L ";
 
             if ($isNotAdmin) {
-                $countQuery .= " WHERE S.institution_id = " . $userData->institution_id;
+                $countQuery .= " WHERE L.institution_id = " . $userData->institution_id;
             }
 
             $totalLogs = DB::selectOne($countQuery)->total;
