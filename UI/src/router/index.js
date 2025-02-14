@@ -647,6 +647,14 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     }
                 },
+                {
+                    path: '/create-expense',
+                    name: 'CreateExpense',
+                    component: ()=> import('@/views/pages/chart-of-accounts/Expenses.vue'),
+                    meta:{
+                        requiresAuth: true, // This route requires authentication
+                    }
+                }
             ]
         },
         {
