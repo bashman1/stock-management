@@ -81,7 +81,7 @@ class RoleController extends Controller
                 $assignRolePermissions =  RolePermission::where(["role_id" => $request->roleId, "permission_id"=> $request->permissionId])->first();
                 $assignRolePermissions->delete();
             }
-            return $this->genericResponse(true, 201, "Permissions assigned successfully", $assignRolePermissions, "assignRolePermission", $request);
+            return $this->genericResponse(true, "Permissions assigned successfully", 201,  $assignRolePermissions, "assignRolePermission", $request);
 
         } catch (\Throwable $th) {
             return $this->genericResponse(false, "Role retrieval  Failed", 500, $th, "assignRolePermission", $request);

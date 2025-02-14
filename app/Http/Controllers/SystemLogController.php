@@ -23,7 +23,7 @@ class SystemLogController extends Controller
             $currentPage = LengthAwarePaginator::resolveCurrentPage();
 
             // Number of items per page
-            $perPage = 15;
+            $perPage = 10;
             // Calculate the offset
             $offset = ($currentPage - 1) * $perPage;
 

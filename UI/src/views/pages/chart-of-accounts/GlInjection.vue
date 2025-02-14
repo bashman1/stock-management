@@ -362,7 +362,7 @@ const creditAccount=(data)=>{
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <Calendar id="tranDt" v-model="tranDt"></Calendar>
-                        <label for="tranDt">Stock Date</label>
+                        <label for="tranDt">Date</label>
                     </span>
                 </div>
 
