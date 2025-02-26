@@ -654,6 +654,14 @@ const router = createRouter({
                     meta:{
                         requiresAuth: true, // This route requires authentication
                     }
+                },
+                {
+                    path: '/upload-mail-receivers',
+                    name: 'bulkMailSender',
+                    component: ()=> import('@/views/pages/messages/SendBulkMails.vue'),
+                    meta:{
+                        requiresAuth: true, // This route requires authentication
+                    }
                 }
             ]
         },
