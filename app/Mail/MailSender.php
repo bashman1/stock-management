@@ -38,6 +38,7 @@ class MailSender extends Mailable
          * checking for attachment
          */
         if(isset($this->details["has_attachment"])){
+        // if (!empty($this->details["has_attachment"])) {
             Log::info('****************** Sending mail with attachment **************************');
             $pdf = app(PDF::class);
             $pdf->loadHTML($this->details["attachment"]);
