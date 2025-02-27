@@ -208,4 +208,5 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get("get-audit-trail", [SystemLogController::class, "getSystemLogs"]);
     Route::post("upload-mail-receivers", [MailReceiverController::class, "uploadMailReceivers"]);
     Route::get("get-mailReceivers", [MailReceiverController::class, "getMailReceivers"]);
+    Route::post("send-bulk-mails", [MailReceiverController::class, "sendBulkMails"]);
 });

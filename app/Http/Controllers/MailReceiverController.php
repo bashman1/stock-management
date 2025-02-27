@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Imports\MailReceiverImport;
 use App\Models\MailReceiver;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MailReceiverController extends Controller
 {
@@ -39,5 +41,35 @@ class MailReceiverController extends Controller
         } catch (\Throwable $th) {
             return $this->genericResponse(false, $th->getMessage(), 500, null, "getMailReceivers", []);
         }
+    }
+
+
+    public function sendBulkMails(Request $request){
+        // subject:subject.value,
+        // body:data.value,
+        // receivers: selectedMember
+
+        foreach ($request->receivers as $key => $value) {
+            // $request->body {name} $value['name']
+
+            // Log::info($request->body);
+
+            $message = str_replace('__name__', $value['name'], $request->body);
+
+            $mail = [
+                "subject" => $request->subject,
+                "body" => $message,
+                "has_attachment" => false,
+                "to"=>[$value['email']],
+                "cc"=>[], "bcc"=>[],
+                "attachment"=>'',
+                "created_on"=>Carbon::now(),
+                "attachment_name"=>"",
+            ];
+
+            $this->sendMail($mail);
+        }
+
+        return $this->genericResponse(true, "Bulk messages sent successfully", 201, [], "sendBulkMails", $request);
     }
 }

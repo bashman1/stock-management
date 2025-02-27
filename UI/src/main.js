@@ -102,6 +102,9 @@ import VirtualScroller from 'primevue/virtualscroller';
 
 import CodeHighlight from '@/components/CodeHighlight.vue';
 import BlockViewer from '@/components/BlockViewer.vue';
+// import  {Ckeditor}  from '@ckeditor/ckeditor5-vue';
+import { QuillEditor } from '@vueup/vue-quill'
+import '@vueup/vue-quill/dist/vue-quill.snow.css';
 
 // import VueMeta from 'vue-meta'
 import Meta from 'vue-meta'
@@ -115,6 +118,7 @@ app.use(PrimeVue, { ripple: true });
 app.use(ToastService);
 app.use(DialogService);
 app.use(ConfirmationService);
+// app.use(Ckeditor);
 // app.use(Meta, {
 //     keyName: 'smart collect',
 //     attribute: 'data-vue-meta',
@@ -217,5 +221,7 @@ app.component('TreeSelect', TreeSelect);
 app.component('TreeTable', TreeTable);
 app.component('TriStateCheckbox', TriStateCheckbox);
 app.component('VirtualScroller', VirtualScroller);
+// app.component('Ckeditor', Ckeditor);
+app.component('QuillEditor', QuillEditor)
 
 app.mount('#app');
