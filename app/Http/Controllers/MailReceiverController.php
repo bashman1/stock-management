@@ -62,9 +62,9 @@ class MailReceiverController extends Controller
                 "has_attachment" => false,
                 "to"=>[$value['email']],
                 "cc"=>[], "bcc"=>[],
-                "attachment"=>'',
+                // "attachment"=>'',
                 "created_on"=>Carbon::now(),
-                "attachment_name"=>"",
+                // "attachment_name"=>"",
             ];
 
             $this->sendMail($mail);
