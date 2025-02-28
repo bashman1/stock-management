@@ -36,7 +36,7 @@ class ScheduledTaskService
             // ->orderBy('priority', 'desc')
             ->orderByDesc('priority')  // High priority comes first
             ->orderBy('id', 'asc')     // Then order by id ascending
-            ->take(10)  // Limit the result to 10 records
+            ->take(100)  // Limit the result to 10 records
             ->get();
         // Loop through each pending mail and send
         foreach ($pendingMails as $mail) {
