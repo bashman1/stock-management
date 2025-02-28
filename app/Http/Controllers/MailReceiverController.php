@@ -49,7 +49,9 @@ class MailReceiverController extends Controller
         // body:data.value,
         // receivers: selectedMember
 
-        foreach ($request->receivers as $key => $value) {
+        $receivers = MailReceiver::where('status', 'Active')->get();
+
+        foreach ($receivers as $key => $value) {
             // $request->body {name} $value['name']
 
             // Log::info($request->body);
@@ -62,9 +64,9 @@ class MailReceiverController extends Controller
                 "has_attachment" => false,
                 "to"=>[$value['email']],
                 "cc"=>[], "bcc"=>[],
-                "attachment"=>'',
+                // "attachment"=>'',
                 "created_on"=>Carbon::now(),
-                "attachment_name"=>"",
+                // "attachment_name"=>"",
             ];
 
             $this->sendMail($mail);
