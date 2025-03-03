@@ -1006,6 +1006,7 @@ class Controller extends BaseController
         $user->description = $request->description;
         $user->role_id =  $request->role_id;
         $user->user_type = $request->user_type;
+        $user->reset_required = true;
         $user->user_category =  $request->user_category;
         $user->institution_id = $request->institution_id;
         $user->branch_id =  $request->branch_id;
