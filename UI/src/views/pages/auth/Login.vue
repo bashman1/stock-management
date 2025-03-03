@@ -16,6 +16,12 @@ const router = useRouter();
 const email = ref('');
 const password = ref('');
 const checked = ref(false);
+const showResetModal = ref(false)
+const globalUserData=ref({});
+const newPassword = ref(null);
+const confirmPassword = ref(null);
+const matchingPassword = ref(true);
+const formError = ref({});
 
 const logoUrl = computed(() => {
     // return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
@@ -23,6 +29,10 @@ const logoUrl = computed(() => {
     return `demo/images/SmarCollectlogo-removebg-preview.png`;
 });
 
+
+const toggleResetModal=(action)=>{
+    showResetModal.value = action
+}
 
 const login=  ()=>{
    let postData = {
@@ -35,12 +45,61 @@ const login=  ()=>{
                 token: response.data.token.accessToken,
                 userData: response.data.user_data,
             };
-            goToDashboard(storedData);
+            globalUserData.value = storedData
+            if(globalUserData?.value?.userData?.reset_required){
+                toggleResetModal(true);
+            }else{
+                goToDashboard(storedData);
+            }
         }else{
             commonService.showError(toast,response.message);
         }
     })
+}
 
+
+const onInputBlur=(value, key)=>{
+    formError.value[key] = commonService.validateFormField(value);
+}
+
+
+const onPasswordReset=async()=>{
+    // formError.value.oldPassword=commonService.validateFormField(oldPassword.value);
+    formError.value.newPassword=commonService.validateFormField(newPassword.value);
+    formError.value.confirmPassword=commonService.validateFormField(confirmPassword.value);
+
+    let invalid = commonService.validateRequiredFields(formError.value);
+    if(invalid || newPassword.value != confirmPassword.value){
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
+    let postData = {
+        userId:globalUserData?.value?.userData?.id,
+        oldPassword: password.value,
+        newPassword: newPassword.value,
+        confirmPassword: confirmPassword.value,
+    }
+    await commonService.setStorage(globalUserData.value);
+    commonService.genericRequest('reset-password', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            toggleResetModal(false)
+            newPassword.value = null;
+            confirmPassword.value=null;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+    await commonService.removeStorage()
+}
+
+const checkMatchingPassword=()=>{
+    if(newPassword.value === confirmPassword.value ){
+        matchingPassword.value = true;
+    }else{
+        matchingPassword.value = false;
+    }
 }
 
 const goToDashboard=async(storedData)=>{
@@ -95,8 +154,53 @@ const goToSelfRegistration = ()=>{
                 </div>
             </div>
         </div>
+
+        <Dialog header="Reset Password" v-model:visible="showResetModal" :style="{ width: '40vw' }"
+        :modal="true" class="p-fluid">
+        <div class="grid p-fluid">
+            <!-- <div class="field col-12 md:col-12 mt-10">
+                <span class="p-float-label">
+                    <InputText type="text" id="subject" v-model="subject"
+                         />
+                    <label for="subject">Subject</label>
+                </span>
+            </div> -->
+            <!-- <div class="field col-12 md:col-12">
+
+            </div> -->
+            <!-- <div class="field col-12 md:col-12">
+                <QuillEditor  v-model:content="data" contentType="html" toolbar="full" theme="snow" />
+            </div> -->
+
+            <div class="field col-12 md:col-12">
+                <span class="p-float-label">
+                    <Password type="text" id="password"  @keyup="checkMatchingPassword" v-model="newPassword" @blur="onInputBlur(newPassword, 'newPassword')"
+                        :class="{ 'p-invalid': formError?.newPassword || !matchingPassword}"  :toggleMask="true"/>
+                    <label for="password">New Password</label>
+                </span>
+            </div>
+
+            <div  class="field col-12 md:col-12">
+                <span class="p-float-label">
+                    <Password type="text" id="confirmPassword" @keyup="checkMatchingPassword" v-model="confirmPassword"
+                        @blur="onInputBlur(confirmPassword, 'confirmPassword')"
+                        :class="{ 'p-invalid': formError?.confirmPassword || !matchingPassword  }"  :toggleMask="true"/>
+                    <label for="confirmPassword">Confirm Password</label>
+                </span>
+            </div>
+
+
+        </div>
+
+        <template #footer>
+            <Button label="Cancel" @click="toggleResetModal(false)" icon="pi pi-times"
+                class="p-button-outlined p-button-danger mr-2 mb-2" />
+            <Button @click="onPasswordReset" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+        </template>
+    </Dialog>
+
     </div>
-    <AppConfig simple />
+    <!-- <AppConfig simple /> -->
 </template>
 
 <style scoped>

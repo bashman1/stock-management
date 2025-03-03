@@ -13,6 +13,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('system_logs', function (Blueprint $table) {
+            $table->text('purpose')->nullable();
+            $table->text('description')->nullable();
             $table->string('country')->nullable();
             $table->string('city')->nullable();
             $table->string('asn')->nullable();

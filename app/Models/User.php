@@ -42,7 +42,15 @@ class User extends Authenticatable
         'updated_on',
         'user_type',
         'user_category',
-        'original_branch_id'
+        'original_branch_id',
+        'login_count',
+        'reset_required',
+        'uuid',
+        'last_login',
+        'last_logout',
+        'auto_password_reset',
+        'password_reset_interval',
+        'last_password',
     ];
 
     /**
