@@ -301,6 +301,7 @@ class UserController extends Controller
 
             // Update the user's password
             $user->password = bcrypt($request->newPassword);
+            $user->reset_required = false;
             $user->save();
 
             DB::commit();

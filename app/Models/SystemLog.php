@@ -24,6 +24,18 @@ class SystemLog extends Model
         'user_id',
         'institution_id',
         'branch_id',
+        'purpose',
+        'description',
+        'country',
+        'city',
+        'asn',
+        'region',
+        'latitude',
+        'longitude',
+        'postal_code',
+        'isp',
+        'time_zone',
+        'uuid',
     ];
 
     protected $casts = [
