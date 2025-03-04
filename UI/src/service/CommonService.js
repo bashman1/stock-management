@@ -1,8 +1,8 @@
 import { actions, state } from '../../store';
 
 export default class CommonService {
-    //  baseUrl = "http://localhost:8000/api/";
-    baseUrl = "https://prod.smartcollect.co.ug/api/";   //prod environment
+     baseUrl = "http://localhost:8000/api/";
+    // baseUrl = "https://prod.smartcollect.co.ug/api/";   //prod environment
     // baseUrl = "https://test.smartcollect.co.ug/api/";   //test environment
 //    baseUrl = "../api/";
 
@@ -137,26 +137,7 @@ export default class CommonService {
    * @returns
    * @author Bash
    */
-    // postFormDataToServerWithToken = (url, method, formData) => {
-    //     return fetch(url, {
-    //       method: method,
-    //       headers: {
-    //         "Content-Type": "multipart/form-data",
-    //         // Accept: "application/json",
-    //         Authorization: "Bearer " + this.getStorage().token
-    //       },
-    //       body: formData
-    //     })
-    //       .then(res => {
-    //         return res.json();
-    //       })
-    //       .then(json => {
-    //         return json;
-    //       })
-    //       .catch(err => {
-    //         console.log(err);
-    //       });
-    //   };
+
 
     postFormDataToServerWithToken = (url, method, formData) => {
         console.log(formData)

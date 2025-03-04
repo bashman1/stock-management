@@ -108,15 +108,7 @@ class Controller extends BaseController
      * @return void
      * @author Bashir <wamulabash1@gmail.com>
      */
-    // public function getLetters($input): string
-    // {
-    //     $words = explode(' ', $input);
-    //     $result = '';
-    //     foreach ($words as $word) {
-    //         $result .= strtoupper(substr($word, 0, min(1, strlen($word))));
-    //     }
-    //     return  substr($result, 0, 2);
-    // }
+
     public function getLetters(string $input): string
     {
         return substr(implode('', array_map(fn($word) => strtoupper($word[0] ?? ''), explode(' ', $input))), 0, 2);
@@ -129,14 +121,7 @@ class Controller extends BaseController
      *
      * @return boolean
      */
-    // public function isNotAdmin(): bool
-    // {
-    //     $userData = auth()->user();
-    //     if ($userData->institution_id != null) {
-    //         return true;
-    //     }
-    //     return false;
-    // }
+
     public function isNotAdmin(): bool
     {
         return auth()->user()->institution_id !== null;
@@ -148,17 +133,6 @@ class Controller extends BaseController
      *
      * @return void
     //  */
-    // public function generateBranchCode(): string
-    // {
-    //     $randomCode = '';
-    //     do {
-    //         $randomCode = (string) $this->randomThreeDigitCode(3);
-    //         $branchCd = Branch::where("code", $randomCode)->first();
-    //     } while ((isset($branchCd) && !empty($branchCd)) ||  strlen($randomCode) != 3);
-
-    //     return strtoupper($randomCode);
-    // }
-
     public function generateBranchCode(): string
     {
         do {
@@ -200,14 +174,7 @@ class Controller extends BaseController
      *
      * @return void
      */
-    // public function generateTranRef(): string
-    // {
-    //     $tranIdRef = InstitutionConfig::where("type", "tran_id_ref")->first();
-    //     $tranId = $tranIdRef->prefix . '' . $tranIdRef->starting . '' . $tranIdRef->current;
-    //     $tranIdRef->current = $tranIdRef->current + $tranIdRef->step;
-    //     $tranIdRef->save();
-    //     return $tranId;
-    // }
+
     public function generateTranRef(): string
     {
         $tranIdRef = InstitutionConfig::where('type', 'tran_id_ref')->firstOrFail();
@@ -226,14 +193,6 @@ class Controller extends BaseController
      * @param [type] $type
      * @return void
      */
-    // public function generateRefNumber($type): string
-    // {
-    //     $refNo = InstitutionConfig::where('type', $type)->first();
-    //     $generatedCode = $refNo->prefix . '' . ($refNo->starting + $refNo->current);
-    //     $refNo->current = $refNo->current + $refNo->step;
-    //     $refNo->save();
-    //     return $generatedCode;
-    // }
     public function generateRefNumber(string $type): string
     {
         $refNo = InstitutionConfig::where('type', $type)->firstOrFail();
@@ -808,53 +767,6 @@ class Controller extends BaseController
         return DB::select($queryString);
     }
 
-
-    // public function getGlBalancesAsOf($startDate, $endDate, $acctNo): float|int
-    // {
-    //     try {
-    //         // Use parameterized query to prevent SQL injection
-    //         $queryString = "SELECT H.*, B.acct_type
-    //                     FROM gl_histories H
-    //                     INNER JOIN gl_balances B ON H.acct_no = B.acct_no
-    //                     WHERE H.acct_no = :acctNo";
-
-    //         // Add date filtering if both start and end dates are provided
-    //         if (isset($startDate) && isset($endDate)) {
-    //             $queryString .= " AND H.transaction_date::date BETWEEN :startDate AND :endDate";
-    //         }
-
-    //         $queryString .= " ORDER BY H.id ASC";
-    //         // Use DB::select with bindings to prevent SQL injection
-    //         $bindings = ['acctNo' => $acctNo];
-    //         if (isset($startDate) && isset($endDate)) {
-    //             $bindings['startDate'] = $startDate;
-    //             $bindings['endDate'] = $endDate;
-    //         }
-
-    //         $glHistory = DB::select($queryString, $bindings);
-    //         $sum = 0;
-
-    //         foreach ($glHistory as $value) {
-    //             // Use object property notation, as DB::select returns objects
-    //             if ($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') {
-    //                 if ($value->dr_cr_ind == 'Dr') {
-    //                     $sum += (float) $value->tran_amount;
-    //                 } else {
-    //                     $sum -= (float) $value->tran_amount;
-    //                 }
-    //             } else {
-    //                 if ($value->dr_cr_ind == 'Cr') {
-    //                     $sum += (float) $value->tran_amount;
-    //                 } else {
-    //                     $sum -= (float) $value->tran_amount;
-    //                 }
-    //             }
-    //         }
-    //         return $sum;
-    //     } catch (\Throwable $th) {
-    //         throw $th;
-    //     }
-    // }
 
     public function getGlBalancesAsOf($startDate, $endDate, $acctNo): float|int
     {
