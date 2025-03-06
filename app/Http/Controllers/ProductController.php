@@ -219,6 +219,10 @@ class ProductController extends Controller
 
             $onDebitPassage = $this->postGlDR($passageDebitRequest);
             $onCreditPassCash = $this->postGlCR($cashCreditRequest);
+        }else{
+            $updateTransaction = $this->updateTransaction($product->name, $userData->institution_id, $userData->branch_id, $request->quantity * $request->purchase_price);
+            $payable = $this->updatePayable($updateTransaction->id, $updateTransaction->amount);
+            $updateHistory=$this->updateGlHistory($updateTransaction->id, $updateTransaction->amount);
         }
 
         $stock = null;
