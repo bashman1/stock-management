@@ -967,4 +967,150 @@ class Controller extends BaseController
             throw $th;
         }
     }
+
+
+    // public function updateTransaction($description, $institutionId, $branchId){
+    //     $transaction = Transaction::where(['description'=> $description, 'institution_id'=>$institutionId, 'branch_id'=>$branchId])->first();
+    //     $transaction->amount=100;
+    //     $transaction->updated_on=Carbon::now();
+    //     $transaction->save();
+    // }
+
+    public function updateTransaction(string $description, int $institutionId, int $branchId, float $amount)
+    {
+        try {
+            $transaction = Transaction::where('description', 'ilike', $description)
+                ->where('institution_id', $institutionId)
+                ->where('branch_id', $branchId)
+                ->first();
+
+            if (!$transaction) {
+                throw new \Exception("Transaction not found for description: {$description}, institutionId: {$institutionId}, branchId: {$branchId}");
+            }
+
+            $transaction->update([
+                'amount' => $amount,
+                'updated_on' => Carbon::now(),
+            ]);
+
+            return $transaction;
+
+        } catch (\Exception $e) {
+            Log::error("Failed to update transaction: " . $e->getMessage());
+            throw new \Exception("An error occurred while updating the transaction.", 500, $e);
+        }
+    }
+
+
+    public function updatePayable(int $tranId, float $amount)
+    {
+        $payable = Payable::where('tran_id', $tranId)->first();
+        if ($payable) {
+            $payable->update([
+                'amount' => $amount,
+                'updated_on' => Carbon::now(),
+            ]);
+        }
+        return $payable;
+    }
+
+
+    // public function updateGlHistory(int $tranId, float $amount)
+    // {
+    //     $glHistory = GlHistory::where('tran_id', $tranId)->get();
+
+    //     foreach ($glHistory as $value) {
+    //         $glBalance = GlBalances::where('acct_no', $value['acct_no'])->first();
+
+
+    //         if ($value['dr_cr_ind'] == 'Dr') {
+    //             if ($glBalance->acct_type == 'ASSET' || $glBalance->acct_type == 'EXPENSE') {
+    //                 $glBalance->update([
+    //                     "balance" => $glBalance->balance - $value['tran_amount'],
+    //                     'updated_on' => Carbon::now(),
+    //                 ]);
+
+    //                 $glBalance->update([
+    //                     "balance" => $glBalance->balance + $amount,
+    //                     'updated_on' => Carbon::now(),
+    //                 ]);
+    //             } else {
+    //                 $glBalance->update([
+    //                     "balance" => $glBalance->balance + $value['tran_amount'],
+    //                     'updated_on' => Carbon::now(),
+    //                 ]);
+
+    //                 $glBalance->update([
+    //                     "balance" => $glBalance->balance - $amount,
+    //                     'updated_on' => Carbon::now(),
+    //                 ]);
+    //             }
+    //         } else {
+    //             if ($glBalance->acct_type == 'ASSET' || $glBalance->acct_type == 'EXPENSE') {
+    //                 $glBalance->update([
+    //                     "balance" => $glBalance->balance + $value['tran_amount'],
+    //                     'updated_on' => Carbon::now(),
+    //                 ]);
+    //                 $glBalance->update([
+    //                     "balance" => $glBalance->balance - $amount,
+    //                     'updated_on' => Carbon::now(),
+    //                 ]);
+    //             } else {
+    //                 $glBalance->update([
+    //                     "balance" => $glBalance->balance - $value['tran_amount'],
+    //                     'updated_on' => Carbon::now(),
+    //                 ]);
+
+    //                 $glBalance->update([
+    //                     "balance" => $glBalance->balance + $amount,
+    //                     'updated_on' => Carbon::now(),
+    //                 ]);
+    //             }
+    //         }
+    //         $editHistory = GlHistory::find($value['id']);
+    //         $editHistory->update([
+    //             'tran_amount' => $amount
+    //         ]);
+    //     }
+    // }
+
+
+    public function updateGlHistory(int $tranId, float $amount): void
+{
+    try {
+        DB::transaction(function () use ($tranId, $amount) {
+            $glHistories = GlHistory::where('tran_id', $tranId)->get();
+
+            foreach ($glHistories as $history) {
+                $glBalance = GlBalances::where('acct_no', $history->acct_no)->first();
+
+                if (!$glBalance) {
+                    throw new \Exception("GL Balance not found for account: {$history->acct_no}");
+                }
+
+                // Determine the sign change based on account type and Dr/Cr indicator
+                $multiplier = ($glBalance->acct_type == 'ASSET' || $glBalance->acct_type == 'EXPENSE') ? 1 : -1;
+                $adjustment = ($history->dr_cr_ind == 'Dr') ? -1 : 1;
+
+                // Compute new balance
+                $newBalance = $glBalance->balance + ($adjustment * $multiplier * -$history->tran_amount);
+                $newBalance += ($adjustment * $multiplier * $amount);
+
+                // Update GL balance in a single query
+                $glBalance->update([
+                    'balance' => $newBalance,
+                    'updated_on' => Carbon::now(),
+                ]);
+
+                // Update GL history
+                $history->update([
+                    'tran_amount' => $amount
+                ]);
+            }
+        });
+    } catch (\Exception $e) {
+        Log::error("Failed to update GL History: " . $e->getMessage());
+        throw new \Exception("An error occurred while updating GL history.", 500, $e);
+    }
+}
 }

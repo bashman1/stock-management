@@ -757,7 +757,7 @@ onMounted(() => {
                 <div class="grid">
                     <div class="field col-12 md:col-6">
                         <span class="p-float-label">
-                            <InputText type="text" id="quantity" @blur="onInputBlur(quantity, 'quantity')" v-model.trim="quantity" :class="{ 'p-invalid': formError?.quantity }" :disabled="isEdit"/>
+                            <InputText type="text" id="quantity" @blur="onInputBlur(quantity, 'quantity')" v-model.trim="quantity" :class="{ 'p-invalid': formError?.quantity }"/>
                             <label for="quantity">Quantity</label>
                         </span>
                     </div>
@@ -821,7 +821,7 @@ onMounted(() => {
 
                     <div class="field col-12 md:col-6">
                         <span class="p-float-label">
-                            <InputText type="text" id="purchasePrice" v-model="purchasePrice" :disabled="isEdit" />
+                            <InputText type="text" id="purchasePrice" v-model="purchasePrice"  />
                             <label for="purchasePrice">Unit Purchase Price </label>
                         </span>
                     </div>
@@ -899,7 +899,7 @@ onMounted(() => {
         <!-- Start of Modals-->
         <Dialog header="Create Category" v-model:visible="showCategoryModal" :style="{ width: '30vw' }" :modal="true"
             class="p-fluid">
-            <p style="padding-top: 20px;">
+            <!-- <p style="padding-top: 20px;"> -->
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
@@ -914,7 +914,7 @@ onMounted(() => {
                     </span>
                 </div>
             </div>
-            </p>
+            <!-- </p> -->
             <template #footer>
                 <Button label="Cancel" @click="closeCategoryModal" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
@@ -924,7 +924,7 @@ onMounted(() => {
 
         <Dialog header="Create Sub Category" v-model:visible="showSubCategoryModal" :style="{ width: '30vw' }" :modal="true"
             class="p-fluid">
-            <p style="padding-top: 20px;">
+            <!-- <p style="padding-top: 20px;"> -->
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
@@ -948,7 +948,7 @@ onMounted(() => {
                     </span>
                 </div>
             </div>
-            </p>
+            <!-- </p> -->
             <template #footer>
                 <Button label="Cancel" @click="closeSubCategoryModal" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
@@ -958,7 +958,7 @@ onMounted(() => {
 
         <Dialog header="Create Manufacturer" v-model:visible="showManufacturerModal" :style="{ width: '75vw' }"
             :modal="true" class="p-fluid">
-            <p style="padding-top: 20px;">
+            <!-- <p style="padding-top: 20px;"> -->
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
@@ -1003,7 +1003,7 @@ onMounted(() => {
                     </span>
                 </div>
             </div>
-            </p>
+            <!-- </p> -->
             <template #footer>
                 <Button label="Cancel" @click="toggleManufacturerModal(false)" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
@@ -1014,7 +1014,7 @@ onMounted(() => {
 
         <Dialog header="Create Supplier" v-model:visible="showSupplierModal" :style="{ width: '75vw' }" :modal="true"
             class="p-fluid">
-            <p style="padding-top: 20px;">
+            <!-- <p style="padding-top: 20px;"> -->
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
@@ -1059,7 +1059,7 @@ onMounted(() => {
                     </span>
                 </div>
             </div>
-            </p>
+            <!-- </p> -->
             <template #footer>
                 <Button label="Cancel" @click="toggleSupplierModal(false)" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
@@ -1069,7 +1069,7 @@ onMounted(() => {
 
         <Dialog header="Create Measurement Unit" v-model:visible="showMeasurementUnitModal" :style="{ width: '30vw' }"
             :modal="true" class="p-fluid">
-                <p style="padding-top: 20px;">
+                <!-- <p style="padding-top: 20px;"> -->
                 <div class="grid p-fluid">
                     <div class="field col-12 md:col-12">
                         <span class="p-float-label">
@@ -1084,7 +1084,7 @@ onMounted(() => {
                         </span>
                     </div>
             </div>
-            </p>
+            <!-- </p> -->
             <template #footer>
                 <Button label="Cancel" @click="toggleMeasurementUnitModal(false)" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
@@ -1095,7 +1095,7 @@ onMounted(() => {
 
         <Dialog header="Create Product Type" v-model:visible="showProductTypeModal" :style="{ width: '30vw' }"
         :modal="true" class="p-fluid">
-            <p style="padding-top: 20px;">
+            <!-- <p style="padding-top: 20px;"> -->
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
@@ -1110,7 +1110,7 @@ onMounted(() => {
                     </span>
                 </div>
         </div>
-        </p>
+        <!-- </p> -->
         <template #footer>
             <Button label="Cancel" @click="toggleTypeModal(false)" icon="pi pi-times"
                 class="p-button-outlined p-button-danger mr-2 mb-2" />
@@ -1120,7 +1120,7 @@ onMounted(() => {
 
     <Dialog header="Create Product Gauge" v-model:visible="showProductGaugeModal" :style="{ width: '30vw' }"
     :modal="true" class="p-fluid">
-        <p style="padding-top: 20px;">
+        <!-- <p style="padding-top: 20px;"> -->
         <div class="grid p-fluid">
             <div class="field col-12 md:col-12">
                 <span class="p-float-label">
@@ -1135,7 +1135,7 @@ onMounted(() => {
                 </span>
             </div>
     </div>
-    </p>
+    <!-- </p> -->
     <template #footer>
         <Button label="Cancel" @click="toggleGaugeModal(false)" icon="pi pi-times"
             class="p-button-outlined p-button-danger mr-2 mb-2" />
