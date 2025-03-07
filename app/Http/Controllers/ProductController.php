@@ -113,7 +113,7 @@ class ProductController extends Controller
             $ppgl = str_replace('***', $branch->code, $pp->param_value);
             $ppE = GlAccounts::where('acct_no', $ppgl)->first();
 
-            $tran = (object) [
+            $tran = (Array) [
                 "acct_no" => $sgl,
                 "acct_type" => $stock->acct_type,
                 "contra_acct_no" => $cgl,
@@ -130,6 +130,14 @@ class ProductController extends Controller
                 "branch_id" => $userData->branch_id,
                 "created_by" => $userData->id,
                 "created_on" => now(),
+                // "member_id"=>null,
+                "product_id"=>$product->id,
+                // "stock_id"=>null,
+                "ext_ref"=>$refNo,
+                "tran"=>"Create Product",
+                // "reversal_reason"=>null,
+                // "reversed_by"=>null,
+                // "reversed_on"=>null,
             ];
 
             $postTran = $this->postTransaction($tran);
@@ -220,9 +228,9 @@ class ProductController extends Controller
             $onDebitPassage = $this->postGlDR($passageDebitRequest);
             $onCreditPassCash = $this->postGlCR($cashCreditRequest);
         }else{
-            $updateTransaction = $this->updateTransaction($product->name, $userData->institution_id, $userData->branch_id, $request->quantity * $request->purchase_price);
-            $payable = $this->updatePayable($updateTransaction->id, $updateTransaction->amount);
-            $updateHistory=$this->updateGlHistory($updateTransaction->id, $updateTransaction->amount);
+            $updateTransaction = $this->updateTransaction($product->id, $userData->institution_id, $userData->branch_id, $request->quantity * $request->purchase_price);
+            $payable = $this->updatePayable($updateTransaction->id, (double) $updateTransaction->amount);
+            $updateHistory=$this->updateGlHistory($updateTransaction->id, (double)$updateTransaction->amount);
         }
 
         $stock = null;
@@ -375,7 +383,7 @@ class ProductController extends Controller
             $ppgl = str_replace('***',$branch->code, $pp->param_value);
             $ppE =GlAccounts::where('acct_no', $ppgl)->first();
 
-            $tran=(object)[
+            $tran=(Array)[
                 "acct_no"=>$sgl,
                 "acct_type"=> $stock->acct_type ,
                 "contra_acct_no"=> $cgl,
@@ -392,6 +400,14 @@ class ProductController extends Controller
                 "branch_id"=>$userData->branch_id ,
                 "created_by"=>$userData->id,
                 "created_on"=>now(),
+                     // "member_id"=>null,
+                     "product_id"=>$product->id,
+                     "stock_id"=>$stock->id,
+                     "ext_ref"=>$stock->id,
+                     "tran"=>"Stocking Product",
+                     // "reversal_reason"=>null,
+                     // "reversed_by"=>null,
+                     // "reversed_on"=>null,
             ];
 
             $postTran = $this->postTransaction($tran);
