@@ -251,7 +251,7 @@ class GlAccountsController extends Controller
     {
         $userData = auth()->user();
         DB::beginTransaction();
-        $tran = (object)[
+        $tran = (Array)[
             "acct_no" => $request->drAcctNo,
             "acct_type" => $request->drAcctType,
             "contra_acct_no" => $request->crAcctNo,
@@ -268,6 +268,14 @@ class GlAccountsController extends Controller
             "branch_id" => $userData->branch_id,
             "created_by" => $userData->id,
             "created_on" => now(),
+            // "member_id"=>null,
+            // "product_id"=>$product->id,
+            // "stock_id"=>null,
+            "ext_ref"=>$request->drAcctNo,
+            "tran"=>"GL Injection",
+            // "reversal_reason"=>null,
+            // "reversed_by"=>null,
+            // "reversed_on"=>null,
         ];
 
         $postTran = $this->postTransaction($tran);

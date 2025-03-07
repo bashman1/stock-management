@@ -106,7 +106,7 @@ class OrderController extends Controller
         $gfsGlType =GlAccounts::where('acct_no', $gfsGl)->first();
         $stInGlType = GlAccounts::where('acct_no', $stInGl)->first();
 
-        $tran=(object)[
+        $tran=(Array)[
             "acct_no"=>$sgl,
             "acct_type"=> $stock->acct_type ,
             "contra_acct_no"=> $cgl,
@@ -123,6 +123,14 @@ class OrderController extends Controller
             "branch_id"=>$userData->branch_id ,
             "created_by"=>$userData->id,
             "created_on"=>now(),
+                        // "member_id"=>null,
+            // "product_id"=>$product->id,
+            // "stock_id"=>null,
+            "ext_ref"=>$ref,
+            "tran"=>"Selling Product",
+            // "reversal_reason"=>null,
+            // "reversed_by"=>null,
+            // "reversed_on"=>null,
         ];
 
         $postTran = $this->postTransaction($tran);
