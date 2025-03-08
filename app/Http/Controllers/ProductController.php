@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\Log;
 use App\Models\Product;
 use App\Models\stock;
 use App\Models\CntrlParameter;
@@ -229,6 +229,9 @@ class ProductController extends Controller
             $onCreditPassCash = $this->postGlCR($cashCreditRequest);
         }else{
             $updateTransaction = $this->updateTransaction($product->id, $userData->institution_id, $userData->branch_id, $request->quantity * $request->purchase_price);
+            Log::info("---------------------------------------------------------");
+            Log::info($updateTransaction);
+            Log::info("---------------------------------------------------------");
             $payable = $this->updatePayable($updateTransaction->id, (double) $updateTransaction->amount);
             $updateHistory=$this->updateGlHistory($updateTransaction->id, (double)$updateTransaction->amount);
         }
