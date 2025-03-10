@@ -34,7 +34,7 @@ const getCommissions=()=>{
             }else{
                 verifiedName.value='Payment initiated successfully. Waiting to approval to complete the transaction';
             }
-           
+
          } else {
              commonService.showError(toast, response.message);
          }
@@ -130,7 +130,7 @@ onMounted(() => {
 
                 <Dialog header="Sales Details" v-model:visible="showPhoneNoModal" :style="{ width: '33vw' }" :modal="true"
                 class="p-fluid">
-                <p style="padding: 20px;">
+                <!-- <p style="padding: 20px;"> -->
                 <div class="grid p-fluid">
                     <div class="field col-12 md:col-12">
                         <img src="/demo/images/mtnmomo.svg" alt="Image" height="50" class="mb-3" />
@@ -143,7 +143,7 @@ onMounted(() => {
                          {{ verifiedName }}
                     </div>
                 </div>
-                </p>
+                <!-- </p> -->
                 <template #footer>
                     <Button label="Cancel" v-if="!phoneNo" @click="toggleModal(false)" icon="pi pi-times"
                         class="p-button-outlined p-button-danger mr-2 mb-2" />

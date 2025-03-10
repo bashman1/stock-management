@@ -792,7 +792,7 @@ onMounted(() => {
         <!-- Start of Modals-->
         <Dialog header="Create new customer" v-model:visible="showCreateCustomerModal" :style="{ width: '75vw' }"
             :modal="true" class="p-fluid">
-            <p style="padding-top: 20px;">
+            <!-- <p style="padding-top: 20px;"> -->
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-6">
                     <span class="p-float-label">
@@ -831,7 +831,7 @@ onMounted(() => {
                     </span>
                 </div>
             </div>
-            </p>
+            <!-- </p> -->
             <template #footer>
                 <Button label="Cancel" @click="toggleCustomerModal(false)" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
