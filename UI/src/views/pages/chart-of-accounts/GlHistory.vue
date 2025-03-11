@@ -124,7 +124,7 @@ onMounted(() => {
                     <Column header="Reversed" sortable field="reversal_flag" />
                     <Column header="Posted By" sortable field="user_name" />
                 </Row>
-                
+
             </ColumnGroup>
             <Column field="transaction_date" header="Transaction Date" style="min-width: 12rem">
                 <template #body="{ data }">
@@ -165,7 +165,7 @@ onMounted(() => {
 
         <Dialog header="Update Ledger Name" v-model:visible="updateGlModal" :style="{ width: '30vw' }" :modal="true"
             class="p-fluid">
-            <p style="padding-top: 20px;">
+            <!-- <p style="padding-top: 20px;"> -->
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
@@ -175,7 +175,7 @@ onMounted(() => {
                     </span>
                 </div>
             </div>
-            </p>
+            <!-- </p> -->
             <template #footer>
                 <Button label="Cancel" @click="toggleEditModal(false)" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
