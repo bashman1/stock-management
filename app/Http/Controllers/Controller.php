@@ -990,11 +990,13 @@ class Controller extends BaseController
                 throw new \Exception("Transaction not found for description: {$productId}, institutionId: {$institutionId}, branchId: {$branchId}");
             }
 
+            $oldAmount = $transaction->tran_amount;
             $transaction->update([
                 'tran_amount' => $amount,
                 'updated_on' => Carbon::now(),
             ]);
 
+            $transaction['old_amount']= $oldAmount;
             return $transaction;
 
         } catch (\Exception $e) {
@@ -1017,9 +1019,9 @@ class Controller extends BaseController
     }
 
 
-    public function updateGlHistory(string $tranId, float $amount)
+    public function updateGlHistory(string $tranId, float $amount, float $old_amount)
     {
-        $glHistory = GlHistory::where('tran_id', $tranId)->get();
+        $glHistory = GlHistory::where(['tran_id'=> $tranId, 'tran_amount'=> $old_amount])->get();
 
         Log::info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         Log::info($glHistory);

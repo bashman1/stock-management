@@ -230,7 +230,7 @@ class ProductController extends Controller
         }else{
             $updateTransaction = $this->updateTransaction($product->id, $userData->institution_id, $userData->branch_id, $request->quantity * $request->purchase_price);
             $payable = $this->updatePayable($updateTransaction->tran_id, (double) $updateTransaction->tran_amount);
-            $updateHistory=$this->updateGlHistory($updateTransaction->tran_id, (double)$updateTransaction->tran_amount);
+            $updateHistory=$this->updateGlHistory($updateTransaction->tran_id, (double)$updateTransaction->tran_amount, (double)$updateTransaction->old_amount);
         }
 
         $stock = null;
@@ -253,8 +253,6 @@ class ProductController extends Controller
             $history->created_by = $userData->id;
             $history->created_on = Carbon::now();
         }
-
-        // $history = new stockHistory();
 
         $stock->purchase_price =  (double) $request->purchase_price;
         $stock->selling_price = (double) $request->selling_price;
@@ -289,8 +287,6 @@ class ProductController extends Controller
         $history->branch_id = $userData->branch_id;
         $history->user_id = $userData->id;
         $history->status = $request->status;
-        // $history->created_by = $userData->created_by ;
-        // $history->created_on =now() ;
         $history->save();
 
         DB::commit();
@@ -479,9 +475,6 @@ class ProductController extends Controller
             $onDebitPassage = $this->postGlDR($passageDebitRequest);
             $onCreditPassCash = $this->postGlCR($cashCreditRequest);
 
-
-
-            // {"quantity":"4567","min_quantity":"1","max_quantity":"1","measurement_unit_id":9,"purchase_price":"1000","manufactured_date":"2024-06-29T21:00:00.000Z","expiry_date":"2024-06-28T21:00:00.000Z","selling_price":"2000","date":"2020-12-31T21:00:00.000Z"}
             DB::commit();
             return $this->genericResponse(true, "Product restock successfully", 201, $stocks, "restock", $request);
         // } catch (\Throwable $th) {
