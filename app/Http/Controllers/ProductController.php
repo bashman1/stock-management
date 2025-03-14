@@ -13,7 +13,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\GlAccounts;
+use App\Models\GlHistory;
 use App\Models\Institution;
+use App\Models\Transaction;
 use Carbon\Carbon;
 
 
@@ -627,20 +629,40 @@ class ProductController extends Controller
 
     public function archiveProduct(Request $request){
         try {
+            DB::beginTransaction();
             $message = '';
+
+            $product = Product::find($request->productId);
+            if(!isset($product)){
+                return $this->genericResponse(false, 'Product not found', 404, [], "archiveProduct", $request);
+            }
+
+            $transaction = Transaction::where('product_id', $product->id)->first();
+            if(!isset($transaction)){
+                return $this->genericResponse(false, 'Product not found', 404, [], "archiveProduct", $request);
+            }
+
+            $glHistory = GlHistory::where('tran_id', $transaction->tran_id)->get();
+
+
+
             if($request->status == 'Archived'){
                 $message = 'product archived successfully';
             }else if ($request->status == 'Active'){
                 $message = 'product activated successfully';
             }
-            $product = Product::find($request->productId);
-            if(!isset($product)){
-                return $this->genericResponse(false, 'Product not found', 404, [], "archiveProduct", $request);
-            }
+
+            $transaction->update([
+                'status'=> $request->status,
+                'updated_on' => Carbon::now(),
+             ]);
+
             $product->status = $request->status;
             $product->save();
+            DB::commit();
             return $this->genericResponse(true, $message, 201, $product, "archiveProduct", $request);
         } catch (\Throwable $th) {
+            DB::rollBack();
             return $this->genericResponse(false, $th->getMessage(), 500, $th, "archiveProduct", $request);
         }
     }

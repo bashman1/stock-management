@@ -696,24 +696,7 @@ class Controller extends BaseController
     {
         $transaction = new Transaction();
         DB::beginTransaction();
-        $transaction = Transaction::create($transactions);
-        // $transaction->acct_no = $transactions->acct_no;
-        // $transaction->acct_type = $transactions->acct_type;
-        // $transaction->contra_acct_no = $transactions->contra_acct_no;
-        // $transaction->contra_acct_type = $transactions->contra_acct_type;
-        // $transaction->description = $transactions->description;
-        // $transaction->dr_cr_ind = $transactions->dr_cr_ind;
-        // $transaction->tran_amount = (float) $transactions->tran_amount;
-        // $transaction->reversal_flag = $transactions->reversal_flag;
-        // $transaction->tran_date = $transactions->tran_date;
-        // $transaction->tran_cd = $transactions->tran_cd;
-        // $transaction->tran_id = $transactions->tran_id;
-        // $transaction->status = $transactions->status;
-        // $transaction->institution_id = $transactions->institution_id;
-        // $transaction->branch_id = $transactions->branch_id;
-        // $transaction->created_by = $transactions->created_by;
-        // $transaction->created_on = $transactions->created_on;
-        // $transaction->save();
+            $transaction = Transaction::create($transactions);
         DB::commit();
         return $transaction;
     }
@@ -1023,10 +1006,10 @@ class Controller extends BaseController
     {
         $glHistory = GlHistory::where(['tran_id'=> $tranId, 'tran_amount'=> $old_amount])->get();
 
-        Log::info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        Log::info($glHistory);
-        Log::info($tranId);
-        Log::info($amount);
+        // Log::info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        // Log::info($glHistory);
+        // Log::info($tranId);
+        // Log::info($amount);
 
 
         foreach ($glHistory as $value) {

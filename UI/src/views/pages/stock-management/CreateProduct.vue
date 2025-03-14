@@ -122,6 +122,7 @@ const paymentMethod=ref( {id:1, name: "Cash", value:"CASH"})
 const weight = ref(null);
 const weightUnit = ref(null);
 const weightPrice = ref(null);
+const src = ref([]);
 
 
 // ********************************************************
@@ -624,6 +625,18 @@ const getProductDetails=(prodId)=>{
     })
 }
 
+
+const onFileSelect=(event) =>{
+    const file = event.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+        src.value.push(e.target.result);
+    };
+
+    reader.readAsDataURL(file);
+}
+
 onMounted(() => {
     getProductCategories();
     getProductSubCategories();
@@ -745,6 +758,18 @@ onMounted(() => {
                             <Textarea inputId="description" rows="11" v-model="description"></Textarea>
                             <label for="description">Description</label>
                         </span>
+                    </div>
+
+                    <div class="field col-12 md:col-12">
+                        <span class="p-float-label">
+                            <FileUpload mode="basic" :multiple="true" @select="onFileSelect" accept="image/*" customUpload auto severity="secondary" class="p-button-outlined" />
+
+                            <span v-for="(img, index) of src" :key="index">
+                                <img v-if="img" :src="img" alt="Image" class="shadow-md rounded-xl w-full sm:w-64" style="filter: grayscale(100%)" />
+                            </span>
+                            <!-- <FileUpload name="demo[]" @uploader="onUpload" :multiple="true" accept="image/*" :maxFileSize="1000000" customUpload /> -->
+                        </span>
+                        <!-- :multiple="true" -->
                     </div>
                 </div>
             </div>
