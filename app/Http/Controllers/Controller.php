@@ -36,6 +36,7 @@ use Illuminate\Support\Facades\Request as IpRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 // use
 
@@ -696,7 +697,7 @@ class Controller extends BaseController
     {
         $transaction = new Transaction();
         DB::beginTransaction();
-            $transaction = Transaction::create($transactions);
+        $transaction = Transaction::create($transactions);
         DB::commit();
         return $transaction;
     }
@@ -979,9 +980,8 @@ class Controller extends BaseController
                 'updated_on' => Carbon::now(),
             ]);
 
-            $transaction['old_amount']= $oldAmount;
+            $transaction['old_amount'] = $oldAmount;
             return $transaction;
-
         } catch (\Exception $e) {
             Log::error("Failed to update transaction: " . $e->getMessage());
             throw new \Exception("An error occurred while updating the transaction.", 500, $e);
@@ -1004,7 +1004,7 @@ class Controller extends BaseController
 
     public function updateGlHistory(string $tranId, float $amount, float $old_amount)
     {
-        $glHistory = GlHistory::where(['tran_id'=> $tranId, 'tran_amount'=> $old_amount])->get();
+        $glHistory = GlHistory::where(['tran_id' => $tranId, 'tran_amount' => $old_amount])->get();
 
         // Log::info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
         // Log::info($glHistory);
@@ -1068,42 +1068,80 @@ class Controller extends BaseController
     }
 
 
-//     public function updateGlHistory(int $tranId, float $amount): void
-// {
-//     try {
-//         DB::transaction(function () use ($tranId, $amount) {
-//             $glHistories = GlHistory::where('tran_id', $tranId)->get();
+    //     public function updateGlHistory(int $tranId, float $amount): void
+    // {
+    //     try {
+    //         DB::transaction(function () use ($tranId, $amount) {
+    //             $glHistories = GlHistory::where('tran_id', $tranId)->get();
 
-//             foreach ($glHistories as $history) {
-//                 $glBalance = GlBalances::where('acct_no', $history->acct_no)->first();
+    //             foreach ($glHistories as $history) {
+    //                 $glBalance = GlBalances::where('acct_no', $history->acct_no)->first();
 
-//                 if (!$glBalance) {
-//                     throw new \Exception("GL Balance not found for account: {$history->acct_no}");
-//                 }
+    //                 if (!$glBalance) {
+    //                     throw new \Exception("GL Balance not found for account: {$history->acct_no}");
+    //                 }
 
-//                 // Determine the sign change based on account type and Dr/Cr indicator
-//                 $multiplier = ($glBalance->acct_type == 'ASSET' || $glBalance->acct_type == 'EXPENSE') ? 1 : -1;
-//                 $adjustment = ($history->dr_cr_ind == 'Dr') ? -1 : 1;
+    //                 // Determine the sign change based on account type and Dr/Cr indicator
+    //                 $multiplier = ($glBalance->acct_type == 'ASSET' || $glBalance->acct_type == 'EXPENSE') ? 1 : -1;
+    //                 $adjustment = ($history->dr_cr_ind == 'Dr') ? -1 : 1;
 
-//                 // Compute new balance
-//                 $newBalance = $glBalance->balance + ($adjustment * $multiplier * -$history->tran_amount);
-//                 $newBalance += ($adjustment * $multiplier * $amount);
+    //                 // Compute new balance
+    //                 $newBalance = $glBalance->balance + ($adjustment * $multiplier * -$history->tran_amount);
+    //                 $newBalance += ($adjustment * $multiplier * $amount);
 
-//                 // Update GL balance in a single query
-//                 $glBalance->update([
-//                     'balance' => $newBalance,
-//                     'updated_on' => Carbon::now(),
-//                 ]);
+    //                 // Update GL balance in a single query
+    //                 $glBalance->update([
+    //                     'balance' => $newBalance,
+    //                     'updated_on' => Carbon::now(),
+    //                 ]);
 
-//                 // Update GL history
-//                 $history->update([
-//                     'tran_amount' => $amount
-//                 ]);
-//             }
-//         });
-//     } catch (\Exception $e) {
-//         Log::error("Failed to update GL History: " . $e->getMessage());
-//         throw new \Exception("An error occurred while updating GL history.", 500, $e);
-//     }
-// }
+    //                 // Update GL history
+    //                 $history->update([
+    //                     'tran_amount' => $amount
+    //                 ]);
+    //             }
+    //         });
+    //     } catch (\Exception $e) {
+    //         Log::error("Failed to update GL History: " . $e->getMessage());
+    //         throw new \Exception("An error occurred while updating GL history.", 500, $e);
+    //     }
+    // }
+
+
+    /**
+     * Summary of paginate
+     * @param mixed $rowsPerPage
+     * @param mixed $total
+     * @param mixed $sqlQuery
+     * @return LengthAwarePaginator<TKey, mixed>
+     */
+    public function paginate($rowsPerPage, $total, $sqlQuery)
+    {
+        try {
+            $currentPage = LengthAwarePaginator::resolveCurrentPage();
+
+            if (!isset($rowsPerPage)) {
+                $rowsPerPage = 10;
+            }
+
+            $offset = ($currentPage - 1) * $rowsPerPage;
+
+            $sqlQuery .= " LIMIT $rowsPerPage OFFSET $offset ";
+
+            $results = DB::select($sqlQuery);
+
+
+            $paginatedLogs = new LengthAwarePaginator(
+                $results,
+                $total,
+                $rowsPerPage,
+                $currentPage,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+
+            return $paginatedLogs;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
 }
