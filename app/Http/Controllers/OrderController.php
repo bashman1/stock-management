@@ -9,8 +9,10 @@ use App\Models\stock;
 use App\Models\Branch;
 use App\Models\GlAccounts;
 use App\Models\CntrlParameter;
+use App\Models\GlHistory;
 use App\Models\Institution;
 use App\Models\TempSale;
+use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
@@ -398,6 +400,91 @@ class OrderController extends Controller
                 // Print receipt
                 $printer->printReceipt();
 
+    }
+
+
+
+    public function deleteOrder(Request $request){
+        DB::beginTransaction();
+        $order = Order::find($request->id);
+        if (!isset($order)){
+            return $this->genericResponse(false, "Order not found", 400, $order, "deleteOrder", $request->id);
+        }
+        $order->status = "Deleted";
+        $order->updated_by = auth()->user()->id;
+        $order->updated_on = now();
+        $order->save();
+
+
+        // updating the transactions
+        $orderTransaction = Transaction::where(['ext_ref'=>$order->ref_no])->first();
+
+        if (!isset($orderTransaction)){
+            return $this->genericResponse(false, "Transaction not found", 400, $orderTransaction, "deleteOrder", $request->id);
+        }
+
+        if (isset($orderTransaction)){
+            $orderTransaction->status = "Deleted";
+            $orderTransaction->reversal_flag = "Y";
+            $orderTransaction->reversal_reason = "Order deleted";
+            $orderTransaction->reversed_by = auth()->user()->id;
+            $orderTransaction->reversed_on = now();
+            $orderTransaction->updated_by = auth()->user()->id;
+            $orderTransaction->updated_on = now();
+            $orderTransaction->save();
+        }
+
+        // updating the debit and credit history
+        $debit = GlHistory::where(['tran_id'=>$orderTransaction->tran_id, 'tran_cd'=>'STO', 'tran_type'=>'STOCK OUT', 'dr_cr_ind'=>'Dr'])->get();
+        foreach ($debit as $item){
+            $item->status = "Deleted";
+            $item->reversal_flag = "Y";
+            $item->updated_by = auth()->user()->id;
+            $item['tran_amt']= $item->tran_amount;
+            $item->updated_on = now();
+            $item->save();
+            // then do a credit transaction of that history
+            $this->postGlCR($item);
+
+        }
+
+
+        $credit = GlHistory::where(['tran_id'=>$orderTransaction->tran_id, 'tran_cd'=>'STO', 'tran_type'=>'STOCK OUT', 'dr_cr_ind'=>'Cr'])->get();
+        foreach ($credit as $item){
+            $item->status = "Deleted";
+            $item->reversal_flag = "Y";
+            $item->updated_by = auth()->user()->id;
+            $item['tran_amt']= $item->tran_amount;
+            $item->updated_on = now();
+            $item->save();
+            // then do a credit transaction of that history
+            $this->postGlDR($item);
+        }
+
+
+        // updating the receivable in case of credit sales
+
+
+        // updating the order items
+        $orderItems = OrderItem::where(['order_id'=>$request->id])->get();
+        foreach ($orderItems as $item){
+            $item->status = "Deleted";
+            $item->updated_by = auth()->user()->id;
+            $item->updated_on = now();
+            $item->save();
+
+            // updating the stock
+            $stock = stock::where(['product_id'=>$item->product_id, 'branch_id'=>$order->branch_id])->first();
+            if (isset($stock)){
+                $stock->quantity = $stock->quantity + $item->qty;
+                $stock->save();
+            }
+        }
+
+
+
+        DB::commit();
+        return $this->genericResponse(true, "Order deleted successfully", 200, $order, "deleteOrder", $request->id);
     }
 
 }

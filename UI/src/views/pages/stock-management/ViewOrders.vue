@@ -44,6 +44,22 @@ const toggleModal = (action) => {
     showProductDetailsModal.value = action;
 }
 
+const deleteOrder = (data)=>{
+    let postData = {
+        id: data.id
+    }
+    commonService.genericRequest('reverse-sale', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getSales();
+            // orderItems.value = response.data;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
 const printReceipt=()=>{
     commonService.genericRequest('print-receipt', 'post', true, {}).then((response) => {
         if (response.status) {
@@ -118,8 +134,8 @@ onMounted(() => {
             <Column headerStyle="min-width:10rem;">
                 <template #body="{ data }">
                     <Button icon="pi pi-eye" class="p-button-primary mr-2" @click="viewDetails(data)" v-tooltip="'View sell details'"/>
-                    <!--                    <Button icon="pi pi-check" class="p-button-rounded p-button-warning mt-2"-->
-                    <!--                            @click="confirmDeleteProduct(data)" />-->
+                                       <Button icon="pi pi-trash" class="p-button-rounded p-button-danger mt-2"
+                                               @click="deleteOrder(data)" />
                 </template>
             </Column>
         </DataTable>
