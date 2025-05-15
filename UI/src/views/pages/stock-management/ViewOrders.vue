@@ -11,7 +11,9 @@ const orderItems = ref(null);
 const commonService = new CommonService();
 const orderDetails = ref({});
 const router = useRouter();
-const route = useRoute()
+const route = useRoute();
+const displayConfirmation = ref(false);
+const deleteOrderId = ref(null);
 
 
 const getSales = () => {
@@ -44,11 +46,12 @@ const toggleModal = (action) => {
     showProductDetailsModal.value = action;
 }
 
-const deleteOrder = (data)=>{
-    let postData = {
-        id: data.id
-    }
-    commonService.genericRequest('reverse-sale', 'post', true, postData).then((response) => {
+const deleteOrder = ()=>{
+    // let postData = {
+    //     id: data.id
+    // }
+    commonService.genericRequest('reverse-sale', 'post', true, deleteOrderId.value).then((response) => {
+        closeConfirmation();
         if (response.status) {
             commonService.showSuccess(toast, response.message);
             getSales();
@@ -69,6 +72,19 @@ const printReceipt=()=>{
         }
     })
 }
+
+const openConfirmation = (data) => {
+    displayConfirmation.value = true;
+    let postData = {
+        id: data.id
+    }
+
+    deleteOrderId.value= postData;
+};
+
+const closeConfirmation = () => {
+    displayConfirmation.value = false;
+};
 
 onMounted(() => {
     getSales();
@@ -134,17 +150,33 @@ onMounted(() => {
             <Column headerStyle="min-width:10rem;">
                 <template #body="{ data }">
                     <Button icon="pi pi-eye" class="p-button-primary mr-2" @click="viewDetails(data)" v-tooltip="'View sell details'"/>
-                                       <Button icon="pi pi-trash" class="p-button-rounded p-button-danger mt-2"
-                                               @click="deleteOrder(data)" />
+                                       <Button icon="pi pi-trash" class="p-button-danger mt-2"
+                                               @click="openConfirmation(data)" v-tooltip="'Reverse sale'" />
                 </template>
             </Column>
         </DataTable>
 
 
+        <div class="card p-fluid">
+            <h5>Confirmation</h5>
+            <Button label="Delete" icon="pi pi-trash" class="p-button-danger" style="width: auto" @click="openConfirmation" />
+            <Dialog header="Confirmation" v-model:visible="displayConfirmation" :style="{ width: '350px' }" :modal="true">
+                <div class="flex align-items-center justify-content-center">
+                    <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
+                    <span>Are you sure you want to proceed?</span>
+                </div>
+                <template #footer>
+                    <Button label="No" icon="pi pi-times" @click="closeConfirmation" class="p-button-text" />
+                    <Button label="Yes" icon="pi pi-check" @click="deleteOrder" class="p-button-text" autofocus />
+                </template>
+            </Dialog>
+        </div>
+
+
 
         <Dialog header="Sales Details" v-model:visible="showProductDetailsModal" :style="{ width: '33vw' }" :modal="true"
             class="p-fluid">
-            <p style="padding: 20px;">
+            <!-- <p style="padding: 20px;"> -->
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-12">
                     <h1>{{orderDetails.institution_name}}</h1>
@@ -203,7 +235,7 @@ onMounted(() => {
                 </Column>
             </DataTable>
             </div>
-            </p>
+            <!-- </p> -->
             <template #footer>
                 <Button label="Cancel" @click="toggleTypeModal(false)" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />

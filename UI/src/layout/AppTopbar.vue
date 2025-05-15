@@ -103,7 +103,7 @@ const getStorageData=()=>{
             <i class="pi pi-bars"></i>
         </button>
 
-        <span class="block text-500 font-bold text-xl ml-3">{{ "User: "+ storageData?.userData?.first_name+" "+storageData?.userData?.last_name+" "+storageData?.userData?.other_name +" | Role: "+ storageData?.userData?.role_name+" | Business: "+ storageData?.userData?.institution_name+" | Branch: "+storageData?.userData?.branch_name }}</span>
+        <span class="hidden lg:block text-500 font-bold text-xl ml-3">{{ "User: "+ storageData?.userData?.first_name+" "+storageData?.userData?.last_name+" "+storageData?.userData?.other_name +" | Role: "+ storageData?.userData?.role_name+" | Business: "+ storageData?.userData?.institution_name+" | Branch: "+storageData?.userData?.branch_name }}</span>
 
         <button class="p-link layout-topbar-menu-button layout-topbar-button" @click="onTopBarMenuButton()">
             <i class="pi pi-ellipsis-v"></i>

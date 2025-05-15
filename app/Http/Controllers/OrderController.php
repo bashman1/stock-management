@@ -17,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 use charlieuki\ReceiptPrinter\ReceiptPrinter as ReceiptPrinter;
 
@@ -435,28 +436,33 @@ class OrderController extends Controller
         }
 
         // updating the debit and credit history
-        $debit = GlHistory::where(['tran_id'=>$orderTransaction->tran_id, 'tran_cd'=>'STO', 'tran_type'=>'STOCK OUT', 'dr_cr_ind'=>'Dr'])->get();
+        $debit = GlHistory::where(['tran_id'=>$orderTransaction->tran_id, 'tran_cd'=>'STO', 'dr_cr_ind'=>'Dr'])->get();
         foreach ($debit as $item){
             $item->status = "Deleted";
             $item->reversal_flag = "Y";
             $item->updated_by = auth()->user()->id;
-            $item['tran_amt']= $item->tran_amount;
+            $item['tran_amount']= $item->tran_amount;
+            // $item['tran_amt']= $item->tran_amount;
             $item->updated_on = now();
             $item->save();
+            $item->tran_amt = $item->tran_amount;
             // then do a credit transaction of that history
             $this->postGlCR($item);
 
         }
 
 
-        $credit = GlHistory::where(['tran_id'=>$orderTransaction->tran_id, 'tran_cd'=>'STO', 'tran_type'=>'STOCK OUT', 'dr_cr_ind'=>'Cr'])->get();
+        $credit = GlHistory::where(['tran_id'=>$orderTransaction->tran_id, 'tran_cd'=>'STO', 'dr_cr_ind'=>'Cr'])->get();
         foreach ($credit as $item){
             $item->status = "Deleted";
             $item->reversal_flag = "Y";
             $item->updated_by = auth()->user()->id;
-            $item['tran_amt']= $item->tran_amount;
+            $item['tran_amount']= $item->tran_amount;
+            // $item['tran_amt']= $item->tran_amount;
             $item->updated_on = now();
             $item->save();
+
+            $item->tran_amt = $item->tran_amount;
             // then do a credit transaction of that history
             $this->postGlDR($item);
         }
@@ -469,7 +475,9 @@ class OrderController extends Controller
         $orderItems = OrderItem::where(['order_id'=>$request->id])->get();
         foreach ($orderItems as $item){
             $item->status = "Deleted";
-            $item->updated_by = auth()->user()->id;
+            $item->updated_by = Auth::user()->id;
+            // $item->updated_by = optional(auth()->user())->id;
+            // $item->updated_by = auth()->user()->id;
             $item->updated_on = now();
             $item->save();
 
@@ -484,7 +492,7 @@ class OrderController extends Controller
 
 
         DB::commit();
-        return $this->genericResponse(true, "Order deleted successfully", 200, $order, "deleteOrder", $request->id);
+        return $this->genericResponse(true, "Sale reversed successfully", 200, $order, "deleteOrder", $request->id);
     }
 
 }
