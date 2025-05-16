@@ -158,8 +158,8 @@ onMounted(() => {
 
 
         <div class="card p-fluid">
-            <h5>Confirmation</h5>
-            <Button label="Delete" icon="pi pi-trash" class="p-button-danger" style="width: auto" @click="openConfirmation" />
+            <!-- <h5>Confirmation</h5> -->
+            <!-- <Button label="Delete" icon="pi pi-trash" class="p-button-danger" style="width: auto" @click="openConfirmation" /> -->
             <Dialog header="Confirmation" v-model:visible="displayConfirmation" :style="{ width: '350px' }" :modal="true">
                 <div class="flex align-items-center justify-content-center">
                     <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
