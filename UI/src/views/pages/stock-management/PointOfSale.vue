@@ -53,6 +53,16 @@ const getProducts = () => {
 const OnSelectItem = (data) => {
 
     // console.log(JSON.stringify(data));
+    let actualProduct = productList.value.find(item => item.id === data.id);
+    if (!actualProduct) {
+        commonService.showError(toast, "Product not found");
+        return;
+    }
+    if(Number(actualProduct?.quantity) <= 0){
+        commonService.showError(toast, "Product out of stock");
+        return;
+    }
+    console.log(actualProduct)
 
     let obj = {
         id: data.id, price: Number(data.selling_price), quantity: 1, discount: 0, name: data.name, tax_config: data.tax_config,
@@ -90,9 +100,22 @@ const OnSelectRemoveItem = (data) => {
 }
 
 const updateQty = (event, data) => {
+    let actualProduct = productList.value.find(item => item.id === data.id);
+    let newQty = Number(event.target.value);
+    if (!actualProduct) {
+        commonService.showError(toast, "Product not found");
+        return;
+    }
+
+    if (Number(event.target.value) > Number(actualProduct?.quantity)) {
+        commonService.showError(toast, "Quantity exceeds available stock "+actualProduct?.quantity);
+        newQty = Number(actualProduct?.quantity);
+        // return;
+    }
+
     selectedProduct.value = selectedProduct.value.map(product => {
-        if (product.id === data.id) {
-            return { ...product, quantity: Number(event.target.value) };
+        if (product.id === data.id ) {
+            return { ...product, quantity: newQty };
         }
         return product;
     });
@@ -109,6 +132,33 @@ const updatePrice = (event, data) => {
 }
 
 const increaseReduce = (data, action) => {
+
+    let actualProduct = productList.value.find(item => item.id === data.id);
+    if (!actualProduct) {
+        commonService.showError(toast, "Product not found");
+        return;
+    }
+
+    let selectedItm = selectedProduct.value.find(item => item.id === data.id);
+
+    if (!selectedItm) {
+        commonService.showError(toast, "Product not found in selected items");
+        return;
+    }
+
+    if (action == 'Add'){
+        if (Number(selectedItm?.quantity) >= Number(actualProduct?.quantity)) {
+            commonService.showError(toast, "Quantity exceeds available stock "+actualProduct?.quantity);
+            return;
+        }
+    } else {
+        if (Number(selectedItm?.quantity) <= 0) {
+            commonService.showError(toast, "Quantity cannot be less than 0");
+            return;
+        }
+    }
+
+
     selectedProduct.value = selectedProduct.value.map(product => {
         if (product.id === data.id) {
             if (action == 'Add') {

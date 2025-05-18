@@ -6,6 +6,7 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use App\Models\RolePermission;
 use App\Models\Permissions;
+use Illuminate\Support\Facades\Auth;
 
 class RoleController extends Controller
 {
@@ -14,7 +15,7 @@ class RoleController extends Controller
     public function createRole(Request $request){
         $role = new Role();
         // try {
-            $userData = auth()->user();
+            $userData = Auth::user();
             $role->name = $request->name;
             $role->type = $request->type;
             $role->institution_id = $request->institution_id;

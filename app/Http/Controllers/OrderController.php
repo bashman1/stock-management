@@ -31,7 +31,7 @@ class OrderController extends Controller
 
     public function newSale($request){
         DB::beginTransaction();
-        $userData = auth()->user();
+        $userData = Auth::user();
         $order = new Order();
         $ref=$this->generateTranRef();
         $order->ref_no = $ref;
@@ -256,7 +256,7 @@ class OrderController extends Controller
     }
 
     public function getOrders(){
-        $userData = auth()->user();
+        $userData = Auth::user();
         $isNotAdmin = $this->isNotAdmin();
 
         $queryString = "SELECT O.id, O.ref_no, O.receipt_no, O.tran_id, O.item_count, O.total,
@@ -412,7 +412,7 @@ class OrderController extends Controller
             return $this->genericResponse(false, "Order not found", 400, $order, "deleteOrder", $request->id);
         }
         $order->status = "Deleted";
-        $order->updated_by = auth()->user()->id;
+        $order->updated_by = Auth::user()->id;
         $order->updated_on = now();
         $order->save();
 
@@ -428,9 +428,9 @@ class OrderController extends Controller
             $orderTransaction->status = "Deleted";
             $orderTransaction->reversal_flag = "Y";
             $orderTransaction->reversal_reason = "Order deleted";
-            $orderTransaction->reversed_by = auth()->user()->id;
+            $orderTransaction->reversed_by = Auth::user()->id;
             $orderTransaction->reversed_on = now();
-            $orderTransaction->updated_by = auth()->user()->id;
+            $orderTransaction->updated_by = Auth::user()->id;
             $orderTransaction->updated_on = now();
             $orderTransaction->save();
         }
@@ -440,7 +440,7 @@ class OrderController extends Controller
         foreach ($debit as $item){
             $item->status = "Deleted";
             $item->reversal_flag = "Y";
-            $item->updated_by = auth()->user()->id;
+            $item->updated_by = Auth::user()->id;
             $item['tran_amount']= $item->tran_amount;
             // $item['tran_amt']= $item->tran_amount;
             $item->updated_on = now();
@@ -456,7 +456,7 @@ class OrderController extends Controller
         foreach ($credit as $item){
             $item->status = "Deleted";
             $item->reversal_flag = "Y";
-            $item->updated_by = auth()->user()->id;
+            $item->updated_by = Auth::user()->id;
             $item['tran_amount']= $item->tran_amount;
             // $item['tran_amt']= $item->tran_amount;
             $item->updated_on = now();

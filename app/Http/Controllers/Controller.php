@@ -37,7 +37,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
-
+use Illuminate\Support\Facades\Auth;
+// use Illuminate\Support\Facades\Log;
 // use
 
 // use Illuminate\Support\Str;
@@ -74,9 +75,9 @@ class Controller extends BaseController
             "response" => $data,
             "return_status" => $status,
             "return_message" => $message,
-            "user_id" => auth()->user() ? auth()->user()->id : null,
-            "institution_id" => auth()->user() ? auth()->user()->institution_id : null,
-            "branch_id" => auth()->user() ? auth()->user()->branch_id : null,
+            "user_id" => Auth::user() ? Auth::user()->id : null,
+            "institution_id" => Auth::user() ? Auth::user()->institution_id : null,
+            "branch_id" => Auth::user() ? Auth::user()->branch_id : null,
             "created_on" => now()
         ];
         $this->setLogs($log);
@@ -98,7 +99,7 @@ class Controller extends BaseController
      */
     public function getUserLogin()
     {
-        return auth()->user();
+        return Auth::user();
     }
 
 
@@ -125,7 +126,7 @@ class Controller extends BaseController
 
     public function isNotAdmin(): bool
     {
-        return auth()->user()->institution_id !== null;
+        return Auth::user()->institution_id !== null;
     }
 
 
@@ -712,8 +713,8 @@ class Controller extends BaseController
      */
     public function getControlAcctByCode($code): array|string
     {
-        $cntrl = CntrlParameter::where(["param_cd" => $code, "institution_id" => auth()->user()->institution_id])->first();
-        $branch = Branch::find(auth()->user()->branch_id);
+        $cntrl = CntrlParameter::where(["param_cd" => $code, "institution_id" => Auth::user()->institution_id])->first();
+        $branch = Branch::find(Auth::user()->branch_id);
         return str_replace("***", $branch->code, $cntrl->param_value);
     }
 
@@ -733,7 +734,7 @@ class Controller extends BaseController
 
     public function getUsersByInstitution($institutionId): array
     {
-        $userData = auth()->user();
+        $userData = Auth::user();
         $isNotAdmin = $this->isNotAdmin();
 
         $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email,
@@ -811,6 +812,8 @@ class Controller extends BaseController
             $userRole = null;
             $defaultRole = DefaultRole::where('status', "Active")->get();
             foreach ($defaultRole as $value) {
+                // Log::info('This is the default role ---.');
+
                 $role = Role::create([
                     "name" => $value["name"],
                     "type" => $value["type"],
@@ -828,8 +831,9 @@ class Controller extends BaseController
 
                 $defaultRolePermissions = DefaultRolePermission::where("role_id", $value["id"])->get();
                 foreach ($defaultRolePermissions as $defaultRolePermission) {
+                    // Log::info('This is an the default permission ++++.');
                     $rolePermission = RolePermission::create([
-                        "role_id" => $defaultRolePermission["role_id"],
+                        "role_id" => $role->id,
                         "permission_id" => $defaultRolePermission["permission_id"],
                         // "created_by"=>auth()->user()->id,
                         "created_on" => Carbon::now(),
@@ -877,13 +881,17 @@ class Controller extends BaseController
 
     public function newUser($request)
     {
+
+
+        // $userId = Auth::user()->id?Auth::user()->id :1;
+
         $user = null;
         if ($request && isset($request->id) && !empty($request->id)) {
             $user = User::find($request->id);
             $user->updated_at = Carbon::now();
         } else {
             $user = new User();
-            $user->created_by = 1;
+            $user->created_by = Auth::user()->id ?? 1;
             $user->created_on = now();
             $user->password = bcrypt($request->password);
         }
