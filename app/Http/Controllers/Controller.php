@@ -881,9 +881,14 @@ class Controller extends BaseController
 
     public function newUser($request)
     {
+        try{
+            DB::beginTransaction();
+            // $user = $this->createUser($request);
 
+            if (User::where('email', $request->email)->exists()) {
+                throw new \Exception('Email already exists', 409);
+            }
 
-        // $userId = Auth::user()->id?Auth::user()->id :1;
 
         $user = null;
         if ($request && isset($request->id) && !empty($request->id)) {
@@ -918,7 +923,15 @@ class Controller extends BaseController
         $user->original_branch_id = $request->branch_id;
 
         $user->save();
-        return $user;
+        // return $user;
+            DB::commit();
+            return $user;
+        }catch (\Throwable $th){
+            DB::rollBack();
+            throw $th;
+        }
+
+
     }
 
 
