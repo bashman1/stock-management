@@ -32,6 +32,7 @@ use App\Http\Controllers\TempSaleController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerReceivableController;
 use App\Http\Controllers\DefaultRoleController;
+use App\Http\Controllers\DurationController;
 use App\Http\Controllers\MailReceiverController;
 use App\Http\Controllers\PayableController;
 use App\Http\Controllers\SystemLogController;
@@ -78,6 +79,7 @@ Route::get('get-institution-types', [InstitutionTypeRefController::class, 'getIn
 Route::get('get-city-county-id/{id}', [CityRefController::class, 'getCityByCountryId']);
 Route::get('get-bank-ref', [BankRefController::class, 'getBanks']);
 Route::post("institution-self-registration", [InstitutionController::class, "institutionSelfRegistration"]);
+Route::get('get-durations', [DurationController::class, 'getDurations']);
 
 Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('crate-role', [RoleController::class, 'createRole']);
