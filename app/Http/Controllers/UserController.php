@@ -125,7 +125,8 @@ class UserController extends Controller
     public function getUsers(){
         try {
             // $users = User::orderBy('id', 'desc')->get();
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
+            // $userData = auth()->user();
             $isNotAdmin = $this->isNotAdmin();
 
             $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email,
@@ -151,7 +152,7 @@ class UserController extends Controller
 
     public function getUserDetails(Request $request){
         try {
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
 
             $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email,
@@ -186,7 +187,7 @@ class UserController extends Controller
 
     public function assignBranchesToUsers(Request $request){
         try {
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
             DB::beginTransaction();
             $clearExisting = UserBranch::where(["user_id"=> $request->user, "status"=> "Active"])->get();
 

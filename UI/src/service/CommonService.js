@@ -393,7 +393,7 @@ export default class CommonService {
      * @returns
      * @author Bash
      */
-    showError = (toast, message, duration = 3000) => {
+    showError = (toast, message, duration = 5000) => {
         return toast.add({ severity: 'error', summary: 'Process Failed', detail: message, life: duration });
     };
 

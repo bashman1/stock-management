@@ -10,55 +10,164 @@ const router = useRouter();
 const route = useRoute()
 
 const durations = ref([]);
+const priceForm = ref([]);
+const setPrice = ref({});
+const packageForm = ref({});
+const configLimit = ref([]);
+const limitationList = ref([]);
+const selectedConfig = ref([]);
+const dummyConfig = ref([  { config: null, value: '' }]);
+
+
+const addPricing = () => {
+    if (setPrice.value.duration && setPrice.value.amount) {
+        priceForm.value.push({
+            duration: setPrice.value.duration,
+            amount: setPrice.value.amount
+        });
+        setPrice.value = {};
+    } else {
+        commonService.showError(toast, 'Please fill all fields');
+    }
+}
+
+const removePricing = (data) => {
+    const index = priceForm.value.indexOf(data);
+    if (index > -1) {
+        priceForm.value.splice(index, 1);
+    }
+}
+
+
+
+// const setSelectedConfig = (selectedValue, index) => {
+//     console.log("event", JSON.stringify(selectedValue));
+
+//     const existingIndex = selectedConfig.value.findIndex(item => item.index === index);
+
+//     if (selectedValue) {
+//         if (existingIndex !== -1) {
+//             // Update existing
+//             selectedConfig.value[existingIndex].config = selectedValue;
+//         } else {
+//             // Push new
+//             selectedConfig.value.push({ config: selectedValue, index: index });
+//         }
+//     } else {
+//         // If no value, remove the item at that index if it exists
+//         if (existingIndex !== -1) {
+//             selectedConfig.value.splice(existingIndex, 1);
+//         }
+//     }
+// };
+
+
+
+
+
+
+
+const updateSelectedConfig = (data, index) => {
+    const existingIndex = selectedConfig.value.findIndex(item => item.index === index);
+
+    if (!data || Object.keys(data).length === 0) {
+        // Remove item if data is empty/null/undefined
+        if (existingIndex !== -1) {
+            selectedConfig.value.splice(existingIndex, 1);
+        }
+        return;
+    }
+
+    if (existingIndex !== -1) {
+        // Update existing entry
+        selectedConfig.value[existingIndex] = {
+            ...selectedConfig.value[existingIndex],
+            ...data
+        };
+    } else {
+        // Push new entry
+        selectedConfig.value.push({
+            index,
+            ...data
+        });
+    }
+
+    console.log(JSON.stringify(selectedConfig.value));
+};
+
+
+const handleLimitationChange = (event, index) => {
+    updateSelectedConfig({ config: event.value }, index);
+}
+
+const setSelectedAmount = (amount, index) => {
+    updateSelectedConfig({ amount: Number(amount) }, index);
+};
+
 
 
 const getDurations = () => {
-    "get-durations"
     commonService.genericRequest("get-durations", 'get', false, {}).then((response) => {
         if (response.status) {
             durations.value = response.data
         } else {
-
+            commonService.showError(toast, response.message);
         }
     })
+}
 
+const getLicensePackageConfig = () => {
+    commonService.genericRequest("get-license-package-configs", 'get', true, {}).then((response) => {
+        if (response.status) {
+            configLimit.value = response.data
+            dummyConfig.value = response.data.map(config => ({ config: null, value: '' }));
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
+const getLicensePackageLimitation = () => {
+    commonService.genericRequest("get-license-package-limitation", 'get', true, {}).then((response) => {
+        if (response.status) {
+            limitationList.value = response.data
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
+
+const onSubmit = () => {
+    if (packageForm.value.name && packageForm.value.description && priceForm.value.length > 0) {
+        const data = {
+            name: packageForm.value.name,
+            description: packageForm.value.description,
+            prices: priceForm.value
+        };
+        commonService.genericRequest("create-package", 'post', true, data).then((response) => {
+            if (response.status) {
+                toast.add({ severity: 'success', summary: 'Success', detail: response.message, life: 3000 });
+                router.push("/view-packages");
+            } else {
+                commonService.showError(toast, response.message);
+            }
+        });
+    } else {
+        commonService.showError(toast, 'Please fill all fields');
+    }
 }
 
 
 onMounted(() => {
     getDurations();
+    getLicensePackageConfig();
+    getLicensePackageLimitation();
 });
 
 </script>
-<!-- <template>
-    <div>
-        <div class="card">
-            <h5>Create Institution</h5>
-            <div class="grid p-fluid mt-3">
-                <Toast />
-
-                <div class="field col-12 md:col-6">
-                    <span class="p-float-label">
-                        <InputText type="text" id="instName" v-model="name" @blur="onInputBlur(name, 'name')"
-                            :class="{ 'p-invalid': formError?.name }" /> class="p-invalid"
-                        <label for="instName">Institution Name</label>
-                    </span>
-                </div>
-
-                <div class="field col-12 md:col-12">
-                    <span class="p-float-label">
-                        <Textarea id="textarea" rows="3" cols="30" v-model="address"></Textarea>
-                        <label for="textarea">Address</label>
-                    </span>
-                </div>
-
-
-            </div>
-        </div>
-    </div>
-
-</template> -->
-
 <template>
     <div class="grid">
         <div class="col-12 md:col-6">
@@ -67,30 +176,49 @@ onMounted(() => {
                 <div class="field">
                     <span class="p-float-label">
 
-                        <InputText id="name1" type="text" />
+                        <InputText id="name1" type="text" v-model="packageForm.name" />
                         <label for="name1">Name</label>
                     </span>
                 </div>
 
                 <div class="field">
                     <span class="p-float-label">
-                        <Textarea id="address" rows="4" />
+                        <Textarea id="address" rows="4" v-model="packageForm.description" />
                         <label for="address">Description</label>
                     </span>
+                </div>
+
+                <div class="formgrid grid" v-for="(config, index) in configLimit">
+                    <div class="field col-12">
+                        <h6>{{config.description}}</h6>
+                    </div>
+                    <div class="field col">
+                        <span class="p-float-label">
+                            <Dropdown id="state"  :options="limitationList" v-model="dummyConfig[index].config"  optionLabel="name"
+                                placeholder="Select duration" @change="handleLimitationChange($event, index)"></Dropdown>
+                            <label for="state">{{config.name}}</label>
+                        </span>
+                    </div>
+                    <div class="field col" v-if="selectedConfig[index] && selectedConfig[index]?.config?.name === 'Limited'">
+                        <span class="p-float-label">
+                            <InputText id="name2" type="text"  v-model="dummyConfig[index].value"  @change="setSelectedAmount($event.target.value, index)" />
+                            <label for="name2">{{config.description}}</label>
+                        </span>
+                    </div>
                 </div>
             </div>
 
             <div class="card p-fluid">
                 <h5>Package Benefits</h5>
                 <div class="formgrid grid">
-                    <div class="field col">
+                    <!-- <div class="field col">
                         <label for="name2">Name</label>
                         <InputText id="name2" type="text" />
-                    </div>
-                    <div class="field col">
+                    </div> -->
+                    <!-- <div class="field col">
                         <label for="email2">Email</label>
                         <InputText id="email2" type="text" />
-                    </div>
+                    </div> -->
                 </div>
             </div>
         </div>
@@ -98,9 +226,25 @@ onMounted(() => {
         <div class="col-12 md:col-6">
             <div class="card p-fluid">
                 <h5>Package Prices</h5>
+                <div class="field ">
+                    <DataTable :value="priceForm" :paginator="false" :scrollable="true">
+                        <Column field="duration.name" header="Duration"></Column>
+                        <Column field="amount" header="Price">
+                            <template #body="{ data }">
+                                {{ commonService.commaSeparator(data.amount) }}
+                            </template>
+                        </Column>
+                        <Column>
+                            <template #body="{ data }">
+                                <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="removePricing(data)"
+                                    v-tooltip="'Delete pricing'" />
+                            </template>
+                        </Column>
+                    </DataTable>
+                </div>
                 <div class="field">
                     <span class="p-float-label">
-                        <Dropdown id="state" v-model="dropdownItem" :options="durations" optionLabel="name"
+                        <Dropdown id="state" v-model="setPrice.duration" :options="durations" optionLabel="name"
                             placeholder="Select duration"></Dropdown>
                         <label for="state">Duration</label>
                     </span>
@@ -108,10 +252,10 @@ onMounted(() => {
                 <div class="field">
                     <div class="p-inputgroup">
                         <span class="p-float-label">
-                            <InputText id="name1" type="text" />
+                            <InputText id="name1" type="text" v-model="setPrice.amount" />
                             <label for="name1">Price</label>
                         </span>
-                        <Button label="Add" />
+                        <Button @click="addPricing" label="Add" />
                     </div>
                 </div>
 

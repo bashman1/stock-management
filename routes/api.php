@@ -33,6 +33,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerReceivableController;
 use App\Http\Controllers\DefaultRoleController;
 use App\Http\Controllers\DurationController;
+use App\Http\Controllers\LicensePackageController;
 use App\Http\Controllers\MailReceiverController;
 use App\Http\Controllers\PayableController;
 use App\Http\Controllers\SystemLogController;
@@ -212,4 +213,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get("get-mailReceivers", [MailReceiverController::class, "getMailReceivers"]);
     Route::post("send-bulk-mails", [MailReceiverController::class, "sendBulkMails"]);
     Route::post("reverse-sale", [OrderController::class, "deleteOrder"]);
+    Route::get("get-license-package-configs", [LicensePackageController::class, "getLicensePackageConfigs"]);
+    Route::get("get-license-package-limitation", [LicensePackageController::class, "getLicensePackageLimitations"]);
 });
