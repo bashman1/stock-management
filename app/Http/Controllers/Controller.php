@@ -1132,14 +1132,18 @@ class Controller extends BaseController
     /**
      * Summary of paginate
      * @param mixed $rowsPerPage
-     * @param mixed $total
+     * @param mixed $totalSql
      * @param mixed $sqlQuery
      * @return LengthAwarePaginator<TKey, mixed>
      */
-    public function paginate($rowsPerPage, $total, $sqlQuery)
+    public function paginate($rowsPerPage, $totalSql, $sqlQuery)
     {
         try {
             $currentPage = LengthAwarePaginator::resolveCurrentPage();
+
+            $totalResult = DB::select($totalSql);
+
+            $total = isset($totalResult[0]) ? (int) $totalResult[0]->total : 0;
 
             if (!isset($rowsPerPage)) {
                 $rowsPerPage = 10;
@@ -1164,5 +1168,44 @@ class Controller extends BaseController
         } catch (\Throwable $th) {
             throw $th;
         }
+    }
+
+
+
+    public function getLicenseDetails($institutionId){
+        try {
+            $queryString = "SELECT L.id, L.license_package_id, L.license_package_price_id,
+            L.start_date, L.end_date, L.quantity, L.paid, L.institution_id,
+            L.status, L.created_at, P.name AS package_name, P.implementation,
+            P.description,X.amount, D.name AS duration, D.unit,
+            D.description as duration_desc,
+            COALESCE(
+                json_agg(
+                DISTINCT jsonb_build_object(
+                    'id', C.id,
+                    'license_benefit_id', C.license_benefit_id,
+                    'benefit', B.name,
+                    'status', C.status,
+                    'created_at', C.created_at
+                )
+                ) FILTER (WHERE C.id IS NOT NULL),
+                '[]'
+            ) AS benefits,
+                GREATEST(AGE(L.end_date, NOW()), INTERVAL '0') AS remaining_time
+            FROM institution_licenses L
+            INNER JOIN license_packages P ON P.id =  L.license_package_id
+            INNER JOIN license_package_prices X ON X.id = L.license_package_price_id
+            INNER JOIN durations D ON D.id = X.duration_id
+            LEFT JOIN license_package_benefits C ON C.license_package_id = P.id
+            LEFT JOIN license_benefits B ON B.id = C.license_benefit_id
+            WHERE L.institution_id = ?
+            GROUP BY L.id, P.name, P.implementation, P.description,
+            X.amount, D.name, D.unit, D.description";
+
+            return  DB::select($queryString, [$institutionId]);
+        } catch (\Throwable $th) {
+            throw new \Exception("An error occurred while validating the institution ID.", 500, $th);
+        }
+
     }
 }

@@ -17,6 +17,7 @@ const configLimit = ref([]);
 const limitationList = ref([]);
 const selectedConfig = ref([]);
 const dummyConfig = ref([  { config: null, value: '' }]);
+const licenseBenefits = ref([]);
 
 
 const addPricing = () => {
@@ -127,7 +128,6 @@ const getLicensePackageConfig = () => {
     })
 }
 
-
 const getLicensePackageLimitation = () => {
     commonService.genericRequest("get-license-package-limitation", 'get', true, {}).then((response) => {
         if (response.status) {
@@ -139,18 +139,23 @@ const getLicensePackageLimitation = () => {
 }
 
 
-
 const onSubmit = () => {
     if (packageForm.value.name && packageForm.value.description && priceForm.value.length > 0) {
         const data = {
             name: packageForm.value.name,
             description: packageForm.value.description,
-            prices: priceForm.value
+            prices: priceForm.value,
+            implementation: packageForm.value.implementation,
+            benefits: packageForm.value.benefits,
         };
-        commonService.genericRequest("create-package", 'post', true, data).then((response) => {
+        commonService.genericRequest("create-license-package", 'post', true, data).then((response) => {
             if (response.status) {
-                toast.add({ severity: 'success', summary: 'Success', detail: response.message, life: 3000 });
-                router.push("/view-packages");
+                commonService.showSuccess(toast, response.message);
+                packageForm.value = {};
+                priceForm.value = [];
+
+                // toast.add({ severity: 'success', summary: 'Success', detail: response.message, life: 3000 });
+                // router.push("/view-packages");
             } else {
                 commonService.showError(toast, response.message);
             }
@@ -161,10 +166,21 @@ const onSubmit = () => {
 }
 
 
+const getLicenseBenefits = () => {
+    commonService.genericRequest("get-license-benefits", 'get', true, {}).then((response) => {
+        if (response.status) {
+            licenseBenefits.value = response.data;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    });
+}
+
 onMounted(() => {
     getDurations();
     getLicensePackageConfig();
     getLicensePackageLimitation();
+    getLicenseBenefits();
 });
 
 </script>
@@ -173,15 +189,21 @@ onMounted(() => {
         <div class="col-12 md:col-6">
             <div class="card p-fluid">
                 <h5>Package Details</h5>
-                <div class="field">
+                <div class="field mt-4">
                     <span class="p-float-label">
-
                         <InputText id="name1" type="text" v-model="packageForm.name" />
                         <label for="name1">Name</label>
                     </span>
                 </div>
 
-                <div class="field">
+                <div class="field  mt-4">
+                    <span class="p-float-label">
+                        <InputNumber id="name1" type="text" v-model="packageForm.implementation" />
+                        <label for="name1">Implementation Fee</label>
+                    </span>
+                </div>
+
+                <div class="field mt-4">
                     <span class="p-float-label">
                         <Textarea id="address" rows="4" v-model="packageForm.description" />
                         <label for="address">Description</label>
@@ -201,7 +223,7 @@ onMounted(() => {
                     </div>
                     <div class="field col" v-if="selectedConfig[index] && selectedConfig[index]?.config?.name === 'Limited'">
                         <span class="p-float-label">
-                            <InputText id="name2" type="text"  v-model="dummyConfig[index].value"  @change="setSelectedAmount($event.target.value, index)" />
+                            <InputNumber id="name2" type="text"  v-model="dummyConfig[index].value"  @change="setSelectedAmount($event.target.value, index)" />
                             <label for="name2">{{config.description}}</label>
                         </span>
                     </div>
@@ -211,14 +233,13 @@ onMounted(() => {
             <div class="card p-fluid">
                 <h5>Package Benefits</h5>
                 <div class="formgrid grid">
-                    <!-- <div class="field col">
-                        <label for="name2">Name</label>
-                        <InputText id="name2" type="text" />
-                    </div> -->
-                    <!-- <div class="field col">
-                        <label for="email2">Email</label>
-                        <InputText id="email2" type="text" />
-                    </div> -->
+                    <div class="field col">
+                        <span class="p-float-label">
+                            <MultiSelect id="state"  :options="licenseBenefits" v-model="packageForm.benefits"  optionLabel="name"
+                                placeholder="Select duration" display="chip" ></MultiSelect>
+                            <label for="state">Package Benefits</label>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -242,14 +263,14 @@ onMounted(() => {
                         </Column>
                     </DataTable>
                 </div>
-                <div class="field">
+                <div class="field mt-4">
                     <span class="p-float-label">
                         <Dropdown id="state" v-model="setPrice.duration" :options="durations" optionLabel="name"
                             placeholder="Select duration"></Dropdown>
                         <label for="state">Duration</label>
                     </span>
                 </div>
-                <div class="field">
+                <div class="field mt-4">
                     <div class="p-inputgroup">
                         <span class="p-float-label">
                             <InputText id="name1" type="text" v-model="setPrice.amount" />

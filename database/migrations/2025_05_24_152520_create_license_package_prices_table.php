@@ -14,8 +14,13 @@ return new class extends Migration
         Schema::create('license_package_prices', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('license_package_id');
-            $table->double('price', 8, 2)->default(0.00);
-
+            $table->unsignedBigInteger('duration_id');
+            $table->double('amount', 8, 2)->default(0.00);
+            $table->string('status')->default('Active');
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->timestamp('created_on')->nullable();
+            $table->timestamp('updated_on')->nullable();
             $table->timestamps();
         });
     }

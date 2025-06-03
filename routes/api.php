@@ -81,6 +81,7 @@ Route::get('get-city-county-id/{id}', [CityRefController::class, 'getCityByCount
 Route::get('get-bank-ref', [BankRefController::class, 'getBanks']);
 Route::post("institution-self-registration", [InstitutionController::class, "institutionSelfRegistration"]);
 Route::get('get-durations', [DurationController::class, 'getDurations']);
+Route::get("get-license-packages", [LicensePackageController::class, "getLicensePackages"]);
 
 Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('crate-role', [RoleController::class, 'createRole']);
@@ -215,4 +216,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("reverse-sale", [OrderController::class, "deleteOrder"]);
     Route::get("get-license-package-configs", [LicensePackageController::class, "getLicensePackageConfigs"]);
     Route::get("get-license-package-limitation", [LicensePackageController::class, "getLicensePackageLimitations"]);
+    Route::post("create-license-package", [LicensePackageController::class, "createLicensePackage"]);
+    Route::get("get-license-benefits", [LicensePackageController::class, "getLicenseBenefits"]);
+
 });

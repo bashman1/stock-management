@@ -1,10 +1,10 @@
 import { actions, state } from '../../store';
 
 export default class CommonService {
-     baseUrl = "http://localhost:8000/api/";
+    //  baseUrl = "http://localhost:8000/api/";
     // baseUrl = "https://prod.smartcollect.co.ug/api/";   //prod environment
     // baseUrl = "https://biiteek.smartcollect.co.ug/api/";   //prod biiteek environment
-    // baseUrl = "https://test.smartcollect.co.ug/api/";   //test environment
+    baseUrl = "https://test.smartcollect.co.ug/api/";   //test environment
 //    baseUrl = "../api/";
 
     // loggedIn = this.checkingAuthentication();
@@ -688,6 +688,17 @@ export default class CommonService {
     generateRandomFiveId = () => {
         return Math.floor(10000 + Math.random() * 90000); // Generates a random number between 10000 and 99999
     };
+
+    toggleModal = (currentValue)=>{
+        return !currentValue
+    }
+
+    openModal = ()=>{
+        return  true;
+    }
+    closeModal = ()=>{
+        return false
+    }
 
 }
 

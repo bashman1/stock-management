@@ -44,6 +44,7 @@ const login=  ()=>{
             const storedData = {
                 token: response.data.token.accessToken,
                 userData: response.data.user_data,
+                license: response.data.license,
             };
             globalUserData.value = storedData
             if(globalUserData?.value?.userData?.reset_required){

@@ -111,6 +111,14 @@ const payableReceivable = ref(
     }
 )
 
+const licenseMenu = ref(
+    {
+        label: 'License',
+        icon: 'pi pi-verified',
+        items: []
+    }
+)
+
 const accountMenu = ref(
     {
         label: 'Account',
@@ -558,6 +566,26 @@ if(commonService.checkPermissions('ViewSystemLogs')){
     )
 }
 
+if (commonService.checkPermissions('CanCreateLicensePackage')) {
+    licenseMenu.value.items.push(
+        {
+            label: 'Create License Package',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-license-package'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CanViewLicensePackages')) {
+    licenseMenu.value.items.push(
+        {
+            label: 'View License Packages',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-license-packages'
+        }
+    );
+}
+
 
 
 
@@ -611,6 +639,10 @@ if (chartOfAccountMenu?.value?.items?.length > 0) {
 
 if (payableReceivable?.value?.items?.length > 0) {
     model.value[0].items.push(payableReceivable.value);
+}
+
+if (licenseMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(licenseMenu.value);
 }
 
 if (accountMenu?.value?.items?.length > 0) {

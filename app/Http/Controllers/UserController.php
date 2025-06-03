@@ -74,6 +74,8 @@ class UserController extends Controller
                 return $this->genericResponse(false, "User account not activated", 404, ["login" => auth()->attempt($login_data)], "login", $request->all());
             }
 
+            $license= null;
+
             if (isset($userData->institution_id)){
                 $institution = Institution::find($userData->institution_id);
                 $branch = Branch::find($userData->branch_id);
@@ -85,6 +87,14 @@ class UserController extends Controller
                 $userData->institution_name=$institution->name;
                 $userData->branch_name=$branch->name;
 
+                $license = $this->getLicenseDetails($institution->id);
+                if (isset($license[0]->id)){
+                    if (Carbon::parse($license[0]->end_date)->isPast()) {
+                        // End date is before now (expired)
+                        return $this->genericResponse(false, "Business license expired", 404, [], "login", $request);
+                    }
+                    $license = $license[0];
+                }
             }else{
                 $userData->institution_name=null;
                 $userData->branch_name=null;
@@ -116,7 +126,7 @@ class UserController extends Controller
             $userData->role = $role;
             $userData->permissions = $permissions;
 
-            return $this->genericResponse(true, "Logged in successfully", 200, ["token" => $token, "user_data" => $userData], "login", $request);
+            return $this->genericResponse(true, "Logged in successfully", 200, ["token" => $token, "user_data" => $userData, 'license'=>$license], "login", $request);
         // } catch (\Exception $e) {
         //     return $this->genericResponse(false, "User creation  Failed", 500, $e->getMessage());
         // }

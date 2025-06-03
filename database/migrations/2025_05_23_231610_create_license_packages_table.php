@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('license_packages', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
+            $table->double('implementation', 8, 2)->default(0);
             $table->text('description')->nullable();
             $table->string('status')->default('Active');
             $table->unsignedBigInteger('created_by')->nullable();

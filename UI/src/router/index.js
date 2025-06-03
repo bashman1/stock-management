@@ -670,7 +670,15 @@ const router = createRouter({
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
-                }
+                },
+                {
+                    path: '/view-license-packages',
+                    name: 'ViewLicensePackages',
+                    component: () => import('@/views/pages/license/ViewLicensePackages.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
             ]
         },
         {
