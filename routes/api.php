@@ -83,6 +83,20 @@ Route::post("institution-self-registration", [InstitutionController::class, "ins
 Route::get('get-durations', [DurationController::class, 'getDurations']);
 Route::get("get-license-packages", [LicensePackageController::class, "getLicensePackages"]);
 
+
+// Show request form
+Route::get('/forgot-password', [UserController::class, 'requestForm'])->name('password.request');
+
+// Handle form submission
+Route::post('/forgot-password', [UserController::class, 'sendResetLink'])->name('password.email');
+
+// Show reset form
+Route::get('/reset-password/{token}', [UserController::class, 'resetForm'])->name('password.reset');
+
+// Handle password update
+Route::post('/reset-password', [UserController::class, 'updatePassword'])->name('password.update');
+
+
 Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('crate-role', [RoleController::class, 'createRole']);
     Route::post('create-city', [CityRefController::class, 'createCity']);
