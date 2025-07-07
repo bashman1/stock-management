@@ -232,5 +232,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get("get-license-package-limitation", [LicensePackageController::class, "getLicensePackageLimitations"]);
     Route::post("create-license-package", [LicensePackageController::class, "createLicensePackage"]);
     Route::get("get-license-benefits", [LicensePackageController::class, "getLicenseBenefits"]);
+    Route::post("update-user-status", [UserController::class, "updateUserStatus"]);
 
 });

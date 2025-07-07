@@ -83,7 +83,7 @@ const openConfirmation = (data) => {
 };
 
 const closeConfirmation = () => {
-    displayConfirmation.value = false;
+    displayConfirmation.value = true;
 };
 
 onMounted(() => {

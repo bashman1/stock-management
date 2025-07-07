@@ -379,4 +379,22 @@ class UserController extends Controller
     }
 
 
+    public function updateUserStatus(Request $request)
+    {
+        // try {
+            $user = User::find($request->userId);
+            // if (!$user) {
+            //     return $this->genericResponse(false, "User not found", 404, null, "updateUserStatus", $request);
+            // }
+
+            $user->status = $request->status;
+            $user->save();
+
+            return $this->genericResponse(true, "User status updated successfully", 200, $user, "updateUserStatus", $request);
+        // } catch (\Throwable $th) {
+        //     return $this->genericResponse(false, "Failed to update user status: " . $th->getMessage(), 500, [], "updateUserStatus", $request);
+        // }
+    }
+
+
 }
