@@ -1728,18 +1728,14 @@
   border-radius: 6px;
 }
 .p-button:enabled:hover {   /** changed from  #4F46E5 **/
-  background:  #660000;
-  /* #38570f; */
+  background: #38570f;
   color: #ffffff;
-  border-color: #660000;
-  /* #38570f; */
+  border-color:  #38570f;
 }
 .p-button:enabled:active {
-  background: #660000;
-  /* #38570f; */
+  background: #38570f;
   color: #ffffff;
-  border-color: #660000;
-  /* #38570f; */
+  border-color:  #38570f;
 }
 .p-button.p-button-outlined {
   background-color: transparent;

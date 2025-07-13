@@ -242,27 +242,27 @@ const router = createRouter({
                     },
                 },
                 {
-                    path:'/upload-members',
+                    path: '/upload-members',
                     name: 'BulkUploadMembers',
-                    component: ()=>import('@/views/pages/member-management/BulkUploadMembers.vue'),
+                    component: () => import('@/views/pages/member-management/BulkUploadMembers.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
 
                 },
                 {
-                    path:'/view-uploaded-members',
+                    path: '/view-uploaded-members',
                     name: 'ViewBulkUploadedMembers',
-                    component: ()=>import('@/views/pages/member-management/ViewBulkUploadedMembers.vue'),
+                    component: () => import('@/views/pages/member-management/ViewBulkUploadedMembers.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
 
                 },
                 {
-                    path:'/approve-uploaded-members/:id',
+                    path: '/approve-uploaded-members/:id',
                     name: 'ApproveBulkUploadedMembers',
-                    component: ()=>import('@/views/pages/member-management/ApproveBulkMember.vue'),
+                    component: () => import('@/views/pages/member-management/ApproveBulkMember.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -271,7 +271,7 @@ const router = createRouter({
                 {
                     path: '/collect-money',
                     name: 'CollectMoney',
-                    component: ()=> import('@/views/pages/collection-management/CollectMoney.vue'),
+                    component: () => import('@/views/pages/collection-management/CollectMoney.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -279,7 +279,7 @@ const router = createRouter({
                 {
                     path: '/view-collected-money',
                     name: 'ViewMoneyCollected',
-                    component: ()=> import('@/views/pages/collection-management/ViewCollections.vue'),
+                    component: () => import('@/views/pages/collection-management/ViewCollections.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -287,7 +287,7 @@ const router = createRouter({
                 {
                     path: '/approve-collections',
                     name: 'ApproveCollections',
-                    component: ()=> import('@/views/pages/collection-management/ApproveCollections.vue'),
+                    component: () => import('@/views/pages/collection-management/ApproveCollections.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -295,7 +295,7 @@ const router = createRouter({
                 {
                     path: '/approved-collections',
                     name: 'ApprovedCollections',
-                    component: ()=> import('@/views/pages/collection-management/ViewApprovedCollections.vue'),
+                    component: () => import('@/views/pages/collection-management/ViewApprovedCollections.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -303,7 +303,7 @@ const router = createRouter({
                 {
                     path: '/view-commissions',
                     name: 'Commissions',
-                    component: ()=> import('@/views/pages/comission/Comissions.vue'),
+                    component: () => import('@/views/pages/comission/Comissions.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -312,7 +312,7 @@ const router = createRouter({
                 {
                     path: '/create-product',
                     name: 'CreateProduct',
-                    component: ()=>import('@/views/pages/stock-management/CreateProduct.vue'),
+                    component: () => import('@/views/pages/stock-management/CreateProduct.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -320,7 +320,7 @@ const router = createRouter({
                 {
                     path: '/create-product/:id',
                     name: 'EditProduct',
-                    component: ()=>import('@/views/pages/stock-management/CreateProduct.vue'),
+                    component: () => import('@/views/pages/stock-management/CreateProduct.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -328,7 +328,7 @@ const router = createRouter({
                 {
                     path: '/view-product',
                     name: 'ViewProduct',
-                    component: ()=>import('@/views/pages/stock-management/ViewProducts.vue'),
+                    component: () => import('@/views/pages/stock-management/ViewProducts.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -336,7 +336,7 @@ const router = createRouter({
                 {
                     path: '/point-of-sale',
                     name: 'PointOfSale',
-                    component: ()=>import('@/views/pages/stock-management/PointOfSale.vue'),
+                    component: () => import('@/views/pages/stock-management/PointOfSale.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -344,7 +344,7 @@ const router = createRouter({
                 {
                     path: '/view-sales',
                     name: 'ViewOrders',
-                    component: ()=>import('@/views/pages/stock-management/ViewOrders.vue'),
+                    component: () => import('@/views/pages/stock-management/ViewOrders.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -352,7 +352,7 @@ const router = createRouter({
                 {
                     path: '/view-product-details/:id',
                     name: 'ViewProductDetails',
-                    component: ()=>import('@/views/pages/stock-management/ProductDetails.vue'),
+                    component: () => import('@/views/pages/stock-management/ProductDetails.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -360,7 +360,7 @@ const router = createRouter({
                 {
                     path: '/chart-of-accounts',
                     name: 'ChartOfAccounts',
-                    component: ()=>import('@/views/pages/chart-of-accounts/ChartOfAccounts.vue'),
+                    component: () => import('@/views/pages/chart-of-accounts/ChartOfAccounts.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -368,7 +368,7 @@ const router = createRouter({
                 {
                     path: '/create-ledger',
                     name: 'CreateLedger',
-                    component: ()=>import('@/views/pages/chart-of-accounts/CreateLedger.vue'),
+                    component: () => import('@/views/pages/chart-of-accounts/CreateLedger.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -376,7 +376,7 @@ const router = createRouter({
                 {
                     path: '/gl-accounts',
                     name: 'GlAccounts',
-                    component: ()=>import('@/views/pages/chart-of-accounts/GlAccounts.vue'),
+                    component: () => import('@/views/pages/chart-of-accounts/GlAccounts.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -384,7 +384,7 @@ const router = createRouter({
                 {
                     path: '/debit-credit-gl',
                     name: 'GlInjection',
-                    component: ()=>import('@/views/pages/chart-of-accounts/GlInjection.vue'),
+                    component: () => import('@/views/pages/chart-of-accounts/GlInjection.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -392,7 +392,7 @@ const router = createRouter({
                 {
                     path: '/gl-statement/:acctNo',
                     name: 'GlStatement',
-                    component: ()=>import('@/views/pages/chart-of-accounts/GlHistory.vue'),
+                    component: () => import('@/views/pages/chart-of-accounts/GlHistory.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -400,7 +400,7 @@ const router = createRouter({
                 {
                     path: '/gl-overview',
                     name: 'GlOverView',
-                    component: ()=>import('@/views/pages/chart-of-accounts/glOverView.vue'),
+                    component: () => import('@/views/pages/chart-of-accounts/glOverView.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -408,7 +408,7 @@ const router = createRouter({
                 {
                     path: '/gl-balance-sheet',
                     name: 'GlBalanceSheet',
-                    component: ()=>import('@/views/pages/chart-of-accounts/BalanceSheet.vue'),
+                    component: () => import('@/views/pages/chart-of-accounts/BalanceSheet.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -416,7 +416,7 @@ const router = createRouter({
                 {
                     path: '/cntrl-params',
                     name: 'CntrlParams',
-                    component: ()=>import('@/views/pages/chart-of-accounts/CntrParams.vue'),
+                    component: () => import('@/views/pages/chart-of-accounts/CntrParams.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -424,7 +424,7 @@ const router = createRouter({
                 {
                     path: '/income-statement',
                     name: 'IncomeStatement',
-                    component: ()=>import('@/views/pages/chart-of-accounts/IncomeStatement.vue'),
+                    component: () => import('@/views/pages/chart-of-accounts/IncomeStatement.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -432,7 +432,7 @@ const router = createRouter({
                 {
                     path: '/products-report',
                     name: 'ProductsReport',
-                    component: ()=>import('@/views/pages/reports/ProductsReport.vue'),
+                    component: () => import('@/views/pages/reports/ProductsReport.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -440,7 +440,7 @@ const router = createRouter({
                 {
                     path: '/sales-report',
                     name: 'SalesReport',
-                    component: ()=>import('@/views/pages/reports/SalesReport.vue'),
+                    component: () => import('@/views/pages/reports/SalesReport.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -448,7 +448,7 @@ const router = createRouter({
                 {
                     path: '/product-inventory-report/:productId',
                     name: 'ProductsInventoryReport',
-                    component: ()=>import('@/views/pages/reports/ProductInventoryReport.vue'),
+                    component: () => import('@/views/pages/reports/ProductInventoryReport.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -456,7 +456,7 @@ const router = createRouter({
                 {
                     path: '/products-sales-report/:productId',
                     name: 'ProductsSalesReport',
-                    component: ()=>import('@/views/pages/reports/ProductSalesReport.vue'),
+                    component: () => import('@/views/pages/reports/ProductSalesReport.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -464,7 +464,7 @@ const router = createRouter({
                 {
                     path: '/logout',
                     name: 'LogOut',
-                    component: ()=>import('@/views/pages/LogOut.vue'),
+                    component: () => import('@/views/pages/LogOut.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -472,7 +472,7 @@ const router = createRouter({
                 {
                     path: '/upload-products',
                     name: 'UploadProducts',
-                    component: ()=>import('@/views/pages/stock-management/BulkUploadProducts.vue'),
+                    component: () => import('@/views/pages/stock-management/BulkUploadProducts.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -496,7 +496,7 @@ const router = createRouter({
                 {
                     path: '/upload-sales',
                     name: 'UploadSales',
-                    component: ()=>import('@/views/pages/stock-management/BulkSales.vue'),
+                    component: () => import('@/views/pages/stock-management/BulkSales.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },
@@ -635,7 +635,7 @@ const router = createRouter({
                     path: '/approve-business',
                     name: 'ApproveInstitution',
                     component: () => import('@/views/pages/institution-management/ApproveInstitutions.vue'),
-                    meta:{
+                    meta: {
                         requiresAuth: true, // This route requires authentication
                     }
                 },
@@ -643,23 +643,23 @@ const router = createRouter({
                     path: '/audit-logs',
                     name: 'SystemLogs',
                     component: () => import('@/views/pages/logs/ViewLogs.vue'),
-                    meta:{
+                    meta: {
                         requiresAuth: true, // This route requires authentication
                     }
                 },
                 {
                     path: '/create-expense',
                     name: 'CreateExpense',
-                    component: ()=> import('@/views/pages/chart-of-accounts/Expenses.vue'),
-                    meta:{
+                    component: () => import('@/views/pages/chart-of-accounts/Expenses.vue'),
+                    meta: {
                         requiresAuth: true, // This route requires authentication
                     }
                 },
                 {
                     path: '/upload-mail-receivers',
                     name: 'bulkMailSender',
-                    component: ()=> import('@/views/pages/messages/SendBulkMails.vue'),
-                    meta:{
+                    component: () => import('@/views/pages/messages/SendBulkMails.vue'),
+                    meta: {
                         requiresAuth: true, // This route requires authentication
                     }
                 },
@@ -675,6 +675,38 @@ const router = createRouter({
                     path: '/view-license-packages',
                     name: 'ViewLicensePackages',
                     component: () => import('@/views/pages/license/ViewLicensePackages.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/create-project',
+                    name: 'CreateProject',
+                    component: () => import('@/views/pages/investment/CreateProject.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-projects',
+                    name: 'ViewProject',
+                    component: () => import('@/views/pages/investment/ViewProjects.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/invest',
+                    name: 'Invest',
+                    component: () => import('@/views/pages/investment/Invest.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                        {
+                    path: '/view-invest',
+                    name: 'ViewInvestments',
+                    component: () => import('@/views/pages/investment/ViewInvestments.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },

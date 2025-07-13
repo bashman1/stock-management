@@ -22,7 +22,8 @@ class GlAccountsController extends Controller
 
     public function getChartOfAccounts(Request $request)
     {
-        $userData = auth()->user();
+
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $glCats = GlCat::orderBy('gl_no', 'asc')->get();
         $chartOfAccounts = [];
@@ -66,7 +67,7 @@ class GlAccountsController extends Controller
 
     public function getLedgerCat(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
 
         $conditions = array();
@@ -87,7 +88,7 @@ class GlAccountsController extends Controller
 
     public function getLedgerSubCat(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
 
         $conditions = array();
@@ -109,7 +110,7 @@ class GlAccountsController extends Controller
 
     public function getLedgerType(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
 
         $conditions = array();
@@ -135,7 +136,7 @@ class GlAccountsController extends Controller
 
     public function glAccounts()
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
 
         $queryString = "SELECT G.acct_no, G.gl_no, G.description, G.gl_cat_no, G.gl_sub_cat_no, G.gl_type_no, G.acct_type, G.branch_cd, G.status,
@@ -160,7 +161,7 @@ class GlAccountsController extends Controller
 
     public function searchGl(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
 
         $conditions = array();
@@ -176,8 +177,14 @@ class GlAccountsController extends Controller
         if (isset($request->acct_no)) {
             $conditions['G.acct_no'] = $request->acct_no;
         }
-        if(isset($request->gl_type_no)){
+        if (isset($request->gl_type_no)) {
             $conditions['G.gl_type_no'] = $request->gl_type_no;
+        }
+        if (isset($request->gl_sub_cat_no)) {
+            $conditions['G.gl_sub_cat_no'] = $request->gl_sub_cat_no;
+        }
+            if (isset($request->gl_cat_no)) {
+            $conditions['G.gl_cat_no'] = $request->gl_cat_no;
         }
         if ($isNotAdmin) {
             $conditions['G.institution_id'] = $userData->institution_id;
@@ -229,7 +236,7 @@ class GlAccountsController extends Controller
 
     public function updateGlAcct(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $request->validate([
             'description' => 'required',
             'acctNo' => 'required'
@@ -249,9 +256,9 @@ class GlAccountsController extends Controller
 
     public function debitCreditGl(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         DB::beginTransaction();
-        $tran = (Array)[
+        $tran = (array)[
             "acct_no" => $request->drAcctNo,
             "acct_type" => $request->drAcctType,
             "contra_acct_no" => $request->crAcctNo,
@@ -271,8 +278,8 @@ class GlAccountsController extends Controller
             // "member_id"=>null,
             // "product_id"=>$product->id,
             // "stock_id"=>null,
-            "ext_ref"=>$request->drAcctNo,
-            "tran"=>"GL Injection",
+            "ext_ref" => $request->drAcctNo,
+            "tran" => "GL Injection",
             // "reversal_reason"=>null,
             // "reversed_by"=>null,
             // "reversed_on"=>null,
@@ -291,7 +298,7 @@ class GlAccountsController extends Controller
             "contra_acct_type" => $request->crAcctType,
             "tran_type" => 'GL INJECTION',
             "tran_cd" => 'GLI',
-            "tran_id" => $postTran->tran_id,
+            "tran_id" => optional($postTran)->tran_id,
             "institution_id" => $userData->institution_id,
             "branch_id" => $userData->branch_id,
             "created_by" => $userData->id,
@@ -309,7 +316,7 @@ class GlAccountsController extends Controller
             "contra_acct_type" => $request->drAcctType,
             "tran_type" => 'GL INJECTION',
             "tran_cd" => 'GLI',
-            "tran_id" => $postTran->tran_id,
+            "tran_id" => optional($postTran)->tran_id,
             "institution_id" => $userData->institution_id,
             "branch_id" => $userData->branch_id,
             "created_by" => $userData->id,
@@ -345,7 +352,7 @@ class GlAccountsController extends Controller
 
     public function glAcctHistory(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
 
         $queryString = "SELECT H.id, H.acct_no,A.acct_type, H.dr_cr_ind, H.tran_amount, H.reversal_flag, H.description, H.transaction_date,
@@ -385,7 +392,7 @@ class GlAccountsController extends Controller
 
     public function glAcctOverView(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
 
         $glCat = GlCat::all();
@@ -411,7 +418,7 @@ class GlAccountsController extends Controller
 
     public function getGlBalances(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
 
         $glCat = GlCat::all();
@@ -444,7 +451,7 @@ class GlAccountsController extends Controller
     public function getCntrlParamGl()
     {
         try {
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
             $conditions =  array();
             $conditions['status'] = "Active";
@@ -463,23 +470,24 @@ class GlAccountsController extends Controller
     {
         // return $this->genericResponse(true,"",200, ["startDate"=> $request->fromDate, "endDate"=>$request->toDate, "request"=>$request]);
         // try {
-        $sales = CntrlParameter::where(["param_cd" => "SL", "institution_id" => auth()->user()->institution_id])->first();
-        $branch = Branch::find(auth()->user()->branch_id);
+        $userData = $this->getUserLogin();
+        $sales = CntrlParameter::where(["param_cd" => "SL", "institution_id" => $userData->institution_id])->first();
+        $branch = Branch::find($userData->branch_id);
         $salesAcctNo = str_replace("***", $branch->code, $sales->param_value);
 
-        $returnOutwards = CntrlParameter::where(["param_cd" => "ROT", "institution_id" => auth()->user()->institution_id])->first();
+        $returnOutwards = CntrlParameter::where(["param_cd" => "ROT", "institution_id" => $userData->institution_id])->first();
         $returnAcctNo = str_replace("***", $branch->code,  $returnOutwards->param_value);
 
-        $openingStock = CntrlParameter::where(["param_cd" => "STI", "institution_id" => auth()->user()->institution_id])->first();
+        $openingStock = CntrlParameter::where(["param_cd" => "STI", "institution_id" => $userData->institution_id])->first();
         $stockAcctNo = str_replace("***", $branch->code,  $openingStock->param_value);
 
-        $purchases = CntrlParameter::where(["param_cd" => "PIA", "institution_id" => auth()->user()->institution_id])->first();
+        $purchases = CntrlParameter::where(["param_cd" => "PIA", "institution_id" => $userData->institution_id])->first();
         $purchaseAcctNo = str_replace("***", $branch->code,  $purchases->param_value);
 
-        $operatingExpenses = CntrlParameter::where(["param_cd" => "OPE", "institution_id" => auth()->user()->institution_id])->first();
+        $operatingExpenses = CntrlParameter::where(["param_cd" => "OPE", "institution_id" => $userData->institution_id])->first();
         $operatingExpenseAcctNo = str_replace("***", $branch->code,  $operatingExpenses->param_value);
 
-        $passage = CntrlParameter::where(["param_cd" => "PP", "institution_id" => auth()->user()->institution_id])->first();
+        $passage = CntrlParameter::where(["param_cd" => "PP", "institution_id" => $userData->institution_id])->first();
         $passageAcctNo = str_replace("***", $branch->code,  $passage->param_value);
 
         // $totalSales = (float) DB::table('gl_histories')
@@ -599,7 +607,8 @@ class GlAccountsController extends Controller
     public function getBalanceSheet(Request $request)
     {
         try {
-            $userData = auth()->user();
+            // $userData = auth()->user();
+            $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
             $tempArray = array();
             $glSubCat = GlSubCat::all();
@@ -624,7 +633,7 @@ class GlAccountsController extends Controller
             }
             return $this->genericResponse(true, 'Balance sheet', 200, $tempArray, "getBalanceSheet", $request);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 400, $th,"getBalanceSheet", $request);
+            return $this->genericResponse(false, $th->getMessage(), 400, $th, "getBalanceSheet", $request);
         }
     }
 
@@ -641,7 +650,8 @@ class GlAccountsController extends Controller
 
     public function getCashBook(Request $request)
     {
-        $userData = auth()->user();
+        // $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $queryString = "SELECT * FROM cntrl_parameters WHERE status = 'Active' AND (param_cd = 'CL' OR param_cd = 'CGL' OR param_cd = 'PD') ";
 
@@ -682,14 +692,15 @@ class GlAccountsController extends Controller
             $vatPayable = $this->getVATPayable($request);
             return $this->genericResponse(true, "VAT payable", 200, $vatPayable, "getVATPayableReport", $request);
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, $th->getMessage(), 500, $th,"getVATPayableReport", $request);
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "getVATPayableReport", $request);
         }
     }
 
     public function getVATPayable($request)
     {
         try {
-            $userData = auth()->user();
+            // $userData = auth()->user();
+            $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
             $queryString = "SELECT I.id, I.order_id, I.product_id, I.qty, I.status,
                 I.institution_id, I.branch_id, I.created_on, I.created_at,
@@ -754,7 +765,8 @@ class GlAccountsController extends Controller
     {
         try {
             DB::beginTransaction();
-            $userData = auth()->user();
+            // $userData = auth()->user();
+            $userData = $this->getUserLogin();
             $glAcct = GlAccounts::where('acct_no', $request->acctNo)->first();
             if (!isset($glAcct)) {
                 return $this->genericResponse(false, "Account not found", 404, $glAcct);
@@ -793,7 +805,8 @@ class GlAccountsController extends Controller
         try {
             DB::beginTransaction();
 
-            $userData = auth()->user();
+            // $userData = auth()->user();
+            $userData = $this->getUserLogin();
             $branch = Branch::find($userData->branch_id);
 
             // Check if GL Generate Account exists
@@ -855,10 +868,12 @@ class GlAccountsController extends Controller
     }
 
 
-    public function getGlHierarchy(Request $request){
+    public function getGlHierarchy(Request $request)
+    {
         try {
-            $userData = auth()->user();
-            $hierarchy = GlHierarchy::where(["institution_id"=> $userData->institution_id, "branch_id"=>$userData->branch_id, "status"=>$request->status])->get();
+            // $userData = auth()->user();
+            $userData = $this->getUserLogin();
+            $hierarchy = GlHierarchy::where(["institution_id" => $userData->institution_id, "branch_id" => $userData->branch_id, "status" => $request->status])->get();
             return $this->genericResponse(true, "Chart of accounts hierarchy fetched successfully", 200, $hierarchy, "getGlHierarchy", $request);
         } catch (\Throwable $th) {
             return $this->genericResponse(false, $th->getMessage(), 500, $th, "getGlHierarchy", $request);

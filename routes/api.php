@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\InvestmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InstitutionController;
@@ -33,10 +34,13 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerReceivableController;
 use App\Http\Controllers\DefaultRoleController;
 use App\Http\Controllers\DurationController;
+use App\Http\Controllers\FixedAssetController;
 use App\Http\Controllers\LicensePackageController;
 use App\Http\Controllers\MailReceiverController;
 use App\Http\Controllers\PayableController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SystemLogController;
+use App\Models\Project;
 
 /*
 |--------------------------------------------------------------------------
@@ -96,7 +100,6 @@ Route::get('/reset-password/{token}', [UserController::class, 'resetForm'])->nam
 // Handle password update
 Route::post('/reset-password', [UserController::class, 'updatePassword'])->name('password.update');
 
-
 Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('crate-role', [RoleController::class, 'createRole']);
     Route::post('create-city', [CityRefController::class, 'createCity']);
@@ -141,23 +144,17 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('create-product-sub-category', [ProductCategoryController::class, "createProductSubCategory"]);
     Route::get('get-product-sub-categories', [ProductCategoryController::class, "getProductSubCategory"]);
     Route::get('get-countries', [CountryRefController::class, "getCountries"]);
-
     Route::post('create-manufacturer', [ManufacturerController::class, "createManufacturer"]);
     Route::get('get-manufacturers', [ManufacturerController::class, "getManufacturers"]);
-
     Route::post('create-supplier', [SupplierController::class, "createSupplier"]);
     Route::get('get-suppliers', [SupplierController::class, "getSuppliers"]);
-
     Route::post('create-measurement-unit', [MeasurementUnitController::class, "createMeasurementUnit"]);
     Route::get('get-measurement-unit', [MeasurementUnitController::class, "getMeasurementUnit"]);
-
     Route::post('create-product', [ProductController::class, "createProduct"]);
     Route::get('get-dashboard-stats', [CommonController::class, "getDashboardStats"]);
-
     Route::get('get-products', [ProductController::class, "getProducts"]);
     Route::post('create-product-type', [ProductTypeController::class, "createProductTypes"]);
     Route::get('get-product-types', [ProductTypeController::class, "getProductTypes"]);
-
     Route::post('create-product-gauge', [ProductGaugeController::class, "createGauge"]);
     Route::get('get-product-gauge', [ProductGaugeController::class, "getGauges"]);
     Route::post('create-order', [OrderController::class, "createOrder"]);
@@ -173,13 +170,11 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get('gl-cats', [GlAccountsController::class, "getLedgerCategories"]);
     Route::post('debit-credit-acct', [GlAccountsController::class, "debitCreditGl"]);
     Route::post('create-gl-account', [GlAccountsController::class, "createGlAcct"]);
-
     Route::post('get-product-details', [ProductController::class, "getProductDetails"]);
     Route::post('download-product-report-pdf', [ReportController::class, "downLoadProductPdfReport"]);
     Route::post('download-product-report-csv', [ReportController::class, "downLoadProductCsvReport"]);
     Route::post("download-sales-item-report-csv", [ReportController::class, "downloadSalesItemCSVReport"]);
     Route::post('download-sales-item-report-pdf', [ReportController::class, "downloadSalesItemPDFReport"]);
-
     Route::post('get-gl-history', [GlAccountsController::class, "glAcctHistory"]);
     Route::post('get-gl-overview', [GlAccountsController::class, "glAcctOverView"]);
     Route::post('get-gl-balance', [GlAccountsController::class, "getGlBalances"]);
@@ -233,5 +228,11 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("create-license-package", [LicensePackageController::class, "createLicensePackage"]);
     Route::get("get-license-benefits", [LicensePackageController::class, "getLicenseBenefits"]);
     Route::post("update-user-status", [UserController::class, "updateUserStatus"]);
-
+    Route::get("get-payment-methods", [FixedAssetController::class, "getPaymentMethods"]);
+    Route::get("get-depreciation-rates", [FixedAssetController::class, "getDepreciationRates"]);
+    Route::post("create-fixed-asset", [FixedAssetController::class, "createOrUpdateFixedAsset"]);
+    Route::post("create-project", [ProjectController::class, "createProject"]);
+    Route::get("get-projects", [ProjectController::class, "getProjects"]);
+    Route::post("create-investment", [InvestmentController::class, "createInvestment"]);
+    Route::get("get-investments", [InvestmentController::class, "getInvestments"]);
 });

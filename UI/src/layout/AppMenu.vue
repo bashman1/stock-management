@@ -127,6 +127,16 @@ const accountMenu = ref(
     }
 )
 
+const investMentMenu = ref(
+    {
+        label: 'Investment',
+        icon: 'pi pi-box',
+        items: []
+    }
+)
+
+
+
 const logOut = ref({
     label: 'Log Out',
     icon: 'pi pi-sign-out',
@@ -430,7 +440,7 @@ if (commonService.checkPermissions('ViewCntrlParams')) {
     );
 }
 
-if (commonService.checkPermissions('ViewIncomeStatement')){
+if (commonService.checkPermissions('ViewIncomeStatement')) {
     chartOfAccountMenu.value.items.push(
         {
             label: 'Income Statement',
@@ -440,7 +450,7 @@ if (commonService.checkPermissions('ViewIncomeStatement')){
     )
 }
 
-if (commonService.checkPermissions('ViewBalanceSheet')){
+if (commonService.checkPermissions('ViewBalanceSheet')) {
     chartOfAccountMenu.value.items.push(
         {
             label: 'Balance Sheet',
@@ -450,7 +460,7 @@ if (commonService.checkPermissions('ViewBalanceSheet')){
     )
 }
 
-if (commonService.checkPermissions('CreateExpenses')){
+if (commonService.checkPermissions('CreateExpenses')) {
     chartOfAccountMenu.value.items.push(
         {
             label: 'Expenses',
@@ -460,7 +470,7 @@ if (commonService.checkPermissions('CreateExpenses')){
     )
 }
 
-if(commonService.checkPermissions('ViewProductsReport')){
+if (commonService.checkPermissions('ViewProductsReport')) {
     reportMenu.value.items.push(
         {
             label: 'Products Report',
@@ -470,7 +480,7 @@ if(commonService.checkPermissions('ViewProductsReport')){
     )
 }
 
-if(commonService.checkPermissions('ViewSalesReport')){
+if (commonService.checkPermissions('ViewSalesReport')) {
     reportMenu.value.items.push(
         {
             label: 'Sales Transaction Report',
@@ -481,7 +491,7 @@ if(commonService.checkPermissions('ViewSalesReport')){
 }
 
 
-if(commonService.checkPermissions('ViewSalesReport')){
+if (commonService.checkPermissions('ViewSalesReport')) {
     reportMenu.value.items.push(
         {
             label: 'Sales Report',
@@ -493,7 +503,7 @@ if(commonService.checkPermissions('ViewSalesReport')){
 
 
 
-if(commonService.checkPermissions('ViewCashBook')){
+if (commonService.checkPermissions('ViewCashBook')) {
     reportMenu.value.items.push(
         {
             label: 'Cash Book',
@@ -504,7 +514,7 @@ if(commonService.checkPermissions('ViewCashBook')){
 }
 
 
-if(commonService.checkPermissions('ViewVatPayable')){
+if (commonService.checkPermissions('ViewVatPayable')) {
     reportMenu.value.items.push(
         {
             label: 'VAT Payable',
@@ -515,7 +525,7 @@ if(commonService.checkPermissions('ViewVatPayable')){
 }
 
 
-if(commonService.checkPermissions('ViewReceivables')){
+if (commonService.checkPermissions('ViewReceivables')) {
     payableReceivable.value.items.push(
         {
             label: 'Receivable',
@@ -525,7 +535,7 @@ if(commonService.checkPermissions('ViewReceivables')){
     )
 }
 
-if(commonService.checkPermissions('ViewPayables')){
+if (commonService.checkPermissions('ViewPayables')) {
     payableReceivable.value.items.push(
         {
             label: 'Payable',
@@ -535,28 +545,28 @@ if(commonService.checkPermissions('ViewPayables')){
     )
 }
 
-if(commonService.checkPermissions('ViewInstitutionProfile')){
+if (commonService.checkPermissions('ViewInstitutionProfile')) {
     accountMenu.value.items.push(
         {
             label: 'Institution Profile',
             icon: 'pi pi-fw pi-circle',
-            to: '/institution-profile/'+commonService.getStorage().userData?.institution_id
+            to: '/institution-profile/' + commonService.getStorage().userData?.institution_id
         }
     )
 }
 
 
-if(commonService.checkPermissions('ViewUserProfile')){
+if (commonService.checkPermissions('ViewUserProfile')) {
     accountMenu.value.items.push(
         {
             label: 'User Profile',
             icon: 'pi pi-fw pi-circle',
-            to: '/user-profile/'+commonService.getStorage().userData?.id
+            to: '/user-profile/' + commonService.getStorage().userData?.id
         }
     )
 }
 
-if(commonService.checkPermissions('ViewSystemLogs')){
+if (commonService.checkPermissions('ViewSystemLogs')) {
     accountMenu.value.items.push(
         {
             label: 'System Logs',
@@ -585,6 +595,46 @@ if (commonService.checkPermissions('CanViewLicensePackages')) {
         }
     );
 }
+
+if (commonService.checkPermissions('CanCreateProject')) {
+    investMentMenu.value.items.push(
+        {
+            label: 'Create Project',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-project'
+        }
+    );
+}
+if (commonService.checkPermissions('ViewProjects')) {
+    investMentMenu.value.items.push(
+        {
+            label: 'View Project',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-projects'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CreateInvestment')) {
+    investMentMenu.value.items.push(
+        {
+            label: 'Invest',
+            icon: 'pi pi-fw pi-circle',
+            to: '/invest'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewInvestment')) {
+    investMentMenu.value.items.push(
+        {
+            label: 'View Investments',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-invest'
+        }
+    );
+}
+
 
 
 
@@ -639,6 +689,10 @@ if (chartOfAccountMenu?.value?.items?.length > 0) {
 
 if (payableReceivable?.value?.items?.length > 0) {
     model.value[0].items.push(payableReceivable.value);
+}
+
+if (investMentMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(investMentMenu.value);
 }
 
 if (licenseMenu?.value?.items?.length > 0) {
