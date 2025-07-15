@@ -71,7 +71,11 @@ onMounted(() => {
                             {{ data.gender }}
                         </template> -->
                     </Column>
-                     <Column field="quantity" header="Initial Investment" style="min-width: 10rem"></Column>
+                     <Column field="quantity" header="Initial Investment" style="min-width: 10rem">
+                        <template #body="{ data }">
+                            {{ commonService.commaSeparator(data.quantity * data.monitory) }}
+                        </template>
+                    </Column>
                     <Column field="benefit" header="Benefit" style="min-width: 12rem">
                         <!-- <template #body="{ data }">
                             {{ data.benefit +' '+ data.benefit_type }}
@@ -91,7 +95,7 @@ onMounted(() => {
                     </Column> -->
                         <Column header="Return Of Investment" style="min-width: 10rem">
                         <template #body="{ data }">
-                            {{ data.benefit * data.quantity }}
+                            {{ commonService.commaSeparator(data.benefit * data.quantity * data.monitory) }}
                         </template>
                     </Column>
                            <Column header="Maturity Date" style="min-width: 10rem">
@@ -116,5 +120,16 @@ onMounted(() => {
                 </DataTable>
             </div>
         </div>
+
+    <!-- <Dialog v-model:visible="deleteProductsDialog" :style="{ width: '450px' }" :header="'Confirm'" :modal="true">
+        <div class="flex align-items-center justify-content-center">
+            <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
+            <span>Are you sure you want to archive {{ selectedProduct?.name }}?</span>
+        </div>
+        <template #footer>
+            <Button label="No" icon="pi pi-times" class="p-button-outlined p-button-danger mr-2 mb-2" @click="deleteProductsDialog = false" />
+            <Button label="Yes" icon="pi pi-check" class="p-button-outlined mr-2 mb-2" @click="archiveProduct" />
+        </template>
+    </Dialog> -->
     </div>
 </template>

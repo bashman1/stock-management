@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\DB;
 use App\Models\Investment;
+use App\Models\Member;
+use App\Models\Project;
 use Illuminate\Http\Request;
 
 class InvestmentController extends Controller
@@ -23,6 +25,24 @@ class InvestmentController extends Controller
                 'created_by' => $userData->id,
                 'created_on' => now(),
             ];
+
+            // $project = Project::find($request->project_id);
+            // $member = Member::find($request->member_id);
+
+            // sending email
+            // $sendMail = [
+            //     "subject" => "Investment",
+            //     "body" => $mailAndSubject->body ?? 'No Body',
+            //     "has_attachment" => false,
+            //     "to" => $member->,
+            //     "cc" => [],
+            //     "bcc" => [],
+            //     "attachment" => "",
+            //     "created_on" => Carbon::now(),
+            //     "attachment_name" => "",
+            // ]
+
+            // $this->sendMail()
 
             $investment = Investment::create($data);
             return $this->genericResponse(true, 'Investment created successfully', 201, $investment, 'createInvestment', []);
