@@ -61,54 +61,38 @@ const getAllMembers = () => {
 }
 
 
+const maturityDate = computed(() => {
+  const duration = formData.value?.project?.duration?.name;
+  const startDate = formData.value?.date ? new Date(formData.value.date) : null;
 
-// const getPaymentMethods = () => {
-//     commonService.genericRequest("get-payment-methods", 'get', true, {}).then((response) => {
-//         if (response.status) {
-//             paymentMethod.value = response.data
-//         } else {
-//             commonService.showError(toast, response.message);
-//         }
-//     })
-// }
+  if (!duration || !startDate) return '';
 
-// const getDepreciationRates = () => {
-//     commonService.genericRequest("get-depreciation-rates", 'get', true, {}).then((response) => {
-//         if (response.status) {
-//             depreciationRate.value = response.data.map(rate=>{return {...rate, name: rate.name + ' (' + rate.rate + '%)' + ' ' + rate.duration.name }})
-//         } else {
-//             commonService.showError(toast, response.message);
-//         }
-//     })
-// }
+  switch (duration) {
+    case 'Daily':
+      startDate.setDate(startDate.getDate() + 1);
+      break;
+    case 'Weekly':
+      startDate.setDate(startDate.getDate() + 7);
+      break;
+    case 'Monthly':
+      startDate.setMonth(startDate.getMonth() + 1);
+      break;
+    case 'Quarterly':
+      startDate.setMonth(startDate.getMonth() + 3);
+      break;
+    case 'Yearly':
+      startDate.setFullYear(startDate.getFullYear() + 1);
+      break;
+    default:
+      return '';
+  }
 
-// Fetch GL Accounts
-// const getFixedAssetAccounts = async () => {
-//     assetAccounts.value = await searchGlAcct({ 'gl_sub_cat_no': '1100000' })
-// };
+   return commonService.formatDate(startDate);
+});
 
-// const getCashBankAccounts = async (account) => {
-//     if (account.value.name == 'Cash') {
-//         cashAccounts.value = await searchGlAcct({ 'gl_type_no': '1301000' })
-//     } else if (account.value.name == 'Bank') {
-//         cashAccounts.value = await searchGlAcct({ 'gl_type_no': '1302000' })
-//     }
-// }
 
-// const getExpenseAccounts = async () => {
-//     expenseAccounts.value = await searchGlAcct({ 'gl_cat_no': '5000000' });
-// }
 
-// const searchGlAcct = (postData) => {
-//     return commonService.genericRequest('gl-search', 'post', true, postData).then(response => {
-//         if (response.status) {
-//             return response.data;
-//         } else {
-//             commonService.showError(toast, response.message);
-//             return null;
-//         }
-//     });
-// }
+
 
 const onSubmit = () => {
     let postData = formData.value
@@ -218,7 +202,7 @@ const dropdownItem = ref(null);
                     </div>
                     <div class="col-12 md:col-6">
                         <p class="text-gray-900 font-bold">Monitory Value</p>
-                        <p class="text-gray-900">{{ formData?.project?.monitory }}</p>
+                        <p class="text-gray-900">{{ commonService.commaSeparator(formData?.project?.monitory) }}</p>
                     </div>
                     <div class="col-12 md:col-6">
                         <p class="text-gray-900 font-bold">Duration</p>
@@ -251,16 +235,16 @@ const dropdownItem = ref(null);
 
                 <div class="grid">
                     <div class="col-12 md:col-6">
-                        <p class="text-gray-900 font-bold">End Date</p>
-                        <p class="text-gray-900">{{ formData?.project?.monitory }}</p>
+                        <p class="text-gray-900 font-bold">Maturity Date</p>
+                        <p class="text-gray-900">{{ maturityDate }}</p>
                     </div>
                     <div class="col-12 md:col-6">
-                        <p class="text-gray-900 font-bold">Total Benefits (Value)</p>
+                        <p class="text-gray-900 font-bold">Return Of Investment (Value)</p>
                         <p class="text-gray-900">{{ formData?.project?.benefit * formData?.quantity }}</p>
                     </div>
                     <div class="col-12 md:col-6">
-                        <p class="text-gray-900 font-bold">Total Benefits (Monitory)</p>
-                        <p class="text-gray-900">{{ formData?.project?.monitory * formData?.quantity }}</p>
+                        <p class="text-gray-900 font-bold">Return Of Investment (Monitory)</p>
+                        <p class="text-gray-900">{{ commonService.commaSeparator(formData?.project?.monitory * formData?.quantity) }}</p>
                     </div>
                 </div>
 

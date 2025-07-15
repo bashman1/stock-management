@@ -21,6 +21,32 @@ const getAllMembers = () => {
     })
 }
 
+const maturityDate = (duration, startDate)=>{
+    if (!duration || !startDate) return '';
+
+    let date = new Date(startDate);
+    switch (duration) {
+        case 'Daily':
+            date.setDate(date.getDate() + 1);
+            break;
+        case 'Weekly':
+            date.setDate(date.getDate() + 7);
+            break;
+        case 'Monthly':
+            date.setMonth(date.getMonth() + 1);
+            break;
+        case 'Quarterly':
+            date.setMonth(date.getMonth() + 3);
+            break;
+        case 'Yearly':
+            date.setFullYear(date.getFullYear() + 1);
+            break;
+        default:
+            return '';
+    }
+    return commonService.formatDate(date);
+}
+
 onMounted(() => {
     getAllMembers();
 });
@@ -45,7 +71,7 @@ onMounted(() => {
                             {{ data.gender }}
                         </template> -->
                     </Column>
-                     <Column field="quantity" header="Quantity" style="min-width: 10rem"></Column>
+                     <Column field="quantity" header="Initial Investment" style="min-width: 10rem"></Column>
                     <Column field="benefit" header="Benefit" style="min-width: 12rem">
                         <!-- <template #body="{ data }">
                             {{ data.benefit +' '+ data.benefit_type }}
@@ -63,19 +89,29 @@ onMounted(() => {
                             {{ data.member_number }}
                         </template>
                     </Column> -->
-                    <Column header="Date" style="min-width: 10rem">
+                        <Column header="Return Of Investment" style="min-width: 10rem">
                         <template #body="{ data }">
-                            {{ data.created_at }}
+                            {{ data.benefit * data.quantity }}
                         </template>
                     </Column>
-                    <!-- <Column headerStyle="min-width:10rem;">
+                           <Column header="Maturity Date" style="min-width: 10rem">
                         <template #body="{ data }">
-                            <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2"
-                                @click="AddRolesPermissions(data)" />
-                            <Button icon="pi pi-trash" class="p-button-rounded p-button-warning mt-2"
-                                @click="confirmDeleteProduct(data)" />
+                            {{ maturityDate(data.duration, data.date) }}
                         </template>
-                    </Column> -->
+                    </Column>
+                    <Column header="Date" style="min-width: 10rem">
+                        <template #body="{ data }">
+                            {{ data.date	 }}
+                        </template>
+                    </Column>
+                    <Column headerStyle="min-width:10rem;">
+                        <template #body="{ data }">
+                            <Button icon="pi pi-plus" class=" p-button-success mr-2"
+                                @click="AddRolesPermissions(data)" />
+                            <!-- <Button icon="pi pi-trash" class=" p-button-warning mt-2"
+                                @click="confirmDeleteProduct(data)" /> -->
+                        </template>
+                    </Column>
 
                 </DataTable>
             </div>

@@ -224,8 +224,8 @@ class OrderController extends Controller
             $items->selling_price =  (double) $value['price'];
             $items->status = $request->status;
             $items->institution_id = $userData->institution_id;
-            $items->branch_id = $userData->institution_id;
-            $items->created_by = $userData->institution_id;
+            $items->branch_id = $userData->branch_id;
+            $items->created_by = $userData->id;
             $items->measurement_unit_id = $value['selected']['unit_id'];
             $items->created_on = now();
 

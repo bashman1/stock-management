@@ -9,7 +9,7 @@ class CommonController extends Controller
 {
 
     public function getDashboardStats(){
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $data = null;
         $collectionGraph=null;

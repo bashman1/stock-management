@@ -38,7 +38,7 @@ class InvestmentController extends Controller
             $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
             $queryString = "SELECT I.id, I.project_id, I.member_id, I.quantity,
-                I.date, I.status, P.name AS project_name, P.benefit, P.benefit_type,
+                I.date, I.status, P.name AS project_name, P.benefit, P.benefit_type,P.monitory,
                 CONCAT(M.first_name,' ',M.last_name, ' ',M.other_name) AS customer, I.created_at, D.name AS duration
                 FROM investments I
                 INNER JOIN projects P  ON P.id = I.project_id
