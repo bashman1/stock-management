@@ -80,7 +80,7 @@ const goToLogin = ()=>{
                     <Button @click="goToLogin" label="Get Started" class="p-button-rounded text-xl border-none mt-5 font-normal text-white line-height-3 px-3"></Button>
                 </div>
                 <div class="flex justify-content-center md:justify-content-end">
-                    <img src="/demo/images/landing/smartcollect.png" alt="Hero Image" class="w-9 md:w-auto" />
+                    <img src="/demo/images/landing/bpos.jpeg" alt="Hero Image" class="w-9 md:w-auto" />
                 </div>
             </div>
 
