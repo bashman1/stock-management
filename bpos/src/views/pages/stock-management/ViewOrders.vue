@@ -101,10 +101,10 @@ const printInvoice = () => {
   orderItems.value.forEach(prod => {
     productRows += `
       <tr>
-        <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>${prod.qty}</td>
-        <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>${prod.name}</td>
-        <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>${commonService.commaSeparator(Number(prod.price))}</td>
-        <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>${commonService.commaSeparator(Number(prod.price) * Number(prod.qty))}</td>
+        <td style='border: 1px solid #000; padding: 8px; color: #666;'>${prod.qty}</td>
+        <td style='border: 1px solid #000; padding: 8px; color: #666;'>${prod.name}</td>
+        <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>${commonService.commaSeparator(Number(prod.price))}</td>
+        <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>${commonService.commaSeparator(Number(prod.price) * Number(prod.qty))}</td>
       </tr>`;
   });
 
@@ -137,20 +137,20 @@ const printInvoice = () => {
 </style>
 </head>
 <body style="background-color: #fff;">
-  <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
+  <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
     <header style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
-      <h1 style='color: #2B5F2C; margin: 0;'>Receipt</h1>
+      <h1 style='color: #000; margin: 0;'>Receipt</h1>
     </header>
 
     <section>
       <div style='display: flex; justify-content: space-between;'>
         <div>
-          <p style="color: #666;"><strong>Company Name:</strong> ${userData.value?.institution_name}</p>
-          <p style="color: #666;"><strong>P.O.Box:</strong> ${userData.value?.p_o_box +' '+userData.value?.address }</p>
+          <p style="color: #000;"><strong>Company Name:</strong> ${userData.value?.institution_name}</p>
+          <p style="color: #000;"><strong>P.O.Box:</strong> ${userData.value?.p_o_box +' '+userData.value?.address }</p>
         </div>
         <div style='text-align: right;'>
-          <p style="color: #666;"><strong>Receipt #:</strong> ${commonService.generateRandomFiveId()}</p>
-          <p style="color: #666;"><strong>Date:</strong> ${commonService.formatDate(commonService.getCurrentTimestamp())}</p>
+          <p style="color: #000;"><strong>Receipt #:</strong> ${commonService.generateRandomFiveId()}</p>
+          <p style="color: #000;"><strong>Date:</strong> ${commonService.formatDate(commonService.getCurrentTimestamp())}</p>
 
         </div>
       </div>
@@ -161,10 +161,10 @@ const printInvoice = () => {
     <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
       <thead>
         <tr>
-          <th style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #002060; color: #fff;'>QTY</th>
-          <th style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #002060; color: #fff;'>DESCRIPTION</th>
-          <th style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #002060; color: #fff;'>UNIT PRICE</th>
-          <th style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #002060; color: #fff;'>AMOUNT</th>
+          <th style='border: 1px solid #000; padding: 8px; text-align: left;  color: #000;'>QTY</th>
+          <th style='border: 1px solid #000; padding: 8px; text-align: left;  color: #000;'>DESCRIPTION</th>
+          <th style='border: 1px solid #000; padding: 8px; text-align: right;  color: #000;'>UNIT PRICE</th>
+          <th style='border: 1px solid #000; padding: 8px; text-align: right;  color: #000;'>AMOUNT</th>
         </tr>
       </thead>
       <tbody>
@@ -172,29 +172,29 @@ const printInvoice = () => {
       </tbody>
       <tfoot>
         <tr>
-          <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>Total</td>
-          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>${orderItems.value[0].total? commonService.commaSeparator( Number(orderItems.value[0].total) ) : 0}</td>
+          <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #000;'>Total</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #000;'>${orderItems.value[0].total? commonService.commaSeparator( Number(orderItems.value[0].total) ) : 0}</td>
         </tr>
         <tr>
-          <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>Amount Paid</td>
-          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>${commonService.commaSeparator( Number(orderItems.value[0].amount_paid))}</td>
+          <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>Amount Paid</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0].amount_paid))}</td>
         </tr>
         <tr>
-          <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>Change</td>
-          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>${commonService.commaSeparator( Number(orderItems.value[0].amount_paid) - Number(orderItems.value[0].total))}</td>
+          <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>Change</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0].amount_paid) - Number(orderItems.value[0].total))}</td>
         </tr>
 
       </tfoot>
     </table>
 
-    <div style='margin-top: 20px; border: 1px solid #ddd; padding: 10px; background: #f2f2f2;'>
-      <p style="color: #666;"><strong>Other Comments:</strong></p>
-      <p style="color: #666;">1. Acknowledged with thanks.</p>
+    <div style='margin-top: 20px; border: 1px solid #000; padding: 10px;'>
+      <p style="color: #000;"><strong>Other Comments:</strong></p>
+      <p style="color: #000;">1. Acknowledged with thanks.</p>
 
     </div>
 
     <div style='text-align: center; margin-top: 30px;'>
-      <p style='font-size: 0.9em; color: #666;'>Thank you for your business!</p>
+      <p style='font-size: 0.9em; color: #000;'>Thank you for your business!</p>
     </div>
   </div>
 </body>
@@ -395,7 +395,7 @@ onMounted(() => {
             </head>
 
             <body style="background-color: #fff;">
-            <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
+            <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
                 <header style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
                 <h1 style='color: #2B5F2C; margin: 0;'>Receipt</h1>
                 <!-- <div style='width: 80px; height: 80px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;'>LOGO</div> -->
@@ -433,38 +433,38 @@ onMounted(() => {
                 <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
                 <thead>
                     <tr>
-                    <th style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #2B5F2C; color: #fff;'>QTY</th>
-                    <th style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #2B5F2C; color: #fff;'>DESCRIPTION</th>
-                    <th style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #2B5F2C; color: #fff;'>UNIT PRICE</th>
-                    <th style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #2B5F2C; color: #fff;'>AMOUNT</th>
+                    <th style='border: 1px solid #000; padding: 8px; text-align: left; background-color: #2B5F2C; color: #fff;'>QTY</th>
+                    <th style='border: 1px solid #000; padding: 8px; text-align: left; background-color: #2B5F2C; color: #fff;'>DESCRIPTION</th>
+                    <th style='border: 1px solid #000; padding: 8px; text-align: right; background-color: #2B5F2C; color: #fff;'>UNIT PRICE</th>
+                    <th style='border: 1px solid #000; padding: 8px; text-align: right; background-color: #2B5F2C; color: #fff;'>AMOUNT</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for='(prod, index) of orderItems' :key='prod.id'>
-                    <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>{{ prod.qty	 }}</td>
-                    <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>{{ prod.name }}</td>
-                    <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(Number(prod.price)) }}</td>
-                    <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(Number(prod.price) * Number(prod.qty)	) }}</td>
+                    <td style='border: 1px solid #000; padding: 8px; color: #666;'>{{ prod.qty	 }}</td>
+                    <td style='border: 1px solid #000; padding: 8px; color: #666;'>{{ prod.name }}</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(Number(prod.price)) }}</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(Number(prod.price) * Number(prod.qty)	) }}</td>
                     </tr>
                 </tbody>
                 <tfoot>
                     <tr>
-                    <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>Total</td>
-                    <td style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>{{ orderItems[0].total	 ? commonService.commaSeparator( Number(orderItems[0].total) ) : 0 }}</td>
+                    <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #666;'>Total</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #666;'>{{ orderItems[0].total	 ? commonService.commaSeparator( Number(orderItems[0].total) ) : 0 }}</td>
                     </tr>
                     <tr>
-                        <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>Amount Paid</td>
-                        <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0].amount_paid	) ) }}</td>
+                        <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>Amount Paid</td>
+                        <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0].amount_paid	) ) }}</td>
                     </tr>
                     <tr>
-                    <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>Change</td>
-                    <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0].amount_paid	) - Number(orderItems[0].total)) }}</td>
+                    <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>Change</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0].amount_paid	) - Number(orderItems[0].total)) }}</td>
                     </tr>
 
                 </tfoot>
                 </table>
 
-                <div style='margin-top: 20px; border: 1px solid #ddd; padding: 10px; background: #f2f2f2;'>
+                <div style='margin-top: 20px; border: 1px solid #000; padding: 10px; background: #f2f2f2;'>
                 <p style="color: #666;"><strong>Other Comments:</strong></p>
                 <p style="color: #666;">1. Acknowledged with thanks.</p>
                 <!-- <p style="color: #666;">2. Please include the invoice number on your check.</p> -->
