@@ -75,9 +75,9 @@ const goToLogin = ()=>{
                 style="background: linear-gradient(0deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2)), radial-gradient(77.36% 256.97% at 77.36% 57.52%, rgb(120, 186, 31) 0%, rgb(204, 204, 204) 100%); clip-path: ellipse(150% 87% at 93% 13%)"
             >
                 <div class="mx-4 md:mx-8 mt-0 md:mt-4">
-                    <h1 class="text-4xl font-bold text-gray-900 line-height-2"><span class="font-light block">Streamline your inventory management, income and expense tracking and more with Smart Collect. </span>Elevate Your Collections with Intelligence and Efficiency</h1>
-                    <p class="font-normal text-2xl line-height-3 md:mt-3 text-gray-700">A convenient solution for your business.</p>
-                    <Button @click="goToLogin" label="Get Started" class="p-button-rounded text-xl border-none mt-5 font-normal text-white line-height-3 px-3"></Button>
+                    <!-- <h1 class="text-4xl font-bold text-gray-900 line-height-2"><span class="font-light block">Streamline your inventory management, income and expense tracking and more with Smart Collect. </span>Elevate Your Collections with Intelligence and Efficiency</h1> -->
+                    <!-- <p class="font-normal text-2xl line-height-3 md:mt-3 text-gray-700">A convenient solution for your business.</p> -->
+                    <!-- <Button @click="goToLogin" label="Get Started" class="p-button-rounded text-xl border-none mt-5 font-normal text-white line-height-3 px-3"></Button> -->
                 </div>
                 <div class="flex justify-content-center md:justify-content-end">
                     <img src="/demo/images/landing/bpos.jpeg" alt="Hero Image" class="w-9 md:w-auto" />

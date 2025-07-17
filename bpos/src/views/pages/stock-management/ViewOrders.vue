@@ -114,6 +114,27 @@ const printInvoice = () => {
   <meta charset='UTF-8'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0'>
   <title>Receipt</title>
+  <style>
+  @media print {
+    body {
+      background: #fff !important;
+      color: #000;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      font-family: Arial, sans-serif;
+    }
+
+    th, td {
+      color: #000 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    * {
+      box-shadow: none !important;
+    }
+  }
+</style>
 </head>
 <body style="background-color: #fff;">
   <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
@@ -130,7 +151,7 @@ const printInvoice = () => {
         <div style='text-align: right;'>
           <p style="color: #666;"><strong>Receipt #:</strong> ${commonService.generateRandomFiveId()}</p>
           <p style="color: #666;"><strong>Date:</strong> ${commonService.formatDate(commonService.getCurrentTimestamp())}</p>
-          
+
         </div>
       </div>
     </section>
@@ -162,7 +183,7 @@ const printInvoice = () => {
           <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>Change</td>
           <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>${commonService.commaSeparator( Number(orderItems.value[0].amount_paid) - Number(orderItems.value[0].total))}</td>
         </tr>
-   
+
       </tfoot>
     </table>
 
@@ -178,9 +199,15 @@ const printInvoice = () => {
   </div>
 </body>
 </html>`);
-  printWindow.document.close();
+//   printWindow.document.close();
+//   printWindow.print();
+//   printWindow.close();
+printWindow.document.close();
+printWindow.onload = function () {
+  printWindow.focus();
   printWindow.print();
   printWindow.close();
+};
 };
 
 /**
@@ -433,7 +460,7 @@ onMounted(() => {
                     <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>Change</td>
                     <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0].amount_paid	) - Number(orderItems[0].total)) }}</td>
                     </tr>
-          
+
                 </tfoot>
                 </table>
 
