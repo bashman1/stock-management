@@ -137,7 +137,7 @@ const printInvoice = () => {
 </style>
 </head>
 <body style="background-color: #fff;">
-  <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
+  <div style='max-width: 750px; font-family: Arial, sans-serif; margin: 20px auto; padding: 30px; border: 1px solid #000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
     <header style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
       <h1 style='color: #000; margin: 0;'>Receipt</h1>
     </header>
