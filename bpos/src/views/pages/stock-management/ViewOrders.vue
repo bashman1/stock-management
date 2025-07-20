@@ -101,7 +101,7 @@ const printInvoice = () => {
   orderItems.value.forEach(prod => {
     productRows += `
       <tr>
-        <td style='border: 1px solid #000; padding: 8px; color: #666;'>${prod.qty}</td>
+        <td style='border: 1px solid #000; padding: 8px; color: #666;'>${prod.qty +' '+ prod.unit}</td>
         <td style='border: 1px solid #000; padding: 8px; color: #666;'>${prod.name}</td>
         <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>${commonService.commaSeparator(Number(prod.price))}</td>
         <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>${commonService.commaSeparator(Number(prod.price) * Number(prod.qty))}</td>
@@ -146,10 +146,10 @@ const printInvoice = () => {
       <div style='display: flex; justify-content: space-between;'>
         <div>
           <p style="color: #000;"><strong>Company Name:</strong> ${userData.value?.institution_name}</p>
-          <p style="color: #000;"><strong>P.O.Box:</strong> ${userData.value?.p_o_box +' '+userData.value?.address }</p>
+          <p style="color: #000;"><strong>P.O.Box:</strong> ${ orderItems.value[0]?.p_o_box +' '+orderItems.value[0]?.institution_address }</p>
         </div>
         <div style='text-align: right;'>
-          <p style="color: #000;"><strong>Receipt #:</strong> ${commonService.generateRandomFiveId()}</p>
+          <p style="color: #000;"><strong>Receipt #:</strong> ${ orderItems.value[0]?.receipt_no}</p>
           <p style="color: #000;"><strong>Date:</strong> ${commonService.formatDate(commonService.getCurrentTimestamp())}</p>
 
         </div>
@@ -194,7 +194,7 @@ const printInvoice = () => {
     </div>
 
     <div style='text-align: center; margin-top: 30px;'>
-      <p style='font-size: 0.9em; color: #000;'>Thank you for your business!</p>
+      <p style='font-size: 0.9em; color: #000;'>We appreciate your support.</p>
     </div>
   </div>
 </body>
@@ -405,10 +405,10 @@ onMounted(() => {
                 <div style='display: flex; justify-content: space-between;'>
                     <div>
                     <p style="color: #666;"><strong>Company Name:</strong> {{ userData?.institution_name }}</p>
-                    <p style="color: #666;"><strong>P.O.Box:</strong> {{ userData?.p_o_box +' '+userData?.address }}</p>
+                    <p style="color: #666;"><strong>P.O.Box:</strong> {{ orderItems[0]?.p_o_box +' '+orderItems[0]?.institution_address }}</p>
                     </div>
                     <div style='text-align: right;'>
-                    <p style="color: #666;"><strong>Receipt #:</strong> {{ commonService.generateRandomFiveId() }}</p>
+                    <p style="color: #666;"><strong>Receipt #:</strong> {{ orderItems[0]?.receipt_no}}</p>
                     <p style="color: #666;"><strong>Date:</strong> {{ commonService.formatDate(commonService.getCurrentTimestamp()) }}</p>
                     <!-- <p style="color: #666;"><strong>Due Date:</strong> 26/02/2019</p> -->
                     </div>
@@ -441,7 +441,7 @@ onMounted(() => {
                 </thead>
                 <tbody>
                     <tr v-for='(prod, index) of orderItems' :key='prod.id'>
-                    <td style='border: 1px solid #000; padding: 8px; color: #666;'>{{ prod.qty	 }}</td>
+                    <td style='border: 1px solid #000; padding: 8px; color: #666;'>{{ prod.qty+' '+ prod.unit}}</td>
                     <td style='border: 1px solid #000; padding: 8px; color: #666;'>{{ prod.name }}</td>
                     <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(Number(prod.price)) }}</td>
                     <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(Number(prod.price) * Number(prod.qty)	) }}</td>
@@ -471,7 +471,7 @@ onMounted(() => {
                 </div>
 
                 <div style='text-align: center; margin-top: 30px;'>
-                <p style='font-size: 0.9em; color: #666;'>Thank you for your business!</p>
+                <p style='font-size: 0.9em; color: #666;'>We appreciate your support</p>
                 <!-- <p style='font-size: 0.9em; color: #666;'>Payment is due within 15 days.</p> -->
                 <!-- <p style='font-size: 0.9em; color: #666;'>Please make checks payable to: {{ commonService.getStorage()?.institution_name }}.</p> -->
                 </div>

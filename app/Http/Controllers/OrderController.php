@@ -280,12 +280,14 @@ class OrderController extends Controller
         P.product_no, COALESCE(O.selling_price ,S.selling_price)  AS price, I.name AS institution_name, B.name AS branch_name, Q.ref_no,
         Q.receipt_no, Q.tran_id, Q.item_count, Q.total, Q.discount, Q.amount_paid, Q.tran_date, Q.payment_status,
         CONCAT(U.first_name,' ',U.last_name,' ',U.other_name) AS user_name, B.address AS branch_address,
-        I.address AS institution_address FROM order_items O
+		C.name AS customer_name, X.name AS unit, I.p_o_box,I.address AS institution_address FROM order_items O
         INNER JOIN products P ON P.id = O.product_id
         INNER JOIN stocks S  ON S.product_id = P.id
         INNER JOIN institutions I ON I.id =O.institution_id
         LEFT JOIN branches B ON B.id = O.branch_id
         INNER JOIN orders Q ON Q.id = O.order_id
+		LEFT JOIN customers C ON C.id = Q.customer_id
+        LEFT JOIN measurement_units X ON X.id = O.measurement_unit_id
         INNER JOIN users U ON Q.user_id = U.id WHERE  O.order_id = $orderId";
         $orderDetails = DB::select($queryString);
         return $this->genericResponse(true, "Order details fetched successfully", 200, $orderDetails, "getOderDetails", $orderId);
