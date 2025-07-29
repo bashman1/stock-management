@@ -235,4 +235,5 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get("get-projects", [ProjectController::class, "getProjects"]);
     Route::post("create-investment", [InvestmentController::class, "createInvestment"]);
     Route::get("get-investments", [InvestmentController::class, "getInvestments"]);
+    Route::post("pay-receivable", [CustomerReceivableController::class, "makePayment"]);
 });

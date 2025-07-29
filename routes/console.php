@@ -27,6 +27,6 @@ Artisan::command('inspire', function () {
 
 
 /**
- * automatic background process
+ * automatic background process   php artisan schedule:run
  */
 Schedule::call(new ScheduledTaskService(new MailSenderService))->everyMinute();

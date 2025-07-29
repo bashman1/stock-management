@@ -29,6 +29,7 @@ const customerAddress = ref(null);
 const customerContact = ref(null);
 const customerDesc = ref(null);
 const customerData = ref([]);
+const dueDate = ref(new Date() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
 
 const showInvoiceModal = ref(false);
 const userData = ref({});
@@ -571,7 +572,7 @@ const printInvoice = () => {
         <div style='text-align: right;'>
           <p style="color: #666;"><strong>Invoice #:</strong> ${commonService.generateRandomFiveId()}</p>
           <p style="color: #666;"><strong>Date:</strong> ${commonService.formatDate(commonService.getCurrentTimestamp())}</p>
-          <p style="color: #666;"><strong>Due Date:</strong> 26/02/2019</p>
+          <p style="color: #666;"><strong>Due Date:</strong> ${commonService.formatDate(dueDate.value)}</p>
         </div>
       </div>
     </section>
@@ -924,7 +925,7 @@ onMounted(() => {
                     <div style='text-align: right;'>
                     <p style="color: #666;"><strong>Invoice #:</strong> {{ commonService.generateRandomFiveId() }}</p>
                     <p style="color: #666;"><strong>Date:</strong> {{ commonService.formatDate(commonService.getCurrentTimestamp()) }}</p>
-                    <p style="color: #666;"><strong>Due Date:</strong> 26/02/2019</p>
+                    <p style="color: #666;"><strong>Due Date:</strong> {{commonService.formatDate(dueDate)}}</p>
                     </div>
                 </div>
                 </section>

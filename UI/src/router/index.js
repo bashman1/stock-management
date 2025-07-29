@@ -703,10 +703,18 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
-                        {
+                {
                     path: '/view-invest',
                     name: 'ViewInvestments',
                     component: () => import('@/views/pages/investment/ViewInvestments.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/create-service',
+                    name: 'CreateService',
+                    component: () => import('@/views/pages/services/CreateService.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication
                     },

@@ -38,6 +38,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Institution;
 // use Illuminate\Support\Facades\Log;
 // use
 
@@ -881,7 +882,7 @@ class Controller extends BaseController
 
     public function newUser($request)
     {
-        try{
+        try {
             DB::beginTransaction();
             // $user = $this->createUser($request);
 
@@ -890,48 +891,85 @@ class Controller extends BaseController
             }
 
 
-        $user = null;
-        if ($request && isset($request->id) && !empty($request->id)) {
-            $user = User::find($request->id);
-            $user->updated_at = Carbon::now();
-        } else {
-            $user = new User();
-            $user->created_by = Auth::user()->id ?? 1;
-            $user->created_on = now();
-            $user->password = bcrypt($request->password);
-        }
+            $user = null;
+            if ($request && isset($request->id) && !empty($request->id)) {
+                $user = User::find($request->id);
+                $user->updated_at = Carbon::now();
+            } else {
+                $user = new User();
+                $user->created_by = Auth::user()->id ?? 1;
+                $user->created_on = now();
+                $user->password = bcrypt($request->password);
+            }
 
-        $user->first_name = $request->first_name;
-        $user->last_name = $request->last_name;
-        $user->other_name = $request->other_name;
-        $user->email = $request->email;
-        $user->phone_number = $request->phone_number;
-        $user->gender = $request->gender;
-        $user->date_of_birth = $request->date_of_birth;
-        $user->address = $request->address;
-        $user->city_id = $request->city_id;
-        $user->status = $request->status;
-        $user->street = $request->street;
-        $user->p_o_box = $request->p_o_box;
-        $user->description = $request->description;
-        $user->role_id =  $request->role_id;
-        $user->user_type = $request->user_type;
-        $user->reset_required = true;
-        $user->user_category =  $request->user_category;
-        $user->institution_id = $request->institution_id;
-        $user->branch_id =  $request->branch_id;
-        $user->original_branch_id = $request->branch_id;
+            $user->first_name = $request->first_name;
+            $user->last_name = $request->last_name;
+            $user->other_name = $request->other_name;
+            $user->email = $request->email;
+            $user->phone_number = $request->phone_number;
+            $user->gender = $request->gender;
+            $user->date_of_birth = $request->date_of_birth;
+            $user->address = $request->address;
+            $user->city_id = $request->city_id;
+            $user->status = $request->status;
+            $user->street = $request->street;
+            $user->p_o_box = $request->p_o_box;
+            $user->description = $request->description;
+            $user->role_id =  $request->role_id;
+            $user->user_type = $request->user_type;
+            $user->reset_required = true;
+            $user->user_category =  $request->user_category;
+            $user->institution_id = $request->institution_id;
+            $user->branch_id =  $request->branch_id;
+            $user->original_branch_id = $request->branch_id;
 
-        $user->save();
-        // return $user;
+            if(isset($user->institution_id)){
+                $institution = Institution::find($request->institution_id);
+                $this->sendEmailToUser($user->email, $request->password, $institution->name, $user->first_name . ' ' . $user->last_name.' '. $user->other_name);
+            }
+
+
+
+            $user->save();
+            // return $user;
             DB::commit();
             return $user;
-        }catch (\Throwable $th){
+        } catch (\Throwable $th) {
             DB::rollBack();
             throw $th;
         }
+    }
 
 
+    public function sendEmailToUser($email,  $temporary_password, $institution_name, $user_name): void
+    {
+        $body = "
+        <p>Dear $user_name,</p>
+
+        <p>Welcome to $institution_name! Your account has been successfully created.</p>
+
+        <p>Here are your login details:</p>
+
+        <p>Username: $email</p>
+        <p>Temporary Password: $temporary_password</p>
+
+        <p>For security reasons, we recommend that you log in and change your password immediately after your first login.</p>
+
+        <p>You can access your account by visiting:</p>
+        👉<p> [Login URL] </p>";
+        $sendMail = [
+            "subject" => 'User account creation',
+            "body" => $body,
+            "has_attachment" => false,
+            "to" => $email,
+            "cc" => [],
+            "bcc" => [],
+            "attachment" => "",
+            "created_on" => Carbon::now(),
+            "attachment_name" => "",
+        ];
+        // Send the email
+        $this->sendMail($sendMail);
     }
 
 
@@ -1172,7 +1210,8 @@ class Controller extends BaseController
 
 
 
-    public function getLicenseDetails($institutionId){
+    public function getLicenseDetails($institutionId)
+    {
         try {
             $queryString = "SELECT L.id, L.license_package_id, L.license_package_price_id,
             L.start_date, L.end_date, L.quantity, L.paid, L.institution_id,
@@ -1206,6 +1245,5 @@ class Controller extends BaseController
         } catch (\Throwable $th) {
             throw new \Exception("An error occurred while validating the institution ID.", 500, $th);
         }
-
     }
 }

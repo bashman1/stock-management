@@ -10,7 +10,7 @@ class CustomerReceivableController extends Controller
 {
     public function getReceivables(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $queryString = "SELECT C.id, C.receipt_no, C.tran_id, C.customer_id, C.amount, C.amount_paid, C.status, C.institution_id, C.branch_id,
         C.created_by, C.created_on, C.updated_by, C.updated_on, C.created_at, C.updated_at, A.name AS customer_name,
@@ -29,5 +29,30 @@ class CustomerReceivableController extends Controller
         $queryString.=" ORDER BY C.id DESC";
         $receivables = DB::select($queryString);
         return $this->genericResponse(true, "Receivables fetched successfully", 200, $receivables, "getReceivables", []);
+    }
+
+
+    public function makePayment(Request $request){
+        try {
+            $receivable = CustomerReceivable::find($request->receivable_id);
+            if (!$receivable) {
+                return $this->genericResponse(false, "Receivable not found", 404, null, "makePayment", $request);
+            }
+
+            $receivable->amount_paid += $request->amount_paid;
+
+            if ($receivable->amount_paid >= $receivable->amount) {
+                $receivable->status = 'Paid';
+            } else {
+                $receivable->status = 'Partially Paid';
+            }
+            $receivable->updated_by = $this->getUserLogin()->id;
+            $receivable->updated_on = now();
+            $receivable->save();
+            return $this->genericResponse(true, "Payment made successfully", 200, $receivable, "makePayment", $request);
+
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, "An error occurred while making payment: " . $th->getMessage(), 500, null, "makePayment", $request);
+        }
     }
 }

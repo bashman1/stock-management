@@ -10,7 +10,7 @@ class PayableController extends Controller
 {
     public function getPayable(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $queryString = "SELECT P.id, P.ref_no, P.tran_id, P.supplier_id, P.product_id, P.manufacturer_id, P.amount, P.amount_paid,P.status,
             P.institution_id, P.branch_id, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.updated_at,
