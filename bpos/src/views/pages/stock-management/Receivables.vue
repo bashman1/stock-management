@@ -130,7 +130,7 @@ onMounted(() => {
 
 
         <!-- Start of Modals-->
-        <Dialog header="Create new customer" v-model:visible="showPaymentModal" :style="{ width: '75vw' }"
+        <Dialog header="Make payment" v-model:visible="showPaymentModal" :style="{ width: '75vw' }"
             :modal="true" class="p-fluid">
 
             <div class="grid p-fluid">
