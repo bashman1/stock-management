@@ -1,9 +1,9 @@
 import { actions, state } from '../../store';
 
 export default class CommonService {
-     baseUrl = "http://localhost:8000/api/";
+    //  baseUrl = "http://localhost:8000/api/";
     // baseUrl = "https://prod.smartcollect.co.ug/api/";   //prod environment
-    // baseUrl = "https://biiteek.smartcollect.co.ug/api/";   //prod biiteek environment
+    baseUrl = "https://biiteek.smartcollect.co.ug/api/";   //prod biiteek environment
     // baseUrl = "https://test.smartcollect.co.ug/api/";   //test environment
 //    baseUrl = "../api/";
 

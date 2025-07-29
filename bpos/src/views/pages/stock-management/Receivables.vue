@@ -45,8 +45,21 @@ const onSubmit = ()=>{
         payment_desc: formData.value?.paymentDesc,
         receivable_id: selectedReceivable.value?.id
     }
-
-    alert(JSON.stringify(postData));
+    togglePaymentModal(false);
+        commonService.genericRequest('pay-receivable', 'post', true, postData).then((response) => {
+        if (response.status) {
+            // receivable.value = response.data;
+            getReceivables();
+             commonService.showSuccess(toast, response.message);
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+    formData.value = {
+        amountPaid: null,
+        paymentDate: null,
+        paymentDesc: null
+    }
 }
 
 onMounted(() => {

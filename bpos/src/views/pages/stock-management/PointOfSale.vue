@@ -29,7 +29,9 @@ const customerAddress = ref(null);
 const customerContact = ref(null);
 const customerDesc = ref(null);
 const customerData = ref([]);
-const dueDate = ref(new Date() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+// const dueDate = ref(new Date()); // 30 days from now
+const dueDate = ref(new Date());
+dueDate.value.setMonth(dueDate.value.getMonth() + 1);
 
 const showInvoiceModal = ref(false);
 const userData = ref({});

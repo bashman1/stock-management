@@ -43,9 +43,10 @@ class CustomerReceivableController extends Controller
 
             if ($receivable->amount_paid >= $receivable->amount) {
                 $receivable->status = 'Paid';
-            } else {
-                $receivable->status = 'Partially Paid';
             }
+            // else {
+            //     $receivable->status = 'Partially Paid';
+            // }
             $receivable->updated_by = $this->getUserLogin()->id;
             $receivable->updated_on = now();
             $receivable->save();
