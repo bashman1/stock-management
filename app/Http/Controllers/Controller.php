@@ -39,6 +39,7 @@ use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Institution;
+use Illuminate\Support\Facades\Storage;
 // use Illuminate\Support\Facades\Log;
 // use
 
@@ -890,6 +891,16 @@ class Controller extends BaseController
                 throw new \Exception('Email already exists', 409);
             }
 
+            $pic = null;
+            $sign = null;
+            if (isset($request->pic)){
+                $pic = $this->saveBase64Image($request->pic, 'users');
+            }
+            if (isset($request->sign)){
+                $sign = $this->saveBase64Image($request->sign, 'signatures');
+            }
+
+
 
             $user = null;
             if ($request && isset($request->id) && !empty($request->id)) {
@@ -905,6 +916,8 @@ class Controller extends BaseController
             $user->first_name = $request->first_name;
             $user->last_name = $request->last_name;
             $user->other_name = $request->other_name;
+            $user->image = $pic;
+            $user->signature = $sign;
             $user->email = $request->email;
             $user->phone_number = $request->phone_number;
             $user->gender = $request->gender;
@@ -923,9 +936,9 @@ class Controller extends BaseController
             $user->branch_id =  $request->branch_id;
             $user->original_branch_id = $request->branch_id;
 
-            if(isset($user->institution_id)){
+            if (isset($user->institution_id)) {
                 $institution = Institution::find($request->institution_id);
-                $this->sendEmailToUser($user->email, $request->password, $institution->name, $user->first_name . ' ' . $user->last_name.' '. $user->other_name);
+                $this->sendEmailToUser($user->email, $request->password, $institution->name, $user->first_name . ' ' . $user->last_name . ' ' . $user->other_name);
             }
 
 
@@ -1245,5 +1258,35 @@ class Controller extends BaseController
         } catch (\Throwable $th) {
             throw new \Exception("An error occurred while validating the institution ID.", 500, $th);
         }
+    }
+
+
+    function saveBase64Image(string $base64Image, string $directory = 'images'): ?string{
+        // Check if base64 string has the image data and mime type
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
+            $image = substr($base64Image, strpos($base64Image, ',') + 1);
+            $extension = strtolower($type[1]); // jpg, png, gif
+
+            if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+                throw new \Exception('Invalid image type');
+            }
+
+            $image = base64_decode($image);
+
+            if ($image === false) {
+                throw new \Exception('Base64 decode failed');
+            }
+
+            // $fileName = Str::uuid() . '.' . $extension;
+            $fileName = now()->format('Y_m_d_His') . '_' . Str::uuid() . '.' . $extension;
+            $filePath = $directory . '/' . $fileName;
+
+            Storage::disk('public')->put($filePath, $image);
+
+            // return $filePath; // saved under storage/app/public/$directory
+            return asset(Storage::url($filePath));
+        }
+
+        return null;
     }
 }

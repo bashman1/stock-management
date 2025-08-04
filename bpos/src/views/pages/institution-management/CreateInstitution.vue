@@ -43,6 +43,7 @@ const prices = ref([]);
 const selectedPrice = ref(null);
 const licenseQuantity = ref(1);
 const totalLicense = ref(0);
+const src = ref(null);
 
 const taxOptions = ref([
     { id: 1, name: 'Enable tax', value: true },
@@ -94,6 +95,7 @@ const onSubmit = () => {
         price: selectedPrice?.value?.id,
         license_quantity: licenseQuantity?.value,
         total_license: Number(totalLicense?.value),
+        image: src.value ? src.value : null
     }
     commonService.genericRequest('create-institution', 'post', true, postData).then((response) => {
         if (response.status) {
@@ -219,6 +221,18 @@ const getInstitutionDetails = (id) => {
 }
 
 
+const onFileSelect=(event) =>{
+    const file = event.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+        src.value = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+}
+
+
 onMounted(() => {
     getInstitutionTypes();
     getCities();
@@ -339,10 +353,16 @@ onMounted(() => {
                     </span>
                 </div>
 
-                <div class="field col-12 md:col-4">
+                <!-- <div class="field col-12 md:col-4">
                     <h5>Attachment</h5>
                     <FileUpload mode="basic" name="demo[]" accept="image/*" :maxFileSize="1000000" @uploader="onUpload"
                         customUpload />
+                </div> -->
+                <div class="field col-12 md:col-12">
+                        <span class="p-float-label">
+                            <FileUpload mode="basic" :multiple="false" @select="onFileSelect" accept="image/*" customUpload auto severity="secondary" class="p-button-outlined" />
+                                <img  :src="src" alt="Image" class="shadow-md rounded-xl w-full sm:w-64" style="width: 300px !important;" />
+                        </span>
                 </div>
 
                 <div class="field col-12 md:col-12">

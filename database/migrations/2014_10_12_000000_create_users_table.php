@@ -32,6 +32,8 @@ return new class extends Migration
             $table->string("street")->nullable();
             $table->string("p_o_box")->nullable();
             $table->text('description')->nullable();
+            $table->string('image')->nullable();
+            $table->string('signature')->nullable();
             $table->unsignedBigInteger('role_id');
             $table->unsignedBigInteger('institution_id')->nullable();
             $table->unsignedBigInteger('branch_id')->nullable();

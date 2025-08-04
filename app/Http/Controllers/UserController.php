@@ -88,6 +88,8 @@ class UserController extends Controller
 
                 $userData->institution_name=$institution->name;
                 $userData->branch_name=$branch->name;
+                $userData->institution_logo=$institution->image;
+
 
                 $license = $this->getLicenseDetails($institution->id);
                 if (isset($license[0]->id)){

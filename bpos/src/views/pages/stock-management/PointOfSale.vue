@@ -915,7 +915,9 @@ onMounted(() => {
             <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
                 <header style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
                 <h1 style='color: #2B5F2C; margin: 0;'>INVOICE</h1>
-                <!-- <div style='width: 80px; height: 80px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;'>LOGO</div> -->
+                <div style='width: 50px; height: 50px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;'>
+                    <img :src="userData?.institution_logo" style="position: relative; width:50px;"> 
+                </div>
                 </header>
 
                 <section>

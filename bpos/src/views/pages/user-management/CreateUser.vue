@@ -35,6 +35,8 @@ const category = ref(null);
 const formError = ref({});
 const userDetails = ref(null);
 const isEdit = ref(false);
+const pic = ref(null);
+const sign = ref(null);
 
 const genderOptions = ref([
     { label: 'Male', value: 'Male' },
@@ -92,6 +94,8 @@ const onSubmit = () => {
         institution_id: institution.value != null ? institution?.value.id : null,
         role_id: role.value?.id,
         branch_id: branch.value != null ? branch.value.id : null,
+        pic: pic.value != null ? pic.value : null,
+        sign: sign.value != null ? sign.value : null,
 
     }
     commonService.genericRequest('create-user', 'post', true, postData).then((response) => {
@@ -241,6 +245,27 @@ const setEditData = async () => {
     description.value = await userDetails.value.description;
 }
 
+const onFileSelectProfile = (event)=>{
+    const file = event.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+        pic.value = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+}
+
+const onFileSelectSignature = (event)=>{
+    const file = event.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+        sign.value = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+}
 
 
 onMounted(() => {
@@ -382,11 +407,22 @@ onMounted(() => {
                         <label for="instDescription">More Info</label>
                     </span>
                 </div>
-                <!-- <div class="field col-12 md:col-2">
-                    <h5>Attachment</h5>
-                    <FileUpload mode="basic" name="demo[]" accept="image/*" :maxFileSize="1000000" @uploader="onUpload" customUpload />
-
-                </div> -->
+                <div class="field col-12 md:col-2">
+                    <h5>Profile Picture</h5>
+                    <!-- <FileUpload mode="basic" name="demo[]" accept="image/*" :maxFileSize="1000000" @uploader="onUpload" customUpload /> -->
+                        <span class="p-float-label">
+                            <FileUpload mode="basic" :multiple="false" @select="onFileSelectProfile" accept="image/*" customUpload auto severity="secondary" class="p-button-outlined" />
+                                <img  :src="pic" alt="Image" class="shadow-md rounded-xl w-full sm:w-64" style="width: 300px !important;" />
+                        </span>
+                </div>
+                <div class="field col-12 md:col-2">
+                    <h5>Signature</h5>
+                        <span class="p-float-label">
+                            <FileUpload mode="basic" :multiple="false" @select="onFileSelectSignature" accept="image/*" customUpload auto severity="secondary" class="p-button-outlined" />
+                                <img  :src="sign" alt="Image" class="shadow-md rounded-xl w-full sm:w-64" style="width: 300px !important;" />
+                        </span>
+                    <!-- <FileUpload mode="basic" name="demo[]" accept="image/*" :maxFileSize="1000000" @uploader="onUpload" customUpload /> -->
+                </div>
 
             </div>
         </div>

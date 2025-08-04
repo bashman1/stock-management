@@ -45,6 +45,11 @@ class InstitutionController extends Controller
             $instConfig->current = $instConfig->current + $instConfig->step;
             $instConfig->save();
 
+            $image = null;
+            if(isset($request->image)){
+                $image=$this->saveBase64Image($request->image, 'institutions');
+            }
+
             $institution = null;
             if (isset($request->id)) {
                 $institution = Institution::find($request->id);
@@ -57,6 +62,7 @@ class InstitutionController extends Controller
                 $institution->created_on = now();
             }
             $institution->name = $request->name;
+            $institution->image = $image;
             $institution->institution_type_id = $request->type;
             $institution->start_date = $request->start_date;
             $institution->address = $request->address;
