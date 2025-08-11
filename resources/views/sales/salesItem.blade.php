@@ -121,3 +121,88 @@
 </body>
 
 </html>
+
+
+
+{{-- Hello there the generic way of working with exports so that you just send data and headers --}}
+
+{{-- <!doctype html>
+<html lang="en">
+
+<head>
+    <style>
+        @page {
+            margin: 100px 25px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            position: fixed;
+            top: -80px;
+            left: 0px;
+            right: 0px;
+            height: 50px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            line-height: 35px;
+        }
+
+        footer {
+            position: fixed;
+            bottom: -40px;
+            left: 0px;
+            right: 0px;
+            height: 30px;
+            text-align: center;
+            font-size: 12px;
+            line-height: 20px;
+        }
+
+        .content {
+            text-align: left;
+            font-size: 14px;
+        }
+    </style>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>{{ $columns[0]['title'] ?? 'Report' }}</title>
+</head>
+
+<body>
+
+    <header>
+        {{ $columns[0]['title'] ?? 'Report' }} - {{ now()->format('Y-m-d') }}
+    </header>
+
+    <footer>
+        Page: {PAGE_NUM}/{PAGE_COUNT}
+    </footer>
+
+    <div class="content mt-5 pt-5">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    @foreach($columns as $col)
+                        <th>{{ $col['header'] }}</th>
+                    @endforeach
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($data as $row)
+                    <tr>
+                        @foreach($columns as $col)
+                            <td>{{ $row[$col['field']] ?? '' }}</td>
+                        @endforeach
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html> --}}

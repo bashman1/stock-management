@@ -201,7 +201,7 @@ onMounted(() => {
     <div className="card">
         <h5>View Products</h5>
         <!--        <p>Use this page to start from scratch and place your custom content.</p>-->
-        <DataTable :value="memberBatch" :paginator="true" class="p-datatable-gridlines" :rows="10" dataKey="id"
+        <DataTable :value="memberBatch?.data" :paginator="true" class="p-datatable-gridlines" :rows="25" dataKey="id"
             :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
             <Column field="name" header="Product" style="min-width: 10rem">
                 <template #body="{ data }">

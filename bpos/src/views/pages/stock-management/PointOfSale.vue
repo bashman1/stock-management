@@ -35,7 +35,9 @@ dueDate.value.setMonth(dueDate.value.getMonth() + 1);
 
 const showInvoiceModal = ref(false);
 const userData = ref({});
-
+const op = ref();
+const searchKeyWord = ref('');
+const metaKey = ref(true);
 
 
 const VAT = ref([
@@ -45,7 +47,14 @@ const VAT = ref([
 
 // **************************************************************************
 const getProducts = () => {
-    commonService.genericRequest('get-products', 'get', true, {}).then((response) => {
+    let postData = {
+        page: 1,
+        search: searchKeyWord.value,
+        rowPerPage: 5,
+        startDate: null,
+        endDate: null,
+    }
+    commonService.genericRequest('get-products', 'POST', true, postData).then((response) => {
         if (response.status) {
             productList.value = response.data;
         } else {
@@ -56,8 +65,7 @@ const getProducts = () => {
 
 const OnSelectItem = (data) => {
 
-    // console.log(JSON.stringify(data));
-    let actualProduct = productList.value.find(item => item.id === data.id);
+    let actualProduct = productList.value?.data.find(item => item.id === data.id);
     if (!actualProduct) {
         commonService.showError(toast, "Product not found");
         return;
@@ -66,7 +74,6 @@ const OnSelectItem = (data) => {
         commonService.showError(toast, "Product out of stock");
         return;
     }
-    console.log(actualProduct)
 
     let obj = {
         id: data.id, price: Number(data.selling_price), quantity: 1, discount: 0, name: data.name, tax_config: data.tax_config,
@@ -104,7 +111,7 @@ const OnSelectRemoveItem = (data) => {
 }
 
 const updateQty = (event, data) => {
-    let actualProduct = productList.value.find(item => item.id === data.id);
+    let actualProduct = productList.value?.data.find(item => item.id === data.id);
     let newQty = Number(event.target.value);
     if (!actualProduct) {
         commonService.showError(toast, "Product not found");
@@ -137,7 +144,7 @@ const updatePrice = (event, data) => {
 
 const increaseReduce = (data, action) => {
 
-    let actualProduct = productList.value.find(item => item.id === data.id);
+    let actualProduct = productList.value?.data.find(item => item.id === data.id);
     if (!actualProduct) {
         commonService.showError(toast, "Product not found");
         return;
@@ -431,10 +438,6 @@ const isPositiveInteger = (val) => {
 
 const onCellEditComplete = (event) => {
     let { data, newValue, field } = event;
-    // const rowIndex = event.rowIndex;
-    // alert(rowIndex)
-    // console.log(event)
-    // alert(JSON.stringify(event))
 
     computeNewSum()
 
@@ -468,8 +471,6 @@ const onCellEditComplete = (event) => {
 const onDropdownChange = (uuid, name) => {
     let index = products.value.findIndex(element => element.uuid === uuid);
     let value = products.value[index];
-    console.log('---------------------------------------------------------')
-    console.log(name)
     value.name = name.name;
     value.id = name.id;
     value.description = name.description;
@@ -516,14 +517,33 @@ const computeNewSum = () => {
 
 
 const onSubmitNewOrder = () => {
-    console.log('****************************************************************')
 
     let sortedProducts = products.value.find(obj => obj.id != null);
-    console.log(JSON.stringify(sortedProducts));
+}
+
+const togglePanel = (event) => {
+    op.value.toggle(event);
 }
 
 
 
+const onSearchInput =(event)=> {
+    // alert( event.target.value) // event object
+    // // or directly from v-model
+    // console.log('From v-model:', searchKeyWord.value)
+    const value = event.target.value;
+    if (value.length > 3 || value.length === 0) {
+        getProducts();
+    }
+}
+
+
+const onRowSelect = (event) => {
+    // alert(`Selected: ${JSON.Stringify(event.data)}`)
+    OnSelectItem(event.data);
+    // alert(`Selected: ${JSON.stringify(event.data)}`)
+    // console.log('Full row data:', event.data)
+}
 
 
 /**
@@ -657,15 +677,13 @@ onMounted(() => {
     <div class="grid p-fluid">
 
 
+
         <div class="field col-12 md:col-3">
-            <!--                        <div class="p-inputgroup">-->
             <span class="p-float-label">
                 <Dropdown id="paymentMethod" :options="paymentOptions" filter v-model="payBy" optionLabel="name">
                 </Dropdown>
                 <label for="paymentMethod">Payment methods</label>
             </span>
-            <!--                            <Button @click="toggleGaugeModal(true)" icon="pi pi-plus" />-->
-            <!--                        </div>-->
         </div>
 
         <div class="field col-12 md:col-3">
@@ -715,9 +733,10 @@ onMounted(() => {
                     filterDisplay="menu" responsiveLayout="scroll">
                     <Column field="name" header="Name" style="max-width: 10rem;">
                         <template #body="{ data }">
-                            <Dropdown id="subCategory" change="" :options="productList" filter v-if="!data.id"
+                            <!-- <Dropdown id="subCategory" :options="productList?.data" filter v-if="!data.id"
                                 optionLabel="name" @change="OnSelectItem($event.value)">
-                            </Dropdown>
+                            </Dropdown> -->
+
                             {{ data.name }}
                         </template>
                     </Column>
@@ -775,6 +794,67 @@ onMounted(() => {
                         </template>
                     </Column>
                 </DataTable>
+
+                        <div>
+                            <span class="p-input-icon-right">
+                                <InputText   @input="onSearchInput"   v-model="searchKeyWord" type="text" @click="togglePanel" placeholder="Search" autofocus fluid />
+                                <i class="pi pi-search" />
+                            </span>
+                        </div>
+
+                        <OverlayPanel ref="op" showCloseIcon="true" dismissable="false" autoZIndex="false">
+                            <div class="flex flex-column gap-3 max-h-10 overflow-y-auto">
+                                <DataTable
+                                :value="productList?.data"
+                                stripedRows
+                                size="small"
+                                dataKey="id"
+                                :rowHover="true"
+                                filterDisplay="menu"
+                                responsiveLayout="scroll"
+                                selectionMode="single"
+                                :metaKeySelection="metaKey"
+                                @row-select="onRowSelect"
+                                    >
+                                    <Column header="#" style="width: 3rem; text-align: center;">
+                                        <template #body="{ index }">
+                                            {{  index + 1 }}
+                                        </template>
+                                    </Column>
+                                    <Column field="name" header="Product" style="min-width: 10rem">
+                                        <template #body="{ data }">
+                                            {{ data.name }}
+                                        </template>
+                                    </Column>
+                                    <Column field="name" header="Category" style="min-width: 10rem">
+                                        <template #body="{ data }">
+                                            {{ data.category_name }}
+                                        </template>
+                                    </Column>
+                                    <Column field="name" header="Selling Price" style="min-width: 10rem">
+                                        <template #body="{ data }">
+                                            {{ commonService.commaSeparator(data.selling_price) }}
+                                        </template>
+                                    </Column>
+                                    <Column field="name" header="Quantity" style="min-width: 10rem">
+                                        <template #body="{ data }">
+                                            {{ data.quantity }}
+                                        </template>
+                                    </Column>
+                                    <Column field="name" header="Unit" style="min-width: 10rem">
+                                        <template #body="{ data }">
+                                            {{ data.unit }}
+                                        </template>
+                                    </Column>
+                                    <Column header="Date" style="min-width: 10rem">
+                                        <template #body="{ data }">
+                                            {{ data.created_at }}
+                                        </template>
+                                    </Column>
+                                </DataTable>
+                            </div>
+                        </OverlayPanel>
+
                 <!-- </div> -->
             </div>
         </div>
@@ -916,7 +996,7 @@ onMounted(() => {
                 <header style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
                 <h1 style='color: #2B5F2C; margin: 0;'>INVOICE</h1>
                 <div style='width: 50px; height: 50px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;'>
-                    <img :src="userData?.institution_logo" style="position: relative; width:50px;"> 
+                    <img :src="userData?.institution_logo" style="position: relative; width:50px;">
                 </div>
                 </header>
 

@@ -27,7 +27,7 @@ class ReportController extends Controller
     public function getInventoryReport(Request $request)
     {
 
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $sqlString =  "SELECT P.id, P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id,
         P.supplier_id, P.measurement_unit_id, P.description, P.institution_id, P.user_id,P.status,
@@ -78,7 +78,7 @@ class ReportController extends Controller
 
     public function getInventoryHistoryReport(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $sqlString = "SELECT P.name AS product_name, H.id, H.purchase_price, H.selling_price, H.product_id, H.stock_id, H.quantity, H.min_quantity,
         H.max_quantity, H.institution_id, COALESCE(H.stock_date, H.created_on) AS stock_date, H.manufactured_date,
@@ -98,7 +98,7 @@ class ReportController extends Controller
 
     public function getSalesHistoryReport(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $sqlString = "SELECT P.name AS product_name, O.id, O.order_id, O.product_id, O.qty AS quantity, O.status,
         O.institution_id, O.created_on,S.ref_no, S.receipt_no, S.tran_id,I.name AS institution_name,
@@ -180,7 +180,7 @@ class ReportController extends Controller
     }
 
     public function getItemSalesData($request){
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $sqlString = "SELECT O.id, O.order_id, O.product_id, O.qty AS quantity, O.status, O.institution_id, O.branch_id,
             O.created_by, O.updated_by, O.updated_on, O.created_at, O.updated_at, P.name AS product_name,
@@ -199,7 +199,8 @@ class ReportController extends Controller
     }
 
     public function downloadSalesItemCSVReport(Request $request){
-        $request->status = 'Active';
+        // $request->status = 'Active';
+        $request->merge(['status' => 'Active']);
         $salesReport = $this->getItemSalesData($request);
         return Excel::download(new SalesItemReport($salesReport), "sales.csv");
     }
@@ -237,10 +238,11 @@ class ReportController extends Controller
 
     public function downloadSalesItemPDFReport(Request $request)
 {
-    $request->status = 'Active';
+    // $request->status = 'Active';
+    $request->merge(['status' => 'Active']);
     $sales = $this->getItemSalesData($request);
 
-    $userData = auth()->user();
+    $userData = $this->getUserLogin();
     $institution = Institution::find($userData->institution_id);
     $institutionContact = InstitutionContact::where("institution_id", $userData->institution_id)->first();
 

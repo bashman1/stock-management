@@ -15,7 +15,7 @@ class SystemLogController extends Controller
     public function getSystemLogs()
     {
         try {
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
 
             // Current page number

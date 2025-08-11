@@ -1187,12 +1187,15 @@ class Controller extends BaseController
      * @param mixed $sqlQuery
      * @return LengthAwarePaginator<TKey, mixed>
      */
-    public function paginate($rowsPerPage, $totalSql, $sqlQuery)
+    public function paginate($rowsPerPage, $totalSql, $sqlQuery, $currentPage = null): LengthAwarePaginator
     {
         try {
-            $currentPage = LengthAwarePaginator::resolveCurrentPage();
+            if (is_null($currentPage)) {
+               $currentPage = LengthAwarePaginator::resolveCurrentPage();
+            }
 
             $totalResult = DB::select($totalSql);
+
 
             $total = isset($totalResult[0]) ? (int) $totalResult[0]->total : 0;
 

@@ -40,6 +40,7 @@ onMounted(() => {
                 lazy
                 :totalRecords="logs?.total"
                 @page="onPageChange($event)"
+                :size="'small'"
                 :rows="15" dataKey="id"
                     :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
 

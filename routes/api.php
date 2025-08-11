@@ -152,7 +152,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get('get-measurement-unit', [MeasurementUnitController::class, "getMeasurementUnit"]);
     Route::post('create-product', [ProductController::class, "createProduct"]);
     Route::get('get-dashboard-stats', [CommonController::class, "getDashboardStats"]);
-    Route::get('get-products', [ProductController::class, "getProducts"]);
+    Route::post('get-products', [ProductController::class, "getProducts"]);
     Route::post('create-product-type', [ProductTypeController::class, "createProductTypes"]);
     Route::get('get-product-types', [ProductTypeController::class, "getProductTypes"]);
     Route::post('create-product-gauge', [ProductGaugeController::class, "createGauge"]);
