@@ -9,17 +9,23 @@ const memberBatch = ref(null);
 const showRestock = ref(false);
 const selectedProduct = ref({});
 const commonService = new CommonService();
-const unitName= ref(null);
-const unitDesc= ref(null);
-const unitFormError=ref({});
-const measurementUnitsData=ref(null);
+const unitName = ref(null);
+const unitDesc = ref(null);
+const unitFormError = ref({});
+const measurementUnitsData = ref(null);
 const formError = ref({});
 const quantity = ref(null);
 const minStock = ref(null);
 const maxStock = ref(null);
 const measurementUnit = ref(null);
-const manufacturedDate=ref(null);
-const expiryDate=ref(null);
+const manufacturedDate = ref(null);
+const expiryDate = ref(null);
+
+const startDate = ref(null);
+const endDate = ref(null);
+const rowsPerPage = ref(5);
+const searchKeyWord = ref(null);
+const currentPage = ref(1);
 
 const purchasePrice = ref(null);
 const date = ref(null);
@@ -32,17 +38,24 @@ const router = useRouter();
 const route = useRoute()
 const showMeasurementUnitModal = ref(false);
 
-const paymentMethodOptions=ref([
-    {id:1, name: "Cash", value:"CASH"},
-    {id:2, name: "Bank", value:"BANK"},
-    {id:3, name: "Credit", value:"CREDIT"},
+const paymentMethodOptions = ref([
+    { id: 1, name: "Cash", value: "CASH" },
+    { id: 2, name: "Bank", value: "BANK" },
+    { id: 3, name: "Credit", value: "CREDIT" },
 ])
 
-const paymentMethod=ref( {id:1, name: "Cash", value:"CASH"})
+const paymentMethod = ref({ id: 1, name: "Cash", value: "CASH" })
 
 
 const getMemberBatch = () => {
-    commonService.genericRequest('get-products', 'get', true, {}).then((response) => {
+    let postData = {
+        page: currentPage.value,
+        search: searchKeyWord.value,
+        rowPerPage: rowsPerPage.value,
+        startDate: startDate.value,
+        endDate: endDate.value,
+    }
+    commonService.genericRequest('get-products', 'POST', true, postData).then((response) => {
         if (response.status) {
             memberBatch.value = response.data;
         } else {
@@ -50,12 +63,12 @@ const getMemberBatch = () => {
         }
     })
 }
-const onInputBlur=(value, key)=>{
+const onInputBlur = (value, key) => {
     formError.value[key] = commonService.validateFormField(value);
 }
 
-const onUnitInputBlur=(value, key)=>{
-    unitFormError.value[key]= commonService.validateFormField(value);
+const onUnitInputBlur = (value, key) => {
+    unitFormError.value[key] = commonService.validateFormField(value);
 }
 
 const goToDetails = (event) => {
@@ -77,39 +90,39 @@ const toggleMeasurementUnitModal = (data) => {
 
 }
 
-const toggleConfirmDialog=(data)=>{
+const toggleConfirmDialog = (data) => {
     selectedProduct.value = data;
-    deleteProductsDialog.value=true;
+    deleteProductsDialog.value = true;
 }
 
 const goToApprove = (event) => {
     router.push("/get-products" + event?.id);
 }
 
-const onSubmit= ()=>{
-    formError.value.quantity=commonService.validateFormField(quantity.value);
-    formError.value.measurementUnit=commonService.validateFormField(measurementUnit.value);
-    formError.value.sellingPrice=commonService.validateFormField(sellingPrice.value);
+const onSubmit = () => {
+    formError.value.quantity = commonService.validateFormField(quantity.value);
+    formError.value.measurementUnit = commonService.validateFormField(measurementUnit.value);
+    formError.value.sellingPrice = commonService.validateFormField(sellingPrice.value);
     // formError.value.name=commonService.validateFormField(name.value);
     let invalid = commonService.validateRequiredFields(formError.value);
-    if(invalid){
+    if (invalid) {
         commonService.showError(toast, "Please fill in the missing field");
         return
     }
 
-    let postData={
+    let postData = {
         quantity: quantity?.value,
-        min_quantity:minStock?.value,
+        min_quantity: minStock?.value,
         max_quantity: maxStock?.value,
         measurement_unit_id: measurementUnit?.value?.id,
         purchase_price: purchasePrice?.value,
-        manufactured_date:manufacturedDate?.value,
-        expiry_date:expiryDate?.value,
+        manufactured_date: manufacturedDate?.value,
+        expiry_date: expiryDate?.value,
         selling_price: sellingPrice?.value,
-        date:date?.value,
+        date: date?.value,
         productId: selectedProduct.value.id,
         status: "Active",
-        payment_method:paymentMethod?.value.value,
+        payment_method: paymentMethod?.value.value,
     }
     console.log(postData)
     commonService.genericRequest('restock-product', 'post', true, postData).then((response) => {
@@ -123,11 +136,11 @@ const onSubmit= ()=>{
             expiryDate.value = null;
             sellingPrice.value = null;
             date.value = null;
-            paymentMethod.value={id:1, name: "Cash", value:"CASH"};
+            paymentMethod.value = { id: 1, name: "Cash", value: "CASH" };
             onCancel();
             getMemberBatch();
             commonService.showSuccess(toast, response.message);
-        //    console.log(response.data);
+            //    console.log(response.data);
         } else {
             commonService.showError(toast, response.message);
         }
@@ -135,19 +148,19 @@ const onSubmit= ()=>{
 }
 
 
-const onCancel=()=>{
+const onCancel = () => {
     showRestock.value = false;
 }
 
 
-const onSubmitUnit=()=>{
+const onSubmitUnit = () => {
     unitFormError.value.unitName = commonService.validateFormField(unitName.value);
     let invalid = commonService.validateRequiredFields(unitFormError.value);
-    if(invalid){
+    if (invalid) {
         commonService.showError(toast, "Please fill in the missing field");
         return
     }
-    let postData={
+    let postData = {
         name: unitName.value,
         description: unitDesc.value,
         status: "Active"
@@ -157,15 +170,15 @@ const onSubmitUnit=()=>{
             commonService.showSuccess(toast, response.message);
             getMeasurementUnit();
             toggleMeasurementUnitModal(false);
-            unitName.value=null;
-            unitDesc.value=null;
+            unitName.value = null;
+            unitDesc.value = null;
         } else {
             commonService.showError(toast, response.message);
         }
     })
 }
 
-const getMeasurementUnit=()=>{
+const getMeasurementUnit = () => {
     commonService.genericRequest('get-measurement-unit', 'get', true, {}).then((response) => {
         if (response.status) {
             measurementUnitsData.value = response.data
@@ -175,9 +188,9 @@ const getMeasurementUnit=()=>{
     })
 }
 
-const archiveProduct=()=>{
-    let postData={
-        status:"Archived",
+const archiveProduct = () => {
+    let postData = {
+        status: "Archived",
         productId: selectedProduct?.value?.id
     }
     commonService.genericRequest("archive-product", 'post', true, postData).then((response) => {
@@ -191,6 +204,17 @@ const archiveProduct=()=>{
     })
 }
 
+const onPageChange = (event)=>{
+    rowsPerPage.value = event.rows;
+    currentPage.value = Number(event.page) + 1;
+    // alert('hello: '+)
+    getMemberBatch();
+}
+
+const searchProduct =()=>{
+    getMemberBatch();
+}
+
 onMounted(() => {
     getMemberBatch();
     getMeasurementUnit();
@@ -201,8 +225,50 @@ onMounted(() => {
     <div className="card">
         <h5>View Products</h5>
         <!--        <p>Use this page to start from scratch and place your custom content.</p>-->
-        <DataTable :value="memberBatch?.data" :paginator="true" class="p-datatable-gridlines" :rows="25" dataKey="id"
-            :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+        <Toolbar class="mb-1">
+            <template #start>
+                <span class="p-float-label mr-2">
+                    <Calendar id="date" showIcon v-model="startDate"></Calendar>
+                    <label for="date">Start Date</label>
+                </span>
+                <span class="p-float-label mr-2">
+                    <Calendar id="date" showIcon fluid iconDisplay="input" v-model="endDate"></Calendar>
+                    <label for="date">End Date</label>
+                </span>
+                <span class="p-float-label mr-2">
+                    <InputText type="text" id="purchasePrice" v-model="searchKeyWord" />
+                    <label for="purchasePrice">Search </label>
+                </span>
+                <Button @click="searchProduct" label="SEARCH" icon="pi pi-search" class="mr-2" />
+            </template>
+
+            <template #end>
+                <Button label="EXCEL" icon="pi pi-file-excel" class="mr-2"  />
+                <Button label="CSV" icon="pi pi-file-excel" class="mr-2" severity="success"  />
+                <Button label="PDF" icon="pi pi-file-pdf" severity="danger"  />
+            </template>
+        </Toolbar>
+
+        <DataTable
+        :value="memberBatch?.data"
+        :paginator="true"
+        stripedRows
+        size="small"
+        :rows="rowsPerPage"
+        dataKey="id"
+        :rowHover="true"
+        :totalRecords="memberBatch?.total"
+        filterDisplay="menu"
+        responsiveLayout="scroll"
+        lazy
+        @page="onPageChange($event)"
+        :rowsPerPageOptions="[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 100]"
+            >
+            <Column header="#" style="width: 3rem; text-align: center;">
+                <template #body="{ index }">
+                    {{  index + 1 }}
+                </template>
+            </Column>
             <Column field="name" header="Product" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.name }}
@@ -265,10 +331,14 @@ onMounted(() => {
             </Column>
             <Column headerStyle="min-width:17rem;">
                 <template #body="{ data }">
-                    <Button icon="pi pi-eye" @click="goToDetails(data)" class="p-button-primary mr-2"  v-tooltip="'View product details'" />
-                    <Button icon="pi pi-pencil" @click="editProduct(data)" class="p-button-success mr-2"  v-tooltip="'Edit product details'" />
-                    <Button icon="pi pi-refresh" @click="restock(data)" class="p-button-warning mr-2"   v-tooltip="'Restock product'"/>
-                    <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="toggleConfirmDialog(data)"  v-tooltip="'Archive product'" />
+                    <Button icon="pi pi-eye" @click="goToDetails(data)" class="p-button-primary mr-2"
+                        v-tooltip="'View product details'" />
+                    <Button icon="pi pi-pencil" @click="editProduct(data)" class="p-button-success mr-2"
+                        v-tooltip="'Edit product details'" />
+                    <Button icon="pi pi-refresh" @click="restock(data)" class="p-button-warning mr-2"
+                        v-tooltip="'Restock product'" />
+                    <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="toggleConfirmDialog(data)"
+                        v-tooltip="'Archive product'" />
                 </template>
             </Column>
         </DataTable>
@@ -282,10 +352,16 @@ onMounted(() => {
                     <div class="field-radiobutton col-4">
                         <div class="formgrid grid">
                             <div class="field-radiobutton col-12">
-                                <p style="text-align: justify;">Lorem ipsum dolor sit amet consectetur adipisicing elit. Expedita voluptas libero beatae, sapiente autem voluptatum atque. Optio ad animi id tempora eius corporis, nam aliquid quos amet cumque molestias ullam.</p>
+                                <!-- <p style="text-align: justify;">Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                                    Expedita voluptas libero beatae, sapiente autem voluptatum atque. Optio ad animi id
+                                    tempora
+                                    eius corporis, nam aliquid quos amet cumque molestias ullam.</p> -->
                             </div>
                             <div class="field-radiobutton col-12">
-                                <p style="text-align: justify;">Lorem ipsum dolor sit amet consectetur adipisicing elit. Expedita voluptas libero beatae, sapiente autem voluptatum atque. Optio ad animi id tempora eius corporis, nam aliquid quos amet cumque molestias ullam.</p>
+                                <!-- <p style="text-align: justify;">Lorem ipsum dolor sit amet consectetur adipisicing elit.
+                                    Expedita voluptas libero beatae, sapiente autem voluptatum atque. Optio ad animi id
+                                    tempora
+                                    eius corporis, nam aliquid quos amet cumque molestias ullam.</p> -->
                             </div>
                         </div>
                     </div>
@@ -294,7 +370,8 @@ onMounted(() => {
 
                             <div class="field col-12 md:col-6">
                                 <span class="p-float-label">
-                                    <InputText type="text" id="quantity" @blur="onInputBlur(quantity, 'quantity')" v-model.trim="quantity" :class="{ 'p-invalid': formError?.quantity }"/>
+                                    <InputText type="text" id="quantity" @blur="onInputBlur(quantity, 'quantity')"
+                                        v-model.trim="quantity" :class="{ 'p-invalid': formError?.quantity }" />
                                     <label for="quantity">Quantity</label>
                                 </span>
                             </div>
@@ -314,7 +391,10 @@ onMounted(() => {
                             <div class="field col-12 md:col-6">
                                 <div class="p-inputgroup">
                                     <span class="p-float-label">
-                                        <Dropdown id="measurementUnit" :options="measurementUnitsData" filter @blur="onInputBlur(measurementUnit, 'measurementUnit')" v-model="measurementUnit" :class="{ 'p-invalid': formError?.measurementUnit }" optionLabel="name">
+                                        <Dropdown id="measurementUnit" :options="measurementUnitsData" filter
+                                            @blur="onInputBlur(measurementUnit, 'measurementUnit')"
+                                            v-model="measurementUnit"
+                                            :class="{ 'p-invalid': formError?.measurementUnit }" optionLabel="name">
                                         </Dropdown>
                                         <label for="measurementUnit">Measurement Unit</label>
                                     </span>
@@ -324,7 +404,7 @@ onMounted(() => {
 
                             <div class="field col-12 md:col-6">
                                 <span class="p-float-label">
-                                    <InputText type="text" id="purchasePrice" v-model="purchasePrice"  />
+                                    <InputText type="text" id="purchasePrice" v-model="purchasePrice" />
                                     <label for="purchasePrice">Unit Purchase Price </label>
                                 </span>
                             </div>
@@ -351,9 +431,12 @@ onMounted(() => {
                                 </span>
                             </div>
 
-                            <div class="field col-12 md:col-6" >
+                            <div class="field col-12 md:col-6">
                                 <span class="p-float-label">
-                                    <Dropdown id="instCity" :options="paymentMethodOptions" v-model="paymentMethod" @blur="onInputBlur(paymentMethod, 'paymentMethod')" :class="{ 'p-invalid': formError?.paymentMethod }" optionLabel="name"></Dropdown>
+                                    <Dropdown id="instCity" :options="paymentMethodOptions" v-model="paymentMethod"
+                                        @blur="onInputBlur(paymentMethod, 'paymentMethod')"
+                                        :class="{ 'p-invalid': formError?.paymentMethod }" optionLabel="name">
+                                    </Dropdown>
                                     <label for="instCity">Payment Method</label>
                                 </span>
                             </div>
@@ -367,7 +450,9 @@ onMounted(() => {
 
                             <div class="field col-12 md:col-6">
                                 <span class="p-float-label">
-                                    <InputText type="text" @blur="onInputBlur(sellingPrice, 'sellingPrice')" id="sellingPrice" v-model="sellingPrice" :class="{ 'p-invalid': formError?.sellingPrice }"/>
+                                    <InputText type="text" @blur="onInputBlur(sellingPrice, 'sellingPrice')"
+                                        id="sellingPrice" v-model="sellingPrice"
+                                        :class="{ 'p-invalid': formError?.sellingPrice }" />
                                     <label for="sellingPrice">Unit Selling Price </label>
                                 </span>
                             </div>
@@ -379,18 +464,21 @@ onMounted(() => {
             </div>
 
             <template #footer>
-                <Button label="CANCEL" icon="pi pi-times" class="p-button-outlined p-button-danger mr-2 mb-2" @click="onCancel" />
+                <Button label="CANCEL" icon="pi pi-times" class="p-button-outlined p-button-danger mr-2 mb-2"
+                    @click="onCancel" />
                 <Button label="SUBMIT" icon="pi pi-check" class="p-button-outlined mr-2 mb-2" @click="onSubmit" />
             </template>
         </Dialog>
 
         <Dialog header="Create Measurement Unit" v-model:visible="showMeasurementUnitModal" :style="{ width: '30vw' }"
-        :modal="true" class="p-fluid">
+            :modal="true" class="p-fluid">
             <!-- <p style="padding-top: 20px;"> -->
             <div class="grid p-fluid">
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
-                        <InputText type="text" id="unitName" @blur="onUnitInputBlur(unitName, 'unitName')" v-model="unitName" :class="{ 'p-invalid': unitFormError?.unitName }" /> <!-- class="p-invalid"-->
+                        <InputText type="text" id="unitName" @blur="onUnitInputBlur(unitName, 'unitName')"
+                            v-model="unitName" :class="{ 'p-invalid': unitFormError?.unitName }" />
+                        <!-- class="p-invalid"-->
                         <label for="unitName">Name</label>
                     </span>
                 </div>
@@ -400,26 +488,27 @@ onMounted(() => {
                         <label for="unitDesc">Description</label>
                     </span>
                 </div>
-        </div>
-        <!-- </p> -->
-        <template #footer>
-            <Button label="Cancel" @click="toggleMeasurementUnitModal(false)" icon="pi pi-times"
-                class="p-button-outlined p-button-danger mr-2 mb-2" />
-            <Button @click="onSubmitUnit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
-        </template>
-    </Dialog>
+            </div>
+            <!-- </p> -->
+            <template #footer>
+                <Button label="Cancel" @click="toggleMeasurementUnitModal(false)" icon="pi pi-times"
+                    class="p-button-outlined p-button-danger mr-2 mb-2" />
+                <Button @click="onSubmitUnit" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
+            </template>
+        </Dialog>
 
 
-    <Dialog v-model:visible="deleteProductsDialog" :style="{ width: '450px' }" :header="'Confirm'" :modal="true">
-        <div class="flex align-items-center justify-content-center">
-            <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
-            <span>Are you sure you want to archive {{ selectedProduct?.name }}?</span>
-        </div>
-        <template #footer>
-            <Button label="No" icon="pi pi-times" class="p-button-outlined p-button-danger mr-2 mb-2" @click="deleteProductsDialog = false" />
-            <Button label="Yes" icon="pi pi-check" class="p-button-outlined mr-2 mb-2" @click="archiveProduct" />
-        </template>
-    </Dialog>
+        <Dialog v-model:visible="deleteProductsDialog" :style="{ width: '450px' }" :header="'Confirm'" :modal="true">
+            <div class="flex align-items-center justify-content-center">
+                <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
+                <span>Are you sure you want to archive {{ selectedProduct?.name }}?</span>
+            </div>
+            <template #footer>
+                <Button label="No" icon="pi pi-times" class="p-button-outlined p-button-danger mr-2 mb-2"
+                    @click="deleteProductsDialog = false" />
+                <Button label="Yes" icon="pi pi-check" class="p-button-outlined mr-2 mb-2" @click="archiveProduct" />
+            </template>
+        </Dialog>
 
     </div>
 </template>

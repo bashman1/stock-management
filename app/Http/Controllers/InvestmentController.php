@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Duration;
 use Illuminate\Support\Facades\DB;
 use App\Models\Investment;
 use App\Models\Member;
@@ -26,23 +27,37 @@ class InvestmentController extends Controller
                 'created_on' => now(),
             ];
 
-            // $project = Project::find($request->project_id);
-            // $member = Member::find($request->member_id);
+            $project = Project::find($request->project_id);
+            $member = Member::find($request->member_id);
+            $duration = Duration::find($project->duration_id);
+
+            $body = "Dear {$member->first_name},\n\n";
+            $body .= "You have successfully invested in the project: {$project->name}.\n";
+            $body .= "Investment Details:\n";
+            $body .= "Project Name: {$project->name}\n";
+            $body .= "Investment: " . ($request->quantity * $project->monitory) . "\n";
+            $body .= "Benefit: {$project->benefit}\n";
+            $body .= "Benefit Type: {$project->benefit_type}\n";
+            $body .= "Duration: {$duration->name}\n";
+            $body .= "Date: {$request->date}\n";
+            $body .= "Thank you for your investment.\n\n";
+            $body .= "Best regards,\n";
+            $body .= "Investment Team";
 
             // sending email
-            // $sendMail = [
-            //     "subject" => "Investment",
-            //     "body" => $mailAndSubject->body ?? 'No Body',
-            //     "has_attachment" => false,
-            //     "to" => $member->,
-            //     "cc" => [],
-            //     "bcc" => [],
-            //     "attachment" => "",
-            //     "created_on" => Carbon::now(),
-            //     "attachment_name" => "",
-            // ]
+            $sendMail = [
+                "subject" => "Investment",
+                "body" => $body,
+                "has_attachment" => false,
+                "to" => $member->email,
+                "cc" => [],
+                "bcc" => [],
+                "attachment" => "",
+                "created_on" => now(),
+                "attachment_name" => "",
+            ];
 
-            // $this->sendMail()
+            $this->sendMail($sendMail);
 
             $investment = Investment::create($data);
             return $this->genericResponse(true, 'Investment created successfully', 201, $investment, 'createInvestment', []);
