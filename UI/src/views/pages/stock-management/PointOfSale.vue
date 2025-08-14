@@ -38,6 +38,7 @@ const userData = ref({});
 const op = ref();
 const searchKeyWord = ref('');
 const metaKey = ref(true);
+const searchInput = ref(null);
 
 
 const VAT = ref([
@@ -298,7 +299,7 @@ const toggleCustomerModal = (action) => {
 
 
 const toggleInvoiceModel = (action) => {
-    showInvoiceModal.value = action
+    showInvoiceModal.value = action;
 }
 
 const onCustomerInputBlur = (value, key) => {
@@ -525,12 +526,15 @@ const togglePanel = (event) => {
     op.value.toggle(event);
 }
 
+const onSearchInputAndOpen = (e) => {
+    onSearchInput(e);
+    if (!op.value.visible) {
+        op.value.show(e); // Keep open
+    }
+};
 
 
 const onSearchInput =(event)=> {
-    // alert( event.target.value) // event object
-    // // or directly from v-model
-    // console.log('From v-model:', searchKeyWord.value)
     const value = event.target.value;
     if (value.length > 3 || value.length === 0) {
         getProducts();
@@ -539,10 +543,8 @@ const onSearchInput =(event)=> {
 
 
 const onRowSelect = (event) => {
-    // alert(`Selected: ${JSON.Stringify(event.data)}`)
     OnSelectItem(event.data);
-    // alert(`Selected: ${JSON.stringify(event.data)}`)
-    // console.log('Full row data:', event.data)
+    op.value.hide(event); // Keep open
 }
 
 
@@ -555,6 +557,37 @@ const close = () => {
     toggleInvoiceModel(false);
     printInvoice();
 };
+
+
+
+const onSubmitInvoice = ()=>{
+    selectedProduct.value = selectedProduct?.value.filter(obj => obj.id != null);
+    let postData = {
+        total: totalPrice(selectedProduct?.value) - Number(discount?.value) + Number(extraTax.value),
+        discount: Number(discount?.value),
+        amountPaid: Number(amountTOPay?.value),
+        itemCount: selectedProduct?.value.length,
+        tranDate: saleDate.value,
+        items: selectedProduct?.value,
+        status: "Active",
+        vat: Number(extraTax.value),
+        vatInc: totalInclusiveTax.value,
+        vatEx: totalExclusiveTax.value,
+        payment_method: payBy?.value.value,
+        address: billingAddress.value,
+        customer_id: customer?.value?.id
+    }
+
+    commonService.genericRequest('create-invoice', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            toggleInvoiceModel(false);
+            printInvoice();
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
 
 
 const printInvoice = () => {
@@ -797,12 +830,12 @@ onMounted(() => {
 
                         <div>
                             <span class="p-input-icon-right">
-                                <InputText   @input="onSearchInput"   v-model="searchKeyWord" type="text" @click="togglePanel" placeholder="Search" autofocus fluid />
+                                <InputText  ref="searchInput"    v-model="searchKeyWord" type="text"  @input="onSearchInputAndOpen" placeholder="Search" autofocus fluid />
                                 <i class="pi pi-search" />
                             </span>
                         </div>
 
-                        <OverlayPanel ref="op" showCloseIcon="true" dismissable="false" autoZIndex="false">
+                        <OverlayPanel ref="op" showCloseIcon="true" :dismissable="false" appendTo="body">
                             <div class="flex flex-column gap-3 max-h-10 overflow-y-auto">
                                 <DataTable
                                 :value="productList?.data"
@@ -1080,7 +1113,7 @@ onMounted(() => {
 
             <!-- /template -->
             <template #footer>
-                <Button label="print" @click="close" icon="pi pi-print" class="p-button-outlined" />
+                <Button label="Submit" @click="onSubmitInvoice" icon="pi pi-print" class="p-button-outlined" />
             </template>
         </Dialog>
     </div>

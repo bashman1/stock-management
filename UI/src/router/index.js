@@ -719,6 +719,22 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/create-building',
+                    name: 'CreateBuilding',
+                    component: () => import('@/views/pages/rental-management/CreateBuilding.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-buildings',
+                    name: 'ViewBuildings',
+                    component: () => import('@/views/pages/rental-management/ViewBuilding.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
             ]
         },
         {
