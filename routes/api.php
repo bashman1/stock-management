@@ -241,4 +241,8 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("create-invoice", [InvoiceController::class, "createInvoice"]);
     Route::post("create-building", [BuildingController::class, "createBuilding"]);
     Route::post("get-buildings", [BuildingController::class, "getBuildings"]);
+    Route::post("create-building-unit", [BuildingController::class, "createBuildingUnit"]);
+    Route::post("get-building-units", [BuildingController::class, "getBuildingUnits"]);
+    Route::post("rent-building-unit", [BuildingController::class, "rentUnit"]);
+    Route::post("get-building-rentals", [BuildingController::class, "getRentals"]);
 });

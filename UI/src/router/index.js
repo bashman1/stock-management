@@ -735,6 +735,39 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/create-building-unit',
+                    name: 'CreateBuildingUnit',
+                    component: () => import('@/views/pages/rental-management/CreateBuildingUint.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-building-units',
+                    name: 'ViewBuildingUnits',
+                    component: () => import('@/views/pages/rental-management/ViewBuildingUnits.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/rent-building-units',
+                    name: 'RentUnit',
+                    component: () => import('@/views/pages/rental-management/RentUnit.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-building-rentals',
+                    name: 'ViewRentalsUnits',
+                    component: () => import('@/views/pages/rental-management/ViewRentalsUnits.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+
             ]
         },
         {

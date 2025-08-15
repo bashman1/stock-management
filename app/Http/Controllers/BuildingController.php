@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Building;
+use App\Models\BuildingUnit;
+use App\Models\Rental;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class BuildingController extends Controller
 {
@@ -87,5 +90,181 @@ class BuildingController extends Controller
         } catch (\Throwable $th) {
             return $this->genericResponse(false, $th->getMessage(), 500, $th, "getBuildings", $request);
         }
+    }
+
+
+    public function createBuildingUnit(Request $request){
+        try {
+            DB::beginTransaction();
+            $userData = $this->getUserLogin();
+            $buildingUnit = BuildingUnit::create([
+                'building_id' => $request->building_id,
+                'unit_type'=> 'Room',
+                'unit_no'=> $request->unit,
+                'name' => $request->name,
+                'rent' => $request->rent,
+                'description' => $request->description,
+                'created_by' => $userData->id,
+                'institution_id' => $userData->institution_id,
+                'branch_id' => $userData->branch_id,
+                'created_on' => now(),
+            ]);
+            DB::commit();
+            return $this->genericResponse(true, "Building unit created successfully", 201, $buildingUnit, "createBuildingUnit", $request);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "createBuildingUnit", $request);
+        }
+    }
+
+
+    public function getBuildingUnits(Request $request){
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+
+            $sqlString = "SELECT BU.id, BU.building_id, BU.unit_type, BU.unit_no, BU.name, BU.rent,
+                BU.description, BU.status, BU.created_by, BU.created_on, BU.created_at, B.name AS building_name
+                FROM building_units BU
+                INNER JOIN buildings B ON B.id = BU.building_id
+                WHERE BU.status = 'Active' ";
+
+            $totalSql = "SELECT COUNT(BU.id) AS total
+                FROM building_units BU
+                INNER JOIN buildings B ON B.id = BU.building_id
+                WHERE BU.status = 'Active' ";
+
+            if ($isNotAdmin) {
+                $sqlString .= " AND B.institution_id = {$userData->institution_id} AND B.branch_id = {$userData->branch_id}";
+                $totalSql .= " AND B.institution_id = {$userData->institution_id} AND B.branch_id = {$userData->branch_id}";
+            }
+            if ($request->search) {
+                $search = $request->search;
+                $sqlString .= " AND (BU.name ILIKE '%{$search}%' OR B.name ILIKE '%{$search}%')";
+                $totalSql .= " AND (BU.name ILIKE '%{$search}%' OR B.name ILIKE '%{$search}%')";
+            }
+
+            if (!empty(trim($request->startDate))) {
+                $startDate = date('Y-m-d', strtotime(trim($request->startDate))); // only date part
+                $sqlString .= " AND BU.created_at::date >= '$startDate'";
+                $totalSql .= " AND BU.created_at::date >= '$startDate'";
+            }
+            if (!empty(trim($request->endDate))) {
+                $endDate = date('Y-m-d', strtotime(trim($request->endDate))); // only date part
+                $sqlString .= " AND BU.created_at::date <= '$endDate'";
+                $totalSql .= " AND BU.created_at::date <= '$endDate'";
+            }
+
+            if ($request->building_id) {
+                $sqlString .= " AND BU.building_id = {$request->building_id}";
+                $totalSql .= " AND BU.building_id = {$request->building_id}";
+            }
+
+            $sqlString .= " ORDER BY BU.id DESC";
+
+            $buildingUnits = $this->paginate($request->rowPerPage, $totalSql, $sqlString);
+
+            return $this->genericResponse(true, "Building units retrieved successfully", 200, $buildingUnits, "getBuildingUnits", $request);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "getBuildingUnits", $request);
+        }
+    }
+
+
+    public function rentUnit(Request $request){
+        try {
+            DB::beginTransaction();
+            $userData = $this->getUserLogin();
+
+            // $dueDate = $request->rental_date->addMonths($request->duration)->format('Y-m-d H:i:s');
+
+            $dueDate = Carbon::parse($request->rental_date)->addMonths($request->duration)->format('Y-m-d H:i:s');
+
+            $rental = Rental::create([
+                'building_id' => $request->building_id,
+                'unit_id' => $request->unit_id,
+                'member_id' => $request->member_id,
+                'duration' => $request->duration,
+                'amount_paid' => $request->amount_paid,
+                'rental_date' => $request->rental_date ? date('Y-m-d H:i:s', strtotime($request->rental_date)) : now(),
+                'due_date' => $dueDate ? date('Y-m-d H:i:s', strtotime($dueDate)) : null,
+                'paid_date' => $request->rental_date ? date('Y-m-d H:i:s', strtotime($request->rental_date)) : null,
+                'description' => $request->description,
+                'institution_id' => $userData->institution_id,
+                'branch_id' => $userData->branch_id,
+                'created_by' => $userData->id,
+                'created_on' => now(),
+                'payment_status' => $request->payment_status ?? 'UNPAID',
+            ]);
+
+            DB::commit();
+            return $this->genericResponse(true, "Building unit rented successfully", 200, $rental, "rentUnit", $request);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "rentUnit", $request);
+        }
+    }
+
+    public function getRentals(Request $request){
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+
+            $sqlString = "SELECT R.id, R.building_id, R.unit_id, R.member_id, R.duration, R.amount_paid,
+                R.status, R.rental_date, R.due_date, R.paid_date, R.description, R.payment_status,
+                R.created_at, B.name AS building_name, B.rent AS building_rent,
+                CONCAT(U.name,' ',U.unit_no) AS unit, U.rent AS unit_rent, I.name AS institution_name,
+                B.name AS branch_name, CONCAT(X.first_name,' ',X.last_name,' ',X.other_name) AS user_name,
+                CONCAT(M.first_name,' ',M.last_name,' ',M.other_name) AS tenant_name
+                FROM rentals R
+                INNER JOIN buildings B ON B.id = R.building_id
+                INNER JOIN building_units U ON U.id = R.unit_id
+                INNER JOIN institutions I ON I.id = R.institution_id
+                INNER JOIN branches Q ON Q.id = R.branch_id
+                INNER JOIN users X ON X.id = R.created_by
+                INNER JOIN members M ON M.id = R.member_id
+                WHERE R.status = 'Active' ";
+
+            $totalSql = "SELECT COUNT(R.id) AS total
+                FROM rentals R
+                INNER JOIN buildings B ON B.id = R.building_id
+                INNER JOIN building_units U ON U.id = R.unit_id
+                INNER JOIN institutions I ON I.id = R.institution_id
+                INNER JOIN branches Q ON Q.id = R.branch_id
+                INNER JOIN users X ON X.id = R.created_by
+                INNER JOIN members M ON M.id = R.member_id
+                WHERE R.status = 'Active' ";
+
+            if ($isNotAdmin) {
+                $sqlString .= " AND B.institution_id = {$userData->institution_id} AND B.branch_id = {$userData->branch_id}";
+                $totalSql .= " AND B.institution_id = {$userData->institution_id} AND B.branch_id = {$userData->branch_id}";
+            }
+            if ($request->search) {
+                $search = $request->search;
+                $sqlString .= " AND (B.name ILIKE '%{$search}%' OR U.unit_no ILIKE '%{$search}%')";
+                $totalSql .= " AND (B.name ILIKE '%{$search}%' OR U.unit_no ILIKE '%{$search}%')";
+            }
+
+            if (!empty(trim($request->startDate))) {
+                $startDate = date('Y-m-d', strtotime(trim($request->startDate))); // only date part
+                $sqlString .= " AND R.created_at::date >= '$startDate'";
+                $totalSql .= " AND R.created_at::date >= '$startDate'";
+            }
+            if (!empty(trim($request->endDate))) {
+                $endDate = date('Y-m-d', strtotime(trim($request->endDate))); // only date part
+                $sqlString .= " AND R.created_at::date <= '$endDate'";
+                $totalSql .= " AND R.created_at::date <= '$endDate'";
+            }
+
+            $sqlString .= " ORDER BY R.id DESC";
+
+            $rentals = $this->paginate($request->rowPerPage, $totalSql, $sqlString);
+
+            return $this->genericResponse(true, "Building units retrieved successfully", 200, $rentals, "getRentals", $request);
+        }catch (\Throwable $th) {
+            // DB::rollBack();
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "getRentals", $request);
+        }
+
     }
 }

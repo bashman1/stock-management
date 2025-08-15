@@ -48,8 +48,7 @@ onMounted(() => {
 </script>
 <template>
     <div className="card">
-        <h5>View Products</h5>
-        <!--        <p>Use this page to start from scratch and place your custom content.</p>-->
+        <h5>View Buildings</h5>
         <Toolbar class="mb-1">
             <template #start>
                 <span class="p-float-label mr-2">
@@ -94,6 +93,11 @@ onMounted(() => {
                     {{  index + 1 }}
                 </template>
             </Column>
+                 <Column field="name" header="Name" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ data.name }}
+                </template>
+            </Column>
             <Column field="name" header="City" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.city_name }}
@@ -119,26 +123,6 @@ onMounted(() => {
                     {{ data.description }}
                 </template>
             </Column>
-            <!-- <Column field="name" header="Selling Price" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ commonService.commaSeparator(data.selling_price) }}
-                </template>
-            </Column> -->
-            <!-- <Column field="name" header="Quantity" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ data.quantity }}
-                </template>
-            </Column> -->
-            <!-- <Column field="name" header="Unit" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ data.unit }}
-                </template>
-            </Column> -->
-            <!-- <Column header="Manufacturer" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ data.manufacturer }}
-                </template>
-            </Column> -->
             <Column header="Institution" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.institution_name }}
@@ -154,7 +138,7 @@ onMounted(() => {
                     {{ data.created_at }}
                 </template>
             </Column>
-            <Column headerStyle="min-width:17rem;">
+            <!-- <Column headerStyle="min-width:17rem;">
                 <template #body="{ data }">
                     <Button icon="pi pi-eye" @click="goToDetails(data)" class="p-button-primary mr-2"
                         v-tooltip="'View product details'" />
@@ -165,7 +149,7 @@ onMounted(() => {
                     <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="toggleConfirmDialog(data)"
                         v-tooltip="'Archive product'" />
                 </template>
-            </Column>
+            </Column> -->
         </DataTable>
     </div>
 </template>

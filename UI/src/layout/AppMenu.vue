@@ -135,6 +135,14 @@ const investMentMenu = ref(
     }
 )
 
+const PropertyMenu = ref(
+    {
+        label: 'Estate Management',
+        icon: 'pi pi-building',
+        items: []
+    }
+)
+
 
 
 const logOut = ref({
@@ -636,6 +644,68 @@ if (commonService.checkPermissions('ViewInvestment')) {
 }
 
 
+if (commonService.checkPermissions('CanCreateBuilding')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'Create Building',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-building'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewBuildings')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'View Building',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-buildings'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CanCreateBuildingUnit')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'Create Building Unit',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-building-unit'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewBuildingUnits')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'View Building Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-building-units'
+        }
+    );
+}
+
+if (commonService.checkPermissions('RentBuildingUnits')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'Rent Building Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/rent-building-units'
+        }
+    );
+}
+
+
+if (commonService.checkPermissions('ViewRentBuildingUnits')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'View Rent Building Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-building-rentals'
+        }
+    );
+}
+
+
 
 
 
@@ -693,6 +763,10 @@ if (payableReceivable?.value?.items?.length > 0) {
 
 if (investMentMenu?.value?.items?.length > 0) {
     model.value[0].items.push(investMentMenu.value);
+}
+
+if (PropertyMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(PropertyMenu.value);
 }
 
 if (licenseMenu?.value?.items?.length > 0) {
