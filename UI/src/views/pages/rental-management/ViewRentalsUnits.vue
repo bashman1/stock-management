@@ -16,6 +16,10 @@ const searchKeyWord = ref(null);
 const currentPage = ref(1);
 
 const buildings = ref([]);
+const showReceiptModal = ref(false);
+const showRentPaymentModal = ref(false);
+const selectedTenant = ref({})
+const formData = ref({});
 
 const getBuildings = () => {
     let postData = {
@@ -38,6 +42,35 @@ const onPageChange = (event)=>{
     rowsPerPage.value = event.rows;
     currentPage.value = Number(event.page) + 1;
     getBuildings();
+}
+
+const toggleReceiptModal=(action)=>{
+    showReceiptModal.value = action;
+}
+
+const viewReceipt = (data)=>{
+    selectedTenant.value = data;
+    toggleReceiptModal(true);
+}
+
+const togglePaymentModal=(action)=>{
+    showRentPaymentModal.value = action
+}
+
+const makePayment=(data)=>{
+    selectedTenant.value = data;
+    togglePaymentModal(true);
+}
+
+
+const printReceipt=()=>{
+    commonService.genericRequest('print-receipt', 'post', true, {}).then((response) => {
+        if (response.status) {
+            orderItems.value = response.data;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
 }
 
 
@@ -93,7 +126,7 @@ onMounted(() => {
                     {{  index + 1 }}
                 </template>
             </Column>
-                 <Column field="name" header="Name" style="min-width: 10rem">
+                 <Column field="name" header="Tenant" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.tenant_name }}
                 </template>
@@ -148,21 +181,6 @@ onMounted(() => {
                     {{ data.status }}
                 </template>
             </Column>
-            <!-- <Column field="name" header="Description" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ data.description }}
-                </template>
-            </Column> -->
-            <!-- <Column header="Institution" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ data.institution_name }}
-                </template>
-            </Column> -->
-            <!-- <Column header="Branch" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ data.branch_name }}
-                </template>
-            </Column> -->
             <Column header="Date" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.created_at }}
@@ -170,9 +188,9 @@ onMounted(() => {
             </Column>
             <Column headerStyle="min-width:13rem;">
                 <template #body="{ data }">
-                    <Button icon="pi pi-eye"  class="p-button-primary mr-2"
+                    <Button icon="pi pi-eye" @click="viewReceipt(data)" class="p-button-primary mr-2"
                         v-tooltip="'View  details'" />
-                    <Button icon="pi pi-pencil"  class="p-button-success mr-2"
+                    <Button icon="pi pi-bill" @click="makePayment(data)"  class="p-button-success mr-2"
                         v-tooltip="'Edit  details'" />
                     <!-- <Button icon="pi pi-refresh"  class="p-button-warning mr-2"
                         v-tooltip="'Restock product'" /> -->
@@ -181,5 +199,98 @@ onMounted(() => {
                 </template>
             </Column>
         </DataTable>
+
+
+
+        <Dialog header="Make Payment" v-model:visible="showRentPaymentModal" :style="{ width: '33vw' }" :modal="true"
+            class="p-fluid">
+            <!-- <p style="padding: 20px;"> -->
+            <!-- <div class="grid p-fluid">
+
+            </div> -->
+
+            <div class="field mt-4">
+                    <span class="p-float-label">
+                        <InputNumber id="name1" type="text" v-model="formData.quantity" />
+                        <label for="name1">Quantity</label>
+                    </span>
+                </div>
+                <div class="field mt-4">
+                    <span class="p-float-label">
+                        <InputNumber id="name1" type="text" v-model="formData.amountPaid" />
+                        <label for="name1">Amount Paid</label>
+                    </span>
+                </div>
+            <template #footer>
+                <Button label="Cancel" @click="toggleTypeModal(false)" icon="pi pi-times"
+                    class="p-button-outlined p-button-danger mr-2 mb-2" />
+                <Button @click="printReceipt" icon="pi pi-print" label="Pay Rent" class="p-button-outlined mr-2 mb-2" />
+            </template>
+        </Dialog>
+
+        <Dialog header="Payment Receipt" v-model:visible="showReceiptModal" :style="{ width: '33vw' }" :modal="true"
+            class="p-fluid">
+            <!-- <p style="padding: 20px;"> -->
+            <div class="grid p-fluid">
+                <div class="field col-12 md:col-12">
+                    <h1>{{selectedTenant.institution_name}}</h1>
+                </div>
+                <div class="field col-6 md:col-6">
+                    <span class="p-float-label">
+                        <!-- <InputText type="text" id="unitName" @blur="onTypeInputBlur(typeName, 'typeName')" v-model="typeName" :class="{ 'p-invalid': typeFormError?.typeName }" /> class="p-invalid" -->
+                        <label for="unitName">Tenant.: {{ selectedTenant.tenant_name }} </label>
+                    </span>
+                </div>
+                <div class="field col-6 md:col-6">
+                    <span class="p-float-label">
+                        <!-- <InputText type="text" id="unitName" @blur="onTypeInputBlur(typeName, 'typeName')" v-model="typeName" :class="{ 'p-invalid': typeFormError?.typeName }" /> class="p-invalid" -->
+                        <label for="unitName">Duration.: {{ selectedTenant.duration +' Months' }}</label>
+                    </span>
+                </div>
+                <div class="field col-6 md:col-6">
+                    <span class="p-float-label">
+                        <!-- <InputText type="text" id="unitName" @blur="onTypeInputBlur(typeName, 'typeName')" v-model="typeName" :class="{ 'p-invalid': typeFormError?.typeName }" /> class="p-invalid" -->
+                        <label for="unitName">Date.: {{ selectedTenant.created_at }}</label>
+                    </span>
+                </div>
+                <div class="field col-6 md:col-6">
+                    <span class="p-float-label">
+                        <!-- <InputText type="text" id="unitName" @blur="onTypeInputBlur(typeName, 'typeName')" v-model="typeName" :class="{ 'p-invalid': typeFormError?.typeName }" /> class="p-invalid" -->
+                        <label for="unitName">Due Date.: {{ selectedTenant.due_date }}</label>
+                    </span>
+                </div>
+                <div class="field col-6 md:col-6">
+                    <span class="p-float-label">
+                        <!-- <InputText type="text" id="unitName" @blur="onTypeInputBlur(typeName, 'typeName')" v-model="typeName" :class="{ 'p-invalid': typeFormError?.typeName }" /> class="p-invalid" -->
+                        <label for="unitName">Building: {{ selectedTenant.building_name }}</label>
+                    </span>
+                </div>
+                <div class="field col-6 md:col-6">
+                    <span class="p-float-label">
+                        <!-- <InputText type="text" id="unitName" @blur="onTypeInputBlur(typeName, 'typeName')" v-model="typeName" :class="{ 'p-invalid': typeFormError?.typeName }" /> class="p-invalid" -->
+                        <label for="unitName">Building Unit: {{ selectedTenant.unit }}</label>
+                    </span>
+                </div>
+                <div class="field col-6 md:col-6">
+                    <span class="p-float-label">
+                        <!-- <InputText type="text" id="unitName" @blur="onTypeInputBlur(typeName, 'typeName')" v-model="typeName" :class="{ 'p-invalid': typeFormError?.typeName }" /> class="p-invalid" -->
+                        <label for="unitName">Rent: {{ commonService.commaSeparator(selectedTenant.unit_rent) +' Per Month' }}</label>
+                    </span>
+                </div>
+                <div class="field col-6 md:col-6">
+                    <span class="p-float-label">
+                        <!-- <InputText type="text" id="unitName" @blur="onTypeInputBlur(typeName, 'typeName')" v-model="typeName" :class="{ 'p-invalid': typeFormError?.typeName }" /> class="p-invalid" -->
+                        <label for="unitName">Rent Paid: {{ commonService.commaSeparator(selectedTenant.amount_paid) }}</label>
+                    </span>
+                </div>
+                <hr>
+            </div>
+            <template #footer>
+                <Button label="Cancel" @click="toggleTypeModal(false)" icon="pi pi-times"
+                    class="p-button-outlined p-button-danger mr-2 mb-2" />
+                <Button @click="printReceipt" icon="pi pi-print" label="Print" class="p-button-outlined mr-2 mb-2" />
+            </template>
+        </Dialog>
+
     </div>
 </template>

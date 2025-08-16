@@ -169,6 +169,10 @@ const onBuildingChange=(event)=>{
     getBuildingUnits(event.value.id);
 }
 
+const onBuildingUnitChange=(event)=>{
+    formData.value.amountPaid = Number(formData.value?.unit?.rent) * Number(formData.value?.quantity);
+}
+
 
 onMounted(() => {
     // getDurations();
@@ -197,7 +201,7 @@ const dropdownItem = ref(null);
                 </div>
                 <div class="field mt-4">
                     <span class="p-float-label">
-                        <Dropdown id="instCity" :options="buildingUnits"  v-model="formData.unit" filter optionLabel="name"></Dropdown>
+                        <Dropdown id="instCity" :options="buildingUnits" @change="onBuildingUnitChange" v-model="formData.unit" filter optionLabel="name"></Dropdown>
                         <label for="instCity">Unit</label>
                     </span>
                 </div>
