@@ -86,6 +86,14 @@ const pointOfSaleMenu = ref(
 //     }
 // )
 
+const invoiceMenu = ref(
+    {
+        label: 'Invoices',
+        icon: 'pi pi-file',
+        items: []
+    }
+)
+
 const salesMenu = ref(
     {
         label: 'sales',
@@ -705,6 +713,28 @@ if (commonService.checkPermissions('ViewRentBuildingUnits')) {
     );
 }
 
+if (commonService.checkPermissions('CanCreateInvoice')) {
+    invoiceMenu.value.items.push(
+        {
+            label: 'Create Invoice',
+            icon: 'pi pi-fw pi-circle',
+            to: '/proforma-invoice'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewInvoice')) {
+    invoiceMenu.value.items.push(
+        {
+            label: 'View Invoices',
+            icon: 'pi pi-fw pi-circle',
+            to: '/View-proforma-invoices'
+        }
+    );
+}
+
+
+
 
 
 
@@ -747,6 +777,10 @@ if (commissionMenu?.value?.items?.length > 0) {
 
 if (reportMenu?.value?.items?.length > 0) {
     model.value[0].items.push(reportMenu.value);
+}
+
+if (invoiceMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(invoiceMenu.value);
 }
 
 if (stockMenu?.value?.items?.length > 0) {

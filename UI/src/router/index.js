@@ -342,6 +342,22 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: '/proforma-invoice',
+                    name: 'ProformaInvoice',
+                    component: () => import('@/views/pages/stock-management/PointOfSale.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/View-proforma-invoices',
+                    name: 'ViewProformaInvoice',
+                    component: () => import('@/views/pages/stock-management/ViewInvoices.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
                     path: '/view-sales',
                     name: 'ViewOrders',
                     component: () => import('@/views/pages/stock-management/ViewOrders.vue'),

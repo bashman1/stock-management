@@ -1,7 +1,7 @@
 <script setup>
 import { FilterMatchMode } from 'primevue/api';
 import { ref, onMounted, onBeforeMount } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
 // import { ProductService } from '@/service/ProductService';
@@ -9,6 +9,7 @@ import { useToast } from 'primevue/usetoast';
 const toast = useToast();
 const commonService = new CommonService();
 const router = useRouter();
+const route = useRoute();
 
 const productList = ref(null);
 const selectedProduct = ref([{ id: null, price: null, quantity: null, discount: null, name: '', tax_config: null }]);
@@ -18,6 +19,8 @@ const balance = ref(0);
 const filters = ref({});
 const institutionDetails = ref({});
 const extraTax = ref(0);
+
+const isProforma = ref(false);
 
 const totalInclusiveTax = ref(0);
 const totalExclusiveTax = ref(0);
@@ -692,11 +695,19 @@ const printInvoice = () => {
 };
 
 
+const invoice = (path)=>{
+    if (path === '/proforma-invoice') {
+        isProforma.value = true;
+    }
+}
+
+
 onBeforeMount(() => {
     initFilters();
 });
 
 onMounted(() => {
+    invoice(route.path)
     getProducts();
     getInstitutionDetails();
     getCustomers()
@@ -896,12 +907,12 @@ onMounted(() => {
                 class=" p-button-danger mr-2 mb-2" />
 
         </div>
-        <div class="col-12 md:col-2">
+        <div class="col-12 md:col-2" v-if="isProforma">
             <Button label="Generate Invoice" @click="toggleInvoiceModel(true)" icon="pi pi-file" iconPos="left"
                 class=" p-button-info mr-2 mb-2" />
         </div>
 
-        <div class="col-12 md:col-12">
+        <div class="col-12 md:col-12" v-if="!isProforma">
             <div class="card" v-if="institutionDetails?.is_tax_enabled && selectedProduct.length > 0">
                 <h5>V.A.T 18%</h5><br>
                 <div class="grid">
@@ -931,25 +942,25 @@ onMounted(() => {
 
         <div class="col-12 md:col-4"></div>
         <div class="col-12 md:col-3"></div>
-        <div class="col-12 md:col-3">
+        <div class="col-12 md:col-3" v-if="!isProforma">
             <p class="font-bold text-right text-xl green-color">Total: {{ totalPrice(selectedProduct) ?
                 commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}
             </p>
         </div>
 
         <div class="col-12 md:col-3"></div>
-        <div class="col-12 md:col-3">
+        <div class="col-12 md:col-3" v-if="!isProforma">
             <span class="p-float-label">
                 <InputText type="text" id="discount" v-model="amountTOPay" /> <!-- class="p-invalid"-->
                 <label for="productId">Amount</label>
             </span>
         </div>
-        <div class="col-12 md:col-3">
+        <div class="col-12 md:col-3" v-if="!isProforma">
             <p class="font-bold text-left text-xl green-color" v-if="amountTOPay && amountTOPay > 0">Change: {{
                 commonService.commaSeparator(Number(amountTOPay) + Number(discount) -
                     (totalPrice(selectedProduct)+Number(extraTax))) }}</p>
         </div>
-        <div class="col-12 md:col-3">
+        <div class="col-12 md:col-3" v-if="!isProforma">
             <Button @click="onSubmitOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
             <!-- <Button @click="onSubmitNewOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" /> -->
         </div>
