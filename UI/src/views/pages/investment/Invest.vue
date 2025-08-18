@@ -69,19 +69,19 @@ const maturityDate = computed(() => {
 
   switch (duration) {
     case 'Daily':
-      startDate.setDate(startDate.getDate() + 1);
+      startDate.setDate(startDate.getDate() + (1 * formData.value?.duration) );
       break;
     case 'Weekly':
-      startDate.setDate(startDate.getDate() + 7);
+      startDate.setDate(startDate.getDate() + (7 * formData.value?.duration) );
       break;
     case 'Monthly':
-      startDate.setMonth(startDate.getMonth() + 1);
+      startDate.setMonth(startDate.getMonth() + (1 * formData.value?.duration) );
       break;
     case 'Quarterly':
-      startDate.setMonth(startDate.getMonth() + 3);
+      startDate.setMonth(startDate.getMonth() + (3 * formData.value?.duration) );
       break;
     case 'Yearly':
-      startDate.setFullYear(startDate.getFullYear() + 1);
+      startDate.setFullYear(startDate.getFullYear() + (1 * formData.value?.duration) );
       break;
     default:
       return '';
@@ -146,6 +146,12 @@ const dropdownItem = ref(null);
                     <span class="p-float-label">
                         <InputNumber id="name1" type="text" v-model="formData.quantity" />
                         <label for="name1">Quantity</label>
+                    </span>
+                </div>
+                <div class="field mt-4">
+                    <span class="p-float-label">
+                        <InputNumber id="name1" type="text" v-model="formData.duration" />
+                        <label for="name1">Duration in {{ formData?.project?.duration?.unit }}</label>
                     </span>
                 </div>
                 <div class="field mt-4">
@@ -240,11 +246,11 @@ const dropdownItem = ref(null);
                     </div>
                     <div class="col-12 md:col-6">
                         <p class="text-gray-900 font-bold">Return Of Investment (Value)</p>
-                        <p class="text-gray-900">{{ formData?.project?.benefit * formData?.quantity }}</p>
+                        <p class="text-gray-900">{{ Number(formData?.project?.benefit) * formData?.quantity * formData?.duration }}</p>
                     </div>
                     <div class="col-12 md:col-6">
                         <p class="text-gray-900 font-bold">Return Of Investment (Monitory)</p>
-                        <p class="text-gray-900">{{ commonService.commaSeparator(formData?.project?.monitory * formData?.quantity) }}</p>
+                        <p class="text-gray-900">{{ commonService.commaSeparator(formData?.project?.monitory * formData?.project?.benefit * formData?.quantity * formData?.duration) }}</p>
                     </div>
                 </div>
 

@@ -21,6 +21,7 @@ class InvestmentController extends Controller
                 'quantity' => $request->quantity,
                 'description' => $request->description,
                 'date' => $request->date,
+                'investment_duration'=> $request->duration,
                 'institution_id' => $userData->institution_id,
                 'branch_id' => $userData->branch_id,
                 'created_by' => $userData->id,
@@ -72,7 +73,7 @@ class InvestmentController extends Controller
         try {
             $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
-            $queryString = "SELECT I.id, I.project_id, I.member_id, I.quantity,
+            $queryString = "SELECT I.id, I.project_id, I.member_id, I.quantity, I.investment_duration,
                 I.date, I.status, P.name AS project_name, P.benefit, P.benefit_type,P.monitory,
                 CONCAT(M.first_name,' ',M.last_name, ' ',M.other_name) AS customer, I.created_at, D.name AS duration
                 FROM investments I

@@ -21,25 +21,25 @@ const getAllMembers = () => {
     })
 }
 
-const maturityDate = (duration, startDate)=>{
+const maturityDate = (duration, startDate, investment_duration)=>{
     if (!duration || !startDate) return '';
 
     let date = new Date(startDate);
     switch (duration) {
         case 'Daily':
-            date.setDate(date.getDate() + 1);
+            date.setDate(date.getDate() + (1 * investment_duration) );
             break;
         case 'Weekly':
-            date.setDate(date.getDate() + 7);
+            date.setDate(date.getDate() + (7 * investment_duration) );
             break;
         case 'Monthly':
-            date.setMonth(date.getMonth() + 1);
+            date.setMonth(date.getMonth() + (1 * investment_duration) );
             break;
         case 'Quarterly':
-            date.setMonth(date.getMonth() + 3);
+            date.setMonth(date.getMonth() + (3 * investment_duration) );
             break;
         case 'Yearly':
-            date.setFullYear(date.getFullYear() + 1);
+            date.setFullYear(date.getFullYear() + (1 * investment_duration) );
             break;
         default:
             return '';
@@ -84,7 +84,7 @@ onMounted(() => {
                     <Column field="benefit_type" header="Benefit Type" style="min-width: 10rem" />
                     <Column header="Duration" style="min-width: 10rem">
                         <template #body="{ data }">
-                            {{ data.duration }}
+                            {{ data.investment_duration +' '+data.duration }}
                         </template>
                     </Column>
                     <Column field="status" header="Status" style="min-width: 10rem" />
@@ -95,12 +95,12 @@ onMounted(() => {
                     </Column> -->
                         <Column header="Return Of Investment" style="min-width: 10rem">
                         <template #body="{ data }">
-                            {{ commonService.commaSeparator(data.benefit * data.quantity * data.monitory) }}
+                            {{ commonService.commaSeparator(data.benefit * data.quantity * data.monitory * data.investment_duration) }}
                         </template>
                     </Column>
                            <Column header="Maturity Date" style="min-width: 10rem">
                         <template #body="{ data }">
-                            {{ maturityDate(data.duration, data.date) }}
+                            {{ maturityDate(data.duration, data.date, data.investment_duration) }}
                         </template>
                     </Column>
                     <Column header="Date" style="min-width: 10rem">

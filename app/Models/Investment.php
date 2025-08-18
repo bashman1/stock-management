@@ -18,6 +18,7 @@ class Investment extends Model
         'created_by',
         'updated_by',
         'created_on',
-        'updated_on'
+        'updated_on',
+        'investment_duration',
     ];
 }

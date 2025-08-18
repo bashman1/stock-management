@@ -8,11 +8,11 @@ const toast = useToast();
 const members = ref(null);
 const commonService = new CommonService();
 
-//  const router = useRouter();
+ const router = useRouter();
 
 
 const AddRolesPermissions=(role)=>{
-    alert(JSON.stringify(role))
+    // alert(JSON.stringify(role))
 }
 
 const getAllMembers = () => {
@@ -23,6 +23,10 @@ const getAllMembers = () => {
             commonService.showError(toast, response.message);
         }
     })
+}
+
+const viewDetails = (member) => {
+    commonService.redirect(router, 'member-profile/'+member.id);
 }
 
 onMounted(() => {
@@ -75,8 +79,11 @@ onMounted(() => {
                     </Column>
                     <Column headerStyle="min-width:10rem;">
                         <template #body="{ data }">
+                            <Button icon="pi pi-eye" class="p-button-rounded p-button-success mr-2"
+                                @click="viewDetails(data)" />
                             <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2"
                                 @click="AddRolesPermissions(data)" />
+
                             <Button icon="pi pi-trash" class="p-button-rounded p-button-warning mt-2"
                                 @click="confirmDeleteProduct(data)" />
                         </template>

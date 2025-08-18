@@ -226,6 +226,14 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: '/member-profile/:id',
+                    name: 'CreateMember',
+                    component: () => import('@/views/pages/member-management/MemberProfile.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
                     path: '/view-members',
                     name: 'ViewMember',
                     component: () => import('@/views/pages/member-management/ViewMembers.vue'),

@@ -120,4 +120,36 @@ class MemberController extends Controller
             AND M.institution_id=$userData->institution_id AND status='" . $request->status . "' ");
         return $this->genericResponse(true, "Approved Successfully", 200, $members, "getMembersByInstitution", $request);
     }
+
+
+    public function getMemberDetails(Request $request)
+    {
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+            $queryString = "SELECT M.id, CONCAT(M.first_name,' ',M.last_name,' ',M.other_name) AS member_name,
+                M.phone_number, M.member_number, M.alt_member_number, M.gender, M.date_of_birth,
+                M.address, M.city_id, M.institution_id, M.branch_id, M.status, M.street,
+                M.p_o_box, M.description, M.created_by, M.created_at, M.email, M.kin_name,
+                M.kin_contact, M.kin_relationship, C.name AS city_name, I.name AS institution_name,
+                B.name AS branch_name, CONCAT(U.first_name,' ',U.last_name,' ',U.other_name) AS user_name
+                FROM members M
+                INNER JOIN city_refs C ON C.id =  M.city_id
+                INNER JOIN institutions I ON I.id = M.institution_id
+                INNER JOIN branches B ON B.id = M.branch_id
+                INNER JOIN users U ON U.id = M.created_by
+                WHERE M.id = {$request->id} AND M.status = 'Active' ";
+
+            if ($isNotAdmin) {
+                $queryString .= " AND M.institution_id = $userData->institution_id";
+            }
+
+            $members = DB::select($queryString);
+
+            return $this->genericResponse(true, "Member details retrieved successfully", 200, $members, "getMemberDetails", []);
+        } catch (\Throwable $th) {
+            //throw $th;
+            return $this->genericResponse(false, "Member not found", 404, [], "getMemberDetails", []);
+        }
+    }
 }

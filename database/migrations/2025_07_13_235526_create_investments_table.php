@@ -20,6 +20,7 @@ return new class extends Migration
             $table->timestamp('date')->default(now());
             $table->string('status')->default('Active');
             $table->unsignedBigInteger('institution_id')->nullable();
+            $table->unsignedBigInteger('investment_duration')->default(1);
             $table->unsignedBigInteger('branch_id')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
