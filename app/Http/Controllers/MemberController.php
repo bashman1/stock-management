@@ -138,7 +138,7 @@ class MemberController extends Controller
                 INNER JOIN institutions I ON I.id = M.institution_id
                 INNER JOIN branches B ON B.id = M.branch_id
                 INNER JOIN users U ON U.id = M.created_by
-                WHERE M.id = {$request->id} AND M.status = 'Active' ";
+                WHERE M.id = {$request->id} ";
 
             if ($isNotAdmin) {
                 $queryString .= " AND M.institution_id = $userData->institution_id";

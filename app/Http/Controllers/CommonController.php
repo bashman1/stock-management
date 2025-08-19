@@ -44,7 +44,10 @@ class CommonController extends Controller
             (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'EXPENSE' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id) AS total_expenses,
             (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'INCOME' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id) AS total_income,
             (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'EXPENSE' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id AND DATE(transaction_date) = CURRENT_DATE) AS today_expenses,
-            (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'INCOME' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id AND DATE(transaction_date) = CURRENT_DATE) AS today_income
+            (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'INCOME' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id AND DATE(transaction_date) = CURRENT_DATE) AS today_income,
+            (SELECT COUNT(id) FROM investments WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_active_investments,
+            (SELECT COUNT(id) FROM investments WHERE status ='Withdrawn' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_withdrawn_investments,
+            (SELECT COALESCE(SUM(I.quantity * P.monitory) ,0) FROM investments I INNER JOIN projects P ON P.id = I.project_id WHERE I.institution_id = $userData->institution_id AND I.branch_id=$userData->branch_id) AS total_investment_value
             ");
 
             $collectionGraph=DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
@@ -102,6 +105,9 @@ class CommonController extends Controller
             (SELECT sum(amount) FROM collections WHERE status ='Active') AS total_approved_collection,
             (SELECT COUNT(id) FROM products WHERE status ='Active') AS products,
             (SELECT COUNT(id) FROM orders WHERE status ='Active') AS sales,
+                        (SELECT COUNT(id) FROM investments WHERE status ='Active') AS total_active_investments,
+            (SELECT COUNT(id) FROM investments WHERE status ='Withdrawn' ) AS total_withdrawn_investments,
+            (SELECT COALESCE(SUM(I.quantity * P.monitory) ,0) FROM investments I INNER JOIN projects P ON P.id = I.project_id) AS total_investment_value,
           --  (SELECT COUNT(id) FROM order_items WHERE status ='Active') AS product_sold
             (SELECT COALESCE(SUM(O.qty * S.selling_price), 0) FROM order_items O INNER JOIN stocks S ON O.product_id = S.product_id AND  O.branch_id = S.branch_id WHERE O.status ='Active') AS product_sold
             -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  reversal_flag = 'N') AS total_stock_value,

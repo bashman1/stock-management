@@ -236,7 +236,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("create-project", [ProjectController::class, "createProject"]);
     Route::get("get-projects", [ProjectController::class, "getProjects"]);
     Route::post("create-investment", [InvestmentController::class, "createInvestment"]);
-    Route::get("get-investments", [InvestmentController::class, "getInvestments"]);
+    Route::post("get-investments", [InvestmentController::class, "getInvestments"]);
     Route::post("pay-receivable", [CustomerReceivableController::class, "makePayment"]);
     Route::post("create-invoice", [InvoiceController::class, "createInvoice"]);
     Route::post("create-building", [BuildingController::class, "createBuilding"]);
@@ -246,4 +246,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("rent-building-unit", [BuildingController::class, "rentUnit"]);
     Route::post("get-building-rentals", [BuildingController::class, "getRentals"]);
     Route::post("get-invoices", [InvoiceController::class, "getInvoices"]);
+    Route::post("get-member-details", [MemberController::class, "getMemberDetails"]);
+    Route::post("withdraw-investment", [InvestmentController::class, "withdrawInvestment"]);
 });
