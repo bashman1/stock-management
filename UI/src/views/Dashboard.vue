@@ -463,6 +463,54 @@ watch(
             </div>
         </div>
 
+                <div class="col-12 lg:col-6 xl:col-3"  v-if="commonService.checkPermissions('ViewInvestment')">
+            <div class="card mb-0">
+                <div class="flex justify-content-between mb-3">
+                    <div>
+                        <span class="block text-500 font-bold text-xl mb-3">Total Investment</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_investment_value)}}</div>
+                    </div>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    </div>
+                </div>
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
+                <!-- <span class="text-500">responded</span> -->
+            </div>
+        </div>
+
+        <div class="col-12 lg:col-6 xl:col-3"  v-if="commonService.checkPermissions('ViewInvestment')">
+            <div class="card mb-0">
+                <div class="flex justify-content-between mb-3">
+                    <div>
+                        <span class="block text-500 font-bold text-xl mb-3">Running Investment</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_active_investments)}}</div>
+                    </div>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    </div>
+                </div>
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
+                <!-- <span class="text-500">responded</span> -->
+            </div>
+        </div>
+
+        <div class="col-12 lg:col-6 xl:col-3"  v-if="commonService.checkPermissions('ViewInvestment')">
+            <div class="card mb-0">
+                <div class="flex justify-content-between mb-3">
+                    <div>
+                        <span class="block text-500 font-bold text-xl mb-3">Withdrawn Investment</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_withdrawn_investments)}}</div>
+                    </div>
+                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    </div>
+                </div>
+                <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
+                <!-- <span class="text-500">responded</span> -->
+            </div>
+        </div>
+
 
     </div>
     <div class="grid">
@@ -519,7 +567,7 @@ watch(
             </div>
         </div> -->
     </div>
-    <div class="grid">
+    <div class="grid" v-if="commonService.checkPermissions('ViewProducts')">
         <div class="col-12 xl:col-6">
             <div class="card">
                 <h5>Best Selling Products</h5>

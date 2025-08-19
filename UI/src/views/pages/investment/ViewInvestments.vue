@@ -12,7 +12,7 @@ const commonService = new CommonService();
 
 
 const getAllMembers = () => {
-    commonService.genericRequest('get-investments', 'get', true, {}).then((response) => {
+    commonService.genericRequest('get-investments', 'post', true, {}).then((response) => {
         if (response.status) {
             members.value = response.data;
         } else {
@@ -47,6 +47,18 @@ const maturityDate = (duration, startDate, investment_duration)=>{
     return commonService.formatDate(date);
 }
 
+
+const withdrawInvestment = (investment) => {
+    commonService.genericRequest('withdraw-investment', 'post', true, { id: investment.id }).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getAllMembers();
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
 onMounted(() => {
     getAllMembers();
 });
@@ -57,7 +69,7 @@ onMounted(() => {
         <div class="col-12">
             <div class="card">
                 <h5>Projects</h5>
-                <DataTable :value="members" :paginator="true" class="p-datatable-gridlines" :rows="10" dataKey="id"
+                <DataTable :value="members" :paginator="true" size="small" class="" :rows="10" dataKey="id"
                     :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
 
                     <Column field="customer" header="Name" style="min-width: 10rem">
@@ -87,7 +99,7 @@ onMounted(() => {
                             {{ data.investment_duration +' '+data.duration }}
                         </template>
                     </Column>
-                    <Column field="status" header="Status" style="min-width: 10rem" />
+                    <Column field="status" header="Status" style="min-width: 8rem" />
                     <!-- <Column header="Member No." style="min-width: 10rem">
                         <template #body="{ data }">
                             {{ data.member_number }}
@@ -98,22 +110,22 @@ onMounted(() => {
                             {{ commonService.commaSeparator(data.benefit * data.quantity * data.monitory * data.investment_duration) }}
                         </template>
                     </Column>
-                           <Column header="Maturity Date" style="min-width: 10rem">
+                           <Column header="Maturity Date" style="min-width: 12rem">
                         <template #body="{ data }">
                             {{ maturityDate(data.duration, data.date, data.investment_duration) }}
                         </template>
                     </Column>
-                    <Column header="Date" style="min-width: 10rem">
+                    <Column header="Date" style="min-width: 12rem">
                         <template #body="{ data }">
                             {{ data.date	 }}
                         </template>
                     </Column>
                     <Column headerStyle="min-width:10rem;">
                         <template #body="{ data }">
-                            <Button icon="pi pi-plus" class=" p-button-success mr-2"
-                                @click="AddRolesPermissions(data)" />
-                            <!-- <Button icon="pi pi-trash" class=" p-button-warning mt-2"
-                                @click="confirmDeleteProduct(data)" /> -->
+                            <Button v-if="data.status == 'Active'" icon="pi pi-wallet" class=" p-button-success mr-2" v-tooltip="'ReInvestment'"
+                                 />
+                            <Button v-if="data.status == 'Active'" icon="pi pi-credit-card" class=" p-button-warning mt-2" v-tooltip="'Withdraw Investment'"
+                                @click="withdrawInvestment(data)" />
                         </template>
                     </Column>
 
