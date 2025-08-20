@@ -1292,4 +1292,23 @@ class Controller extends BaseController
 
         return null;
     }
+
+
+
+    /**
+     * Summary of getCntParameterByCd
+     * getting control parameter by code
+     * @param mixed $param_cd
+     * @param mixed $institution_id
+     * @param mixed $branch_cd
+     * @return GlAccounts|null
+     */
+    public function getCntParameterByCd( $param_cd, $institution_id, $branch_cd)
+    {
+        $cnt = CntrlParameter::where(['param_cd' => $param_cd, 'institution_id' => $institution_id])->first();
+        $cntGl = str_replace('***',$branch_cd, $cnt->param_value);
+        $acct=GlAccounts::where('acct_no', $cntGl)->first();
+        return $acct;
+    }
+
 }

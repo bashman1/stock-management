@@ -7,6 +7,8 @@ use App\Models\BuildingUnit;
 use App\Models\Rental;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use App\Models\Branch;
+use App\Models\Member;
 use Carbon\Carbon;
 
 class BuildingController extends Controller
@@ -39,7 +41,8 @@ class BuildingController extends Controller
         }
     }
 
-    public function getBuildings(Request $request){
+    public function getBuildings(Request $request)
+    {
         try {
 
             $userData = $this->getUserLogin();
@@ -93,14 +96,15 @@ class BuildingController extends Controller
     }
 
 
-    public function createBuildingUnit(Request $request){
+    public function createBuildingUnit(Request $request)
+    {
         try {
             DB::beginTransaction();
             $userData = $this->getUserLogin();
             $buildingUnit = BuildingUnit::create([
                 'building_id' => $request->building_id,
-                'unit_type'=> 'Room',
-                'unit_no'=> $request->unit,
+                'unit_type' => 'Room',
+                'unit_no' => $request->unit,
                 'name' => $request->name,
                 'rent' => $request->rent,
                 'description' => $request->description,
@@ -118,7 +122,8 @@ class BuildingController extends Controller
     }
 
 
-    public function getBuildingUnits(Request $request){
+    public function getBuildingUnits(Request $request)
+    {
         try {
             $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
@@ -171,7 +176,8 @@ class BuildingController extends Controller
     }
 
 
-    public function rentUnit(Request $request){
+    public function rentUnit(Request $request)
+    {
         try {
             DB::beginTransaction();
             $userData = $this->getUserLogin();
@@ -197,6 +203,80 @@ class BuildingController extends Controller
                 'payment_status' => $request->payment_status ?? 'UNPAID',
             ]);
 
+            $member = Member::find($request->member_id);
+            $branch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
+            $cash = $this->getCntParameterByCd('CL', $userData->institution_id, $branch->code);
+            $sales = $this->getCntParameterByCd('SL', $userData->institution_id, $branch->code);
+
+            $tran = (array)[
+                "acct_no" => $cash->acct_no,
+                "acct_type" => $cash->acct_type,
+                "contra_acct_no" => $sales->acct_no,
+                "contra_acct_type" => $sales->acct_type,
+                "description" => "Rent payment:- {$member->first_name} {$member->last_name} on " . date('Y-m-d H:i:s'),
+                "dr_cr_ind" => "DR/CR",
+                "tran_amount" => $request->amount_paid,
+                "reversal_flag" => 'N',
+                "tran_date" => isset($request->date) ? $request->date : now(),
+                "tran_cd" => 'RNT',
+                "tran_id" => $this->generateUuid(),
+                "status" => 'Active',
+                "institution_id" => $userData->institution_id,
+                "branch_id" => $userData->branch_id,
+                "created_by" => $userData->id,
+                "created_on" => now(),
+                "member_id" =>  $request->member_id,
+                // "product_id" => $product->id,
+                // "stock_id" => $stock->id,
+                "ext_ref" => $rental->id,
+                "tran" => "RENT PAYMENT",
+                // "reversal_reason"=>null,
+                // "reversed_by"=>null,
+                // "reversed_on"=>null,
+            ];
+
+
+            $postTran = $this->postTransaction($tran);
+
+            $debitRequest = (object)[
+                "acct_no" => $cash->acct_no,
+                "acct_type" => $cash->acct_type,
+                "tran_amt" => $postTran->tran_amount ?? 0,
+                "reversal_flag" => 'N',
+                "description" => $postTran->description ?? '',
+                "transaction_date" => $postTran->tran_date ?? now(),
+                "contra_acct_no" => $sales->acct_no,
+                "contra_acct_type" => $sales->acct_type,
+                "tran_type" => 'RENT PAYMENT',
+                "tran_cd" => 'RNT',
+                "tran_id" => $postTran->tran_id ?? null,
+                "institution_id" => $userData->institution_id,
+                "branch_id" => $userData->branch_id,
+                "created_by" => $userData->id,
+                "status" => 'Active',
+            ];
+            $creditRequest = (object)[
+                "acct_no" => $sales->acct_no,
+                "acct_type" => $sales->acct_type,
+                "tran_amt" => $postTran->tran_amount ?? 0,
+                "reversal_flag" => 'N',
+                "description" => $postTran->description ?? '',
+                "transaction_date" => $postTran->tran_date ?? now(),
+                "contra_acct_no" => $cash->acct_no,
+                "contra_acct_type" => $cash->acct_type,
+                "tran_type" => 'STOCK IN',
+                "tran_cd" => 'STO',
+                "tran_id" => $postTran->tran_id ?? null,
+                "institution_id" => $userData->institution_id,
+                "branch_id" => $userData->branch_id,
+                "created_by" => $userData->id,
+                "status" => 'Active',
+            ];
+
+            $debit = $this->postGlDR($debitRequest);
+            $credit = $this->postGlCR($creditRequest);
+
+
             DB::commit();
             return $this->genericResponse(true, "Building unit rented successfully", 200, $rental, "rentUnit", $request);
         } catch (\Throwable $th) {
@@ -205,7 +285,8 @@ class BuildingController extends Controller
         }
     }
 
-    public function getRentals(Request $request){
+    public function getRentals(Request $request)
+    {
         try {
             $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
@@ -261,10 +342,9 @@ class BuildingController extends Controller
             $rentals = $this->paginate($request->rowPerPage, $totalSql, $sqlString);
 
             return $this->genericResponse(true, "Building units retrieved successfully", 200, $rentals, "getRentals", $request);
-        }catch (\Throwable $th) {
+        } catch (\Throwable $th) {
             // DB::rollBack();
             return $this->genericResponse(false, $th->getMessage(), 500, $th, "getRentals", $request);
         }
-
     }
 }
