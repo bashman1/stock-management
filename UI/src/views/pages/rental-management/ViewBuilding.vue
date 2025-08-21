@@ -41,6 +41,11 @@ const onPageChange = (event)=>{
 }
 
 
+const goToDetails= (data)=>{
+    commonService.redirect(router, 'view-building-details/'+data.id);
+}
+
+
 onMounted(() => {
     getBuildings();
 });
@@ -138,18 +143,18 @@ onMounted(() => {
                     {{ data.created_at }}
                 </template>
             </Column>
-            <!-- <Column headerStyle="min-width:17rem;">
+            <Column headerStyle="min-width:17rem;">
                 <template #body="{ data }">
                     <Button icon="pi pi-eye" @click="goToDetails(data)" class="p-button-primary mr-2"
                         v-tooltip="'View product details'" />
-                    <Button icon="pi pi-pencil" @click="editProduct(data)" class="p-button-success mr-2"
+                    <!-- <Button icon="pi pi-pencil" @click="editProduct(data)" class="p-button-success mr-2"
                         v-tooltip="'Edit product details'" />
                     <Button icon="pi pi-refresh" @click="restock(data)" class="p-button-warning mr-2"
                         v-tooltip="'Restock product'" />
                     <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="toggleConfirmDialog(data)"
-                        v-tooltip="'Archive product'" />
+                        v-tooltip="'Archive product'" /> -->
                 </template>
-            </Column> -->
+            </Column>
         </DataTable>
     </div>
 </template>

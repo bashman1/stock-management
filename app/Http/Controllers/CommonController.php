@@ -47,7 +47,11 @@ class CommonController extends Controller
             (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'INCOME' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id AND DATE(transaction_date) = CURRENT_DATE) AS today_income,
             (SELECT COUNT(id) FROM investments WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_active_investments,
             (SELECT COUNT(id) FROM investments WHERE status ='Withdrawn' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_withdrawn_investments,
-            (SELECT COALESCE(SUM(I.quantity * P.monitory) ,0) FROM investments I INNER JOIN projects P ON P.id = I.project_id WHERE I.institution_id = $userData->institution_id AND I.branch_id=$userData->branch_id) AS total_investment_value
+            (SELECT COALESCE(SUM(I.quantity * P.monitory) ,0) FROM investments I INNER JOIN projects P ON P.id = I.project_id WHERE I.institution_id = $userData->institution_id AND I.branch_id=$userData->branch_id) AS total_investment_value,
+            (SELECT COUNT(id) FROM buildings WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id = $userData->branch_id) AS total_buildings,
+            (SELECT COUNT(id) FROM building_units WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id = $userData->branch_id) AS total_building_units_available,
+            (SELECT COUNT(id) FROM building_units WHERE status ='Occupied' AND institution_id = $userData->institution_id AND branch_id = $userData->branch_id ) AS total_building_units_occupied,
+            (SELECT SUM(rent) FROM building_units WHERE (status ='Occupied' OR status ='Active') AND institution_id = $userData->institution_id AND branch_id = $userData->branch_id) AS monthly_rent_income
             ");
 
             $collectionGraph=DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
@@ -109,7 +113,11 @@ class CommonController extends Controller
             (SELECT COUNT(id) FROM investments WHERE status ='Withdrawn' ) AS total_withdrawn_investments,
             (SELECT COALESCE(SUM(I.quantity * P.monitory) ,0) FROM investments I INNER JOIN projects P ON P.id = I.project_id) AS total_investment_value,
           --  (SELECT COUNT(id) FROM order_items WHERE status ='Active') AS product_sold
-            (SELECT COALESCE(SUM(O.qty * S.selling_price), 0) FROM order_items O INNER JOIN stocks S ON O.product_id = S.product_id AND  O.branch_id = S.branch_id WHERE O.status ='Active') AS product_sold
+            (SELECT COALESCE(SUM(O.qty * S.selling_price), 0) FROM order_items O INNER JOIN stocks S ON O.product_id = S.product_id AND  O.branch_id = S.branch_id WHERE O.status ='Active') AS product_sold,
+            (SELECT COUNT(id) FROM buildings WHERE status ='Active') AS total_buildings,
+            (SELECT COUNT(id) FROM building_units WHERE status ='Active') AS total_building_units_available,
+            (SELECT COUNT(id) FROM building_units WHERE status ='Occupied') AS total_building_units_occupied,
+            (SELECT SUM(rent) FROM building_units WHERE (status ='Occupied' OR status ='Active')) AS monthly_rent_income
             -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  reversal_flag = 'N') AS total_stock_value,
             -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  reversal_flag = 'N') AS today_stock_value
             -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  AND reversal_flag = 'N') AS total_sales_value

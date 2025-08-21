@@ -791,6 +791,14 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/view-building-details/:id',
+                    name: 'BuildingProfile',
+                    component: () => import('@/views/pages/rental-management/BuildingProfile.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
 
             ]
         },

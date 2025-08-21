@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Building;
 use App\Models\BuildingUnit;
 use App\Models\Rental;
+use App\Models\RentalHistory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\Branch;
@@ -75,6 +76,11 @@ class BuildingController extends Controller
                 $totalSql .= " AND (B.name ILIKE '%{$search}%' OR B.address ILIKE '%{$search}%')";
             }
 
+            if ($request->id){
+                $sqlString .= " AND B.id = {$request->id}";
+                $totalSql .= " AND B.id = {$request->id}";
+            }
+
             if (!empty(trim($request->startDate))) {
                 $startDate = date('Y-m-d', strtotime(trim($request->startDate))); // only date part
                 $sqlString .= " AND B.created_at::date >= '$startDate'";
@@ -131,38 +137,55 @@ class BuildingController extends Controller
             $sqlString = "SELECT BU.id, BU.building_id, BU.unit_type, BU.unit_no, BU.name, BU.rent,
                 BU.description, BU.status, BU.created_by, BU.created_on, BU.created_at, B.name AS building_name
                 FROM building_units BU
-                INNER JOIN buildings B ON B.id = BU.building_id
-                WHERE BU.status = 'Active' ";
+                INNER JOIN buildings B ON B.id = BU.building_id";
 
             $totalSql = "SELECT COUNT(BU.id) AS total
                 FROM building_units BU
-                INNER JOIN buildings B ON B.id = BU.building_id
-                WHERE BU.status = 'Active' ";
+                INNER JOIN buildings B ON B.id = BU.building_id";
+
+            $conditions = [];
+
+            if ($request->status){
+                $conditions[] = "BU.status = '" . addslashes($request->status) . "'";
+            }
 
             if ($isNotAdmin) {
-                $sqlString .= " AND B.institution_id = {$userData->institution_id} AND B.branch_id = {$userData->branch_id}";
-                $totalSql .= " AND B.institution_id = {$userData->institution_id} AND B.branch_id = {$userData->branch_id}";
+                $conditions[] = "BU.institution_id = " . intval($userData->institution_id);
+                $conditions[] = "BU.branch_id = " . intval($userData->branch_id);
+
+                // $sqlString .= " AND B.institution_id = {$userData->institution_id} AND B.branch_id = {$userData->branch_id}";
+                // $totalSql .= " AND B.institution_id = {$userData->institution_id} AND B.branch_id = {$userData->branch_id}";
             }
             if ($request->search) {
                 $search = $request->search;
-                $sqlString .= " AND (BU.name ILIKE '%{$search}%' OR B.name ILIKE '%{$search}%')";
-                $totalSql .= " AND (BU.name ILIKE '%{$search}%' OR B.name ILIKE '%{$search}%')";
+                $conditions[] = "BU.name ILIKE '%" . addslashes($search) . "%' OR B.name ILIKE '%" . addslashes($search) . "%'";
+
+                // $sqlString .= " AND (BU.name ILIKE '%{$search}%' OR B.name ILIKE '%{$search}%')";
+                // $totalSql .= " AND (BU.name ILIKE '%{$search}%' OR B.name ILIKE '%{$search}%')";
             }
 
             if (!empty(trim($request->startDate))) {
                 $startDate = date('Y-m-d', strtotime(trim($request->startDate))); // only date part
-                $sqlString .= " AND BU.created_at::date >= '$startDate'";
-                $totalSql .= " AND BU.created_at::date >= '$startDate'";
+                $conditions[] = "BU.created_at::date >= '$startDate'";
+                // $sqlString .= " AND BU.created_at::date >= '$startDate'";
+                // $totalSql .= " AND BU.created_at::date >= '$startDate'";
             }
             if (!empty(trim($request->endDate))) {
                 $endDate = date('Y-m-d', strtotime(trim($request->endDate))); // only date part
-                $sqlString .= " AND BU.created_at::date <= '$endDate'";
-                $totalSql .= " AND BU.created_at::date <= '$endDate'";
+                $conditions[] = "BU.created_at::date <= '$endDate'";
+                // $sqlString .= " AND BU.created_at::date <= '$endDate'";
+                // $totalSql .= " AND BU.created_at::date <= '$endDate'";
             }
 
             if ($request->building_id) {
-                $sqlString .= " AND BU.building_id = {$request->building_id}";
-                $totalSql .= " AND BU.building_id = {$request->building_id}";
+                $conditions[] = "BU.building_id = " . intval($request->building_id);
+                // $sqlString .= " AND BU.building_id = {$request->building_id}";
+                // $totalSql .= " AND BU.building_id = {$request->building_id}";
+            }
+
+            if (count($conditions) > 0) {
+                $sqlString .= " WHERE " . implode(" AND ", $conditions);
+                $totalSql .= " WHERE " . implode(" AND ", $conditions);
             }
 
             $sqlString .= " ORDER BY BU.id DESC";
@@ -189,6 +212,34 @@ class BuildingController extends Controller
             $rental = Rental::create([
                 'building_id' => $request->building_id,
                 'unit_id' => $request->unit_id,
+                'member_id' => $request->member_id,
+                'duration' => $request->duration,
+                'amount_paid' => $request->amount_paid,
+                'rental_date' => $request->rental_date ? date('Y-m-d H:i:s', strtotime($request->rental_date)) : now(),
+                'due_date' => $dueDate ? date('Y-m-d H:i:s', strtotime($dueDate)) : null,
+                'paid_date' => $request->rental_date ? date('Y-m-d H:i:s', strtotime($request->rental_date)) : null,
+                'description' => $request->description,
+                'institution_id' => $userData->institution_id,
+                'branch_id' => $userData->branch_id,
+                'created_by' => $userData->id,
+                'created_on' => now(),
+                'payment_status' => $request->payment_status ?? 'UNPAID',
+            ]);
+
+
+            $unit = BuildingUnit::find($request->unit_id);
+            if ($unit) {
+                $unit->status = 'Occupied';
+                $unit->save();
+            } else {
+                return $this->genericResponse(false, "Building unit not found", 404, null, "rentUnit", $request);
+            }
+
+            // $rental->rental_id = $rental->id;
+            $history = RentalHistory::create([
+                'building_id' => $request->building_id,
+                'unit_id' => $request->unit_id,
+                'rental_id'=> $rental->id,
                 'member_id' => $request->member_id,
                 'duration' => $request->duration,
                 'amount_paid' => $request->amount_paid,
@@ -285,6 +336,16 @@ class BuildingController extends Controller
         }
     }
 
+
+    public function evacuateUnit(Request $request){
+        $rental = Rental::find($request->id);
+        if ($rental){
+            $rental->delete();
+            $rental->save();
+        }
+    }
+
+
     public function getRentals(Request $request)
     {
         try {
@@ -346,5 +407,112 @@ class BuildingController extends Controller
             // DB::rollBack();
             return $this->genericResponse(false, $th->getMessage(), 500, $th, "getRentals", $request);
         }
+    }
+
+
+    public function makeRentPayment(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $userData = $this->getUserLogin();
+
+            $rental = Rental::find($request->id);
+            if (!$rental) {
+                return $this->genericResponse(false, "Rental not found", 404, null, "makeRentPayment", $request);
+            }
+
+            $unit = BuildingUnit::find($rental->unit_id);
+
+            $numberOfMoths = ceil((double) $request->amount_paid / (double) $unit->rent);
+            $dueDate = Carbon::parse($rental->rental_date)->addMonths($numberOfMoths)->format('Y-m-d H:i:s');
+
+            $rental->amount_paid =  $rental->amount_paid + (double) $request->amount_paid;
+            $rental->paid_date = now();
+            $rental->due_date = $dueDate;
+            $rental->duration = $rental->duration + $numberOfMoths;
+            // $rental->payment_status = 'PAID';
+            $rental->save();
+
+
+            $member = Member::find($rental->member_id);
+            $branch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
+            $cash = $this->getCntParameterByCd('CL', $userData->institution_id, $branch->code);
+            $sales = $this->getCntParameterByCd('SL', $userData->institution_id, $branch->code);
+
+            $tran = (array)[
+                "acct_no" => $cash->acct_no,
+                "acct_type" => $cash->acct_type,
+                "contra_acct_no" => $sales->acct_no,
+                "contra_acct_type" => $sales->acct_type,
+                "description" => "Rent payment:- {$member->first_name} {$member->last_name} on " . date('Y-m-d H:i:s'),
+                "dr_cr_ind" => "DR/CR",
+                "tran_amount" => $request->amount_paid,
+                "reversal_flag" => 'N',
+                "tran_date" => isset($request->date) ? $request->date : now(),
+                "tran_cd" => 'RNT',
+                "tran_id" => $this->generateUuid(),
+                "status" => 'Active',
+                "institution_id" => $userData->institution_id,
+                "branch_id" => $userData->branch_id,
+                "created_by" => $userData->id,
+                "created_on" => now(),
+                "member_id" =>  $request->member_id,
+                // "product_id" => $product->id,
+                // "stock_id" => $stock->id,
+                "ext_ref" => $rental->id,
+                "tran" => "RENT PAYMENT",
+                // "reversal_reason"=>null,
+                // "reversed_by"=>null,
+                // "reversed_on"=>null,
+            ];
+
+
+            $postTran = $this->postTransaction($tran);
+
+            $debitRequest = (object)[
+                "acct_no" => $cash->acct_no,
+                "acct_type" => $cash->acct_type,
+                "tran_amt" => $postTran->tran_amount ?? 0,
+                "reversal_flag" => 'N',
+                "description" => $postTran->description ?? '',
+                "transaction_date" => $postTran->tran_date ?? now(),
+                "contra_acct_no" => $sales->acct_no,
+                "contra_acct_type" => $sales->acct_type,
+                "tran_type" => 'RENT PAYMENT',
+                "tran_cd" => 'RNT',
+                "tran_id" => $postTran->tran_id ?? null,
+                "institution_id" => $userData->institution_id,
+                "branch_id" => $userData->branch_id,
+                "created_by" => $userData->id,
+                "status" => 'Active',
+            ];
+            $creditRequest = (object)[
+                "acct_no" => $sales->acct_no,
+                "acct_type" => $sales->acct_type,
+                "tran_amt" => $postTran->tran_amount ?? 0,
+                "reversal_flag" => 'N',
+                "description" => $postTran->description ?? '',
+                "transaction_date" => $postTran->tran_date ?? now(),
+                "contra_acct_no" => $cash->acct_no,
+                "contra_acct_type" => $cash->acct_type,
+                "tran_type" => 'STOCK IN',
+                "tran_cd" => 'STO',
+                "tran_id" => $postTran->tran_id ?? null,
+                "institution_id" => $userData->institution_id,
+                "branch_id" => $userData->branch_id,
+                "created_by" => $userData->id,
+                "status" => 'Active',
+            ];
+
+            $debit = $this->postGlDR($debitRequest);
+            $credit = $this->postGlCR($creditRequest);
+
+            DB::commit();
+            return $this->genericResponse(true, "Rent payment made successfully", 200, $rental, "makeRentPayment", $request);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "makeRentPayment", $request);
+        }
+
     }
 }

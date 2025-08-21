@@ -99,9 +99,6 @@ const maturityDate = computed(() => {
 });
 
 
-
-
-
 const onSubmit = () => {
     let postData = formData.value
     postData.building_id = formData.value.building.id;
@@ -150,6 +147,7 @@ const getBuildingUnits = (buildingId) => {
         startDate: startDate.value,
         endDate: endDate.value,
         building_id: buildingId,
+        status: "Active"
     }
     commonService.genericRequest('get-building-units', 'POST', true, postData).then((response) => {
         if (response.status) {

@@ -58,8 +58,34 @@ const togglePaymentModal=(action)=>{
 }
 
 const makePayment=(data)=>{
+    formData.value = { };
     selectedTenant.value = data;
     togglePaymentModal(true);
+}
+
+const onSubmitPayments =()=>{
+    if (!formData.value.amountPaid || formData.value.amountPaid <= 0) {
+        commonService.showError(toast, 'Please enter a valid amount');
+        return;
+    }
+    let postData = {
+        id : selectedTenant.value.id,
+        tenant_id: selectedTenant.value.id,
+        amount_paid: formData.value.amountPaid,
+        building_id: selectedTenant.value.building_id,
+        unit_id: selectedTenant.value.unit_id
+    }
+
+    // alert(JSON.stringify(postData));
+    commonService.genericRequest('make-rental-payments', 'POST', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            togglePaymentModal(false);
+            getBuildings();
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
 }
 
 
@@ -146,12 +172,12 @@ onMounted(() => {
                     {{ commonService.commaSeparator(data.unit_rent) +' Per Month' }}
                 </template>
             </Column>
-            <Column field="name" header="Paid On" style="min-width: 10rem">
+            <!-- <Column field="name" header="Paid On" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.paid_date  }}
                 </template>
-            </Column>
-              <Column field="name" header="Paid On" style="min-width: 10rem">
+            </Column> -->
+              <Column field="name" header="Duration" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.duration +' Months'}}
                 </template>
@@ -176,11 +202,11 @@ onMounted(() => {
                     {{ commonService.commaSeparator((data.unit_rent * data.duration) - data.amount_paid) }}
                 </template>
             </Column>
-            <Column field="name" header="Status" style="min-width: 10rem">
+            <!-- <Column field="name" header="Status" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.status }}
                 </template>
-            </Column>
+            </Column> -->
             <Column header="Date" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.created_at }}
@@ -190,12 +216,12 @@ onMounted(() => {
                 <template #body="{ data }">
                     <Button icon="pi pi-eye" @click="viewReceipt(data)" class="p-button-primary mr-2"
                         v-tooltip="'View  details'" />
-                    <Button icon="pi pi-bill" @click="makePayment(data)"  class="p-button-success mr-2"
-                        v-tooltip="'Edit  details'" />
+                    <Button icon="pi pi-money-bill" @click="makePayment(data)"  class="p-button-success mr-2"
+                        v-tooltip="'Make Payments'" />
                     <!-- <Button icon="pi pi-refresh"  class="p-button-warning mr-2"
                         v-tooltip="'Restock product'" /> -->
                     <Button icon="pi pi-trash" class="p-button-danger mr-2"
-                        v-tooltip="'Archive Details'" />
+                        v-tooltip="'Evacuate/Shift'" />
                 </template>
             </Column>
         </DataTable>
@@ -204,27 +230,17 @@ onMounted(() => {
 
         <Dialog header="Make Payment" v-model:visible="showRentPaymentModal" :style="{ width: '33vw' }" :modal="true"
             class="p-fluid">
-            <!-- <p style="padding: 20px;"> -->
-            <!-- <div class="grid p-fluid">
-
-            </div> -->
-
-            <div class="field mt-4">
-                    <span class="p-float-label">
-                        <InputNumber id="name1" type="text" v-model="formData.quantity" />
-                        <label for="name1">Quantity</label>
-                    </span>
-                </div>
                 <div class="field mt-4">
+                    <p class="text-900 font-bold">Tenant: <span class="font-normal"> {{selectedTenant?.tenant_name +' | '+ commonService.commaSeparator(selectedTenant?.unit_rent)+' Per Month | '+ selectedTenant?.building_name +' '+ selectedTenant?.unit}}</span></p>
                     <span class="p-float-label">
                         <InputNumber id="name1" type="text" v-model="formData.amountPaid" />
-                        <label for="name1">Amount Paid</label>
+                        <label for="name1">Amount</label>
                     </span>
                 </div>
             <template #footer>
-                <Button label="Cancel" @click="toggleTypeModal(false)" icon="pi pi-times"
+                <Button label="Cancel" @click="togglePaymentModal(false)" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
-                <Button @click="printReceipt" icon="pi pi-print" label="Pay Rent" class="p-button-outlined mr-2 mb-2" />
+                <Button @click="onSubmitPayments"  label="Pay Rent" class="p-button-outlined mr-2 mb-2" />
             </template>
         </Dialog>
 
