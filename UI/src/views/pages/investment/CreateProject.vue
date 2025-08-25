@@ -13,6 +13,7 @@ const formError = ref({});
 const durations = ref([]);
 
 const benefitType = ref([{ label: 'Multiplier', value: 'Multiplier' }, { label: 'Percentage', value: 'Percentage' } , { label: 'Fixed Value', value: 'Fixed Value' }]);
+const projectType = ref([{ label: 'Goats', value: 'Goats' }, { label: 'Maize', value: 'Maize' } , { label: 'Bees', value: 'Bees' }]);
 
 const onSubmit = () => {
 
@@ -103,6 +104,15 @@ onMounted(() => {
 
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
+                    <Dropdown id="state" v-model="formData.projectType" :options="projectType" filter optionLabel="label"
+                    @blur="onInputBlur(formData.projectType, 'projectType')" :class="{ 'p-invalid': formError?.projectType }"
+                            placeholder="Benefit Type"></Dropdown>
+                        <label for="state">Project Type</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
                         <InputNumber type="text" id="email" v-model="formData.benefit"  @blur="onInputBlur(formData.benefit, 'benefit')" :class="{ 'p-invalid': formError?.benefit }" /> <!-- class="p-invalid"-->
                         <label for="email">Benefit Value</label>
                     </span>
@@ -112,6 +122,49 @@ onMounted(() => {
                     <span class="p-float-label">
                         <Calendar inputId="dob" v-model="formData.date"></Calendar>
                         <label for="dob">Date</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputNumber type="text" id="email" v-model="formData.gracePeriod" /> <!-- class="p-invalid"-->
+                        <label for="email">Grace Period</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputNumber type="text" id="email" v-model="formData.size" /> <!-- class="p-invalid"-->
+                        <label for="email">Size</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputNumber type="text" id="email" v-model="formData.investmentReturnValue" /> <!-- class="p-invalid"-->
+                        <label for="email">Return Of Investment Value</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputNumber type="text" id="email" v-model="formData.investmentReturnDuration" /> <!-- class="p-invalid"-->
+                        <label for="email">Return Of Investment Duration</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                    <Dropdown id="state" v-model="formData.duration" :options="durations" filter optionLabel="unit"
+                            placeholder="Select duration"></Dropdown>
+                        <label for="state">Return Of Investment Duration Unit </label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputNumber type="text" id="email" v-model="formData.investmentReturnValue" /> <!-- class="p-invalid"-->
+                        <label for="email">Cost Per Unit</label>
                     </span>
                 </div>
 

@@ -585,7 +585,7 @@ const onSubmitInvoice = ()=>{
         if (response.status) {
             commonService.showSuccess(toast, response.message);
             toggleInvoiceModel(false);
-            printInvoice();
+            // printInvoice();
         } else {
             commonService.showError(toast, response.message);
         }
@@ -1124,6 +1124,7 @@ onMounted(() => {
 
             <!-- /template -->
             <template #footer>
+                <Button label="Print" @click="printInvoice" icon="pi pi-print" class="p-button-outlined" />
                 <Button label="Submit" @click="onSubmitInvoice" icon="pi pi-print" class="p-button-outlined" />
             </template>
         </Dialog>

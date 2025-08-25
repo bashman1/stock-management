@@ -20,8 +20,44 @@ class ScheduledTaskService
     public function __invoke()
     {
         $this->sendPendingMails(); // Single point of execution
+
+
+
+                // Daily alert at 08:00
+        if (now()->format('H:i') === '00:00') {
+            // $this->sendDailyAlerts();
+            // $this->markRan('daily');
+        }
+
+        // Weekly alert - Monday 08:00
+        if (now()->isMonday() && now()->format('H:i') === '00:00') {
+            // $this->sendWeeklyAlerts();
+            // $this->markRan('weekly');
+        }
+
+        // Monthly alert - 1st of month at 08:00
+        if (now()->day === 1 && now()->format('H:i') === '00:00') {
+            // $this->sendMonthlyAlerts();
+            // $this->markRan('monthly');
+        }
+
+        // Quarterly alert - 1st of Jan/Apr/Jul/Oct at 08:00
+        if (in_array(now()->month, [1,4,7,10]) && now()->day === 1 && now()->format('H:i') === '00:00') {
+            // $this->sendQuarterlyAlerts();
+            // $this->markRan('quarterly');
+        }
+
+                // Yearly alert - 1st January at 08:00
+        if (now()->month === 1 && now()->day === 1 && now()->format('H:i') === '08:00') {
+            // $this->sendYearlyAlerts();
+            // $this->markRan('yearly', now()->endOfYear());
+        }
     }
 
+    /**
+     * Summary of sendPendingMails
+     * @return void
+     */
     public function sendPendingMails(): void
     {
         Log::info('Start sending mail');
@@ -80,5 +116,18 @@ class ScheduledTaskService
             }
         }
         Log::info('Finished sending mail');
+    }
+
+
+    /**
+     * Summary of sendDailyAlerts
+     * includes the sales, purchases, and other daily alerts
+     * like low stock, upcoming expires, sales purchases, and other alerts
+     * @return void
+     */
+    public function sendDailyAlerts()
+    {
+        // Logic for sending daily alerts
+        Log::info('Sending daily alerts');
     }
 }

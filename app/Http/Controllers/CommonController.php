@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CommonController extends Controller
 {
@@ -157,5 +159,21 @@ class CommonController extends Controller
 
         return $this->genericResponse(true, "Stats", 200, ["count"=>$data, "collectionGraph"=>$collectionGraph, "membersGraph"=>$membersGraph,
             "productsGraph"=>$productsGraph, "salesGraph"=>$salesGraph, "bestSellingProduct"=>$bestSellingProduct, "productAboutToExpire"=>$productAboutToExpire], "getDashboardStats", []);
+    }
+
+
+    public function setDailyNotification(){
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+            // Logic to set daily notifications
+            // This could involve checking for pending tasks, reminders, etc.
+            // For now, we will just log a message
+            Log::info("Daily notification set for user: {$userData->id}");
+            // return $this->genericResponse(true, "Daily notification set successfully", 200, [], "setDailyNotification", []);
+        } catch (\Throwable $th) {
+            Log::error("Error setting daily notification: " . $th->getMessage());
+            // return $this->genericResponse(false, $th->getMessage(), 500, [], "setDailyNotification", []);
+        }
     }
 }

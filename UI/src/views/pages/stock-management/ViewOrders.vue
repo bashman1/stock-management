@@ -14,6 +14,8 @@ const router = useRouter();
 const route = useRoute();
 const displayConfirmation = ref(false);
 const deleteOrderId = ref(null);
+const showInvoiceModal = ref(false);
+const userData = ref({});
 
 
 const getSales = () => {
@@ -26,7 +28,7 @@ const getSales = () => {
     })
 }
 const viewDetails = (data) => {
-    toggleModal(true);
+    // toggleModal(true);
     orderDetails.value = data;
     getOrderDetails(data?.id);
 
@@ -36,6 +38,7 @@ const getOrderDetails = (orderId) => {
     commonService.genericRequest('get-orders-details/' + orderId, 'get', true, {}).then((response) => {
         if (response.status) {
             orderItems.value = response.data;
+            toggleInvoiceModel(true);
         } else {
             commonService.showError(toast, response.message);
         }
@@ -86,7 +89,140 @@ const closeConfirmation = () => {
     displayConfirmation.value = true;
 };
 
+const toggleInvoiceModel = (action) => {
+    showInvoiceModal.value = action
+}
+
+const printInvoice = () => {
+  const printWindow = window.open('', '', 'width=600,height=600');
+  printWindow.document.open();
+
+  let productRows = '';
+  orderItems.value.forEach(prod => {
+    productRows += `
+      <tr>
+        <td style='border: 1px solid #000; padding: 8px; color: #666;'>${prod.qty +' '+ prod.unit}</td>
+        <td style='border: 1px solid #000; padding: 8px; color: #666;'>${prod.name}</td>
+        <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>${commonService.commaSeparator(Number(prod.price))}</td>
+        <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>${commonService.commaSeparator(Number(prod.price) * Number(prod.qty))}</td>
+      </tr>`;
+  });
+
+  printWindow.document.write(`<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Receipt</title>
+  <style>
+  @media print {
+    body {
+      background: #fff !important;
+      color: #000;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      font-family: Arial, sans-serif;
+    }
+
+    th, td {
+      color: #000 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    * {
+      box-shadow: none !important;
+    }
+  }
+</style>
+</head>
+<body style="background-color: #fff;">
+  <div style='max-width: 750px; font-family: Arial, sans-serif; margin: 20px auto; padding: 30px; border: 1px solid #000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
+    <header style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
+      <h1 style='color: #000; margin: 0;'>Receipt</h1>
+    </header>
+
+    <section>
+      <div style='display: flex; justify-content: space-between;'>
+        <div>
+          <p style="color: #000;"><strong>Company Name:</strong> ${userData.value?.institution_name}</p>
+          <p style="color: #000;"><strong>P.O.Box:</strong> ${ orderItems.value[0]?.p_o_box +' '+orderItems.value[0]?.institution_address }</p>
+          <p style="color: #000;"><strong>Customer:</strong> ${ orderItems[0]?.customer_name ? orderItems[0]?.customer_name: 'Cash' }</p>
+        </div>
+        <div style='text-align: right;'>
+          <p style="color: #000;"><strong>Receipt #:</strong> ${ orderItems.value[0]?.receipt_no}</p>
+          <p style="color: #000;"><strong>Date:</strong> ${commonService.formatDate(commonService.getCurrentTimestamp())}</p>
+
+        </div>
+      </div>
+    </section>
+
+
+
+    <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
+      <thead>
+        <tr>
+          <th style='border: 1px solid #000; padding: 8px; text-align: left;  color: #000;'>QTY</th>
+          <th style='border: 1px solid #000; padding: 8px; text-align: left;  color: #000;'>DESCRIPTION</th>
+          <th style='border: 1px solid #000; padding: 8px; text-align: right;  color: #000;'>UNIT PRICE</th>
+          <th style='border: 1px solid #000; padding: 8px; text-align: right;  color: #000;'>AMOUNT</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${productRows}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #000;'>Total</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #000;'>${orderItems.value[0].total? commonService.commaSeparator( Number(orderItems.value[0].total) ) : 0}</td>
+        </tr>
+        <tr>
+          <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>Amount Paid</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0].amount_paid))}</td>
+        </tr>
+        <tr>
+          <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>Change</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0].amount_paid) - Number(orderItems.value[0].total))}</td>
+        </tr>
+
+      </tfoot>
+    </table>
+
+    <div style='margin-top: 20px; border: 1px solid #000; padding: 10px;'>
+      <p style="color: #000;"><strong>Other Comments:</strong></p>
+      <p style="color: #000;">1. Acknowledged with thanks.</p>
+
+    </div>
+
+    <div style='text-align: center; margin-top: 30px;'>
+      <p style='font-size: 0.9em; color: #000;'>We appreciate your support.</p>
+    </div>
+  </div>
+</body>
+</html>`);
+//   printWindow.document.close();
+//   printWindow.print();
+//   printWindow.close();
+printWindow.document.close();
+printWindow.onload = function () {
+  printWindow.focus();
+  printWindow.print();
+  printWindow.close();
+};
+};
+
+/**
+ *
+ The end testing code for editable table
+ */
+
+const close = () => {
+    toggleInvoiceModel(false);
+    printInvoice();
+};
+
 onMounted(() => {
+    userData.value=commonService.getStorage().userData;
     getSales();
 });
 
@@ -240,6 +376,115 @@ onMounted(() => {
                 <Button label="Cancel" @click="toggleTypeModal(false)" icon="pi pi-times"
                     class="p-button-outlined p-button-danger mr-2 mb-2" />
                 <Button @click="printReceipt" icon="pi pi-print" label="Print" class="p-button-outlined mr-2 mb-2" />
+            </template>
+        </Dialog>
+
+
+        <!-- A4 Receipt generation -->
+        <Dialog header="Generate Invoice" v-model:visible="showInvoiceModal" :style="{ width: '75vw' }" :modal="true"
+            class="p-fluid">
+
+            <!-- template -->
+
+            <!DOCTYPE html>
+            <html lang='en'>
+
+            <head>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>Invoice</title>
+            </head>
+
+            <body style="background-color: #fff;">
+            <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
+                <header style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
+                <h1 style='color: #2B5F2C; margin: 0;'>Receipt</h1>
+                <!-- <div style='width: 80px; height: 80px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;'>LOGO</div> -->
+                </header>
+
+                <section>
+                <div style='display: flex; justify-content: space-between;'>
+                    <div>
+                    <p style="color: #666;"><strong>Company Name:</strong> {{ userData?.institution_name }}</p>
+                    <p style="color: #666;"><strong>P.O.Box:</strong> {{ orderItems[0]?.p_o_box +' '+orderItems[0]?.institution_address }}</p>
+                    <p style="color: #666;"><strong>Customer:</strong> {{ orderItems[0]?.customer_name ? orderItems[0]?.customer_name: 'Cash' }}</p>
+                    </div>
+                    <div style='text-align: right;'>
+                    <p style="color: #666;"><strong>Receipt #:</strong> {{ orderItems[0]?.receipt_no}}</p>
+                    <p style="color: #666;"><strong>Date:</strong> {{ commonService.formatDate(commonService.getCurrentTimestamp()) }}</p>
+                    <!-- <p style="color: #666;"><strong>Due Date:</strong> 26/02/2019</p> -->
+                    </div>
+                </div>
+                </section>
+
+                <!-- <section style='margin-top: 20px;'>
+                <div style='display: flex; justify-content: space-between;'>
+                    <div>
+                    <div style='background: #2B5F2C; padding: 5px 10px; font-weight: bold;'>BILL TO</div>
+                    <p style="color: #666;">{{ customer?.name }}</p>
+                    <p style="color: #666;">{{ billingAddress }}</p>
+                    </div>
+                    <div>
+                    <div style='background: #2B5F2C; padding: 5px 10px; font-weight: bold;'>SHIP TO</div>
+                    <p style="color: #666;">{{ customer?.name }}</p>
+                    <p style="color: #666;">{{ billingAddress }}</p>
+                    </div>
+                </div>
+                </section> -->
+
+                <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
+                <thead>
+                    <tr>
+                    <th style='border: 1px solid #000; padding: 8px; text-align: left; background-color: #2B5F2C; color: #fff;'>QTY</th>
+                    <th style='border: 1px solid #000; padding: 8px; text-align: left; background-color: #2B5F2C; color: #fff;'>DESCRIPTION</th>
+                    <th style='border: 1px solid #000; padding: 8px; text-align: right; background-color: #2B5F2C; color: #fff;'>UNIT PRICE</th>
+                    <th style='border: 1px solid #000; padding: 8px; text-align: right; background-color: #2B5F2C; color: #fff;'>AMOUNT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for='(prod, index) of orderItems' :key='prod.id'>
+                    <td style='border: 1px solid #000; padding: 8px; color: #666;'>{{ prod.qty+' '+ prod.unit}}</td>
+                    <td style='border: 1px solid #000; padding: 8px; color: #666;'>{{ prod.name }}</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(Number(prod.price)) }}</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(Number(prod.price) * Number(prod.qty)	) }}</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                    <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #666;'>Total</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #666;'>{{ orderItems[0].total	 ? commonService.commaSeparator( Number(orderItems[0].total) ) : 0 }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>Amount Paid</td>
+                        <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0].amount_paid	) ) }}</td>
+                    </tr>
+                    <tr>
+                    <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>Change</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0].amount_paid	) - Number(orderItems[0].total)) }}</td>
+                    </tr>
+
+                </tfoot>
+                </table>
+
+                <div style='margin-top: 20px; border: 1px solid #000; padding: 10px; background: #f2f2f2;'>
+                <p style="color: #666;"><strong>Other Comments:</strong></p>
+                <p style="color: #666;">1. Acknowledged with thanks.</p>
+                <!-- <p style="color: #666;">2. Please include the invoice number on your check.</p> -->
+                </div>
+
+                <div style='text-align: center; margin-top: 30px;'>
+                <p style='font-size: 0.9em; color: #666;'>We appreciate your support</p>
+                <!-- <p style='font-size: 0.9em; color: #666;'>Payment is due within 15 days.</p> -->
+                <!-- <p style='font-size: 0.9em; color: #666;'>Please make checks payable to: {{ commonService.getStorage()?.institution_name }}.</p> -->
+                </div>
+            </div>
+            </body>
+
+            </html>
+
+            <!-- /template -->
+            <template #footer>
+                <Button label="print" @click="close" icon="pi pi-print" class="p-button-outlined" />
             </template>
         </Dialog>
 
