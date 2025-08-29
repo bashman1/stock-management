@@ -34,6 +34,11 @@ const getBuildings = () => {
     })
 }
 
+const editInvoice = (data)=>{
+    commonService.redirect(router, "proforma-invoice/"+data.id);
+
+}
+
 const onPageChange = (event)=>{
     rowsPerPage.value = event.rows;
     currentPage.value = Number(event.page) + 1;
@@ -145,7 +150,7 @@ onMounted(() => {
             </Column>
             <Column headerStyle="min-width:17rem;">
                 <template #body="{ data }">
-                    <Button icon="pi pi-eye"  class="p-button-primary mr-2"
+                    <Button icon="pi pi-eye"  @click="editInvoice(data)" class="p-button-primary mr-2"
                         v-tooltip="'View product details'" />
                     <Button icon="pi pi-pencil"  class="p-button-success mr-2"
                         v-tooltip="'Edit product details'" />

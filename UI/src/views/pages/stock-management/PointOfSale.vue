@@ -696,8 +696,29 @@ const printInvoice = () => {
 
 
 const invoice = (path)=>{
-    if (path === '/proforma-invoice') {
+    if (path.includes('/proforma-invoice')) {
         isProforma.value = true;
+    }
+}
+
+const getInvoiceDetails= (path, id )=>{
+    if (path.includes('/proforma-invoice') && Number(id)){
+
+        let postData = {
+            id: Number(id)
+        }
+
+        commonService.genericRequest('get-invoice-details', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            // toggleInvoiceModel(false);
+            // printInvoice();
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+
+
     }
 }
 
@@ -708,6 +729,7 @@ onBeforeMount(() => {
 
 onMounted(() => {
     invoice(route.path)
+    getInvoiceDetails(route.path, route.params.id);
     getProducts();
     getInstitutionDetails();
     getCustomers()

@@ -249,4 +249,5 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-member-details", [MemberController::class, "getMemberDetails"]);
     Route::post("withdraw-investment", [InvestmentController::class, "withdrawInvestment"]);
     Route::post("make-rental-payments", [BuildingController::class, "makeRentPayment"]);
+    Route::post("get-invoice-details", [ProductController::class, "getInvoiceDetails"]);
 });

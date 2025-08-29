@@ -16,6 +16,8 @@ use Illuminate\Support\Str;
 use App\Models\GlAccounts;
 use App\Models\GlHistory;
 use App\Models\Institution;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Transaction;
 use Carbon\Carbon;
 
@@ -487,14 +489,13 @@ class ProductController extends Controller
         // }
     }
 
-
-    public function getProducts(Request $request)
+    public function getProductList($request)
     {
-        $userData = $this->getUserLogin();
-        // $userData = auth()->user();
-        $isNotAdmin = $this->isNotAdmin();
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
 
-        $sqlString = "SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
+            $sqlString = "SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
             P.institution_id, P.user_id, P.status, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.ref_no, P.updated_at, C.name AS category_name,
             S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
             E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name,  P.tax_config, Y.name AS secondary_unit, P.secondary_weight, P.secondary_price, P.secondary_measurement_unit_id
@@ -508,19 +509,8 @@ class ProductController extends Controller
             INNER JOIN institutions I ON I.id =P.institution_id
             LEFT JOIN measurement_units Y ON Y.id = P.secondary_measurement_unit_id
             WHERE P.status = 'Active'";
-        // if ($isNotAdmin) {
-        //     $sqlString .= " AND E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
-        // }
-        // if (isset($request->search)){
-        //      $sqlString .= " AND P.name ILIKE '%".$request->search."'" ;
-        // }
-        // if (!empty(trim($request->search))) {
-        //     $sqlString .= " AND P.name ILIKE '%".trim($request->search)."'" ;
-        // }
-        // $sqlString .= " ORDER BY P.id DESC ";
 
-
-        $totalSql = "SELECT COUNT(P.id) AS total
+            $totalSql = "SELECT COUNT(P.id) AS total
             FROM products P INNER JOIN product_categories C ON C.id = P.category_id
             LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
             LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
@@ -531,41 +521,102 @@ class ProductController extends Controller
             INNER JOIN institutions I ON I.id =P.institution_id
             LEFT JOIN measurement_units Y ON Y.id = P.secondary_measurement_unit_id
             WHERE P.status = 'Active'";
-        if ($isNotAdmin) {
-            $totalSql .= " AND E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
-            $sqlString .= " AND E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
+            if ($isNotAdmin) {
+                $totalSql .= " AND E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
+                $sqlString .= " AND E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
+            }
+            if (!empty(trim($request->search))) {
+                $totalSql .= " AND P.name ILIKE '%" . trim($request->search) . "%'";
+                $sqlString .= " AND P.name ILIKE '%" . trim($request->search) . "%'";
+            }
+
+            if (!empty(trim($request->startDate))) {
+                $startDate = date('Y-m-d', strtotime(trim($request->startDate))); // only date part
+                $sqlString .= " AND P.created_at::date >= '$startDate'";
+                $totalSql .= " AND P.created_at::date >= '$startDate'";
+            }
+            if (!empty(trim($request->endDate))) {
+                $endDate = date('Y-m-d', strtotime(trim($request->endDate))); // only date part
+                $sqlString .= " AND P.created_at::date <= '$endDate'";
+                $totalSql .= " AND P.created_at::date <= '$endDate'";
+            }
+
+            if (isset($request->id)) {
+                $sqlString .= " AND P.id = $request->id";
+                $totalSql .= " AND P.id = $request->id";
+            }
+
+            $sqlString .= " ORDER BY P.id DESC ";
+
+            $products = $this->paginate($request->rowPerPage, $totalSql, $sqlString);
+            return $products;
+        } catch (\Throwable $th) {
+            throw new $th;
         }
-        if (!empty(trim($request->search))) {
-            $totalSql .= " AND P.name ILIKE '%" . trim($request->search) . "%'";
-            $sqlString .= " AND P.name ILIKE '%" . trim($request->search) . "%'";
-        }
+    }
+
+
+    public function getProducts(Request $request)
+    {
+        // $userData = $this->getUserLogin();
+        // // $userData = auth()->user();
+        // $isNotAdmin = $this->isNotAdmin();
+
+        // $sqlString = "SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
+        //     P.institution_id, P.user_id, P.status, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.ref_no, P.updated_at, C.name AS category_name,
+        //     S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
+        //     E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name,  P.tax_config, Y.name AS secondary_unit, P.secondary_weight, P.secondary_price, P.secondary_measurement_unit_id
+        //     FROM products P INNER JOIN product_categories C ON C.id = P.category_id
+        //     LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
+        //     LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
+        //     LEFT JOIN suppliers Q ON P.supplier_id = Q.id
+        //     LEFT JOIN measurement_units T ON P.measurement_unit_id = T.id
+        //     INNER JOIN stocks E ON E.product_id = P.id
+        //     INNER JOIN branches B ON B.id = E.branch_id
+        //     INNER JOIN institutions I ON I.id =P.institution_id
+        //     LEFT JOIN measurement_units Y ON Y.id = P.secondary_measurement_unit_id
+        //     WHERE P.status = 'Active'";
+
+        // $totalSql = "SELECT COUNT(P.id) AS total
+        //     FROM products P INNER JOIN product_categories C ON C.id = P.category_id
+        //     LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
+        //     LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
+        //     LEFT JOIN suppliers Q ON P.supplier_id = Q.id
+        //     LEFT JOIN measurement_units T ON P.measurement_unit_id = T.id
+        //     INNER JOIN stocks E ON E.product_id = P.id
+        //     INNER JOIN branches B ON B.id = E.branch_id
+        //     INNER JOIN institutions I ON I.id =P.institution_id
+        //     LEFT JOIN measurement_units Y ON Y.id = P.secondary_measurement_unit_id
+        //     WHERE P.status = 'Active'";
+        // if ($isNotAdmin) {
+        //     $totalSql .= " AND E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
+        //     $sqlString .= " AND E.institution_id = $userData->institution_id AND E.branch_id = $userData->branch_id";
+        // }
+        // if (!empty(trim($request->search))) {
+        //     $totalSql .= " AND P.name ILIKE '%" . trim($request->search) . "%'";
+        //     $sqlString .= " AND P.name ILIKE '%" . trim($request->search) . "%'";
+        // }
 
         // if (!empty(trim($request->startDate))) {
-        //     $startDate = date('Y-m-d H:i:s', strtotime(trim($request->startDate)));
-        //         $sqlString .= " AND P.created_at >= '$startDate'";
-        //         $totalSql .= " AND P.created_at >= '$startDate'";
+        //     $startDate = date('Y-m-d', strtotime(trim($request->startDate))); // only date part
+        //     $sqlString .= " AND P.created_at::date >= '$startDate'";
+        //     $totalSql .= " AND P.created_at::date >= '$startDate'";
         // }
-        // if (!empty(trim($request->startDate))) {
-        //      $endDate = date('Y-m-d H:i:s', strtotime(trim($request->endDate)));
-        //      $sqlString .= " AND P.created_at <= '$endDate'";
-        //      $totalSql .= " AND P.created_at <= '$endDate'";
+        // if (!empty(trim($request->endDate))) {
+        //     $endDate = date('Y-m-d', strtotime(trim($request->endDate))); // only date part
+        //     $sqlString .= " AND P.created_at::date <= '$endDate'";
+        //     $totalSql .= " AND P.created_at::date <= '$endDate'";
         // }
-        if (!empty(trim($request->startDate))) {
-            $startDate = date('Y-m-d', strtotime(trim($request->startDate))); // only date part
-            $sqlString .= " AND P.created_at::date >= '$startDate'";
-            $totalSql .= " AND P.created_at::date >= '$startDate'";
-        }
-        if (!empty(trim($request->endDate))) {
-            $endDate = date('Y-m-d', strtotime(trim($request->endDate))); // only date part
-            $sqlString .= " AND P.created_at::date <= '$endDate'";
-            $totalSql .= " AND P.created_at::date <= '$endDate'";
-        }
 
-        $sqlString .= " ORDER BY P.id DESC ";
+        // if (isset($request->id)){
+        //     $sqlString .= " AND P.id = $request->id";
+        //     $totalSql .= " AND P.id = $request->id";
+        // }
 
-        // $products = DB::select($sqlString);
+        // $sqlString .= " ORDER BY P.id DESC ";
 
-        $products = $this->paginate($request->rowPerPage, $totalSql, $sqlString);
+        // $products = $this->paginate($request->rowPerPage, $totalSql, $sqlString);
+        $products = $this->getProductList($request);
         return $this->genericResponse(true, "Product list", 200, $products, "getProducts", []);
     }
 
@@ -722,6 +773,33 @@ class ProductController extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
             return $this->genericResponse(false, $th->getMessage(), 500, $th, "archiveProduct", $request);
+        }
+    }
+
+
+    public function getInvoiceDetails(Request $request)
+    {
+        try {
+            $invoice = Invoice::find($request->id);
+
+            if (!isset($invoice)) {
+                return $this->genericResponse(false, "Invoice not found", 400, $invoice, "getInvoiceDetails", $request);
+            }
+
+            $invoiceItems = InvoiceItem::where(['invoice_id' => $invoice->id])->get();
+
+            $response = [];
+            foreach ($invoiceItems as $item) {
+                $postData = (object)["id" => $item['id']];
+
+                $results = $this->getProductList($postData);
+
+                $response = array_merge($response, $results['data']['data']);
+            }
+
+            return $this->genericResponse(true, "Invoice details", 200, $response, "getInvoiceDetails", $request);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, "Unauthenticated", 401, null, "getInvoiceDetails", $request);
         }
     }
 }
