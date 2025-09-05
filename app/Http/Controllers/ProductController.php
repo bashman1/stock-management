@@ -788,13 +788,17 @@ class ProductController extends Controller
 
             $invoiceItems = InvoiceItem::where(['invoice_id' => $invoice->id])->get();
 
-            $response = [];
+            $response =  Array();
             foreach ($invoiceItems as $item) {
-                $postData = (object)["id" => $item['id']];
+                $postData = (object)["id" => $item['product_id']];
 
-                $results = $this->getProductList($postData);
+                $request->merge(["id"=> $item['product_id']]);
 
-                $response = array_merge($response, $results['data']['data']);
+                $results = $this->getProductList($request);
+
+                $response = $results;
+
+                array_merge($response, $results['data']['data']);
             }
 
             return $this->genericResponse(true, "Invoice details", 200, $response, "getInvoiceDetails", $request);

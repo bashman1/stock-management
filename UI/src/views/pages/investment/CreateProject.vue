@@ -20,8 +20,11 @@ const onSubmit = () => {
     console.log(formData.value);
 
     let postData = formData.value;
-    postData.duration_id = postData.duration?.id;
-    postData.benefit_type = postData.benefitType?.value;
+    postData.duration_id = postData?.duration?.id;
+    postData.benefit_type = postData?.benefitType?.value;
+    postData.project_type = postData?.projectType?.value;
+    postData.return_of_investment_duration_id = postData?.investmentDuration?.id
+
 
     formError.value.name = commonService.validateFormField(formData.value?.name);
     formError.value.duration = commonService.validateFormField(formData.value?.duration);
@@ -135,7 +138,7 @@ onMounted(() => {
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <InputNumber type="text" id="email" v-model="formData.size" /> <!-- class="p-invalid"-->
-                        <label for="email">Size</label>
+                        <label for="email">Size in Acres</label>
                     </span>
                 </div>
 
@@ -155,18 +158,18 @@ onMounted(() => {
 
                 <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                    <Dropdown id="state" v-model="formData.duration" :options="durations" filter optionLabel="unit"
+                    <Dropdown id="state" v-model="formData.investmentDuration" :options="durations" filter optionLabel="unit"
                             placeholder="Select duration"></Dropdown>
                         <label for="state">Return Of Investment Duration Unit </label>
                     </span>
                 </div>
 
-                <div class="field col-12 md:col-4">
+                <!-- <div class="field col-12 md:col-4">
                     <span class="p-float-label">
-                        <InputNumber type="text" id="email" v-model="formData.investmentReturnValue" /> <!-- class="p-invalid"-->
+                        <InputNumber type="text" id="email" v-model="formData.investmentReturnValue" />
                         <label for="email">Cost Per Unit</label>
                     </span>
-                </div>
+                </div> -->
 
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">

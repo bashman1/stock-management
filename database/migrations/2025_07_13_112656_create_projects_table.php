@@ -21,6 +21,12 @@ return new class extends Migration
             $table->decimal('monitory', 15, 2)->default(0);
             $table->timestamp('date')->default(now());
             $table->string('status')->default('Active');
+            $table->string('project_type')->default('Goats');
+            $table->unsignedBigInteger('grace_period')->nullable();
+            $table->decimal('size', 15, 2)->default(0);
+            $table->decimal('return_of_investment_value', 15, 2)->default(0);
+            $table->decimal('return_of_investment_duration_value', 15, 2)->default(0);
+            $table->unsignedBigInteger('return_of_investment_duration_id', )->nullable();
             $table->unsignedBigInteger('institution_id')->nullable();
             $table->unsignedBigInteger('branch_id')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
