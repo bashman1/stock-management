@@ -807,6 +807,78 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/bulk-upload-buildings',
+                    name: 'BulkUploadBuilding',
+                    component: () => import('@/views/pages/rental-management/BulkUploadbuilding.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/bulk-upload-building-units',
+                    name: 'BulkUploadBuildingUnits',
+                    component: () => import('@/views/pages/rental-management/BulkUploadUnit.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/bulk-upload-tenants-room',
+                    name: 'BulkUploadRentals',
+                    component: () => import('@/views/pages/rental-management/BulkUploadRentals.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-building-uploaded-batches',
+                    name: 'ViewBuildingUploadedBatches',
+                    component: () => import('@/views/pages/rental-management/ViewBuildingUploadedBatches.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-building-units-uploaded-batches',
+                    name: 'ViewBuildingUnitUploadedBatches',
+                    component: () => import('@/views/pages/rental-management/ViewBuildingUnitUploadedBatches.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/view-tenants-rooms-uploaded-batches',
+                    name: 'ViewRentalUploadedBatches',
+                    component: () => import('@/views/pages/rental-management/ViewRentalUploadedBatches.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/approve-uploaded-buildings/:id',
+                    name: 'ApproveBuildings',
+                    component: () => import('@/views/pages/rental-management/ApproveBuildings.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/approve-uploaded-building-units/:id',
+                    name: 'ApproveBuildingUnits',
+                    component: () => import('@/views/pages/rental-management/ApproveBuildingUnits.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/approve-uploaded-tenants-rooms/:id',
+                    name: 'ApproveRentals',
+                    component: () => import('@/views/pages/rental-management/ApproveRentals.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
 
             ]
         },

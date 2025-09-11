@@ -15,6 +15,7 @@ class Building extends Model
         'address',
         'plot',
         'status',
+        'ref_no',
         'rent',
         'institution_id',
         'branch_id',

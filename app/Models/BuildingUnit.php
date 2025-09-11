@@ -13,6 +13,7 @@ class BuildingUnit extends Model
         'unit_type',
         'unit_no',
         'status',
+        'ref_no',
         'rent',
         'description',
         'institution_id',

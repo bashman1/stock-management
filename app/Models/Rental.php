@@ -14,6 +14,7 @@ class Rental extends Model
         'amount_paid',
         'status',
         'rental_date',
+        'ref_no',
         'due_date',
         'paid_date',
         'description',

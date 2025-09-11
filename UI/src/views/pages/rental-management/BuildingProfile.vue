@@ -82,6 +82,9 @@ onMounted(() => {
                     <label for="name1" class="text-900 font-bold">City: <span class="font-normal"> {{buildingDetails?.city_name}}</span></label>
                 </div>
                 <div class="field">
+                    <label for="name1" class="text-900 font-bold">Ref. No.: <span class="font-normal"> {{buildingDetails?.ref_no}}</span></label>
+                </div>
+                <div class="field">
                     <label for="name1" class="text-900 font-bold">Address: <span class="font-normal"> {{buildingDetails?.address}}</span></label>
                 </div>
                 <div class="field">

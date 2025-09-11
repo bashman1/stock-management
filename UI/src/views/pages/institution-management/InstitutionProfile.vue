@@ -138,7 +138,7 @@ onMounted(() => {
             <div class="card p-fluid">
                 <h5 class="text-500">Branches</h5>
                 <div class="field"  v-for="(branch, index) in institutionDetails?.branches" :key="index">
-                    <label class="text-900" for="name1"><span> {{index+1 +'. '+ branch?.name+', '+branch?.address}}</span></label>
+                    <label class="text-900" for="name1"><span> {{index+1 +'. '+ branch?.name+', '+branch?.address+', '+branch?.code}}</span></label>
                 </div>
             </div>
 

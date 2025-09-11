@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('unit_type')->nullable();
             $table->string('unit_no')->nullable();
             $table->string('status')->default('Active');
+            $table->string('ref_no')->nullable();
             $table->text('description')->nullable();
             $table->double('rent', 8, 2)->default(0);
             $table->unsignedBigInteger('institution_id');

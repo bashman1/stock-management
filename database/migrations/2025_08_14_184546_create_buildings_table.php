@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('street')->nullable();
             $table->string('address')->nullable();
             $table->string('plot')->nullable();
+            $table->string('ref_no')->nullable();
             $table->string('status')->default('Active');
             $table->double('rent', 8, 2)->default(0);
             $table->text('description')->nullable();

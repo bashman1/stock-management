@@ -19,6 +19,7 @@ return new class extends Migration
             $table->double('duration', 8, 2)->default(0);
             $table->double('amount_paid', 8, 2)->default(0);
             $table->string('status')->default('Active');
+            $table->string('ref_no')->nullable();
             $table->timestamp('rental_date')->nullable();
             $table->timestamp('due_date')->nullable();
             $table->timestamp('paid_date')->nullable();

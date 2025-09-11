@@ -250,4 +250,16 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("withdraw-investment", [InvestmentController::class, "withdrawInvestment"]);
     Route::post("make-rental-payments", [BuildingController::class, "makeRentPayment"]);
     Route::post("get-invoice-details", [ProductController::class, "getInvoiceDetails"]);
+    Route::post("upload-buildings", [BuildingController::class, "uploadBuildings"]);
+    Route::post("upload-building-units", [BuildingController::class, "uploadBuildingUnits"]);
+    Route::post("upload-tenants-room", [BuildingController::class, "uploadTenantsRoom"]);
+    Route::post("get-building-uploaded-batch", [BuildingController::class, "getBuildingBatches"]);
+    Route::post("get-building-units-uploaded-batch", [BuildingController::class, "getBuildingUnitBatches"]);
+    Route::post("get-rental-uploaded-batch", [BuildingController::class, "getRentalBatches"]);
+    Route::post("get-batch-buildings", [BuildingController::class, "getBatchBuildings"]);
+    Route::post("get-batch-building-units", [BuildingController::class, "getBatchBuildingUnits"]);
+    Route::post("get-batch-rentals", [BuildingController::class, "getBatchRentals"]);
+    Route::post("approve-batch-buildings", [BuildingController::class, "approveBuilding"]);
+    Route::post("approve-batch-building-units", [BuildingController::class, "approveBuildingUnit"]);
+    Route::post("approve-batch-rentals", [BuildingController::class, "approveRental"]);
 });

@@ -123,9 +123,9 @@ onMounted(() => {
                     {{ data.status }}
                 </template>
             </Column>
-            <Column field="name" header="Description" style="min-width: 10rem">
+            <Column field="name" header="Ref No." style="min-width: 10rem">
                 <template #body="{ data }">
-                    {{ data.description }}
+                    {{ data.ref_no }}
                 </template>
             </Column>
             <Column header="Institution" style="min-width: 10rem">

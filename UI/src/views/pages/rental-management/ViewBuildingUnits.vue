@@ -104,6 +104,11 @@ onMounted(() => {
                     {{ data.unit_no }}
                 </template>
             </Column>
+            <Column field="name" header="Ref No" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ data.ref_no }}
+                </template>
+            </Column>
             <Column field="name" header="Building" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.building_name	 }}
