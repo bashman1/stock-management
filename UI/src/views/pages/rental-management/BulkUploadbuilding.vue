@@ -59,7 +59,7 @@ const uploadFile = async () => {
         }
         const data = await response.json();
         commonService.showSuccess(toast, data.message);
-        // router.push("/view-uploaded-members");
+        router.push("/view-building-uploaded-batches");
     } catch (error) {
         console.error(error.message);
         commonService.showError(toast, error.message);

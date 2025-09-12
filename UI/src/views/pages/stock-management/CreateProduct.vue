@@ -240,6 +240,10 @@ const onSubmit= ()=>{
     commonService.genericRequest('create-product', 'post', true, postData).then((response) => {
         if (response.status) {
             commonService.showSuccess(toast, response.message);
+            if(isEdit.value){
+                // router.push("/view-product-details/"+editId.value);
+                 commonService.redirect(router,"/view-product-details/"+editId.value);
+            }
             name.value=null;
             category.value=null;
             subCategory.value=null;
@@ -262,8 +266,11 @@ const onSubmit= ()=>{
             weight.value=null;
             weightUnit.value=null;
             weightPrice.value=null;
-            tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'};
+            // tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'};
             paymentMethod.value={id:1, name: "Cash", value:"CASH"};
+
+
+
         } else {
             commonService.showError(toast, response.message);
         }

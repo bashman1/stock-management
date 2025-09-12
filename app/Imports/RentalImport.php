@@ -61,6 +61,7 @@ class RentalImport implements ToModel, WithHeadingRow
             // 'description' => $row['description'],
             'institution_id' => $instData->id,
             'branch_id' => $branchData->id,
+            'batch_id' => $this->batch_id,
             // 'created_by' => auth()->id(),
             // 'created_on' => now(),
             // 'payment_status' => $row['payment_status'] ?? 'Unpaid',

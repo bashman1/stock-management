@@ -410,12 +410,12 @@ class BuildingController extends Controller
             $rental = Rental::create([
                 'building_id' => $request->building_id,
                 'unit_id' => $request->unit_id,
-                'member_id' => $request->member_id,
+                'member_id' =>  $request->member_id,
                 'duration' => $request->duration,
                 'amount_paid' => $request->amount_paid,
                 'rental_date' => $request->rental_date ? date('Y-m-d H:i:s', strtotime($request->rental_date)) : now(),
                 'due_date' => $dueDate ? date('Y-m-d H:i:s', strtotime($dueDate)) : null,
-                'paid_date' => $request->rental_date ? date('Y-m-d H:i:s', strtotime($request->rental_date)) : null,
+                // 'paid_date' => $request->rental_date ? date('Y-m-d H:i:s', strtotime($request->rental_date)) : null,
                 'description' => $request->description,
                 'institution_id' => $userData->institution_id,
                 'branch_id' => $userData->branch_id,
@@ -622,7 +622,7 @@ class BuildingController extends Controller
             $unit = BuildingUnit::find($rental->unit_id);
 
             $numberOfMoths = ceil((float) $request->amount_paid / (float) $unit->rent);
-            $dueDate = Carbon::parse($rental->rental_date)->addMonths($numberOfMoths)->format('Y-m-d H:i:s');
+            $dueDate = Carbon::parse($rental->due_date)->addMonths($numberOfMoths)->format('Y-m-d H:i:s');
 
             $rental->amount_paid =  $rental->amount_paid + (float) $request->amount_paid;
             $rental->paid_date = now();
@@ -916,7 +916,8 @@ class BuildingController extends Controller
                $rental->status = 'Active';
                $rental->created_by = $this->getUserLogin()->id;
                $rental->created_on = now();
-               $response = $this->rental($rental);
+               $rental->duration = (float)$rental->duration;
+               $response = $this->newRental($rental);
                 if($response){
                     $rental->save();
                 }

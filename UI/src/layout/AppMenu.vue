@@ -10,9 +10,7 @@ const institutionMenu = ref(
     {
         label: 'Institution Management',
         icon: 'pi pi-fw pi-building',
-        items: [
-
-        ]
+        items: []
     },
 );
 
@@ -326,6 +324,64 @@ if (commonService.checkPermissions('ViewUploadBulkSalesBatch')) {
     );
 }
 
+if (commonService.checkPermissions('BulkUploadBuildings')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Buildings',
+            icon: 'pi pi-fw pi-circle',
+            to: '/bulk-upload-buildings'
+        }
+    );
+
+}
+
+if (commonService.checkPermissions('BulkUploadBuildingUnits')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Building Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/bulk-upload-building-units'
+        }
+    );
+}
+
+if (commonService.checkPermissions('BulkUploadTenantsUnits')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Tenants Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/bulk-upload-tenants-room'
+        }
+    );
+}
+if (commonService.checkPermissions('ApproveBuildingBatch')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Approve Buildings Batch',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-building-uploaded-batches'
+        }
+    );
+
+}
+if (commonService.checkPermissions('ApproveBuildingUnitBatch')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Approve Building Units Batch',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-building-units-uploaded-batches'
+        }
+    );
+}
+if (commonService.checkPermissions('ApproveTenantUnitBatch')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Approve Tenants Units Batch',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-tenants-rooms-uploaded-batches'
+        }
+    );
+}
 
 if (commonService.checkPermissions('CollectMoney')) {
     collectionMenu.value.items.push(
