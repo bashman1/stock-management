@@ -879,6 +879,22 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/notifications-config',
+                    name: 'NotificationConfig',
+                    component: () => import('@/views/pages/notifications/NotificationConfig.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/notifications-types',
+                    name: 'NotificationTypes',
+                    component: () => import('@/views/pages/notifications/NotificationTypes.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
 
             ]
         },

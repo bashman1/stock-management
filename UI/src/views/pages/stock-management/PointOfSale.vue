@@ -42,7 +42,7 @@ const op = ref();
 const searchKeyWord = ref('');
 const metaKey = ref(true);
 const searchInput = ref(null);
-
+const itemsBackUp = ref([]);
 
 const VAT = ref([
     { id: 1, name: "18%", amount: 0, total: 0 },
@@ -68,6 +68,8 @@ const getProducts = () => {
 }
 
 const OnSelectItem = (data) => {
+
+    itemsBackUp.value.push(data);
 
     let actualProduct = productList.value?.data.find(item => item.id === data.id);
     if (!actualProduct) {
@@ -115,7 +117,7 @@ const OnSelectRemoveItem = (data) => {
 }
 
 const updateQty = (event, data) => {
-    let actualProduct = productList.value?.data.find(item => item.id === data.id);
+    let actualProduct = itemsBackUp.value?.find(item => item.id === data.id);
     let newQty = Number(event.target.value);
     if (!actualProduct) {
         commonService.showError(toast, "Product not found");
@@ -148,7 +150,7 @@ const updatePrice = (event, data) => {
 
 const increaseReduce = (data, action) => {
 
-    let actualProduct = productList.value?.data.find(item => item.id === data.id);
+    let actualProduct = itemsBackUp.value?.find(item => item.id === data.id);
     if (!actualProduct) {
         commonService.showError(toast, "Product not found");
         return;
@@ -160,6 +162,8 @@ const increaseReduce = (data, action) => {
         commonService.showError(toast, "Product not found in selected items");
         return;
     }
+
+
 
     if (action == 'Add'){
         if (Number(selectedItm?.quantity) >= Number(actualProduct?.quantity)) {

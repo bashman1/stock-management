@@ -2,9 +2,9 @@ import { actions, state } from '../../store';
 
 export default class CommonService {
     //  baseUrl = "http://localhost:8000/api/";
-    baseUrl = "https://prod.smartcollect.co.ug/api/";   //prod environment
+    // baseUrl = "https://prod.smartcollect.co.ug/api/";   //prod environment
     // baseUrl = "https://biiteek.smartcollect.co.ug/api/";   //prod biiteek environment
-    // baseUrl = "https://test.smartcollect.co.ug/api/";   //test environment
+    baseUrl = "https://test.smartcollect.co.ug/api/";   //test environment
 //    baseUrl = "../api/";
 
     // loggedIn = this.checkingAuthentication();
@@ -660,7 +660,8 @@ export default class CommonService {
         return permissions.some(element => element.name == permission);
     }
 
-    formatDate=(date)=> {
+    formatDate=(inputDate)=> {
+        const date = new Date(inputDate);
         const pad = (num) => String(num).padStart(2, '0');
         const day = pad(date.getDate());
         const month = pad(date.getMonth() + 1); // Months are zero-based

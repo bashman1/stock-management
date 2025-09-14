@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-
+use App\Models\Notification;
+use App\Models\NotificationType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -10,20 +11,21 @@ use Illuminate\Support\Facades\Log;
 class CommonController extends Controller
 {
 
-    public function getDashboardStats(){
+    public function getDashboardStats()
+    {
         $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $data = null;
-        $collectionGraph=null;
-        $membersGraph =null;
-        $productsGraph =null;
-        $salesGraph =null;
-        $bestSellingProduct=[];
+        $collectionGraph = null;
+        $membersGraph = null;
+        $productsGraph = null;
+        $salesGraph = null;
+        $bestSellingProduct = [];
 
-        if($isNotAdmin){
+        if ($isNotAdmin) {
 
-            $inventoryAcct= $this->getControlAcctByCode("STI");
-            $salesAcct= $this->getControlAcctByCode("SL");
+            $inventoryAcct = $this->getControlAcctByCode("STI");
+            $salesAcct = $this->getControlAcctByCode("SL");
             $data = DB::select("SELECT
             -- (SELECT COUNT(id) FROM institutions WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_institutions,
             (SELECT COUNT(id) FROM branches WHERE status ='Active' AND institution_id = $userData->institution_id) AS total_branches,
@@ -56,31 +58,31 @@ class CommonController extends Controller
             (SELECT SUM(rent) FROM building_units WHERE (status ='Occupied' OR status ='Active') AND institution_id = $userData->institution_id AND branch_id = $userData->branch_id) AS monthly_rent_income
             ");
 
-            $collectionGraph=DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
+            $collectionGraph = DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
             generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN collections c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             AND c.institution_id = $userData->institution_id AND c.branch_id=$userData->branch_id
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
 
-            $membersGraph =DB::select("SELECT COALESCE(COUNT(m.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
+            $membersGraph = DB::select("SELECT COALESCE(COUNT(m.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
             generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN members m ON date_trunc('MONTH', m.created_at) = date_trunc('MONTH', gs.month)
             AND m.institution_id = $userData->institution_id AND m.branch_id=$userData->branch_id
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month) ");
 
-            $productsGraph =DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
+            $productsGraph = DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
             generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN products c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             AND c.institution_id = $userData->institution_id
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
 
-            $salesGraph =DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
+            $salesGraph = DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
             generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN orders c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             AND c.institution_id = $userData->institution_id AND c.branch_id=$userData->branch_id
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
 
-            $bestSellingProduct=DB::select("SELECT P.name, S.purchase_price, S.selling_price, SUM(I.qty) AS quantity
+            $bestSellingProduct = DB::select("SELECT P.name, S.purchase_price, S.selling_price, SUM(I.qty) AS quantity
             FROM orders O INNER JOIN order_items I ON O.id = I.order_id
             INNER JOIN products P ON P.id = I.product_id
             INNER JOIN stocks S ON P.id = S.product_id
@@ -99,8 +101,7 @@ class CommonController extends Controller
             GROUP BY P.name, S.purchase_price, S.selling_price, S.quantity, S.expiry_date
             ORDER BY days_difference ASC
             LIMIT 10;");
-
-        }else{
+        } else {
             $data = DB::select("SELECT
             (SELECT COUNT(id) FROM institutions WHERE status ='Active') AS total_institutions,
             (SELECT COUNT(id) FROM branches WHERE status ='Active') AS total_branches,
@@ -125,22 +126,22 @@ class CommonController extends Controller
             -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  AND reversal_flag = 'N') AS total_sales_value
             -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  AND reversal_flag = 'N') AS today_sales_value
             ");
-            $collectionGraph=DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
+            $collectionGraph = DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
             generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN collections c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
 
-            $membersGraph =DB::select("SELECT COALESCE(COUNT(m.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
+            $membersGraph = DB::select("SELECT COALESCE(COUNT(m.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
             generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN members m ON date_trunc('MONTH', m.created_at) = date_trunc('MONTH', gs.month)
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month) ");
 
-            $productsGraph =DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
+            $productsGraph = DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
             generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN products c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
 
-            $salesGraph =DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
+            $salesGraph = DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
             generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
             AS gs(month) LEFT JOIN orders c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
@@ -157,12 +158,20 @@ class CommonController extends Controller
             LIMIT 10;");
         }
 
-        return $this->genericResponse(true, "Stats", 200, ["count"=>$data, "collectionGraph"=>$collectionGraph, "membersGraph"=>$membersGraph,
-            "productsGraph"=>$productsGraph, "salesGraph"=>$salesGraph, "bestSellingProduct"=>$bestSellingProduct, "productAboutToExpire"=>$productAboutToExpire], "getDashboardStats", []);
+        return $this->genericResponse(true, "Stats", 200, [
+            "count" => $data,
+            "collectionGraph" => $collectionGraph,
+            "membersGraph" => $membersGraph,
+            "productsGraph" => $productsGraph,
+            "salesGraph" => $salesGraph,
+            "bestSellingProduct" => $bestSellingProduct,
+            "productAboutToExpire" => $productAboutToExpire
+        ], "getDashboardStats", []);
     }
 
 
-    public function setDailyNotification(){
+    public function setDailyNotification()
+    {
         try {
             $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
@@ -176,4 +185,58 @@ class CommonController extends Controller
             // return $this->genericResponse(false, $th->getMessage(), 500, [], "setDailyNotification", []);
         }
     }
+
+
+    public function getNotificationTypes(Request $request)
+    {
+        try {
+            $query = NotificationType::query();
+            $query->when($request->id, fn($q, $id) => $q->where('id', $id));
+            $query->when($request->name, fn($q, $name) => $q->where('name', 'like', "%$name%"));
+            $query->when($request->status, fn($q, $status) => $q->where('status', $status));
+            $query->when($request->type, fn($q, $type) => $q->where('type', $type));
+            $notificationTypes = $query->get();
+            return $this->genericResponse(true, "Notification Types", 200, $notificationTypes, "getNotificationTypes", $request);
+        } catch (\Throwable $th) {
+            Log::error("Error notification types: " . $th->getMessage());
+            return $this->genericResponse(false, $th->getMessage(), 500, [], "getNotificationTypes", $request);
+        }
+    }
+
+
+    public function createNotificationConfig(Request $request){
+        try {
+            DB::beginTransaction();
+            $userData = $this->getUserLogin();
+                $notification = Notification::create([
+                    'notification_type_id'=>$request->notification_type_id,
+                    'category'=>$request->category,
+                    'user_id'=>$request->user_id,
+                    'member_id'=>$request->member_id,
+                    'customer_id'=>$request->customer_id,
+                    'supplier_id'=>$request->supplier_id,
+                    'manufacturer_id'=>$request->manufacturer_id,
+                    'name'=>$request->name,
+                    'email'=>$request->email,
+                    'phone'=>$request->phone,
+                    'daily'=>$request->daily,
+                    'weekly'=>$request->weekly,
+                    'monthly'=>$request->monthly,
+                    'quarterly'=>$request->quarterly,
+                    'yearly'=>$request->yearly,
+                    'description'=>$request->description,
+                    'institution_id'=>$userData->institution_id,
+                    'branch_id'=>$userData->branch_id,
+                    'created_by'=>$userData->id,
+                    'created_on'=>now(),
+                ]);
+            DB::commit();
+            return $this->genericResponse(true, "Notification configured successfully", 201,  $notification, 'createNotificationConfig', $request);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->genericResponse(false, $th->getMessage(), 500, [], "createNotificationConfig", $request);
+        }
+    }
+
+
 }

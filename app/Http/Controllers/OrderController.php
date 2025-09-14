@@ -272,7 +272,7 @@ class OrderController extends Controller
         $queryString.=" ORDER BY O.id DESC";
 
         $orders = DB::select($queryString);
-        return $this->genericResponse(true, "Collected successfully", 200, $orders, "getOrders", []);
+        return $this->genericResponse(true, "Orders fetched successfully", 200, $orders, "getOrders", []);
     }
 
     public function getOderDetails($orderId){

@@ -190,10 +190,37 @@ class ReportController extends Controller
             INNER JOIN orders Q ON Q.id = O.order_id
             INNER JOIN stocks S ON S.branch_id = O.branch_id AND S.product_id = O.product_id
             INNER JOIN measurement_units  M ON M.id = P.measurement_unit_id ";
-        $sqlString .= " WHERE O.status = '$request->status' ";
-        if ($isNotAdmin) {
-            $sqlString .= " AND O.institution_id = $userData->institution_id AND O.branch_id = $userData->branch_id";
+        // $sqlString .= " WHERE O.status = '$request->status' ";
+        // if ($isNotAdmin) {
+        //     $sqlString .= " AND O.institution_id = $userData->institution_id AND O.branch_id = $userData->branch_id";
+        // }
+        $conditions = [];
+        if (isset($request->status)) {
+            $conditions[] = "O.status = '" . addslashes($request->status) . "'";
         }
+        if ($isNotAdmin) {
+            $conditions[] = "O.institution_id = " . intval($userData->institution_id);
+            $conditions[] = "O.branch_id = " . intval($userData->branch_id);
+        }
+        if (isset($request->from_date) && isset($request->to_date)) {
+            $from_date = date('Y-m-d', strtotime($request->from_date));
+            $to_date   = date('Y-m-d', strtotime($request->to_date));
+            $conditions[] = "DATE(Q.tran_date) BETWEEN '$from_date' AND '$to_date'";
+        }else if (isset($request->from_date)) {
+            $conditions[] = "DATE(Q.tran_date) >= '" . addslashes($request->from_date) . "'";
+        } else if (isset($request->to_date)) {
+            $conditions[] = "DATE(Q.tran_date) <= '" . addslashes($request->to_date) . "'";
+        }
+        if (isset($request->searchKey)){
+            $searchKey = addslashes($request->searchKey);
+            $conditions[] = "(P.name ILIKE '%$searchKey%' OR P.product_no ILIKE '%$searchKey%'
+            OR Q.ref_no ILIKE '%$searchKey%' OR Q.receipt_no ILIKE '%$searchKey%'
+            OR Q.tran_id ILIKE '%$searchKey%')";
+        }
+        if (count($conditions) > 0) {
+            $sqlString .= " WHERE " . implode(" AND ", $conditions);
+        }
+
         $sqlString .= " ORDER BY O.id DESC";
         return DB::select($sqlString);
     }

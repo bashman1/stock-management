@@ -262,4 +262,6 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("approve-batch-buildings", [BuildingController::class, "approveBuilding"]);
     Route::post("approve-batch-building-units", [BuildingController::class, "approveBuildingUnit"]);
     Route::post("approve-batch-rentals", [BuildingController::class, "approveRental"]);
+    Route::post("get-notification-types", [CommonController::class, "getNotificationTypes"]);
+    Route::post("create-notification-config", [CommonController::class, "createNotificationConfig"]);
 });

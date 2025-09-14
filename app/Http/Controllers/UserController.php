@@ -20,48 +20,17 @@ class UserController extends Controller
 
 
     public function createUser(Request $request){
-        // try {
+        try {
             $user = $this->newUser($request);
-            // if(isset($request->id)){
-            //     $user = User::find($request->id);
-            //     $user->updated_at = Carbon::now();
-            // }else{
-            //     $user = new User();
-            //     $user->created_by = 1;
-            //     $user->created_on = now();
-            //     $user->password = bcrypt($request->password);
-            // }
-
-            // $user->first_name = $request->first_name;
-            // $user->last_name = $request->last_name;
-            // $user->other_name = $request->other_name;
-            // $user->email = $request->email;
-            // $user->phone_number = $request->phone_number;
-            // $user->gender = $request->gender;
-            // $user->date_of_birth = $request->date_of_birth;
-            // $user->address = $request->address;
-            // $user->city_id = $request->city_id;
-            // $user->status = $request->status;
-            // $user->street = $request->street;
-            // $user->p_o_box = $request->p_o_box;
-            // $user->description = $request->description;
-            // $user->role_id =  $request->role_id;
-            // $user->user_type = $request->user_type;
-            // $user->user_category =  $request->user_category;
-            // $user->institution_id = $request->institution_id;
-            // $user->branch_id =  $request->branch_id;
-            // $user->original_branch_id = $request->branch_id;
-
-            // $user->save();
             return $this->genericResponse(true, "User created successfully", 201, $user, "createUser", $request);
-        // } catch (\Throwable $th) {
-        //     return $this->genericResponse(false, "User creation  Failed", 500, []);
-        // }
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, "User creation  Failed", 500, []);
+        }
     }
 
 
     public function login(Request $request){
-        // try {
+        try {
             $login_data = $request->validate([
                 "email" => "required",
                 "password" => "required",
@@ -131,16 +100,14 @@ class UserController extends Controller
             $userData->permissions = $permissions;
 
             return $this->genericResponse(true, "Logged in successfully", 200, ["token" => $token, "user_data" => $userData, 'license'=>$license], "login", $request);
-        // } catch (\Exception $e) {
-        //     return $this->genericResponse(false, "User creation  Failed", 500, $e->getMessage());
-        // }
+        } catch (\Exception $e) {
+            return $this->genericResponse(false, "User creation  Failed", 500, $e->getMessage());
+        }
     }
 
     public function getUsers(){
         try {
-            // $users = User::orderBy('id', 'desc')->get();
             $userData = $this->getUserLogin();
-            // $userData = auth()->user();
             $isNotAdmin = $this->isNotAdmin();
 
             $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email,
@@ -180,7 +147,6 @@ class UserController extends Controller
             LEFT JOIN users V ON V.id = U.created_by
             WHERE U.id = $request->userId ";
             if($isNotAdmin){
-                    // $queryString.=" AND U.institution_id = $userData->institution_id AND U.branch_id=$userData->branch_id ";
                     $queryString.=" AND U.institution_id = $userData->institution_id ";
             }
             $queryString.=" ORDER BY U.id DESC ";
@@ -243,7 +209,6 @@ class UserController extends Controller
     public function getUserBranches(Request $request){
         try {
             $userBranches = DB::select("SELECT U.*, B.name FROM user_branches U INNER JOIN branches B ON U.branch_id = B.id WHERE U.user_id = $request->user_id AND  U.status = '$request->status' ");
-        //    $userBranches = UserBranch::where(['user_id'=> $request->user_id, 'status'=>$request->status])->get();
            return $this->genericResponse(true, "Users branch fetched successfully", 200, $userBranches, "getUserBranches", $request);
         } catch (\Throwable $th) {
             return $this->genericResponse(false,  $th->getMessage(), 500,  $th, "getUserBranches", $request);
@@ -304,11 +269,6 @@ class UserController extends Controller
                 return $this->genericResponse(false, "User not found", 404, null, "resetPassword", $request);
             }
 
-            // Check if the provided old password matches the hashed password in the database
-            // if (!Hash::check($request->oldPassword, $user->password)) {
-            //     return $this->genericResponse(false, "Invalid old password", 401, null);
-            // }
-
             // Ensure new password and confirm password match
             if ($request->newPassword !== $request->confirmPassword) {
                 return $this->genericResponse(false, "New password and confirm password do not match", 401, null , "resetPassword", $request);
@@ -327,9 +287,6 @@ class UserController extends Controller
             return $this->genericResponse(false, $th->getMessage(), 500, $th, "resetPassword", $request);
         }
     }
-
-
-
 
 
     // passwsword reset methods

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import CommonService from '@/service/CommonService';
 import { useToast } from 'primevue/usetoast';
@@ -11,10 +11,16 @@ const commonService = new CommonService();
 const router = useRouter();
 const productsReport = ref(null);
 const isDownloading = ref(false);
+const startDate = ref(null);
+const endDate = ref(null);
+const searchKeyWord = ref(null);
 
 const getProductsReport = () => {
     let postData = {
-        status: 'Active'
+        status: 'Active',
+        from_date: startDate.value,
+        to_date: endDate.value,
+        searchKey: searchKeyWord.value
     };
     commonService.genericRequest('get-item-sales-report', 'post', true, postData).then((response) => {
         if (response.status) {
@@ -34,9 +40,15 @@ const goToSales = (data) => {
 
 const getProductReportPdfFile = () => {
     try {
+        let postData = {
+            status: 'Active',
+            from_date: startDate.value,
+            to_date: endDate.value,
+            searchKey: searchKeyWord.value
+        };
         isDownloading.value = true;
         commonService
-            .genericRequest('download-sales-item-report-pdf', 'post', true, {status: 'Active'}, true)
+            .genericRequest('download-sales-item-report-pdf', 'post', true, postData, true)
 
             .then((blob) => {
                 const fileURL = window.URL.createObjectURL(new Blob([blob]));
@@ -74,6 +86,23 @@ const getProductReportCsvFile = () => {
     }
 };
 
+
+const totalQuantity = computed(() =>
+  productsReport?.value?.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+);
+
+const totalAmount = computed(() =>
+  productsReport?.value?.reduce((sum, item) => sum + ((Number(item.quantity) || 0) * (Number(item.selling_price) || 0)), 0)
+);
+
+const totalSellingPrice = computed(() =>
+  productsReport?.value?.reduce((sum, item) => sum + (Number(item.selling_price) || 0), 0)
+);
+
+const totalProfitMargin = computed(() =>
+  productsReport?.value?.reduce((sum, item) => sum + (((Number(item.selling_price) || 0) - (Number(item.purchase_price) || 0)) * (Number(item.quantity) || 0)), 0)
+);
+
 onMounted(() => {
     getProductsReport();
 });
@@ -85,6 +114,21 @@ onMounted(() => {
             <!-- <div class="grid p-fluid mt-3"> -->
             <Toast />
             <Toolbar class="mb-4">
+                 <template #start>
+                    <span class="p-float-label mr-2">
+                        <Calendar id="date" showIcon v-model="startDate"></Calendar>
+                        <label for="date">Start Date</label>
+                    </span>
+                    <span class="p-float-label mr-2">
+                        <Calendar id="date" showIcon fluid iconDisplay="input" v-model="endDate"></Calendar>
+                        <label for="date">End Date</label>
+                    </span>
+                    <span class="p-float-label mr-2">
+                        <InputText type="text" id="purchasePrice" v-model="searchKeyWord" />
+                        <label for="purchasePrice">Search </label>
+                    </span>
+                    <Button @click="getProductsReport" label="SEARCH" icon="pi pi-search" class="mr-2" />
+                </template>
                 <template v-slot:end>
                     <div class="my-2">
                         <Button label="CSV" icon="pi pi-file-excel" class="p-button-success mr-2" @click="() => getProductReportCsvFile()" />
@@ -93,7 +137,7 @@ onMounted(() => {
                 </template>
 
             </Toolbar>
-            <DataTable :value="productsReport" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id" :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+            <DataTable :value="productsReport" :paginator="true" stripedRows size="small" :rows="20" dataKey="id" :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
 
                 <Column field="name" header="Date" style="min-width: 10rem">
                     <template #body="{ data }">
@@ -109,6 +153,9 @@ onMounted(() => {
                     <template #body="{ data }">
                         {{ commonService.commaSeparator(data.quantity) }}
                     </template>
+                    <template #footer>
+                        <b>{{ commonService.commaSeparator(totalQuantity) }}</b>
+                    </template>
                 </Column>
                 <Column field="name" header="Measurement Unit" style="min-width: 10rem">
                     <template #body="{ data }">
@@ -119,20 +166,29 @@ onMounted(() => {
                     <template #body="{ data }">
                         {{ commonService.commaSeparator(data.quantity * data.selling_price) }}
                     </template>
+                    <template #footer>
+                        <b>{{ commonService.commaSeparator(totalAmount) }}</b>
+                    </template>
                 </Column>
 
                 <Column field="name" header="Selling Price" style="min-width: 10rem">
                     <template #body="{ data }">
                         {{ commonService.commaSeparator(data.selling_price) }}
                     </template>
+                    <template #footer>
+                        <b>{{ commonService.commaSeparator(totalSellingPrice) }}</b>
+                    </template>
                 </Column>
                 <Column field="name" header="Profit Margin" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ commonService.commaSeparator(data.selling_price - data.purchase_price) }}
+                        {{ commonService.commaSeparator((data.selling_price - data.purchase_price)*data.quantity) }}
+                    </template>
+                    <template #footer>
+                        <b>{{ commonService.commaSeparator(totalProfitMargin) }}</b>
                     </template>
                 </Column>
             </DataTable>
-            <!-- </div> -->
+
         </div>
     </div>
 </template>
