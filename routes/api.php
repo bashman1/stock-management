@@ -264,4 +264,8 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("approve-batch-rentals", [BuildingController::class, "approveRental"]);
     Route::post("get-notification-types", [CommonController::class, "getNotificationTypes"]);
     Route::post("create-notification-config", [CommonController::class, "createNotificationConfig"]);
+    Route::post("evacuate-building-unit", [BuildingController::class, "evacuateUnit"]);
+    Route::post("landlord-payments", [BuildingController::class, "landLoadPayment"]);
+    Route::post("get-land-load-payments", [BuildingController::class, "getLandLoadPayments"]);
+    Route::post("rent-arrears-report", [ReportController::class, "rentArrearsReport"]);
 });

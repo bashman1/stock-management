@@ -16,6 +16,14 @@ const searchKeyWord = ref(null);
 const currentPage = ref(1);
 
 const buildings = ref([]);
+const showLandLoadPaymentModal = ref(false);
+const showMaintenancePaymentModal = ref(false);
+const selectedBuilding = ref(null);
+const formData = ref({});
+const paymentType = ref([
+    {name: 'Rent', code: 'RENT'},
+    {name: 'Maintenance', code: 'MAINTENANCE'},
+])
 
 const getBuildings = () => {
     let postData = {
@@ -44,6 +52,56 @@ const onPageChange = (event)=>{
 const goToDetails= (data)=>{
     commonService.redirect(router, 'view-building-details/'+data.id);
 }
+
+const payLandLoad= (data)=>{
+    // commonService.redirect(router, 'pay-building-load/'+data.id);
+}
+
+const toggleLandLoadPaymentModal = (status) => {
+    showLandLoadPaymentModal.value = status;
+}
+
+
+const onLandLoadPayment =(data)=>{
+    selectedBuilding.value = data;
+    toggleLandLoadPaymentModal(true);
+    formData.value = {};
+}
+
+const onSubmitPayments=()=>{
+    if(!formData.value.amountPaid){
+        commonService.showError(toast, "Please enter amount");
+        return;
+    }
+    if(!formData.value.date){
+        commonService.showError(toast, "Please select date");
+        return;
+    }
+    if(!formData.value.paymentType){
+        commonService.showError(toast, "Please select payment type");
+        return;
+    }
+
+    let postData = {
+        building_id: selectedBuilding?.value.id,
+        amount: formData.value?.amountPaid,
+        date: formData.value?.date,
+        payment_type: formData.value?.paymentType?.code,
+        description: formData.value?.description,
+    }
+    commonService.genericRequest('landlord-payments', 'POST', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            toggleLandLoadPaymentModal(false);
+            formData.value = {};
+            getBuildings();
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
 
 
 onMounted(() => {
@@ -143,18 +201,47 @@ onMounted(() => {
                     {{ data.created_at }}
                 </template>
             </Column>
-            <Column headerStyle="min-width:17rem;">
+            <Column headerStyle="min-width:12rem;">
                 <template #body="{ data }">
                     <Button icon="pi pi-eye" @click="goToDetails(data)" class="p-button-primary mr-2"
                         v-tooltip="'View product details'" />
-                    <!-- <Button icon="pi pi-pencil" @click="editProduct(data)" class="p-button-success mr-2"
-                        v-tooltip="'Edit product details'" />
-                    <Button icon="pi pi-refresh" @click="restock(data)" class="p-button-warning mr-2"
-                        v-tooltip="'Restock product'" />
-                    <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="toggleConfirmDialog(data)"
+                    <Button icon="pi pi-money-bill" @click="onLandLoadPayment(data)" class="p-button-success mr-2"
+                        v-tooltip="'Pay land load'" />
+                    <!-- <Button icon="pi pi-wrench" @click="onMaintenancePayment(data)" class="p-button-warning mr-2"
+                        v-tooltip="'Maintenance Cost'" /> -->
+                    <!-- <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="toggleConfirmDialog(data)"
                         v-tooltip="'Archive product'" /> -->
                 </template>
             </Column>
         </DataTable>
+
+        <Dialog header="Make Land Load Payment" v-model:visible="showLandLoadPaymentModal" :style="{ width: '33vw' }" :modal="true"
+            class="p-fluid">
+                <div class="field mt-4 mb-5">
+                    <p class="text-900 font-bold">Land load: <span class="font-normal"> {{selectedBuilding?.name }}</span></p>
+                    <span class="p-float-label mb-5">
+                        <InputNumber id="name1" type="text" v-model="formData.amountPaid" />
+                        <label for="name1">Amount</label>
+                    </span>
+                    <span class="p-float-label mb-5">
+                        <Calendar id="date" showIcon fluid iconDisplay="input" v-model="formData.date"></Calendar>
+                        <label for="date">Date</label>
+                    </span>
+                    <span class="p-float-label mb-5">
+                        <Dropdown id="supplier"  :options=" paymentType" filter v-model="formData.paymentType" optionLabel="name">
+                        </Dropdown>
+                        <label for="supplier">Payment</label>
+                    </span>
+                     <span class="p-float-label mb-5">
+                        <Textarea type="text" id="purchasePrice" v-model="formData.description" />
+                        <label for="purchasePrice">More Info </label>
+                    </span>
+                </div>
+            <template #footer>
+                <Button label="Cancel" @click="toggleLandLoadPaymentModal(false)" icon="pi pi-times"
+                    class="p-button-outlined p-button-danger mr-2 mb-2" />
+                <Button @click="onSubmitPayments"  label="Pay Payments" class="p-button-outlined mr-2 mb-2" />
+            </template>
+        </Dialog>
     </div>
 </template>

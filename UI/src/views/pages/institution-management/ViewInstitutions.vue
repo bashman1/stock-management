@@ -25,6 +25,10 @@ const editInstitution = (event) => {
     router.push("/create-institution/" + event?.id);
 }
 
+const viewDetails = (institution) => {
+    commonService.redirect(router, 'institution-profile/'+institution.id);
+}
+
 onMounted(() => {
     getAllInstitutions();
 });
@@ -76,7 +80,7 @@ onMounted(() => {
                     </Column>
                     <Column headerStyle="min-width:10rem;">
                         <template #body="{ data }">
-                            <Button icon="pi pi-eye" @click="editInstitution(data)" class="p-button-primary mr-2"  v-tooltip="'View institution details'" />
+                            <Button icon="pi pi-eye" @click="viewDetails(data)" class="p-button-primary mr-2"  v-tooltip="'View institution details'" />
                             <Button icon="pi pi-pencil" @click="editInstitution(data)" class="p-button-success mr-2"  v-tooltip="'Edit institution details'" />
                             <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="editInstitution(data)"  v-tooltip="'Archive institution'" />
                         </template>

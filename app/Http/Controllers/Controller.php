@@ -40,6 +40,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Institution;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\InstitutionContact;
 // use Illuminate\Support\Facades\Log;
 // use
 
@@ -1309,6 +1311,50 @@ class Controller extends BaseController
         $cntGl = str_replace('***',$branch_cd, $cnt->param_value);
         $acct=GlAccounts::where('acct_no', $cntGl)->first();
         return $acct;
+    }
+
+
+
+
+    public function downloadPDF($title, $orientation = 'portrait', $genericData){
+        $userData = $this->getUserLogin();
+        $institution = Institution::find($userData->institution_id);
+        $institutionContact = InstitutionContact::where("institution_id", $userData->institution_id)->first();
+
+        if (count($genericData) > 0) {
+            // Set options and load the view
+            Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+
+            $pdf = Pdf::loadView('generic.report', compact('genericData'));
+
+            // Set paper size and orientation
+            $pdf->setBasePath(public_path());
+            $pdf->setPaper('A4', $orientation); // 'portrait' or 'landscape'
+
+            // Render the PDF to access the DomPDF canvas
+            $pdf->render();
+            $dompdf = $pdf->getDomPDF();
+            $canvas = $dompdf->getCanvas();
+            $font = $dompdf->getFontMetrics()->getFont('Helvetica', 'normal');
+
+            // Add header to each page
+            // $canvas->page_text(30, 30, "Document NameContact Information Address", $font, 10, [0, 0, 0]);
+            $canvas->page_text(350, 15, $title, $font, 12, [0, 0, 0]);
+
+            $canvas->page_text(30, 10, $institution->name, $font, 10, [0, 0, 0]);
+            $canvas->page_text(30, 20, "Phone number:" . $institutionContact->phone_number . " Email:" . $institutionContact->email, $font, 10, [0, 0, 0]);
+            $canvas->page_text(30, 30, $institution->address, $font, 10, [0, 0, 0]);
+
+            // Add footer to each page
+            // Position and add printed by and powered by text
+            $canvas->page_text(30, 550, "Powered by:Smart Collect. Printed by:" . $userData->first_name . ". " . $userData->last_name . " " . $userData->other_name . " On:" . date('D d M Y'), $font, 10, [0, 0, 0]);
+
+            $canvas->page_text(700, 550, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);     //landscape
+
+            // Stream the generated PDF
+            return $pdf->stream('sales_report.pdf');
+        }
+
     }
 
 }

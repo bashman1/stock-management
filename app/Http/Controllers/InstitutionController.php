@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 // use Illuminate\Support\Facades\DB;
 use App\Services\SavingAccountProductService;
 use App\Services\CommissionConfigService;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class InstitutionController extends Controller
@@ -207,24 +208,27 @@ class InstitutionController extends Controller
             DB::beginTransaction();
             $packagePrice = LicensePackagePrice::where('id', $request->price)->first();
                 if (!$packagePrice) {
-                    return $this->genericResponse(false, "License package price not found", 404, [], "createInstitution", $request);
+                    throw new \Exception("License package price not found");
+                    // return $this->genericResponse(false, "License package price not found", 404, [], "createInstitution", $request);
                 }
                 $duration = Duration::find($packagePrice->duration_id);
                 if (!$duration) {
-                    return $this->genericResponse(false, "Duration not found for the license package price", 404, [], "createInstitution", $request);
+                    throw new \Exception("Duration not found for the license package price");
+                    // return $this->genericResponse(false, "Duration not found for the license package price", 404, [], "createInstitution", $request);
                 }
 
                 $endDate = null;
-                if ($duration->unit == 'Day') {
+                if ($duration->unit == 'Day(s)') {
                     $endDate = now()->addDays((int) $request->license_quantity);
-                } elseif ($duration->unit == 'Week') {
+                } elseif ($duration->unit == 'Week(s)') {
                     $endDate = now()->addWeeks((int) $request->license_quantity);
-                }elseif ($duration->unit == 'Month') {
+                }elseif ($duration->unit == 'Month(s)') {
                     $endDate = now()->addMonths((int) $request->license_quantity);
-                } elseif ($duration->unit == 'Year') {
+                } elseif ($duration->unit == 'Year(s)') {
                     $endDate = now()->addYears((int) $request->license_quantity);
                 } else {
-                    return $this->genericResponse(false, "Invalid duration unit for the license package price", 400, [], "createInstitution", $request);
+                    throw new \Exception("Invalid duration unit for the license package price");
+                    // return $this->genericResponse(false, "Invalid duration unit for the license package price", 400, [], "createInstitution", $request);
                 }
 
                 $license = InstitutionLicense::create([
@@ -243,7 +247,9 @@ class InstitutionController extends Controller
             // return $this->genericResponse(true, "Institution licensed successfully", 201, $license, "licenseInstitution", $request);
         } catch (\Throwable $th) {
             DB::rollback();
-            return $this->genericResponse(false, $th->getMessage(), 500, $th, "licenseInstitution", $request);
+            Log::error($th->getMessage());
+            throw $th;
+            // return $this->genericResponse(false, $th->getMessage(), 500, $th, "licenseInstitution", $request);
         }
     }
 

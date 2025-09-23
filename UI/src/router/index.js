@@ -895,7 +895,22 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
-
+                {
+                    path: '/rental-arrears-report',
+                    name: 'RentalArrearsReport',
+                    component: () => import('@/views/pages/reports/RentalArrearsReport.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/land-load-payment-report',
+                    name: 'LandLoadPaymentReport',
+                    component: () => import('@/views/pages/reports/LandLoadPaymentReport.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
             ]
         },
         {

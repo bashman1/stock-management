@@ -99,6 +99,20 @@ const printReceipt=()=>{
     })
 }
 
+const evacuateUnit=(data)=>{
+    let postData = {
+        id : data.id,
+    }
+    commonService.genericRequest('evacuate-building-unit', 'POST', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getBuildings();
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
 
 onMounted(() => {
     getBuildings();
@@ -220,7 +234,7 @@ onMounted(() => {
                         v-tooltip="'Make Payments'" />
                     <!-- <Button icon="pi pi-refresh"  class="p-button-warning mr-2"
                         v-tooltip="'Restock product'" /> -->
-                    <Button icon="pi pi-trash" class="p-button-danger mr-2"
+                    <Button @click="evacuateUnit(data)" icon="pi pi-trash" class="p-button-danger mr-2"
                         v-tooltip="'Evacuate/Shift'" />
                 </template>
             </Column>

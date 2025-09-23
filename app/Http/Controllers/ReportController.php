@@ -12,6 +12,8 @@ use App\Models\InstitutionContact;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Services\ReportsService;
+// use Illuminate\Container\Attributes\Log;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
@@ -174,12 +176,14 @@ class ReportController extends Controller
         return Excel::download(new ProductCsvExport, 'users.csv');
     }
 
-    public function getItemSalesReport(Request $request){
+    public function getItemSalesReport(Request $request)
+    {
         $salesReport = $this->getItemSalesData($request);
         return $this->genericResponse(true, "Sales list", 200, $salesReport, "getItemSalesReport", $request);
     }
 
-    public function getItemSalesData($request){
+    public function getItemSalesData($request)
+    {
         $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $sqlString = "SELECT O.id, O.order_id, O.product_id, O.qty AS quantity, O.status, O.institution_id, O.branch_id,
@@ -206,12 +210,12 @@ class ReportController extends Controller
             $from_date = date('Y-m-d', strtotime($request->from_date));
             $to_date   = date('Y-m-d', strtotime($request->to_date));
             $conditions[] = "DATE(Q.tran_date) BETWEEN '$from_date' AND '$to_date'";
-        }else if (isset($request->from_date)) {
+        } else if (isset($request->from_date)) {
             $conditions[] = "DATE(Q.tran_date) >= '" . addslashes($request->from_date) . "'";
         } else if (isset($request->to_date)) {
             $conditions[] = "DATE(Q.tran_date) <= '" . addslashes($request->to_date) . "'";
         }
-        if (isset($request->searchKey)){
+        if (isset($request->searchKey)) {
             $searchKey = addslashes($request->searchKey);
             $conditions[] = "(P.name ILIKE '%$searchKey%' OR P.product_no ILIKE '%$searchKey%'
             OR Q.ref_no ILIKE '%$searchKey%' OR Q.receipt_no ILIKE '%$searchKey%'
@@ -225,95 +229,164 @@ class ReportController extends Controller
         return DB::select($sqlString);
     }
 
-    public function downloadSalesItemCSVReport(Request $request){
+    public function downloadSalesItemCSVReport(Request $request)
+    {
         // $request->status = 'Active';
         $request->merge(['status' => 'Active']);
         $salesReport = $this->getItemSalesData($request);
         return Excel::download(new SalesItemReport($salesReport), "sales.csv");
     }
 
-    // public function downloadSalesItemPDFReport(Request $request){
-    //     $request->status = 'Active';
-    //     $sales = $this->getItemSalesData($request);
-    //     if (count($sales) > 0) {
-    //         Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
-
-    //         $pdf = Pdf::loadView('sales.salesItem', compact('sales'));
-    //         // $pdf->getDomPDF()->set_option("enable_php", true);
-    //         $pdf->setBasePath(public_path());
-    //         $pdf->setPaper('A4', 'landscape');
-    //         $pdf->setBasePath(public_path());
-
-    //         //adding page number
-    //         $pdf->render();
-    //         $dompdf = $pdf->getDomPDF();
-
-    //         // Add header (custom text at the top of each page)
-    //         $canvas = $dompdf->getCanvas();
-    //         $font = $dompdf->getFontMetrics()->getFont('Helvetica', 'normal');
-    //         $canvas->page_text(270, 10, "Sales Report Header", $font, 12, [0, 0, 0]);
-
-    //         // Add page numbers to the footer (bottom of each page)
-    //         // $canvas->page_text(520, 820, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);  //portrait
-    //         $canvas->page_text(700, 550, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);     //landscape
-    //         // end of adding page number
-
-    //         return $pdf->stream('sales_report' . '.pdf');
-    //     }
-    // }
-
-
     public function downloadSalesItemPDFReport(Request $request)
-{
-    // $request->status = 'Active';
-    $request->merge(['status' => 'Active']);
-    $sales = $this->getItemSalesData($request);
+    {
+        // $request->status = 'Active';
+        $request->merge(['status' => 'Active']);
+        $sales = $this->getItemSalesData($request);
 
-    $userData = $this->getUserLogin();
-    $institution = Institution::find($userData->institution_id);
-    $institutionContact = InstitutionContact::where("institution_id", $userData->institution_id)->first();
+        // $userData = $this->getUserLogin();
+        // $institution = Institution::find($userData->institution_id);
+        // $institutionContact = InstitutionContact::where("institution_id", $userData->institution_id)->first();
 
-    if (count($sales) > 0) {
-        // Set options and load the view
-        Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
-        $pdf = Pdf::loadView('sales.salesItem', compact('sales'));
+        // if (count($sales) > 0) {
+        //     // Set options and load the view
+        //     Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+        //     // $pdf = Pdf::loadView('sales.salesItem', compact('sales'));
 
-        // Set paper size and orientation
-        $pdf->setBasePath(public_path());
-        $pdf->setPaper('A4', 'landscape');
+        $genericData = [
+            'data' => $sales,
+            'headers' => [
+                ['header' => 'Date', 'key' => 'created_at'],
+                ['header' => 'Name', 'key' => 'product_name'],
+                ['header' => 'Quantity Sold', 'key' => 'quantity'],
+                ['header' => 'Measurement Unit', 'key' => 'measurement_unit'],
+                ['header' => 'Amount', 'key' => 'selling_price'],
+                ['header' => 'Selling Price', 'key' => 'selling_price'],
+                ['header' => 'Profit Margin', 'key' => 'purchase_price'],
+            ]
+        ];
 
-        // Render the PDF to access the DomPDF canvas
-        $pdf->render();
-        $dompdf = $pdf->getDomPDF();
-        $canvas = $dompdf->getCanvas();
-        $font = $dompdf->getFontMetrics()->getFont('Helvetica', 'normal');
+        return $this->downloadPDF('Sales Report',  'landscape', $genericData);
+        // $pdf = Pdf::loadView('generic.report', compact('genericData'));
 
-        // Add header to each page
-        // $canvas->page_text(30, 30, "Document NameContact Information Address", $font, 10, [0, 0, 0]);
-        $canvas->page_text(350, 15, "Sales Report", $font, 12, [0, 0, 0]);
+        // // Set paper size and orientation
+        // $pdf->setBasePath(public_path());
+        // $pdf->setPaper('A4', 'landscape');
 
-        $canvas->page_text(30, 10, $institution->name, $font, 10, [0, 0, 0]);
-        $canvas->page_text(30, 20, "Phone number:".$institutionContact->phone_number." Email:".$institutionContact->email, $font, 10, [0, 0, 0]);
-        $canvas->page_text(30, 30, $institution->address, $font, 10, [0, 0, 0]);
+        // // Render the PDF to access the DomPDF canvas
+        // $pdf->render();
+        // $dompdf = $pdf->getDomPDF();
+        // $canvas = $dompdf->getCanvas();
+        // $font = $dompdf->getFontMetrics()->getFont('Helvetica', 'normal');
+
+        // // Add header to each page
+        // // $canvas->page_text(30, 30, "Document NameContact Information Address", $font, 10, [0, 0, 0]);
+        // $canvas->page_text(350, 15, "Sales Report", $font, 12, [0, 0, 0]);
+
+        // $canvas->page_text(30, 10, $institution->name, $font, 10, [0, 0, 0]);
+        // $canvas->page_text(30, 20, "Phone number:" . $institutionContact->phone_number . " Email:" . $institutionContact->email, $font, 10, [0, 0, 0]);
+        // $canvas->page_text(30, 30, $institution->address, $font, 10, [0, 0, 0]);
 
 
-        // Add footer to each page
-        // Position and add printed by and powered by text
-        $canvas->page_text(30, 550, "Powered by:Smart Collect. Printed by:".$userData->first_name.". ".$userData->last_name." ".$userData->other_name." On:".date('D d M Y'), $font, 10, [0, 0, 0]);
+        // // Add footer to each page
+        // // Position and add printed by and powered by text
+        // $canvas->page_text(30, 550, "Powered by:Smart Collect. Printed by:" . $userData->first_name . ". " . $userData->last_name . " " . $userData->other_name . " On:" . date('D d M Y'), $font, 10, [0, 0, 0]);
 
-        // Add an image to the footer (left side)
-        // $imagePath = public_path('images/SmarCollectlogo-removebg-preview.png');
-        // $image = $canvas->image($imagePath, 30, 800, 50, 20); // Adjust coordinates and size as needed
+        // // Add an image to the footer (left side)
+        // // $imagePath = public_path('images/SmarCollectlogo-removebg-preview.png');
+        // // $image = $canvas->image($imagePath, 30, 800, 50, 20); // Adjust coordinates and size as needed
 
-        // Add page numbers to the footer (right side)
-        // $canvas->page_text(700, 820, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);
-        $canvas->page_text(700, 550, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);     //landscape
+        // // Add page numbers to the footer (right side)
+        // // $canvas->page_text(700, 820, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);
+        // $canvas->page_text(700, 550, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);     //landscape
 
-        // Stream the generated PDF
-        return $pdf->stream('sales_report.pdf');
+        // // Stream the generated PDF
+        // return $pdf->stream('sales_report.pdf');
+        // }
     }
-}
 
+    public function rentArrearsReport(Request $request)
+    {
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+            $sqlString = "SELECT
+                R.id, R.building_id, R.unit_id, R.member_id, R.duration,
+                R.amount_paid, R.status, R.ref_no, R.rental_date, R.due_date,
+                R.paid_date, R.description, R.institution_id, R.branch_id,
+                R.created_by, R.created_on, R.created_at, R.updated_at, R.payment_status,
+                B.name AS building_name, B.ref_no AS building_ref,
+                X.name AS unit_name, X.unit_type, X.unit_no,
+                X.ref_no AS unit_ref, X.rent AS unit_monthly_rent,
+                CONCAT(M.first_name,' ',M.last_name,' ',M.other_name) AS member_name,
+                M.member_number, M.alt_member_number, M.phone_number, M.email, M.gender,
+                COALESCE(RH.amount_paid_as_at, 0) AS amount_paid_as_at
+            FROM rentals R
+            INNER JOIN buildings B ON B.id = R.building_id
+            INNER JOIN building_units X ON X.id = R.unit_id
+            INNER JOIN members M ON R.member_id = M.id
+            LEFT JOIN (
+                SELECT rental_id, unit_id, member_id,
+                    SUM(amount_paid) AS amount_paid_as_at
+                FROM rental_histories
+                GROUP BY rental_id, unit_id, member_id
+            ) RH ON RH.rental_id = R.id
+                AND RH.unit_id = R.unit_id
+                AND RH.member_id = R.member_id
+            ";
 
+            $totalSql = "SELECT (R.id) AS total
+            FROM rentals R
+            INNER JOIN buildings B ON B.id = R.building_id
+            INNER JOIN building_units X ON X.id = R.unit_id
+            INNER JOIN members M ON R.member_id = M.id
+            LEFT JOIN (
+                SELECT rental_id, unit_id, member_id,
+                    SUM(amount_paid) AS amount_paid_as_at
+                FROM rental_histories
+                GROUP BY rental_id, unit_id, member_id
+            ) RH ON RH.rental_id = R.id
+                AND RH.unit_id = R.unit_id
+                AND RH.member_id = R.member_id
 
+            ";
+
+            $conditions = [];
+            if ($isNotAdmin) {
+                $conditions[] = "R.institution_id = " . intval($userData->institution_id);
+                // $conditions[] = "R.branch_id = " . intval($userData->branch_id);
+            }
+            if (isset($request->searchKey)) {
+                $searchKey = addslashes($request->searchKey);
+                $conditions[] = "(B.name ILIKE '%$searchKey%' OR B.ref_no ILIKE '%$searchKey%'
+                OR X.unit_no ILIKE '%$searchKey%' OR X.unit_type ILIKE '%$searchKey%'
+                OR M.first_name ILIKE '%$searchKey%' OR M.last_name ILIKE '%$searchKey%'
+                OR M.other_name ILIKE '%$searchKey%' OR M.member_number ILIKE '%$searchKey%'
+                OR M.alt_member_number ILIKE '%$searchKey%' OR M.phone_number ILIKE '%$searchKey%'
+                OR M.email ILIKE '%$searchKey%')";
+            }
+            if (isset($request->from_date) && isset($request->to_date)) {
+                $from_date = date('Y-m-d', strtotime($request->from_date));
+                $to_date   = date('Y-m-d', strtotime($request->to_date));
+                $conditions[] = "DATE(R.due_date) BETWEEN '$from_date' AND '$to_date'";
+            } else if (isset($request->from_date)) {
+                $conditions[] = "DATE(R.due_date) >= '" . addslashes($request->from_date) . "'";
+            } else if (isset($request->to_date)) {
+                $conditions[] = "DATE(R.due_date) <= '" . addslashes($request->to_date) . "'";
+            }
+
+            Log::info("Hello there ************************************");
+            Log::info($request->from_date);
+
+            if (count($conditions) > 0) {
+                $sqlString .= " WHERE " . implode(" AND ", $conditions);
+                $totalSql .= " WHERE " . implode(" AND ", $conditions);
+            }
+            $sqlString .= " ORDER BY R.id DESC";
+            $rentals = $this->paginate($request->rowPerPage, $totalSql, $sqlString, $request->page);
+            return $this->genericResponse(true, "Rentals list", 200, $rentals, "rentArrearsReport", $request);
+
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, "Error occurred", 500, null, "rentArrearsReport", $request);
+        }
+    }
 }

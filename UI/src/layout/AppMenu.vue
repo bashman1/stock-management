@@ -596,6 +596,26 @@ if (commonService.checkPermissions('ViewVatPayable')) {
     )
 }
 
+if (commonService.checkPermissions('RentArrearsReport')) {
+    reportMenu.value.items.push(
+        {
+            label: 'Rent Arrears Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/rental-arrears-report'
+        }
+    )
+}
+
+if (commonService.checkPermissions('LandLoadPaymentReport')){
+        reportMenu.value.items.push(
+        {
+            label: 'Land Load Payment Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/land-load-payment-report'
+        }
+    )
+}
+
 
 if (commonService.checkPermissions('ViewReceivables')) {
     payableReceivable.value.items.push(

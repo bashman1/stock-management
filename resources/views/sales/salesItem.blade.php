@@ -89,7 +89,7 @@
                 {{ $item->created_at }}
             </td>
             <td>
-                {{$item->product_name }}
+                {{preg_replace('/[^A-Za-z0-9]+/', '-', $item->product_name) }}
             </td>
             <td>
                 {{$item->quantity }}

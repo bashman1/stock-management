@@ -17,10 +17,12 @@ use App\Models\Member;
 use Carbon\Carbon;
 use App\Imports\BuildingImport;
 use App\Models\BuildingBatch;
+use App\Models\LandloadPayment;
 use App\Models\TempBuildings;
 use App\Models\TempBuildingUnit;
 use App\Models\TempRental;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Log;
 
 
 class BuildingController extends Controller
@@ -265,130 +267,6 @@ class BuildingController extends Controller
         try {
             DB::beginTransaction();
             $rental = $this->newRental($request);
-            // $userData = $this->getUserLogin();
-
-            // // $dueDate = $request->rental_date->addMonths($request->duration)->format('Y-m-d H:i:s');
-
-            // $dueDate = Carbon::parse($request->rental_date)->addMonths($request->duration)->format('Y-m-d H:i:s');
-
-            // $rental = Rental::create([
-            //     'building_id' => $request->building_id,
-            //     'unit_id' => $request->unit_id,
-            //     'member_id' => $request->member_id,
-            //     'duration' => $request->duration,
-            //     'amount_paid' => $request->amount_paid,
-            //     'rental_date' => $request->rental_date ? date('Y-m-d H:i:s', strtotime($request->rental_date)) : now(),
-            //     'due_date' => $dueDate ? date('Y-m-d H:i:s', strtotime($dueDate)) : null,
-            //     'paid_date' => $request->rental_date ? date('Y-m-d H:i:s', strtotime($request->rental_date)) : null,
-            //     'description' => $request->description,
-            //     'institution_id' => $userData->institution_id,
-            //     'branch_id' => $userData->branch_id,
-            //     'created_by' => $userData->id,
-            //     'created_on' => now(),
-            //     'payment_status' => $request->payment_status ?? 'UNPAID',
-            // ]);
-
-
-            // $unit = BuildingUnit::find($request->unit_id);
-            // if ($unit) {
-            //     $unit->status = 'Occupied';
-            //     $unit->save();
-            // } else {
-            //     return $this->genericResponse(false, "Building unit not found", 404, null, "rentUnit", $request);
-            // }
-
-            // // $rental->rental_id = $rental->id;
-            // $history = RentalHistory::create([
-            //     'building_id' => $request->building_id,
-            //     'unit_id' => $request->unit_id,
-            //     'rental_id' => $rental->id,
-            //     'member_id' => $request->member_id,
-            //     'duration' => $request->duration,
-            //     'amount_paid' => $request->amount_paid,
-            //     'rental_date' => $request->rental_date ? date('Y-m-d H:i:s', strtotime($request->rental_date)) : now(),
-            //     'due_date' => $dueDate ? date('Y-m-d H:i:s', strtotime($dueDate)) : null,
-            //     'paid_date' => $request->rental_date ? date('Y-m-d H:i:s', strtotime($request->rental_date)) : null,
-            //     'description' => $request->description,
-            //     'institution_id' => $userData->institution_id,
-            //     'branch_id' => $userData->branch_id,
-            //     'created_by' => $userData->id,
-            //     'created_on' => now(),
-            //     'payment_status' => $request->payment_status ?? 'UNPAID',
-            // ]);
-
-            // $member = Member::find($request->member_id);
-            // $branch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
-            // $cash = $this->getCntParameterByCd('CL', $userData->institution_id, $branch->code);
-            // $sales = $this->getCntParameterByCd('SL', $userData->institution_id, $branch->code);
-
-            // $tran = (array)[
-            //     "acct_no" => $cash->acct_no,
-            //     "acct_type" => $cash->acct_type,
-            //     "contra_acct_no" => $sales->acct_no,
-            //     "contra_acct_type" => $sales->acct_type,
-            //     "description" => "Rent payment:- {$member->first_name} {$member->last_name} on " . date('Y-m-d H:i:s'),
-            //     "dr_cr_ind" => "DR/CR",
-            //     "tran_amount" => $request->amount_paid,
-            //     "reversal_flag" => 'N',
-            //     "tran_date" => isset($request->date) ? $request->date : now(),
-            //     "tran_cd" => 'RNT',
-            //     "tran_id" => $this->generateUuid(),
-            //     "status" => 'Active',
-            //     "institution_id" => $userData->institution_id,
-            //     "branch_id" => $userData->branch_id,
-            //     "created_by" => $userData->id,
-            //     "created_on" => now(),
-            //     "member_id" =>  $request->member_id,
-            //     // "product_id" => $product->id,
-            //     // "stock_id" => $stock->id,
-            //     "ext_ref" => $rental->id,
-            //     "tran" => "RENT PAYMENT",
-            //     // "reversal_reason"=>null,
-            //     // "reversed_by"=>null,
-            //     // "reversed_on"=>null,
-            // ];
-
-
-            // $postTran = $this->postTransaction($tran);
-
-            // $debitRequest = (object)[
-            //     "acct_no" => $cash->acct_no,
-            //     "acct_type" => $cash->acct_type,
-            //     "tran_amt" => $postTran->tran_amount ?? 0,
-            //     "reversal_flag" => 'N',
-            //     "description" => $postTran->description ?? '',
-            //     "transaction_date" => $postTran->tran_date ?? now(),
-            //     "contra_acct_no" => $sales->acct_no,
-            //     "contra_acct_type" => $sales->acct_type,
-            //     "tran_type" => 'RENT PAYMENT',
-            //     "tran_cd" => 'RNT',
-            //     "tran_id" => $postTran->tran_id ?? null,
-            //     "institution_id" => $userData->institution_id,
-            //     "branch_id" => $userData->branch_id,
-            //     "created_by" => $userData->id,
-            //     "status" => 'Active',
-            // ];
-            // $creditRequest = (object)[
-            //     "acct_no" => $sales->acct_no,
-            //     "acct_type" => $sales->acct_type,
-            //     "tran_amt" => $postTran->tran_amount ?? 0,
-            //     "reversal_flag" => 'N',
-            //     "description" => $postTran->description ?? '',
-            //     "transaction_date" => $postTran->tran_date ?? now(),
-            //     "contra_acct_no" => $cash->acct_no,
-            //     "contra_acct_type" => $cash->acct_type,
-            //     "tran_type" => 'STOCK IN',
-            //     "tran_cd" => 'STO',
-            //     "tran_id" => $postTran->tran_id ?? null,
-            //     "institution_id" => $userData->institution_id,
-            //     "branch_id" => $userData->branch_id,
-            //     "created_by" => $userData->id,
-            //     "status" => 'Active',
-            // ];
-
-            // $debit = $this->postGlDR($debitRequest);
-            // $credit = $this->postGlCR($creditRequest);
-
 
             DB::commit();
             return $this->genericResponse(true, "Building unit rented successfully", 200, $rental, "rentUnit", $request);
@@ -398,7 +276,8 @@ class BuildingController extends Controller
         }
     }
 
-    public function newRental($request){
+    public function newRental($request)
+    {
         try {
             DB::beginTransaction();
             $userData = $this->getUserLogin();
@@ -528,7 +407,7 @@ class BuildingController extends Controller
 
             DB::commit();
             return $rental;
-        }catch (\Throwable $th) {
+        } catch (\Throwable $th) {
             throw $th;
         }
     }
@@ -538,10 +417,18 @@ class BuildingController extends Controller
     {
         $rental = Rental::find($request->id);
         if ($rental) {
+            $unitId = $rental->unit_id; // keep unit id before deleting
             $rental->delete();
-            $rental->save();
+
+            $unit = BuildingUnit::find($unitId);
+            if ($unit) {
+                $unit->status = 'Active';
+                $unit->save();
+            }
         }
+        return $this->genericResponse(true, "Building unit evacuated successfully", 200, null, "evacuateUnit", $request);
     }
+
 
 
     public function getRentals(Request $request)
@@ -621,13 +508,13 @@ class BuildingController extends Controller
 
             $unit = BuildingUnit::find($rental->unit_id);
 
-            $numberOfMoths = ceil((float) $request->amount_paid / (float) $unit->rent);
-            $dueDate = Carbon::parse($rental->due_date)->addMonths($numberOfMoths)->format('Y-m-d H:i:s');
+            // $numberOfMoths = ceil((float) $request->amount_paid / (float) $unit->rent);
+            // $dueDate = Carbon::parse($rental->due_date)->addMonths($numberOfMoths)->format('Y-m-d H:i:s');
 
             $rental->amount_paid =  $rental->amount_paid + (float) $request->amount_paid;
             $rental->paid_date = now();
-            $rental->due_date = $dueDate;
-            $rental->duration = $rental->duration + $numberOfMoths;
+            // $rental->due_date = $dueDate;
+            // $rental->duration = $rental->duration + $numberOfMoths;
             // $rental->payment_status = 'PAID';
             $rental->save();
 
@@ -872,15 +759,16 @@ class BuildingController extends Controller
         return $this->genericResponse(true, "Pending members", 200, $members, "getBatchMembers", $request);
     }
 
-    public function approveBuilding(Request $request){
+    public function approveBuilding(Request $request)
+    {
         try {
-            foreach ($request->members as $member){
-               $building = TempBuildings::find($member["id"]);
-               $building->status = 'Active';
-               $building->created_by = $this->getUserLogin()->id;
-               $building->created_on = now();
-               $response = $this->newBuilding($building);
-                if($response){
+            foreach ($request->members as $member) {
+                $building = TempBuildings::find($member["id"]);
+                $building->status = 'Active';
+                $building->created_by = $this->getUserLogin()->id;
+                $building->created_on = now();
+                $response = $this->newBuilding($building);
+                if ($response) {
                     $building->save();
                 }
             }
@@ -890,15 +778,16 @@ class BuildingController extends Controller
         }
     }
 
-    public function approveBuildingUnit(Request $request){
+    public function approveBuildingUnit(Request $request)
+    {
         try {
-            foreach ($request->members as $member){
-               $buildingUnit = TempBuildingUnit::find($member["id"]);
-               $buildingUnit->status = 'Active';
-               $buildingUnit->created_by = $this->getUserLogin()->id;
-               $buildingUnit->created_on = now();
-               $response = $this->newBuildingUnit($buildingUnit);
-                if($response){
+            foreach ($request->members as $member) {
+                $buildingUnit = TempBuildingUnit::find($member["id"]);
+                $buildingUnit->status = 'Active';
+                $buildingUnit->created_by = $this->getUserLogin()->id;
+                $buildingUnit->created_on = now();
+                $response = $this->newBuildingUnit($buildingUnit);
+                if ($response) {
                     $buildingUnit->save();
                 }
             }
@@ -909,16 +798,17 @@ class BuildingController extends Controller
     }
 
 
-    public function approveRental(Request $request){
+    public function approveRental(Request $request)
+    {
         try {
-            foreach ($request->members as $member){
-               $rental = TempRental::find($member["id"]);
-               $rental->status = 'Active';
-               $rental->created_by = $this->getUserLogin()->id;
-               $rental->created_on = now();
-               $rental->duration = (float)$rental->duration;
-               $response = $this->newRental($rental);
-                if($response){
+            foreach ($request->members as $member) {
+                $rental = TempRental::find($member["id"]);
+                $rental->status = 'Active';
+                $rental->created_by = $this->getUserLogin()->id;
+                $rental->created_on = now();
+                $rental->duration = (float)$rental->duration;
+                $response = $this->newRental($rental);
+                if ($response) {
                     $rental->save();
                 }
             }
@@ -927,4 +817,80 @@ class BuildingController extends Controller
             throw $th;
         }
     }
+
+
+    public function landLoadPayment(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $userData = $this->getUserLogin();
+            $landLoad = LandloadPayment::create([
+                'building_id' => $request->building_id,
+                'amount' => $request->amount,
+                'payment_date' => $request->payment_date ? date('Y-m-d H:i:s', strtotime($request->payment_date)) : now(),
+                'description' => $request->description,
+                'institution_id' => $userData->institution_id,
+                'branch_id' => $userData->branch_id,
+                'created_by' => $userData->id,
+                'payment_type' => $request->payment_type,
+                'created_on' => now(),
+            ]);
+            DB::commit();
+            return $this->genericResponse(
+                true,
+                "Land load payment made successfully",
+                200,
+                $landLoad,
+                "landLoadPayment",
+                $request
+            );
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "landLoadPayment", $request);
+        }
+    }
+
+    public function getLandLoadPayments(Request $request)
+    {
+        try {
+            $startDate   = $request->input('start_date');   // ✅
+            $endDate     = $request->input('end_date');     // ✅
+            $buildingId  = $request->input('building_id');  // ✅
+            $search      = $request->input('search');       // ✅
+            $rowsPerPage = $request->input('row_per_page', 10);
+            $page        = $request->input('page', 1);
+
+            $payments = DB::table('landload_payments as L')
+                ->select(
+                    'L.id',
+                    'L.building_id',
+                    'L.amount',
+                    'L.payment_type',
+                    'L.payment_date',
+                    'L.payment_method',
+                    'L.description',
+                    'L.status'
+                )
+                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('L.payment_date', [$startDate, $endDate]);
+                })
+                ->when(filled($buildingId), function ($query) use ($buildingId) {
+                    $query->where('L.building_id', $buildingId);
+                })
+                ->when(filled($search), function ($query) use ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('L.description', 'ILIKE', "%{$search}%")
+                            ->orWhere('L.payment_type', 'ILIKE', "%{$search}%")
+                            ->orWhere('L.payment_method', 'ILIKE', "%{$search}%");
+                    });
+                })
+                ->paginate($rowsPerPage, ['*'], 'page', $page);
+
+            return $this->genericResponse( true,"Land load payments retrieved successfully",200,$payments,"getLandLoadPayments",$request);
+        } catch (\Throwable $th) {
+            Log::error($th);
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "getLandLoadPayments", $request);
+        }
+    }
+
 }
