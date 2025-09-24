@@ -268,4 +268,5 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("landlord-payments", [BuildingController::class, "landLoadPayment"]);
     Route::post("get-land-load-payments", [BuildingController::class, "getLandLoadPayments"]);
     Route::post("rent-arrears-report", [ReportController::class, "rentArrearsReport"]);
+    Route::get("get-printer-configs", [CommonController::class, "getPrinterConfigs"]);
 });

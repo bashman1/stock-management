@@ -551,7 +551,9 @@ class ProductController extends Controller
             $products = $this->paginate($request->rowPerPage, $totalSql, $sqlString);
             return $products;
         } catch (\Throwable $th) {
-            throw new $th;
+            // throw new $th;
+            throw $th;
+
         }
     }
 

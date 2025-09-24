@@ -238,5 +238,21 @@ class CommonController extends Controller
         }
     }
 
+    public function getPrinterConfigs(){
+        try{
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+            $query = DB::table('printer_configs');
+            if($isNotAdmin){
+                $query->where('institution_id', $userData->institution_id);
+                    //   ->where('branch_id', $userData->branch_id);
+            }
+            $printerConfigs = $query->first();
+            return $this->genericResponse(true, "Printer Configs", 200, $printerConfigs, "getPrinterConfigs", []);
+        }catch(\Throwable $th){
+            return $this->genericResponse(false, $th->getMessage(), 500, [], "getPrinterConfigs", []);
+        }
+    }
+
 
 }

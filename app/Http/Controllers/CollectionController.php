@@ -28,7 +28,7 @@ class CollectionController extends Controller
 
     public function fieldCollect(Request  $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $tranIdRef = InstitutionConfig::where("type", "tran_id_ref")->first();
         $tranId = $tranIdRef->prefix . '' . $tranIdRef->starting . '' . $tranIdRef->current;
         $tranIdRef->current = $tranIdRef->current + $tranIdRef->step;
@@ -167,7 +167,7 @@ class CollectionController extends Controller
 // }
 
     public function getOfficersCollectionData(){
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
 
         $queryString = "SELECT T.*, CONCAT(M.first_name,' ',M.last_name, ' ',M.other_name) AS member_name,
@@ -209,7 +209,7 @@ class CollectionController extends Controller
 
     public function getPendingTransactions($status)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
 
         $queryString= "SELECT T.*, CONCAT(M.first_name,' ',M.last_name, ' ',M.other_name) AS member_name,
@@ -235,7 +235,7 @@ class CollectionController extends Controller
     {
         try {
             DB::beginTransaction();
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
             if ($request->action == "Approved") {
                 foreach ($request->tranList as  $value) {
                     $approveTmpTran = TempCollection::find($value["id"]);
@@ -312,7 +312,6 @@ class CollectionController extends Controller
             return $this->genericResponse(true, "Transaction $request->action successfully", 201, [], "approveTransactions", $request);
         } catch (\Throwable $th) {
             DB::rollback();
-            // throw new $th;
             return $this->genericResponse(false, "Transaction $request->action failed", 400, $th, "approveTransactions", $request);
         }
     }
@@ -332,7 +331,7 @@ class CollectionController extends Controller
 
     public function getApprovedTransactionsData(){
         try {
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
             $queryString="SELECT T.*, CONCAT(M.first_name,' ',M.last_name, ' ',M.other_name) AS member_name,
             I.name AS institution_name, B.name AS branch_name,

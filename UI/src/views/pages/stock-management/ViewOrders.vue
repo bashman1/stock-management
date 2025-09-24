@@ -15,6 +15,7 @@ const route = useRoute();
 const displayConfirmation = ref(false);
 const deleteOrderId = ref(null);
 const showInvoiceModal = ref(false);
+const printerConfig = ref(null);
 const userData = ref({});
 
 
@@ -67,9 +68,24 @@ const deleteOrder = ()=>{
 
 
 const printReceipt=()=>{
-    commonService.genericRequest('print-receipt', 'post', true, {}).then((response) => {
+    const postData = {
+        items: orderItems.value
+    }
+    toggleInvoiceModel(false);
+    commonService.genericRequest('print-receipt', 'post', true, postData).then((response) => {
         if (response.status) {
             orderItems.value = response.data;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
+const getPrinterConfig=()=>{
+    commonService.genericRequest('get-printer-configs', 'get', true, {}).then((response) => {
+        if (response.status) {
+            printerConfig.value = response.data;
         } else {
             commonService.showError(toast, response.message);
         }
@@ -174,15 +190,15 @@ const printInvoice = () => {
       <tfoot>
         <tr>
           <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #000;'>Total</td>
-          <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #000;'>${orderItems.value[0].total? commonService.commaSeparator( Number(orderItems.value[0].total) ) : 0}</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #000;'>${orderItems.value[0].total? commonService.commaSeparator( Number(orderItems.value[0]?.total) ) : 0}</td>
         </tr>
         <tr>
           <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>Amount Paid</td>
-          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0].amount_paid))}</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0]?.amount_paid))}</td>
         </tr>
         <tr>
           <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>Change</td>
-          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0].amount_paid) - Number(orderItems.value[0].total))}</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0]?.amount_paid) - Number(orderItems.value[0]?.total))}</td>
         </tr>
 
       </tfoot>
@@ -224,6 +240,7 @@ const close = () => {
 onMounted(() => {
     userData.value=commonService.getStorage().userData;
     getSales();
+    getPrinterConfig();
 });
 
 </script>
@@ -286,8 +303,10 @@ onMounted(() => {
             <Column headerStyle="min-width:10rem;">
                 <template #body="{ data }">
                     <Button icon="pi pi-eye" class="p-button-primary mr-2" @click="viewDetails(data)" v-tooltip="'View sell details'"/>
-                                       <Button icon="pi pi-trash" class="p-button-danger mt-2"
+                                       <Button icon="pi pi-trash" class="p-button-danger mr-2"
                                                @click="openConfirmation(data)" v-tooltip="'Reverse sale'" />
+                    <!-- <Button icon="pi pi-print" class="p-button-primary mr-2" @click="printReceipt" v-tooltip="'Thermal Printer'"/> -->
+
                 </template>
             </Column>
         </DataTable>
@@ -452,15 +471,15 @@ onMounted(() => {
                 <tfoot>
                     <tr>
                     <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #666;'>Total</td>
-                    <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #666;'>{{ orderItems[0].total	 ? commonService.commaSeparator( Number(orderItems[0].total) ) : 0 }}</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #666;'>{{ orderItems[0]?.total	 ? commonService.commaSeparator( Number(orderItems[0]?.total) ) : 0 }}</td>
                     </tr>
                     <tr>
                         <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>Amount Paid</td>
-                        <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0].amount_paid	) ) }}</td>
+                        <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0]?.amount_paid	) ) }}</td>
                     </tr>
                     <tr>
                     <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>Change</td>
-                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0].amount_paid	) - Number(orderItems[0].total)) }}</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0]?.amount_paid	) - Number(orderItems[0]?.total)) }}</td>
                     </tr>
 
                 </tfoot>
@@ -484,7 +503,9 @@ onMounted(() => {
 
             <!-- /template -->
             <template #footer>
-                <Button label="print" @click="close" icon="pi pi-print" class="p-button-outlined" />
+                <Button v-if="printerConfig?.paper == 'Thermal' " label="print" @click="printReceipt" icon="pi pi-print" class="p-button-outlined" v-tooltip="'Printing on Thermal printer 80mm Paper size'"/>
+                <Button v-else label="print" @click="close" icon="pi pi-print" class="p-button-outlined" v-tooltip="'Printing on A4 Paper size'"/>
+
             </template>
         </Dialog>
 

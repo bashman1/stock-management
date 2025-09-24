@@ -331,41 +331,44 @@ class OrderController extends Controller
     }
 
 
-    public function printReceipt(){
+    public function printReceipt(Request $request){
 
+        $userData = $this->getUserLogin();
+        $institution = Institution::find($userData->institution_id);
                 // Set params
-                $mid = '123123456';
-                $store_name = 'YOURMART';
-                $store_address = 'Mart Address';
+                $mid = $institution->ref_no;
+                $store_name = $institution->name;
+                $store_address = $institution->address;
                 $store_phone = '1234567890';
                 $store_email = 'yourmart@email.com';
                 $store_website = 'yourmart.com';
-                $tax_percentage = 18;
-                $transaction_id = 'TX123ABC456';
+                // $tax_percentage = 18;
+                $transaction_id = '';
 
-                // Set items
-                $items = [
-                    [
-                        'name' => 'French Fries (tera)',
-                        'qty' => 2,
-                        'price' => 65000,
-                    ],
-                    [
-                        'name' => 'Roasted Milk Tea (large)',
-                        'qty' => 1,
-                        'price' => 24000,
-                    ],
-                    [
-                        'name' => 'Honey Lime (large)',
-                        'qty' => 3,
-                        'price' => 10000,
-                    ],
-                    [
-                        'name' => 'Jasmine Tea (grande)',
-                        'qty' => 3,
-                        'price' => 8000,
-                    ],
-                ];
+
+
+
+                $rawItems = $request->items; // or json_decode($request->getContent(), true)
+
+                // Initialize formatted items array
+                $items = [];
+
+                foreach ($rawItems as $item) {
+                    $transaction_id = $item['receipt_no'];
+                    // Convert strings to integers/floats if needed
+                    $quantity = (float) $item['qty'];
+                    $price = (float) $item['price'];
+                    $subTotal = $quantity * $price;
+
+                    $items[] = [
+                        'name' => $item['name'] . (isset($item['unit']) ? ' (' . $item['unit'] . ')' : ''),
+                        // 'name'      => $item['name'] . (isset($item['unit']) ? ' ' . $item['unit'] : ''),
+                        'qty'       => $quantity, // e.g., "1 Bag"
+                        'price'     => $price,
+                        'sub_total' => $subTotal,
+                    ];
+                }
+
 
                 // Init printer
                 $printer = new ReceiptPrinter;
@@ -373,6 +376,8 @@ class OrderController extends Controller
                     config('receiptprinter.connector_type'),
                     config('receiptprinter.connector_descriptor')
                 );
+
+                $printer->setCurrency('UGX: ');
 
                 // Set store info
                 $printer->setStore($mid, $store_name, $store_address, $store_phone, $store_email, $store_website);
@@ -382,11 +387,11 @@ class OrderController extends Controller
                     $printer->addItem(
                         $item['name'],
                         $item['qty'],
-                        $item['price']
+                        $item['price'],
                     );
                 }
                 // Set tax
-                $printer->setTax($tax_percentage);
+                $printer->setTax(0);
 
                 // Calculate total
                 $printer->calculateSubTotal();
