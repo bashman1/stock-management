@@ -142,7 +142,8 @@ const trayzPrinter = async () => {
     const grandTotal = subTotal + tax;
 
     await qz.websocket.connect();
-    const config = qz.configs.create('POS-80'); // Adjust to your printer
+    // const config = qz.configs.create('POS-80'); // Adjust to your printer
+    const config = qz.configs.create('XP-80C'); // Adjust to your printer
 
     const LINE_WIDTH = 48;  // ≈ full width for 80mm thermal printer
 
