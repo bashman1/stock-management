@@ -17,7 +17,15 @@ return new class extends Migration
             $table->string('paper')->default('Thermal');
             $table->string('printer')->default('POS-80');
             $table->string('size')->default('80mm');
+            $table->text('address')->nullable();
+            $table->string('p_o_box')->nullable();
+            $table->text('thanks_message')->nullable();
+            $table->text('powered_message')->nullable();
+            $table->text('phone_number')->nullable();
+            $table->text('email')->nullable();
+            $table->boolean('auto')->default(false);
             $table->text('footer')->nullable();
+            $table->string('currency')->default('UGX');
             $table->text('description')->nullable();
             $table->string("status")->default('Active');
             $table->unsignedBigInteger('institution_id')->nullable();
