@@ -56,4 +56,24 @@ class CustomerReceivableController extends Controller
             return $this->genericResponse(false, "An error occurred while making payment: " . $th->getMessage(), 500, null, "makePayment", $request);
         }
     }
+
+
+    public function deleteReceivable(Request $request){
+        try {
+            DB::beginTransaction();
+            $receivable = CustomerReceivable::find($request->receivable_id);
+            if (!$receivable) {
+                return $this->genericResponse(false, "Receivable not found", 404, null, "deleteReceivable", $request);
+            }
+            $receivable->status = 'Deleted';
+            $receivable->updated_by = $this->getUserLogin()->id;
+            $receivable->updated_on = now();
+            $receivable->save();
+            DB::commit();
+            return $this->genericResponse(true, "Receivable deleted successfully", 200, $receivable, "deleteReceivable", $request);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->genericResponse(false, "An error occurred while deleting receivable: " . $th->getMessage(), 500, null, "deleteReceivable", $request);
+        }
+    }
 }

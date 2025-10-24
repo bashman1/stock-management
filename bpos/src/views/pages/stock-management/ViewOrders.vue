@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
+import qz from 'qz-tray';
 
 const toast = useToast();
 const memberBatch = ref(null);
@@ -15,6 +16,7 @@ const route = useRoute();
 const displayConfirmation = ref(false);
 const deleteOrderId = ref(null);
 const showInvoiceModal = ref(false);
+const printerConfig = ref(null);
 const userData = ref({});
 
 
@@ -67,9 +69,24 @@ const deleteOrder = ()=>{
 
 
 const printReceipt=()=>{
-    commonService.genericRequest('print-receipt', 'post', true, {}).then((response) => {
+    const postData = {
+        items: orderItems.value
+    }
+    toggleInvoiceModel(false);
+    commonService.genericRequest('print-receipt', 'post', true, postData).then((response) => {
         if (response.status) {
             orderItems.value = response.data;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
+const getPrinterConfig=()=>{
+    commonService.genericRequest('get-printer-configs', 'get', true, {}).then((response) => {
+        if (response.status) {
+            printerConfig.value = response.data;
         } else {
             commonService.showError(toast, response.message);
         }
@@ -92,6 +109,109 @@ const closeConfirmation = () => {
 const toggleInvoiceModel = (action) => {
     showInvoiceModal.value = action
 }
+
+
+
+const trayzPrinter = async () => {
+  try {
+        const updatedItems = orderItems.value?.map(item => ({
+            ...item,
+            uom: item.unit,
+            qty: Number(item.qty),
+            price: Number(item.price),
+
+            })) || [];
+
+    const receipt = {
+      store: {
+        name:  printerConfig.value?.name,
+        address: printerConfig.value?.address,
+        poBox: printerConfig.value?.p_o_box,
+        phone: printerConfig.value?.phone_number,
+      },
+      cashier: userData.value?.first_name,
+      currency: printerConfig.value?.currency || 'UGX',
+      date: new Date().toLocaleString(),
+      receiptNo: orderItems.value[0]?.receipt_no,
+      customer: orderItems.value[0]?.customer_name ? orderItems.value[0]?.customer_name: 'Cash',
+      items:updatedItems,
+      taxRate: 0.18
+    };
+
+    const amountPaid = Number(orderItems.value[0]?.amount_paid) || 0;
+
+    const subTotal = receipt.items.reduce((sum, i) => sum + i.qty * i.price, 0);
+    const tax = subTotal * receipt.taxRate;
+    const grandTotal = subTotal + tax;
+
+    await qz.websocket.connect();
+    // const config = qz.configs.create('POS-80'); // Adjust to your printer
+    // const config = qz.configs.create('XP-80C'); // Adjust to your printer
+    const config = qz.configs.create(printerConfig.value?.printer); // Adjust to your printer
+
+    const LINE_WIDTH = 48;  // ≈ full width for 80mm thermal printer
+
+    // Helper to pad/trim text
+    // const padLine = (text, width = LINE_WIDTH) =>
+    //   text.length >= width ? text.substring(0, width) : text.padEnd(width, ' ');
+    const padLine = (text, width = LINE_WIDTH) => {
+        const str = (text ?? '').toString();    // ✅ fallback to empty string
+        return str.length >= width ? str.substring(0, width) : str.padEnd(width, ' ');
+    };
+
+
+    let data = [
+      '\x1B\x40',        // Reset printer
+      '\x1B\x61\x01',    // Center text
+      padLine(receipt.store.name.toUpperCase()) + '\n',
+      padLine(receipt.store.address) + '\n',
+      padLine(`Tel: ${receipt.store.phone}`) + '\n',
+      padLine('='.repeat(LINE_WIDTH)) + '\n',
+      '\x1B\x61\x00',    // Left align
+      padLine(`Receipt No. : ${receipt.receiptNo}`) + '\n',
+      padLine(`Cashier : ${receipt.cashier}`) + '\n',
+      padLine(`Date    : ${receipt.date}`) + '\n',
+      '-'.repeat(LINE_WIDTH) + '\n',
+      padLine('ITEM(UOM)          QTY   PRICE    SUBTOTAL') + '\n',
+      '-'.repeat(LINE_WIDTH) + '\n'
+    ];
+
+    // Items with unit of measure & line subtotal
+    receipt.items.forEach(item => {
+      const nameUom = `${item.name}(${item.uom})`.padEnd(18).substring(0, 18);
+      const qty = item.qty.toString().padStart(3);
+      const price = item.price.toLocaleString().padStart(7);
+      const lineTotal = (item.qty * item.price).toLocaleString().padStart(9);
+      data.push(`${nameUom}${qty}  ${price}  ${lineTotal}\n`);
+    });
+
+    data.push(
+      '-'.repeat(LINE_WIDTH) + '\n',
+    //   padLine(`Subtotal: ${receipt.currency} ${subTotal.toLocaleString()}`) + '\n',
+    //   padLine(`Tax (18%): ${receipt.currency} ${tax.toLocaleString()}`) + '\n',
+    //   padLine(`TOTAL:    ${receipt.currency} ${grandTotal.toLocaleString()}`) + '\n',
+      padLine(`TOTAL:    ${receipt.currency} ${subTotal.toLocaleString()}`) + '\n',
+      padLine(`AMOUNT PAID:    ${receipt.currency} ${amountPaid.toLocaleString()}`) + '\n',
+      padLine(`CHANGE:    ${receipt.currency} ${(subTotal - amountPaid).toLocaleString()}`) + '\n',
+      '='.repeat(LINE_WIDTH) + '\n',
+      '\x1B\x61\x01',  // Center text
+      '\n',           // extra blank line
+      padLine(printerConfig.value?.thanks_message) + '\n',
+      padLine(printerConfig.value?.footer) + '\n',
+      padLine(printerConfig.value?.powered_message) + '\n',
+      '*'.repeat(LINE_WIDTH) + '\n',
+      '\n\n',         // Extra bottom padding before cut (same as top)
+      '\n\n',            // TOP padding (2 blank lines)
+      '\x1D\x56\x00'  // Cut paper
+    );
+
+    await qz.print(config, data);
+    await qz.websocket.disconnect();
+  } catch (err) {
+    console.error('Printing failed:', err);
+  }
+};
+
 
 const printInvoice = () => {
   const printWindow = window.open('', '', 'width=600,height=600');
@@ -147,7 +267,7 @@ const printInvoice = () => {
         <div>
           <p style="color: #000;"><strong>Company Name:</strong> ${userData.value?.institution_name}</p>
           <p style="color: #000;"><strong>P.O.Box:</strong> ${ orderItems.value[0]?.p_o_box +' '+orderItems.value[0]?.institution_address }</p>
-          <p style="color: #000;"><strong>Customer:</strong> ${ orderItems.value[0]?.customer_name ? orderItems.value[0]?.customer_name: 'Cash' }</p>
+          <p style="color: #000;"><strong>Customer:</strong> ${ orderItems[0]?.customer_name ? orderItems.value[0]?.customer_name: 'Cash' }</p>
         </div>
         <div style='text-align: right;'>
           <p style="color: #000;"><strong>Receipt #:</strong> ${ orderItems.value[0]?.receipt_no}</p>
@@ -174,15 +294,15 @@ const printInvoice = () => {
       <tfoot>
         <tr>
           <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #000;'>Total</td>
-          <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #000;'>${orderItems.value[0].total? commonService.commaSeparator( Number(orderItems.value[0].total) ) : 0}</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #000;'>${orderItems.value[0].total? commonService.commaSeparator( Number(orderItems.value[0]?.total) ) : 0}</td>
         </tr>
         <tr>
           <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>Amount Paid</td>
-          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0].amount_paid))}</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0]?.amount_paid))}</td>
         </tr>
         <tr>
           <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>Change</td>
-          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0].amount_paid) - Number(orderItems.value[0].total))}</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0]?.amount_paid) - Number(orderItems.value[0]?.total))}</td>
         </tr>
 
       </tfoot>
@@ -224,6 +344,7 @@ const close = () => {
 onMounted(() => {
     userData.value=commonService.getStorage().userData;
     getSales();
+    getPrinterConfig();
 });
 
 </script>
@@ -286,8 +407,10 @@ onMounted(() => {
             <Column headerStyle="min-width:10rem;">
                 <template #body="{ data }">
                     <Button icon="pi pi-eye" class="p-button-primary mr-2" @click="viewDetails(data)" v-tooltip="'View sell details'"/>
-                                       <Button icon="pi pi-trash" class="p-button-danger mt-2"
+                                       <Button icon="pi pi-trash" class="p-button-danger mr-2"
                                                @click="openConfirmation(data)" v-tooltip="'Reverse sale'" />
+                    <!-- <Button icon="pi pi-print" class="p-button-primary mr-2" @click="printReceipt" v-tooltip="'Thermal Printer'"/> -->
+
                 </template>
             </Column>
         </DataTable>
@@ -452,15 +575,15 @@ onMounted(() => {
                 <tfoot>
                     <tr>
                     <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #666;'>Total</td>
-                    <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #666;'>{{ orderItems[0].total	 ? commonService.commaSeparator( Number(orderItems[0].total) ) : 0 }}</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #666;'>{{ orderItems[0]?.total	 ? commonService.commaSeparator( Number(orderItems[0]?.total) ) : 0 }}</td>
                     </tr>
                     <tr>
                         <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>Amount Paid</td>
-                        <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0].amount_paid	) ) }}</td>
+                        <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0]?.amount_paid	) ) }}</td>
                     </tr>
                     <tr>
                     <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>Change</td>
-                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0].amount_paid	) - Number(orderItems[0].total)) }}</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0]?.amount_paid	) - Number(orderItems[0]?.total)) }}</td>
                     </tr>
 
                 </tfoot>
@@ -481,10 +604,11 @@ onMounted(() => {
             </body>
 
             </html>
-
             <!-- /template -->
             <template #footer>
-                <Button label="print" @click="close" icon="pi pi-print" class="p-button-outlined" />
+                <Button v-if="printerConfig?.paper == 'Thermal' " label="print" @click="trayzPrinter" icon="pi pi-print" class="p-button-outlined" v-tooltip="'Printing on Thermal printer 80mm Paper size'"/>
+                <Button v-else label="print" @click="close" icon="pi pi-print" class="p-button-outlined" v-tooltip="'Printing on A4 Paper size'"/>
+
             </template>
         </Dialog>
 

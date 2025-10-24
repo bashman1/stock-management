@@ -9,6 +9,8 @@ const router = useRouter();
 const route = useRoute()
 const receivable = ref(null);
 const commonService = new CommonService();
+const displayConfirmation = ref(false);
+const deleteReceivableId = ref(null);
 
 const formData = ref({
     amountPaid: null,
@@ -31,6 +33,31 @@ const getReceivables = () => {
     commonService.genericRequest('get-receivables', 'post', true, {}).then((response) => {
         if (response.status) {
             receivable.value = response.data;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
+const openConfirmation = (data) => {
+    displayConfirmation.value = true;
+    deleteReceivableId.value= data.id;
+};
+
+const closeConfirmation = () => {
+    displayConfirmation.value = true;
+};
+
+const deleteReceivables = ()=>{
+    let postData = {
+        receivable_id: deleteReceivableId.value
+    }
+    commonService.genericRequest('delete-receivable', 'post', true, postData).then((response) => {
+        closeConfirmation();
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getReceivables();
         } else {
             commonService.showError(toast, response.message);
         }
@@ -121,11 +148,27 @@ onMounted(() => {
                         v-tooltip="'View sell details'" />
                      <Button icon="pi pi-dollar" class="p-button-info mr-2" @click="makePayment(data)"
                         v-tooltip="'Make payment'" />
-                    <!--                    <Button icon="pi pi-check" class="p-button-rounded p-button-warning mt-2"-->
-                    <!--                            @click="confirmDeleteProduct(data)" />-->
+                    <Button icon="pi pi-trash" class="p-button-danger mt-2"
+                                               @click="openConfirmation(data)" v-tooltip="'Delete Receivable'" />
                 </template>
             </Column>
         </DataTable>
+
+
+        <div class="card p-fluid">
+            <!-- <h5>Confirmation</h5> -->
+            <!-- <Button label="Delete" icon="pi pi-trash" class="p-button-danger" style="width: auto" @click="openConfirmation" /> -->
+            <Dialog header="Confirmation" v-model:visible="displayConfirmation" :style="{ width: '350px' }" :modal="true">
+                <div class="flex align-items-center justify-content-center">
+                    <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
+                    <span>Are you sure you want to delete receivable?</span>
+                </div>
+                <template #footer>
+                    <Button label="No" icon="pi pi-times" @click="closeConfirmation" class="p-button-text" />
+                    <Button label="Yes" icon="pi pi-check" @click="deleteReceivables" class="p-button-text" autofocus />
+                </template>
+            </Dialog>
+        </div>
 
 
 
