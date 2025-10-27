@@ -267,7 +267,7 @@ const printInvoice = () => {
         <div>
           <p style="color: #000;"><strong>Company Name:</strong> ${userData.value?.institution_name}</p>
           <p style="color: #000;"><strong>P.O.Box:</strong> ${ orderItems.value[0]?.p_o_box +' '+orderItems.value[0]?.institution_address }</p>
-          <p style="color: #000;"><strong>Customer:</strong> ${ orderItems[0]?.customer_name ? orderItems.value[0]?.customer_name: 'Cash' }</p>
+          <p style="color: #000;"><strong>Customer:</strong> ${ orderItems[0].value?.customer_name ? orderItems.value[0]?.customer_name: 'Cash' }</p>
         </div>
         <div style='text-align: right;'>
           <p style="color: #000;"><strong>Receipt #:</strong> ${ orderItems.value[0]?.receipt_no}</p>
