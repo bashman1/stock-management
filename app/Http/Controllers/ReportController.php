@@ -374,6 +374,8 @@ class ReportController extends Controller
                 $conditions[] = "DATE(R.due_date) <= '" . addslashes($request->to_date) . "'";
             }
 
+            $conditions[] = " ( X.rent * R.duration) - COALESCE(RH.amount_paid_as_at, 0) > 0 ";
+
             Log::info("Hello there ************************************");
             Log::info($request->from_date);
 
