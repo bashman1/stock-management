@@ -311,7 +311,7 @@ class ReportController extends Controller
             $isNotAdmin = $this->isNotAdmin();
             $sqlString = "SELECT
                 R.id, R.building_id, R.unit_id, R.member_id, R.duration,
-                R.amount_paid, R.status, R.member_number AS ref_no, R.rental_date, R.due_date,
+                R.amount_paid, R.status, R.ref_no, R.rental_date, R.due_date,
                 R.paid_date, R.description, R.institution_id, R.branch_id,
                 R.created_by, R.created_on, R.created_at, R.updated_at, R.payment_status,
                 B.name AS building_name, B.ref_no AS building_ref,
