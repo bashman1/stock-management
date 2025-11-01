@@ -24,6 +24,7 @@ const paymentType = ref([
     {name: 'Rent', code: 'RENT'},
     {name: 'Maintenance', code: 'MAINTENANCE'},
 ])
+const deleteBuildingDialog = ref(false);
 
 const getBuildings = () => {
     let postData = {
@@ -61,11 +62,32 @@ const toggleLandLoadPaymentModal = (status) => {
     showLandLoadPaymentModal.value = status;
 }
 
+const toggleConfirmDialog = (data)=>{
+    selectedBuilding.value = data;
+    deleteBuildingDialog.value = true;
+}
+
 
 const onLandLoadPayment =(data)=>{
     selectedBuilding.value = data;
     toggleLandLoadPaymentModal(true);
     formData.value = {};
+}
+
+const deleteBuilding = ()=>{
+    let postData = {
+        id: selectedBuilding?.value.id,
+    }
+    commonService.genericRequest('archive-building', 'POST', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            deleteBuildingDialog.value = false;
+            getBuildings();
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+
 }
 
 const onSubmitPayments=()=>{
@@ -166,7 +188,7 @@ onMounted(() => {
                     {{ data.city_name }}
                 </template>
             </Column>
-            <Column field="name" header="Plot. No" style="min-width: 10rem">
+            <Column field="name" header="Plot. No" style="min-width: 8rem">
                 <template #body="{ data }">
                     {{ data.plot }}
                 </template>
@@ -181,7 +203,7 @@ onMounted(() => {
                     {{ data.status }}
                 </template>
             </Column>
-            <Column field="name" header="Ref No." style="min-width: 10rem">
+            <Column field="name" header="Ref No." style="min-width: 8rem">
                 <template #body="{ data }">
                     {{ data.ref_no }}
                 </template>
@@ -201,16 +223,16 @@ onMounted(() => {
                     {{ data.created_at }}
                 </template>
             </Column>
-            <Column headerStyle="min-width:12rem;">
+            <Column headerStyle="min-width:16rem;">
                 <template #body="{ data }">
                     <Button icon="pi pi-eye" @click="goToDetails(data)" class="p-button-primary mr-2"
-                        v-tooltip="'View product details'" />
+                        v-tooltip="'View building details'" />
                     <Button icon="pi pi-money-bill" @click="onLandLoadPayment(data)" class="p-button-success mr-2"
                         v-tooltip="'Pay land load'" />
-                    <!-- <Button icon="pi pi-wrench" @click="onMaintenancePayment(data)" class="p-button-warning mr-2"
-                        v-tooltip="'Maintenance Cost'" /> -->
-                    <!-- <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="toggleConfirmDialog(data)"
-                        v-tooltip="'Archive product'" /> -->
+                    <Button icon="pi pi-pencil" @click="toggleConfirmDialog(data)" class="p-button-primary mr-2"
+                        v-tooltip="'Edit building'" />
+                    <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="toggleConfirmDialog(data)"
+                        v-tooltip="'Archive building'" />
                 </template>
             </Column>
         </DataTable>
@@ -243,5 +265,18 @@ onMounted(() => {
                 <Button @click="onSubmitPayments"  label="Pay Payments" class="p-button-outlined mr-2 mb-2" />
             </template>
         </Dialog>
+        <Dialog v-model:visible="deleteBuildingDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
+                    <div class="flex align-items-center justify-content-center">
+                        <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
+                        <span v-if="selectedBuilding"
+                            >Are you sure you want to archive <b>{{ selectedBuilding?.name }}</b
+                            >?</span
+                        >
+                    </div>
+                    <template #footer>
+                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteBuildingDialog = false" />
+                        <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteBuilding" />
+                    </template>
+                </Dialog>
     </div>
 </template>

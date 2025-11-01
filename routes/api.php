@@ -270,4 +270,5 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("rent-arrears-report", [ReportController::class, "rentArrearsReport"]);
     Route::get("get-printer-configs", [CommonController::class, "getPrinterConfigs"]);
     Route::post("delete-receivable", [CustomerReceivableController::class, "deleteReceivable"]);
+    Route::post("archive-building", [BuildingController::class, "archiveBuilding"]);
 });

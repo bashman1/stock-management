@@ -386,7 +386,7 @@ class ReportController extends Controller
             return $this->genericResponse(true, "Rentals list", 200, $rentals, "rentArrearsReport", $request);
 
         } catch (\Throwable $th) {
-            return $this->genericResponse(false, "Error occurred", 500, null, "rentArrearsReport", $request);
+            return $this->genericResponse(false, $th->getMessage(), 500, null, "rentArrearsReport", $request);
         }
     }
 }

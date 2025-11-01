@@ -893,4 +893,19 @@ class BuildingController extends Controller
         }
     }
 
+
+    public function archiveBuilding(Request $request){
+        try {
+            $building = Building::find($request->id);
+            if (!$building) {
+                return $this->genericResponse(false, "Building not found", 404, null, "archiveBuilding", $request);
+            }
+            $building->status = 'Archived';
+            $building->save();
+            return $this->genericResponse(true, "Building archived successfully", 200, $building, "archiveBuilding", $request);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "archiveBuilding", $request);
+        }
+    }
+
 }
