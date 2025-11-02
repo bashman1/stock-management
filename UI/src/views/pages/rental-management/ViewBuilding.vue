@@ -87,7 +87,6 @@ const deleteBuilding = ()=>{
             commonService.showError(toast, response.message);
         }
     })
-
 }
 
 const onSubmitPayments=()=>{
@@ -103,7 +102,6 @@ const onSubmitPayments=()=>{
         commonService.showError(toast, "Please select payment type");
         return;
     }
-
     let postData = {
         building_id: selectedBuilding?.value.id,
         amount: formData.value?.amountPaid,
@@ -123,7 +121,9 @@ const onSubmitPayments=()=>{
     })
 }
 
-
+const updateBuilding = (data)=>{
+    commonService.redirect(router, 'update-building/'+data.id);
+}
 
 
 onMounted(() => {
@@ -229,10 +229,10 @@ onMounted(() => {
                         v-tooltip="'View building details'" />
                     <Button icon="pi pi-money-bill" @click="onLandLoadPayment(data)" class="p-button-success mr-2"
                         v-tooltip="'Pay land load'" />
-                    <Button icon="pi pi-pencil" @click="toggleConfirmDialog(data)" class="p-button-primary mr-2"
+                    <Button icon="pi pi-pencil" @click="updateBuilding(data)" class="p-button-primary mr-2"
                         v-tooltip="'Edit building'" />
                     <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="toggleConfirmDialog(data)"
-                        v-tooltip="'Archive building'" />
+                        v-tooltip.left="'Archive building'" />
                 </template>
             </Column>
         </DataTable>

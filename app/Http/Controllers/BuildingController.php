@@ -33,8 +33,12 @@ class BuildingController extends Controller
         try {
             DB::beginTransaction();
             $building = $this->newBuilding($request);
+
+            $message='';
+            $request->id ? $message='Building updated successfully' : $message='Building created successfully';
+
             DB::commit();
-            return $this->genericResponse(true, "Building created successfully", 201, $building, "createBuilding", $request);
+            return $this->genericResponse(true, $message, 201, $building, "createBuilding", $request);
         } catch (\Throwable $th) {
             DB::rollBack();
             return $this->genericResponse(false, $th->getMessage(), 500, $th, "createBuilding", $request);
@@ -49,8 +53,10 @@ class BuildingController extends Controller
 
             DB::beginTransaction();
             $userData = $this->getUserLogin();
-            $ref = $this->generateRefNumber('building_ref');
-            $building = Building::create([
+            $ref = $request->id ? Building::find($request->id)->ref_no : $this->generateRefNumber('building_ref');
+            $building = Building::updateOrCreate(
+                 ['id' => $request->id ?? null],
+                [
                 'name' => $request->name,
                 'city_id' => $request->city_id,
                 'street' => $request->street,
@@ -62,8 +68,10 @@ class BuildingController extends Controller
                 'description' => $request->description,
                 'institution_id' => $userData->institution_id,
                 'branch_id' => $userData->branch_id,
-                'created_by' => $userData->id,
-                'created_on' => now(),
+                $request->id ? 'updated_by' : 'created_by' => $userData->id,
+                $request->id ? 'updated_on' : 'created_on' => now(),
+                // 'created_by' => $userData->id,
+                // 'created_on' => now(),
             ]);
             DB::commit();
             return $building;
@@ -138,23 +146,11 @@ class BuildingController extends Controller
         try {
             DB::beginTransaction();
             $buildingUnit = $this->newBuildingUnit($request);
-            // $userData = $this->getUserLogin();
-            // $ref = $this->generateRefNumber('building_unit_ref');
-            // $buildingUnit = BuildingUnit::create([
-            //     'building_id' => $request->building_id,
-            //     'unit_type' => 'Room',
-            //     'unit_no' => $request->unit,
-            //     'ref_no' => $ref,
-            //     'name' => $request->name,
-            //     'rent' => $request->rent,
-            //     'description' => $request->description,
-            //     'created_by' => $userData->id,
-            //     'institution_id' => $userData->institution_id,
-            //     'branch_id' => $userData->branch_id,
-            //     'created_on' => now(),
-            // ]);
+            $message='';
+            $request->id ? $message='Building unit updated successfully' : $message='Building unit created successfully';
+
             DB::commit();
-            return $this->genericResponse(true, "Building unit created successfully", 201, $buildingUnit, "createBuildingUnit", $request);
+            return $this->genericResponse(true, $message, 201, $buildingUnit, "createBuildingUnit", $request);
         } catch (\Throwable $th) {
             DB::rollBack();
             return $this->genericResponse(false, $th->getMessage(), 500, $th, "createBuildingUnit", $request);
@@ -168,8 +164,10 @@ class BuildingController extends Controller
 
             DB::beginTransaction();
             $userData = $this->getUserLogin();
-            $ref = $this->generateRefNumber('building_unit_ref');
-            $buildingUnit = BuildingUnit::create([
+            $ref = $request->id ? BuildingUnit::find($request->id)->ref_no : $this->generateRefNumber('building_unit_ref');
+            $buildingUnit = BuildingUnit::updateOrCreate(
+                ['id' => $request->id ?? null],
+                [
                 'building_id' => $request->building_id,
                 'unit_type' => 'Room',
                 'unit_no' => $request->unit,
@@ -179,8 +177,10 @@ class BuildingController extends Controller
                 'description' => $request->description,
                 'created_by' => $userData->id,
                 'institution_id' => $userData->institution_id,
-                'branch_id' => $userData->branch_id,
-                'created_on' => now(),
+                $request->id ? 'updated_by' : 'created_by' => $userData->id,
+                $request->id ? 'updated_on' : 'created_on' => now(),
+                // 'branch_id' => $userData->branch_id,
+                // 'created_on' => now(),
             ]);
             DB::commit();
             return $buildingUnit;
@@ -211,7 +211,6 @@ class BuildingController extends Controller
             if ($request->status) {
                 $conditions[] = "BU.status = '" . addslashes($request->status) . "'";
             }
-
             if ($isNotAdmin) {
                 $conditions[] = "BU.institution_id = " . intval($userData->institution_id);
                 $conditions[] = "BU.branch_id = " . intval($userData->branch_id);
@@ -226,7 +225,6 @@ class BuildingController extends Controller
                 // $sqlString .= " AND (BU.name ILIKE '%{$search}%' OR B.name ILIKE '%{$search}%')";
                 // $totalSql .= " AND (BU.name ILIKE '%{$search}%' OR B.name ILIKE '%{$search}%')";
             }
-
             if (!empty(trim($request->startDate))) {
                 $startDate = date('Y-m-d', strtotime(trim($request->startDate))); // only date part
                 $conditions[] = "BU.created_at::date >= '$startDate'";
@@ -239,9 +237,13 @@ class BuildingController extends Controller
                 // $sqlString .= " AND BU.created_at::date <= '$endDate'";
                 // $totalSql .= " AND BU.created_at::date <= '$endDate'";
             }
-
             if ($request->building_id) {
                 $conditions[] = "BU.building_id = " . intval($request->building_id);
+                // $sqlString .= " AND BU.building_id = {$request->building_id}";
+                // $totalSql .= " AND BU.building_id = {$request->building_id}";
+            }
+            if ($request->id) {
+                $conditions[] = "BU.id = " . intval($request->id);
                 // $sqlString .= " AND BU.building_id = {$request->building_id}";
                 // $totalSql .= " AND BU.building_id = {$request->building_id}";
             }
@@ -905,6 +907,21 @@ class BuildingController extends Controller
             return $this->genericResponse(true, "Building archived successfully", 200, $building, "archiveBuilding", $request);
         } catch (\Throwable $th) {
             return $this->genericResponse(false, $th->getMessage(), 500, $th, "archiveBuilding", $request);
+        }
+    }
+
+
+    public function archiveBuildingUnit(Request $request){
+        try {
+            $buildingUnit = BuildingUnit::find($request->id);
+            if (!$buildingUnit) {
+                return $this->genericResponse(false, "Building unit not found", 404, null, "archiveBuildingUnit", $request);
+            }
+            $buildingUnit->status = 'Archived';
+            $buildingUnit->save();
+            return $this->genericResponse(true, "Building unit archived successfully", 200, $buildingUnit, "archiveBuildingUnit", $request);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(), 500, $th, "archiveBuildingUnit", $request);
         }
     }
 

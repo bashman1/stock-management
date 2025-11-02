@@ -1,27 +1,28 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
 
 const toast = useToast();
 const commonService = new CommonService();
 const router = useRouter();
+const route = useRoute();
 const formData = ref({});
 const userData=ref(null);
 const formError = ref({});
 const durations = ref([]);
 const citiesData = ref(null);
+const buildingDetails = ref(null);
 
 const benefitType = ref([{ label: 'Multiplier', value: 'Multiplier' }, { label: 'Percentage', value: 'Percentage' } , { label: 'Fixed Value', value: 'Fixed Value' }]);
 
 const onSubmit = () => {
 
-    // console.log(formData.value);
-
     let postData = formData.value;
     postData.city_id = postData.city?.id;
     postData.date = postData.date ? postData.date: new Date();
+    postData.id = route.params.id ? Number(route.params.id) : null;
 
     console.log(formData.value);
 
@@ -44,7 +45,7 @@ const onSubmit = () => {
     commonService.genericRequest('create-building', 'post', true, postData).then((response) => {
         if (response.status) {
             commonService.showSuccess(toast, response.message);
-            // commonService.redirect(router, "/view-projects");
+            commonService.redirect(router, "/view-buildings");
             formData.value = {};
         } else {
             commonService.showError(toast, response.message);
@@ -77,10 +78,44 @@ const getCities = () => {
 }
 
 
-onMounted(() => {
+const getBuildingDetails = () => {
+
+    if(!route.params.id){
+        return;
+    }
+
+        let postData = {
+        page: 1,
+        search: null,
+        rowPerPage: 10,
+        startDate: null,
+        endDate: null,
+        id: Number(route.params.id)
+    }
+    commonService.genericRequest('get-buildings', 'post', true, postData).then((response) => {
+        if (response.status) {
+            buildingDetails.value = response?.data?.data[0];
+            formData.value.name = buildingDetails.value.name;
+            formData.value.city = citiesData.value?.find(city=>city.id == Number(buildingDetails.value.city_id));
+            formData.value.street = buildingDetails.value.street;
+            formData.value.address = buildingDetails.value.address;
+            formData.value.plot = buildingDetails.value.plot;
+            formData.value.rent = buildingDetails.value.rent ? buildingDetails.value.rent: 0;
+            formData.value.date = new Date(buildingDetails.value.created_at);
+            formData.value.description = buildingDetails.value.description;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
+onMounted(async() => {
     userData.value=commonService.getStorage().userData;
-    getDurations();
-    getCities();
+    await getDurations();
+    await getCities();
+    await getBuildingDetails();
+
 });
 
 

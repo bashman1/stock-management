@@ -16,6 +16,8 @@ const searchKeyWord = ref(null);
 const currentPage = ref(1);
 
 const buildings = ref([]);
+const deleteBuildingUnitDialog = ref(false);
+const selectedBuildingUnit = ref(null);
 
 const getBuildings = () => {
     let postData = {
@@ -24,7 +26,7 @@ const getBuildings = () => {
         rowPerPage: rowsPerPage.value,
         startDate: startDate.value,
         endDate: endDate.value,
-        // building_id: 2,
+        status: 'Active'
     }
     commonService.genericRequest('get-building-units', 'POST', true, postData).then((response) => {
         if (response.status) {
@@ -33,6 +35,35 @@ const getBuildings = () => {
             commonService.showError(toast, response.message);
         }
     })
+}
+
+const toggleModal = (action)=>{
+    deleteBuildingUnitDialog.value = action;
+}
+
+const toggleConfirmDialog = (data)=>{
+    selectedBuildingUnit.value = data;
+    toggleModal(true);
+}
+
+const deleteBuildingUnit =()=>{
+    let postData = {
+        id : selectedBuildingUnit.value?.id
+    }
+
+    commonService.genericRequest('archive-building-unit', 'POST', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getBuildings();
+            toggleModal(false);
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const editBuildingUnit = (data)=>{
+    commonService.redirect(router, 'update-building-unit/'+data.id);
 }
 
 const onPageChange = (event)=>{
@@ -129,33 +160,35 @@ onMounted(() => {
                     {{ data.description }}
                 </template>
             </Column>
-            <!-- <Column header="Institution" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ data.institution_name }}
-                </template>
-            </Column>
-            <Column header="Branch" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ data.branch_name }}
-                </template>
-            </Column> -->
             <Column header="Date" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.created_at }}
                 </template>
             </Column>
-            <!-- <Column headerStyle="min-width:17rem;">
+            <Column headerStyle="min-width:8rem;">
                 <template #body="{ data }">
-                    <Button icon="pi pi-eye" @click="goToDetails(data)" class="p-button-primary mr-2"
-                        v-tooltip="'View product details'" />
-                    <Button icon="pi pi-pencil" @click="editProduct(data)" class="p-button-success mr-2"
-                        v-tooltip="'Edit product details'" />
-                    <Button icon="pi pi-refresh" @click="restock(data)" class="p-button-warning mr-2"
-                        v-tooltip="'Restock product'" />
+                    <Button icon="pi pi-pencil" @click="editBuildingUnit(data)" class="p-button-success mr-2"
+                        v-tooltip="'Edit building unit details'" />
                     <Button icon="pi pi-trash" class="p-button-danger mr-2" @click="toggleConfirmDialog(data)"
-                        v-tooltip="'Archive product'" />
+                        v-tooltip.left="'Archive building unit'" />
                 </template>
-            </Column> -->
+            </Column>
         </DataTable>
+
+
+        <Dialog v-model:visible="deleteBuildingUnitDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
+                    <div class="flex align-items-center justify-content-center">
+                        <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
+                        <span v-if="selectedBuildingUnit"
+                            >Are you sure you want to archive <b>{{ selectedBuildingUnit?.name +' '+selectedBuildingUnit?.unit_no }}</b
+                            >?</span
+                        >
+                    </div>
+                    <template #footer>
+                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteBuildingUnitDialog = false" />
+                        <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteBuildingUnit" />
+                    </template>
+        </Dialog>
+
     </div>
 </template>

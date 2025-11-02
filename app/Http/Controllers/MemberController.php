@@ -37,7 +37,7 @@ class MemberController extends Controller
         }
 
         $members = Member::when($isNotAdmin, function ($query) use ($userData) {
-            return $query->where("institution_id", $userData->institution_id);
+            return $query->where(["institution_id"=>$userData->institution_id, "status"=>"Active"]);
         })->orderBy("id", "desc")->get();
         return $this->genericResponse(true, "Member retrieved successfully", 201, $members, "getMembers", []);
     }
@@ -150,6 +150,22 @@ class MemberController extends Controller
         } catch (\Throwable $th) {
             //throw $th;
             return $this->genericResponse(false, "Member not found", 404, [], "getMemberDetails", []);
+        }
+    }
+
+    public function deleteMember(Request $request){
+        try {
+            $member = Member::find($request->id);
+            if (!isset($member->id)) {
+                throw new \Exception("Member not found");
+            }
+            $member->status = 'Deleted';
+            $member->updated_by = $this->getUserLogin()->id;
+            $member->updated_on = now();
+            $member->save();
+            return $this->genericResponse(true, "Member deleted successfully", 200, [], "deleteMember", $request);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(), 404, [], "deleteMember", $request);
         }
     }
 }

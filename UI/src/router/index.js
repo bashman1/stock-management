@@ -760,6 +760,14 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: '/update-building/:id',
+                    name: 'UpdateBuilding',
+                    component: () => import('@/views/pages/rental-management/CreateBuilding.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
                     path: '/view-buildings',
                     name: 'ViewBuildings',
                     component: () => import('@/views/pages/rental-management/ViewBuilding.vue'),
@@ -770,6 +778,14 @@ const router = createRouter({
                 {
                     path: '/create-building-unit',
                     name: 'CreateBuildingUnit',
+                    component: () => import('@/views/pages/rental-management/CreateBuildingUint.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
+                    path: '/update-building-unit/:id',
+                    name: 'UpdateBuildingUnit',
                     component: () => import('@/views/pages/rental-management/CreateBuildingUint.vue'),
                     meta: {
                         requiresAuth: true, // This route requires authentication

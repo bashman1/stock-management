@@ -1,12 +1,13 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
 
 const toast = useToast();
 const commonService = new CommonService();
 const router = useRouter();
+const route = useRoute();
 const formData = ref({});
 const userData=ref(null);
 const formError = ref({});
@@ -20,6 +21,7 @@ const endDate = ref(null);
 const rowsPerPage = ref(50);
 const searchKeyWord = ref(null);
 const currentPage = ref(1);
+const buildingUnits = ref(null);
 
 const benefitType = ref([{ label: 'Multiplier', value: 'Multiplier' }, { label: 'Percentage', value: 'Percentage' } , { label: 'Fixed Value', value: 'Fixed Value' }]);
 
@@ -30,6 +32,7 @@ const onSubmit = () => {
     let postData = formData.value;
     postData.building_id = postData.building?.id;
     postData.date = postData.date ? postData.date: new Date();
+    postData.id = route.params.id ? Number(route.params.id) : null;
 
     console.log(formData.value);
 
@@ -52,7 +55,7 @@ const onSubmit = () => {
     commonService.genericRequest('create-building-unit', 'post', true, postData).then((response) => {
         if (response.status) {
             commonService.showSuccess(toast, response.message);
-            // commonService.redirect(router, "/view-projects");
+            commonService.redirect(router, "/view-building-units");
             formData.value = {};
         } else {
             commonService.showError(toast, response.message);
@@ -84,9 +87,39 @@ const getBuildings = () => {
 }
 
 
+const getBuildingUnitEditDetails = ()=>{
+    if(!route.params.id){
+        return;
+    }
+    let postData = {
+        page: currentPage.value,
+        search: searchKeyWord.value,
+        rowPerPage: rowsPerPage.value,
+        startDate: startDate.value,
+        endDate: endDate.value,
+        id: Number(route.params.id)
+        // status: 'Active'
+    }
+    commonService.genericRequest('get-building-units', 'POST', true, postData).then((response) => {
+        if (response.status) {
+            buildingUnits.value = response?.data?.data[0];
+            formData.value.name = buildingUnits.value?.name;
+            formData.value.unit = buildingUnits.value?.unit_no;
+            formData.value.rent = buildingUnits.value?.rent;
+            formData.value.description = buildingUnits.value?.description;
+            formData.value.date = buildingUnits.value?.created_at ? new Date(buildingUnits.value?.created_at) : null;
+            formData.value.building = buildings.value.data.find(item=>item.id===buildingUnits.value?.building_id);
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
 onMounted(() => {
     userData.value=commonService.getStorage().userData;
     getBuildings();
+    getBuildingUnitEditDetails();
 });
 
 
