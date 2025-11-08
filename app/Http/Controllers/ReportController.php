@@ -309,46 +309,73 @@ class ReportController extends Controller
         try {
             $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
-            $sqlString = "SELECT
-                R.id, R.building_id, R.unit_id, R.member_id, R.duration,
-                R.amount_paid, R.status, R.ref_no, R.rental_date, R.due_date,
-                R.paid_date, R.description, R.institution_id, R.branch_id,
-                R.created_by, R.created_on, R.created_at, R.updated_at, R.payment_status,
-                B.name AS building_name, B.ref_no AS building_ref,
-                X.name AS unit_name, X.unit_type, X.unit_no,
-                X.ref_no AS unit_ref, X.rent AS unit_monthly_rent,
-                CONCAT(M.first_name,' ',M.last_name,' ',M.other_name) AS member_name,
-                M.member_number, M.alt_member_number, M.phone_number, M.email, M.gender,
-                COALESCE(RH.amount_paid_as_at, 0) AS amount_paid_as_at
-            FROM rentals R
-            INNER JOIN buildings B ON B.id = R.building_id
-            INNER JOIN building_units X ON X.id = R.unit_id
-            INNER JOIN members M ON R.member_id = M.id
-            LEFT JOIN (
-                SELECT rental_id, unit_id, member_id,
-                    SUM(amount_paid) AS amount_paid_as_at
-                FROM rental_histories
-                GROUP BY rental_id, unit_id, member_id
-            ) RH ON RH.rental_id = R.id
-                AND RH.unit_id = R.unit_id
-                AND RH.member_id = R.member_id
-            ";
+            // $sqlString = "SELECT
+            //     R.id, R.building_id, R.unit_id, R.member_id, R.duration,
+            //     R.amount_paid, R.status, R.ref_no, R.rental_date, R.due_date,
+            //     R.paid_date, R.description, R.institution_id, R.branch_id,
+            //     R.created_by, R.created_on, R.created_at, R.updated_at, R.payment_status,
+            //     B.name AS building_name, B.ref_no AS building_ref,
+            //     X.name AS unit_name, X.unit_type, X.unit_no,
+            //     X.ref_no AS unit_ref, X.rent AS unit_monthly_rent,
+            //     CONCAT(M.first_name,' ',M.last_name,' ',M.other_name) AS member_name,
+            //     M.member_number, M.alt_member_number, M.phone_number, M.email, M.gender,
+            //     COALESCE(RH.amount_paid_as_at, 0) AS amount_paid_as_at
+            // FROM rentals R
+            // INNER JOIN buildings B ON B.id = R.building_id
+            // INNER JOIN building_units X ON X.id = R.unit_id
+            // INNER JOIN members M ON R.member_id = M.id
+            // LEFT JOIN (
+            //     SELECT rental_id, unit_id, member_id,
+            //         SUM(amount_paid) AS amount_paid_as_at
+            //     FROM rental_histories
+            //     GROUP BY rental_id, unit_id, member_id
+            // ) RH ON RH.rental_id = R.id
+            //     AND RH.unit_id = R.unit_id
+            //     AND RH.member_id = R.member_id
+            // ";
 
-            $totalSql = "SELECT (R.id) AS total
-            FROM rentals R
-            INNER JOIN buildings B ON B.id = R.building_id
-            INNER JOIN building_units X ON X.id = R.unit_id
-            INNER JOIN members M ON R.member_id = M.id
-            LEFT JOIN (
-                SELECT rental_id, unit_id, member_id,
-                    SUM(amount_paid) AS amount_paid_as_at
-                FROM rental_histories
-                GROUP BY rental_id, unit_id, member_id
-            ) RH ON RH.rental_id = R.id
-                AND RH.unit_id = R.unit_id
-                AND RH.member_id = R.member_id
+            $sqlString = "SELECT R.id, R.building_id, R.unit_id, R.member_id, R.duration,
+                        R.amount_paid, R.status, R.ref_no, R.rental_date, R.due_date,
+                        R.paid_date, R.description, R.institution_id, R.branch_id,
+                        R.created_by, R.created_on, R.created_at, R.updated_at, R.payment_status,
+                        B.name AS building_name, B.ref_no AS building_ref,
+                        X.name AS unit_name, X.unit_type, X.unit_no,
+                        X.ref_no AS unit_ref, X.rent AS unit_monthly_rent,
+                        CONCAT(M.first_name,' ',M.last_name,' ',M.other_name) AS member_name,
+                        M.member_number, M.alt_member_number, M.phone_number, M.email, M.gender,
+                        SUM(RH.amount_paid) AS amount_paid_as_at
+                        FROM rentals R
+                        INNER JOIN buildings B ON B.id = R.building_id
+                        INNER JOIN building_units X ON X.id = R.unit_id
+                        INNER JOIN members M ON R.member_id = M.id
+                        LEFT JOIN rental_histories RH ON RH.rental_id = R.id
+                        GROUP BY R.id, B.name, B.ref_no, X.name, X.unit_type,
+                        x.unit_no, x.ref_no, x.rent, m.first_name, m.last_name,
+                        m.other_name, m.member_number, m.alt_member_number,
+                        m.phone_number,m.email, m.gender";
 
-            ";
+            // $totalSql = "SELECT (R.id) AS total
+            // FROM rentals R
+            // INNER JOIN buildings B ON B.id = R.building_id
+            // INNER JOIN building_units X ON X.id = R.unit_id
+            // INNER JOIN members M ON R.member_id = M.id
+            // LEFT JOIN (
+            //     SELECT rental_id, unit_id, member_id,
+            //         SUM(amount_paid) AS amount_paid_as_at
+            //     FROM rental_histories
+            //     GROUP BY rental_id, unit_id, member_id
+            // ) RH ON RH.rental_id = R.id
+            //     AND RH.unit_id = R.unit_id
+            //     AND RH.member_id = R.member_id
+
+            // ";
+
+            $totalSql ="SELECT COUNT(R.id) AS total
+                        FROM rentals R
+                        INNER JOIN buildings B ON B.id = R.building_id
+                        INNER JOIN building_units X ON X.id = R.unit_id
+                        INNER JOIN members M ON R.member_id = M.id
+                        LEFT JOIN rental_histories RH ON RH.rental_id = R.id";
 
             $conditions = [];
             if ($isNotAdmin) {
@@ -374,7 +401,7 @@ class ReportController extends Controller
                 $conditions[] = "DATE(R.due_date) <= '" . addslashes($request->to_date) . "'";
             }
 
-            $conditions[] = " ( X.rent * R.duration) - COALESCE(RH.amount_paid_as_at, 0) > 0 ";
+            $conditions[] = " ( X.rent * R.duration) - COALESCE(RH.amount_paid, 0) > 0 ";
 
             Log::info("Hello there ************************************");
             Log::info($request->from_date);
