@@ -349,10 +349,7 @@ class ReportController extends Controller
                         INNER JOIN building_units X ON X.id = R.unit_id
                         INNER JOIN members M ON R.member_id = M.id
                         LEFT JOIN rental_histories RH ON RH.rental_id = R.id
-                        GROUP BY R.id, B.name, B.ref_no, X.name, X.unit_type,
-                        x.unit_no, x.ref_no, x.rent, m.first_name, m.last_name,
-                        m.other_name, m.member_number, m.alt_member_number,
-                        m.phone_number,m.email, m.gender";
+                        ";
 
             // $totalSql = "SELECT (R.id) AS total
             // FROM rentals R
@@ -410,6 +407,11 @@ class ReportController extends Controller
                 $sqlString .= " WHERE " . implode(" AND ", $conditions);
                 $totalSql .= " WHERE " . implode(" AND ", $conditions);
             }
+
+            $sqlString .= " GROUP BY R.id, B.name, B.ref_no, X.name, X.unit_type,
+                        x.unit_no, x.ref_no, x.rent, m.first_name, m.last_name,
+                        m.other_name, m.member_number, m.alt_member_number,
+                        m.phone_number,m.email, m.gender ";
             $sqlString .= " ORDER BY R.id DESC";
             $rentals = $this->paginate($request->rowPerPage, $totalSql, $sqlString, $request->page);
             return $this->genericResponse(true, "Rentals list", 200, $rentals, "rentArrearsReport", $request);
