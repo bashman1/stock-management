@@ -52,7 +52,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css"
           integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 
-    <title>Sale Report</title>
+    {{-- <title>Sale Report</title> --}}
 </head>
 
 <body>
@@ -89,7 +89,7 @@
                 {{ $item->created_at }}
             </td>
             <td>
-                {{preg_replace('/[^A-Za-z0-9]+/', '-', $item->product_name) }}
+                {{ $item->product_name }}
             </td>
             <td>
                 {{$item->quantity }}
@@ -124,85 +124,4 @@
 
 
 
-{{-- Hello there the generic way of working with exports so that you just send data and headers --}}
 
-{{-- <!doctype html>
-<html lang="en">
-
-<head>
-    <style>
-        @page {
-            margin: 100px 25px;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-        }
-
-        header {
-            position: fixed;
-            top: -80px;
-            left: 0px;
-            right: 0px;
-            height: 50px;
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-            line-height: 35px;
-        }
-
-        footer {
-            position: fixed;
-            bottom: -40px;
-            left: 0px;
-            right: 0px;
-            height: 30px;
-            text-align: center;
-            font-size: 12px;
-            line-height: 20px;
-        }
-
-        .content {
-            text-align: left;
-            font-size: 14px;
-        }
-    </style>
-
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>{{ $columns[0]['title'] ?? 'Report' }}</title>
-</head>
-
-<body>
-
-    <header>
-        {{ $columns[0]['title'] ?? 'Report' }} - {{ now()->format('Y-m-d') }}
-    </header>
-
-    <footer>
-        Page: {PAGE_NUM}/{PAGE_COUNT}
-    </footer>
-
-    <div class="content mt-5 pt-5">
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    @foreach($columns as $col)
-                        <th>{{ $col['header'] }}</th>
-                    @endforeach
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($data as $row)
-                    <tr>
-                        @foreach($columns as $col)
-                            <td>{{ $row[$col['field']] ?? '' }}</td>
-                        @endforeach
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-
-</body>
-</html> --}}

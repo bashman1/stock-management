@@ -234,7 +234,7 @@ class ReportController extends Controller
         // $request->status = 'Active';
         $request->merge(['status' => 'Active']);
         $salesReport = $this->getItemSalesData($request);
-        return Excel::download(new SalesItemReport($salesReport), "sales.csv");
+        return Excel::download(new SalesItemReport($salesReport), "sales_report.csv");
     }
 
     public function downloadSalesItemPDFReport(Request $request)
@@ -242,15 +242,6 @@ class ReportController extends Controller
         // $request->status = 'Active';
         $request->merge(['status' => 'Active']);
         $sales = $this->getItemSalesData($request);
-
-        // $userData = $this->getUserLogin();
-        // $institution = Institution::find($userData->institution_id);
-        // $institutionContact = InstitutionContact::where("institution_id", $userData->institution_id)->first();
-
-        // if (count($sales) > 0) {
-        //     // Set options and load the view
-        //     Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
-        //     // $pdf = Pdf::loadView('sales.salesItem', compact('sales'));
 
         $genericData = [
             'data' => $sales,
@@ -266,42 +257,7 @@ class ReportController extends Controller
         ];
 
         return $this->downloadPDF('Sales Report',  'landscape', $genericData);
-        // $pdf = Pdf::loadView('generic.report', compact('genericData'));
 
-        // // Set paper size and orientation
-        // $pdf->setBasePath(public_path());
-        // $pdf->setPaper('A4', 'landscape');
-
-        // // Render the PDF to access the DomPDF canvas
-        // $pdf->render();
-        // $dompdf = $pdf->getDomPDF();
-        // $canvas = $dompdf->getCanvas();
-        // $font = $dompdf->getFontMetrics()->getFont('Helvetica', 'normal');
-
-        // // Add header to each page
-        // // $canvas->page_text(30, 30, "Document NameContact Information Address", $font, 10, [0, 0, 0]);
-        // $canvas->page_text(350, 15, "Sales Report", $font, 12, [0, 0, 0]);
-
-        // $canvas->page_text(30, 10, $institution->name, $font, 10, [0, 0, 0]);
-        // $canvas->page_text(30, 20, "Phone number:" . $institutionContact->phone_number . " Email:" . $institutionContact->email, $font, 10, [0, 0, 0]);
-        // $canvas->page_text(30, 30, $institution->address, $font, 10, [0, 0, 0]);
-
-
-        // // Add footer to each page
-        // // Position and add printed by and powered by text
-        // $canvas->page_text(30, 550, "Powered by:Smart Collect. Printed by:" . $userData->first_name . ". " . $userData->last_name . " " . $userData->other_name . " On:" . date('D d M Y'), $font, 10, [0, 0, 0]);
-
-        // // Add an image to the footer (left side)
-        // // $imagePath = public_path('images/SmarCollectlogo-removebg-preview.png');
-        // // $image = $canvas->image($imagePath, 30, 800, 50, 20); // Adjust coordinates and size as needed
-
-        // // Add page numbers to the footer (right side)
-        // // $canvas->page_text(700, 820, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);
-        // $canvas->page_text(700, 550, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);     //landscape
-
-        // // Stream the generated PDF
-        // return $pdf->stream('sales_report.pdf');
-        // }
     }
 
     public function rentArrearsReport(Request $request)
@@ -309,30 +265,7 @@ class ReportController extends Controller
         try {
             $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
-            // $sqlString = "SELECT
-            //     R.id, R.building_id, R.unit_id, R.member_id, R.duration,
-            //     R.amount_paid, R.status, R.ref_no, R.rental_date, R.due_date,
-            //     R.paid_date, R.description, R.institution_id, R.branch_id,
-            //     R.created_by, R.created_on, R.created_at, R.updated_at, R.payment_status,
-            //     B.name AS building_name, B.ref_no AS building_ref,
-            //     X.name AS unit_name, X.unit_type, X.unit_no,
-            //     X.ref_no AS unit_ref, X.rent AS unit_monthly_rent,
-            //     CONCAT(M.first_name,' ',M.last_name,' ',M.other_name) AS member_name,
-            //     M.member_number, M.alt_member_number, M.phone_number, M.email, M.gender,
-            //     COALESCE(RH.amount_paid_as_at, 0) AS amount_paid_as_at
-            // FROM rentals R
-            // INNER JOIN buildings B ON B.id = R.building_id
-            // INNER JOIN building_units X ON X.id = R.unit_id
-            // INNER JOIN members M ON R.member_id = M.id
-            // LEFT JOIN (
-            //     SELECT rental_id, unit_id, member_id,
-            //         SUM(amount_paid) AS amount_paid_as_at
-            //     FROM rental_histories
-            //     GROUP BY rental_id, unit_id, member_id
-            // ) RH ON RH.rental_id = R.id
-            //     AND RH.unit_id = R.unit_id
-            //     AND RH.member_id = R.member_id
-            // ";
+
 
             $sqlString = "SELECT R.id, R.building_id, R.unit_id, R.member_id, R.duration,
                         R.amount_paid, R.status, R.ref_no, R.rental_date, R.due_date,
@@ -351,21 +284,7 @@ class ReportController extends Controller
                         LEFT JOIN rental_histories RH ON RH.rental_id = R.id
                         ";
 
-            // $totalSql = "SELECT (R.id) AS total
-            // FROM rentals R
-            // INNER JOIN buildings B ON B.id = R.building_id
-            // INNER JOIN building_units X ON X.id = R.unit_id
-            // INNER JOIN members M ON R.member_id = M.id
-            // LEFT JOIN (
-            //     SELECT rental_id, unit_id, member_id,
-            //         SUM(amount_paid) AS amount_paid_as_at
-            //     FROM rental_histories
-            //     GROUP BY rental_id, unit_id, member_id
-            // ) RH ON RH.rental_id = R.id
-            //     AND RH.unit_id = R.unit_id
-            //     AND RH.member_id = R.member_id
 
-            // ";
 
             $totalSql ="SELECT COUNT(R.id) AS total
                         FROM rentals R
@@ -400,7 +319,7 @@ class ReportController extends Controller
 
             $conditions[] = " ( X.rent * R.duration) - COALESCE(RH.amount_paid, 0) > 0 ";
 
-            Log::info("Hello there ************************************");
+            // Log::info("Hello there ****************/********************");
             Log::info($request->from_date);
 
             if (count($conditions) > 0) {
