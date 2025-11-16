@@ -189,11 +189,13 @@ class ReportController extends Controller
         $sqlString = "SELECT O.id, O.order_id, O.product_id, O.qty AS quantity, O.status, O.institution_id, O.branch_id,
             O.created_by, O.updated_by, O.updated_on, O.created_at, O.updated_at, P.name AS product_name,
             P.description, P.product_no, P.ref_no, Q.ref_no AS transaction_ref, Q.receipt_no, Q.tran_id,
-            S.selling_price, S.purchase_price, M.name as measurement_unit FROM order_items O
+            COALESCE(R.selling_price, S.selling_price) AS selling_price, S.purchase_price, M.name as measurement_unit FROM order_items O
             INNER JOIN products P ON O.product_id = P.id
             INNER JOIN orders Q ON Q.id = O.order_id
             INNER JOIN stocks S ON S.branch_id = O.branch_id AND S.product_id = O.product_id
-            INNER JOIN measurement_units  M ON M.id = P.measurement_unit_id ";
+            INNER JOIN measurement_units  M ON M.id = P.measurement_unit_id
+            LEFT JOIN order_items R ON Q.id = R.order_id";
+
         // $sqlString .= " WHERE O.status = '$request->status' ";
         // if ($isNotAdmin) {
         //     $sqlString .= " AND O.institution_id = $userData->institution_id AND O.branch_id = $userData->branch_id";
