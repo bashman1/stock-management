@@ -522,7 +522,10 @@ const onSubmitNewOrder = () => {
 }
 
 const togglePanel = (event) => {
-    op.value.toggle(event);
+
+    op.value.show(event);
+    // op.value.alignOverlay(event)
+    // op.value.toggle(event);
 }
 
 
@@ -801,7 +804,6 @@ onMounted(() => {
                                 <i class="pi pi-search" />
                             </span>
                         </div>
-
                         <OverlayPanel ref="op" showCloseIcon="true" dismissable="false" autoZIndex="false">
                             <div class="flex flex-column gap-3 max-h-10 overflow-y-auto">
                                 <DataTable

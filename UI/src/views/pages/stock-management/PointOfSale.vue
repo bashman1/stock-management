@@ -530,14 +530,14 @@ const onSubmitNewOrder = () => {
 }
 
 const togglePanel = (event) => {
-    op.value.toggle(event);
+    op.value.show(event);
 }
 
 const onSearchInputAndOpen = (e) => {
-    onSearchInput(e);
-    if (!op.value.visible) {
+    // onSearchInput(e);
+    // if (!op.value.visible) {
         op.value.show(e); // Keep open
-    }
+    // }
 };
 
 
@@ -867,7 +867,7 @@ onMounted(() => {
 
                         <div>
                             <span class="p-input-icon-right">
-                                <InputText  ref="searchInput"    v-model="searchKeyWord" type="text"  @input="onSearchInputAndOpen" placeholder="Search" autofocus fluid />
+                                <InputText  ref="searchInput"    v-model="searchKeyWord" type="text"   @input="onSearchInputAndOpen" @keydown="onSearchInputAndOpen" @click="onSearchInputAndOpen" placeholder="Search" autofocus fluid />
                                 <i class="pi pi-search" />
                             </span>
                         </div>

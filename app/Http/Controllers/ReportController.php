@@ -194,7 +194,7 @@ class ReportController extends Controller
             INNER JOIN orders Q ON Q.id = O.order_id
             INNER JOIN stocks S ON S.branch_id = O.branch_id AND S.product_id = O.product_id
             INNER JOIN measurement_units  M ON M.id = P.measurement_unit_id
-            LEFT JOIN order_items R ON Q.id = R.order_id";
+            LEFT JOIN order_items R ON Q.id = R.order_id AND R.product_id = O.product_id";
 
         // $sqlString .= " WHERE O.status = '$request->status' ";
         // if ($isNotAdmin) {
