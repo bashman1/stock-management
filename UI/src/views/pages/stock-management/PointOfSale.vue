@@ -1,6 +1,6 @@
 <script setup>
 import { FilterMatchMode } from 'primevue/api';
-import { ref, onMounted, onBeforeMount } from 'vue';
+import { ref, onMounted, onBeforeMount, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
@@ -43,6 +43,8 @@ const searchKeyWord = ref('');
 const metaKey = ref(true);
 const searchInput = ref(null);
 const itemsBackUp = ref([]);
+
+// const editableSelect = ref(null);
 
 const VAT = ref([
     { id: 1, name: "18%", amount: 0, total: 0 },
@@ -538,6 +540,8 @@ const onSearchInputAndOpen = (e) => {
     // if (!op.value.visible) {
         op.value.show(e); // Keep open
     // }
+    // searchInput.value?.$el.querySelector('input')?.focus()
+    refocus();
 };
 
 
@@ -546,6 +550,11 @@ const onSearchInput =(event)=> {
     if (value.length > 3 || value.length === 0) {
         getProducts();
     }
+}
+
+const refocus = async ()=>{
+    await nextTick();
+    searchInput.value.$el.focus();
 }
 
 
@@ -732,6 +741,7 @@ onBeforeMount(() => {
 });
 
 onMounted(() => {
+    searchInput.value.$el.focus();
     invoice(route.path)
     getInvoiceDetails(route.path, route.params.id);
     getProducts();
@@ -739,6 +749,7 @@ onMounted(() => {
     getCustomers()
     products.value = initializeProducts();
     userData.value=commonService.getStorage().userData;
+
 });
 
 
@@ -867,10 +878,14 @@ onMounted(() => {
 
                         <div>
                             <span class="p-input-icon-right">
-                                <InputText  ref="searchInput"    v-model="searchKeyWord" type="text"   @input="onSearchInputAndOpen" @keydown="onSearchInputAndOpen" placeholder="Search" autofocus fluid />
+                                <InputText  ref="searchInput" v-model="searchKeyWord" type="text"   @input="onSearchInputAndOpen" @keydown="onSearchInputAndOpen" placeholder="Search" fluid />
                                 <i class="pi pi-search" />
                             </span>
                         </div>
+
+                        <!-- <div>
+                            <Dropdown v-model="editableSelect" filter editable :options="productList?.data" optionLabel="name" placeholder="Select a item" class="w-full md:w-14rem" />
+                        </div> -->
 
                         <OverlayPanel ref="op" showCloseIcon="true" :dismissable="false" appendTo="body">
                             <div class="flex flex-column gap-3 max-h-10 overflow-y-auto">
