@@ -214,7 +214,7 @@ const calculateCustomerTotal = (name) => {
                             <i class="pi" :class="{ 'text-green-500 pi-check-circle': data.verified, 'text-pink-500 pi-times-circle': !data.verified }"></i>
                         </template>
                         <template #filter="{ filterModel }">
-                            <TriStateCheckbox v-model="filterModel.value" />
+                            <!-- <TriStateCheckbox v-model="filterModel.value" /> -->
                         </template>
                     </Column>
                 </DataTable>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\GenericCSVExport;
 use App\Exports\SalesItemReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,40 +29,53 @@ class ReportController extends Controller
 
     public function getInventoryReport(Request $request)
     {
-
-        $userData = $this->getUserLogin();
-        $isNotAdmin = $this->isNotAdmin();
-        $sqlString =  "SELECT P.id, P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id,
-        P.supplier_id, P.measurement_unit_id, P.description, P.institution_id, P.user_id,P.status,
-        P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.updated_at,
-        P.type_id, P.gauge_id, C.name AS category_name, S.name AS sub_category_name,
-        M.name AS manufacturer_name, M.website, M.email,M.phone_number,M.country_id,
-        M.description AS manufacturer_description, R.name AS manufacture_country,
-        K.name AS measurement_unit_name,I.name AS institution_name, P.tax_config,
-        T.name AS supplier_name, CONCAT(U.first_name, ' ', U.last_name,' ', U.other_name) AS user_name,
-        Q.name AS type_name, G.name AS gauge_name, Y.purchase_price, Y.selling_price,
-        Y.quantity, Y.min_quantity, Y.max_quantity, Y.stock_date,Y.manufactured_date,
-        Y.expiry_date, B.name AS branch_name FROM products P
-        LEFT JOIN product_categories C ON C.id = P.category_id
-        LEFT JOIN product_sub_categories S ON S.id=P.sub_category_id
-        LEFT JOIN manufacturers M ON M.id =P.measurement_unit_id
-        LEFT JOIN country_refs R ON M.country_id =R.id
-        LEFT JOIN suppliers T ON T.id = P.supplier_id
-        INNER JOIN measurement_units K ON K.id = P.measurement_unit_id
-        INNER JOIN institutions I ON I.id = P.institution_id
-        INNER JOIN users U ON U.id = P.user_id
-        LEFT JOIN product_types Q ON Q.id = P.type_id
-        LEFT JOIN product_gauges G ON G.id = P.gauge_id
-        INNER JOIN stocks Y ON P.id = Y.product_id
-        INNER JOIN branches B ON Y.branch_id = B.id";
-        $sqlString .= " WHERE P.status = '$request->status'";
-        if ($isNotAdmin) {
-            $sqlString .= " AND P.institution_id = $userData->institution_id AND Y.branch_id = $userData->branch_id";
-        }
-        $sqlString .= " ORDER BY P.id DESC";
-        $products = DB::select($sqlString);
+        $products = $this->getInventoryReportData($request);
         return $this->genericResponse(true, "Product list", 200, $products, "getInventoryReport", $request);
     }
+
+
+
+    public function getInventoryReportData($request)
+    {
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+            $sqlString =  "SELECT P.id, P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id,
+                P.supplier_id, P.measurement_unit_id, P.description, P.institution_id, P.user_id,P.status,
+                P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.updated_at,
+                P.type_id, P.gauge_id, C.name AS category_name, S.name AS sub_category_name,
+                M.name AS manufacturer_name, M.website, M.email,M.phone_number,M.country_id,
+                M.description AS manufacturer_description, R.name AS manufacture_country,
+                K.name AS measurement_unit_name,I.name AS institution_name, P.tax_config,
+                T.name AS supplier_name, CONCAT(U.first_name, ' ', U.last_name,' ', U.other_name) AS user_name,
+                Q.name AS type_name, G.name AS gauge_name, Y.purchase_price, Y.selling_price,
+                Y.quantity, Y.min_quantity, Y.max_quantity, Y.stock_date,Y.manufactured_date,
+                Y.expiry_date, B.name AS branch_name FROM products P
+                LEFT JOIN product_categories C ON C.id = P.category_id
+                LEFT JOIN product_sub_categories S ON S.id=P.sub_category_id
+                LEFT JOIN manufacturers M ON M.id =P.measurement_unit_id
+                LEFT JOIN country_refs R ON M.country_id =R.id
+                LEFT JOIN suppliers T ON T.id = P.supplier_id
+                INNER JOIN measurement_units K ON K.id = P.measurement_unit_id
+                INNER JOIN institutions I ON I.id = P.institution_id
+                INNER JOIN users U ON U.id = P.user_id
+                LEFT JOIN product_types Q ON Q.id = P.type_id
+                LEFT JOIN product_gauges G ON G.id = P.gauge_id
+                INNER JOIN stocks Y ON P.id = Y.product_id
+                INNER JOIN branches B ON Y.branch_id = B.id";
+            $sqlString .= " WHERE P.status = '$request->status'";
+            if ($isNotAdmin) {
+                $sqlString .= " AND P.institution_id = $userData->institution_id AND Y.branch_id = $userData->branch_id";
+            }
+            $sqlString .= " ORDER BY P.id DESC";
+            $products = DB::select($sqlString);
+            return $products;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+
 
     /**
      * Undocumented function
@@ -145,9 +159,30 @@ class ReportController extends Controller
 
     public function downLoadProductCsvReport()
     {
-        //TODO get products belonging to a store
+        $parameter= (object) ["status" => "Active"];
+        $products = $this->getInventoryReportData($parameter);
 
-        return Excel::download(new ProductCsvExport, 'users.csv');
+        $genericData = [
+            'data' => $products,
+            'headers' => [
+                ['header' => 'Product Name', 'key' => 'name'],
+                ['header' => 'Product No', 'key' => 'product_no'],
+                ['header' => 'Category', 'key' => 'category_name'],
+                ['header' => 'Sub Category', 'key' => 'sub_category_name'],
+                ['header' => 'Manufacturer', 'key' => 'manufacturer_name'],
+                ['header' => 'Supplier', 'key' => 'supplier_name'],
+                ['header' => 'Measurement Unit', 'key' => 'measurement_unit_name'],
+                ['header' => 'Purchase Price', 'key' => 'purchase_price'],
+                ['header' => 'Selling Price', 'key' => 'selling_price'],
+                ['header' => 'Quantity in Stock', 'key' => 'quantity'],
+                ['header' => 'Min Quantity', 'key' => 'min_quantity'],
+                ['header' => 'Max Quantity', 'key' => 'max_quantity'],
+                ['header' => 'Stock Date', 'key' => 'stock_date'],
+                ['header' => 'Manufactured Date', 'key' => 'manufactured_date'],
+                ['header' => 'Expiry Date', 'key' => 'expiry_date'],
+            ]
+        ];
+        return Excel::download(new GenericCSVExport($genericData), 'product_report.csv');
     }
 
 
@@ -171,7 +206,6 @@ class ReportController extends Controller
 
     public function downLoadSalesCsvReport()
     {
-        //TODO get products belonging to a store
 
         return Excel::download(new ProductCsvExport, 'users.csv');
     }
@@ -259,7 +293,6 @@ class ReportController extends Controller
         ];
 
         return $this->downloadPDF('Sales Report',  'landscape', $genericData);
-
     }
 
     public function rentArrearsReport(Request $request)
@@ -288,7 +321,7 @@ class ReportController extends Controller
 
 
 
-            $totalSql ="SELECT COUNT(R.id) AS total
+            $totalSql = "SELECT COUNT(R.id) AS total
                         FROM rentals R
                         INNER JOIN buildings B ON B.id = R.building_id
                         INNER JOIN building_units X ON X.id = R.unit_id
@@ -336,7 +369,6 @@ class ReportController extends Controller
             $sqlString .= " ORDER BY R.id DESC";
             $rentals = $this->paginate($request->rowPerPage, $totalSql, $sqlString, $request->page);
             return $this->genericResponse(true, "Rentals list", 200, $rentals, "rentArrearsReport", $request);
-
         } catch (\Throwable $th) {
             return $this->genericResponse(false, $th->getMessage(), 500, null, "rentArrearsReport", $request);
         }

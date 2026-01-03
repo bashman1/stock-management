@@ -1,5 +1,5 @@
 <script setup>
-import { FilterMatchMode } from 'primevue/api';
+// import { FilterMatchMode } from 'primevue/api';
 import { ref, onMounted, onBeforeMount, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import CommonService from '@/service/CommonService'
@@ -250,11 +250,11 @@ const getInstitutionDetails = () => {
     })
 }
 
-const initFilters = () => {
-    filters.value = {
-        global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-    };
-};
+// const initFilters = () => {
+//     filters.value = {
+//         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+//     };
+// };
 
 const computeVAT = () => {
     let taxExTotal = 0;
@@ -737,7 +737,7 @@ const getInvoiceDetails= (path, id )=>{
 
 
 onBeforeMount(() => {
-    initFilters();
+    // initFilters();
 });
 
 onMounted(() => {
