@@ -89,6 +89,8 @@ Route::post("institution-self-registration", [InstitutionController::class, "ins
 Route::get('get-durations', [DurationController::class, 'getDurations']);
 Route::get("get-license-packages", [LicensePackageController::class, "getLicensePackages"]);
 
+// Route::post('test-efris', [ProductController::class, "testEfrisProductCreation"]);
+
 
 // Show request form
 Route::get('/forgot-password', [UserController::class, 'requestForm'])->name('password.request');
@@ -273,4 +275,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("archive-building", [BuildingController::class, "archiveBuilding"]);
     Route::post("archive-building-unit", [BuildingController::class, "archiveBuildingUnit"]);
     Route::post("delete-member", [MemberController::class, "deleteMember"]);
+    Route::get("efris-measurement-units", [ProductController::class, "getEfrisMeasurementUnits"]);
+    Route::get("efris-commodity-categories", [ProductCategoryController::class, "iteratePages"]);
+    Route::post("search-efris-commodity-categories", [ProductCategoryController::class, "searchEfrisCommodityCategories"]);
 });

@@ -145,6 +145,10 @@ class BuildingController extends Controller
     {
         try {
             DB::beginTransaction();
+            $userData = $this->getUserLogin();
+            $request->merge(['institution_id' => $userData->institution_id,
+                             'branch_id' => $userData->branch_id,
+                            ]);
             $buildingUnit = $this->newBuildingUnit($request);
             $message='';
             $request->id ? $message='Building unit updated successfully' : $message='Building unit created successfully';
@@ -177,6 +181,7 @@ class BuildingController extends Controller
                 'description' => $request->description,
                 'created_by' => $userData->id,
                 'institution_id' => $userData->institution_id,
+                'branch_id' => $userData->branch_id,
                 $request->id ? 'updated_by' : 'created_by' => $userData->id,
                 $request->id ? 'updated_on' : 'created_on' => now(),
                 // 'branch_id' => $userData->branch_id,

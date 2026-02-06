@@ -10,13 +10,13 @@
         "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
     },
     "dependencies": {
-        "@primevue/themes": "^4.5.1",
+        "@primevue/themes": "^4.5.4",
         "@vueup/vue-quill": "^1.2.0",
         "chart.js": "3.3.2",
         "jsrsasign": "^11.1.0",
-        "primeflex": "^3.2.1",
+        "primeflex": "^3.3.1",
         "primeicons": "^7.0.0",
-        "primevue": "^4.5.1",
+        "primevue": "^4.5.4",
         "qz-tray": "^2.2.5",
         "vue": "^3.2.41",
         "vue-meta": "^2.4.0",

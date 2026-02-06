@@ -895,10 +895,10 @@ class Controller extends BaseController
 
             $pic = null;
             $sign = null;
-            if (isset($request->pic)){
+            if (isset($request->pic)) {
                 $pic = $this->saveBase64Image($request->pic, 'users');
             }
-            if (isset($request->sign)){
+            if (isset($request->sign)) {
                 $sign = $this->saveBase64Image($request->sign, 'signatures');
             }
 
@@ -1193,7 +1193,7 @@ class Controller extends BaseController
     {
         try {
             if (is_null($currentPage)) {
-               $currentPage = LengthAwarePaginator::resolveCurrentPage();
+                $currentPage = LengthAwarePaginator::resolveCurrentPage();
             }
 
             $totalResult = DB::select($totalSql);
@@ -1266,7 +1266,8 @@ class Controller extends BaseController
     }
 
 
-    function saveBase64Image(string $base64Image, string $directory = 'images'): ?string{
+    function saveBase64Image(string $base64Image, string $directory = 'images'): ?string
+    {
         // Check if base64 string has the image data and mime type
         if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
             $image = substr($base64Image, strpos($base64Image, ',') + 1);
@@ -1305,18 +1306,19 @@ class Controller extends BaseController
      * @param mixed $branch_cd
      * @return GlAccounts|null
      */
-    public function getCntParameterByCd( $param_cd, $institution_id, $branch_cd)
+    public function getCntParameterByCd($param_cd, $institution_id, $branch_cd)
     {
         $cnt = CntrlParameter::where(['param_cd' => $param_cd, 'institution_id' => $institution_id])->first();
-        $cntGl = str_replace('***',$branch_cd, $cnt->param_value);
-        $acct=GlAccounts::where('acct_no', $cntGl)->first();
+        $cntGl = str_replace('***', $branch_cd, $cnt->param_value);
+        $acct = GlAccounts::where('acct_no', $cntGl)->first();
         return $acct;
     }
 
 
 
 
-    public function downloadPDF($title, $orientation = 'portrait', $genericData){
+    public function downloadPDF($title, $orientation = 'portrait', $genericData)
+    {
         $userData = $this->getUserLogin();
         $institution = Institution::find($userData->institution_id);
         $institutionContact = InstitutionContact::where("institution_id", $userData->institution_id)->first();
@@ -1354,7 +1356,55 @@ class Controller extends BaseController
             // Stream the generated PDF
             return $pdf->stream('sales_report.pdf');
         }
-
     }
 
+    public function getUserInstitution()
+    {
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+            if (!$isNotAdmin) {
+                throw new \Exception("Unauthorized access to institution data.", 403);
+            }
+            $institution = Institution::find($userData->institution_id);
+            return $institution;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+
+    /**
+     * Safe Date
+     * This method is used to safely parse a date string and return null if the date is invalid.
+     * It also handles bad JS date: "Thu Jan 01 1970 03:00:00 GMT..."
+     *
+     * @param string|null $value
+     * @return string|null
+     * @throws \Exception
+     * @author Bashir <wamulabash1@gmail.com.com>
+     */
+    public function safeDate(?string $value): ?string
+    {
+        if (empty($value) || $value === 'null') {
+            return null;
+        }
+
+        try {
+            // Try normal parsing first (ISO, Y-m-d, etc.)
+            $date = Carbon::parse($value)->toDateString();
+        } catch (\Throwable $e) {
+            try {
+                // Handle bad JS date: "Thu Jan 01 1970 03:00:00 GMT..."
+                $clean = substr($value, 0, 24);
+                $date = Carbon::createFromFormat('D M d Y H:i:s', $clean)
+                    ->toDateString();
+            } catch (\Throwable $e) {
+                return null; // NEVER throw
+            }
+        }
+
+        // Kill the epoch date here
+        return $date === '1970-01-01' ? null : $date;
+    }
 }

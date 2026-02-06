@@ -45,6 +45,18 @@ const VAT = ref([
     { id: 2, name: "Exempted", amount: 0, total: 0 },
 ])
 
+const customerTypeOptions = ref([
+    {"label":"Individual", "value":"Individual", "name":"Individual"},
+    {"label":"Company", "value":"Company", "name":"Company"},
+])
+const customerType = ref({"label":"Individual", "value":"Individual", "name":"Individual"})
+const customerTin = ref(null);
+const customerNINBrn = ref(null);
+const customerLandLine = ref(null);
+const customerBusinessName = ref(null);
+const customerSector = ref(null);
+const customerCitizenship = ref(null);
+const customerBusinessPlace = ref(null);
 // **************************************************************************
 const getProducts = () => {
     let postData = {
@@ -324,6 +336,14 @@ const onSubmitCustomer = () => {
         phone_number: customerContact.value,
         description: customerDesc.value,
         status: "Active",
+        type: customerType.value?.value,
+        tin: customerTin.value,
+        nin_brn: customerNINBrn.value,
+        land_line: customerLandLine.value,
+        business_name: customerBusinessName.value,
+        sector: customerSector.value,
+        citizenship: customerCitizenship.value,
+        business_address: customerBusinessPlace.value,
     }
 
     commonService.genericRequest('create-customer', 'post', true, postData).then((response) => {
@@ -927,11 +947,37 @@ onMounted(() => {
 
 
         <!-- Start of Modals-->
-        <Dialog header="Create new customer" v-model:visible="showCreateCustomerModal" :style="{ width: '75vw' }"
+        <Dialog header="Create new customer" v-model:visible="showCreateCustomerModal" :style="{ width: '80vw' }"
             :modal="true" class="p-fluid">
             <!-- <p style="padding-top: 20px;"> -->
             <div class="grid p-fluid">
-                <div class="field col-12 md:col-6">
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <Dropdown :options="customerTypeOptions" v-model="customerType" optionLabel="name"
+                                style="width: 100%; margin-left: 1px; margin-right:1px;">
+                        </Dropdown>
+                        <label for="supplierContact">Customer Type</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="customerTin" v-model="customerTin" />
+                        <!-- class="p-invalid"-->
+                        <label for="supplierContact">Tin</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="customerTin" v-model="customerNINBrn" />
+                        <!-- class="p-invalid"-->
+                        <label for="supplierContact">Customer NIN Brn</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <InputText type="text" id="customerName"
                             @blur="onCustomerInputBlur(customerName, 'customerName')" v-model="customerName"
@@ -940,13 +986,13 @@ onMounted(() => {
                         <label for="supplierName">Name</label>
                     </span>
                 </div>
-                <div class="field col-12 md:col-6">
+                <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <InputText type="text" id="supplierEmail" v-model="customerEmail" /> <!-- class="p-invalid"-->
                         <label for="supplierEmail">Email</label>
                     </span>
                 </div>
-                <div class="field col-12 md:col-6">
+                <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <InputText type="text" id="supplierAddress" v-model="customerAddress" />
                         <!-- class="p-invalid"-->
@@ -954,13 +1000,76 @@ onMounted(() => {
                     </span>
                 </div>
 
-                <div class="field col-12 md:col-6">
+                <div class="field col-12 md:col-4">
                     <span class="p-float-label">
                         <InputText type="text" id="supplierContact" v-model="customerContact" />
                         <!-- class="p-invalid"-->
                         <label for="supplierContact">Phone Number</label>
                     </span>
                 </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="customerLandLine" v-model="customerLandLine" />
+                        <!-- class="p-invalid"-->
+                        <label for="supplierContact">Land Line Number</label>
+                    </span>
+                </div>
+
+                 <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="customerTin" v-model="customerBusinessName" />
+                        <!-- class="p-invalid"-->
+                        <label for="supplierContact">Customer Business Name</label>
+                    </span>
+                </div>
+
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <Dropdown :options="customerTypeOptions" v-model="customerSector" optionLabel="name"
+                                style="width: 100%; margin-left: 1px; margin-right:1px;">
+                        </Dropdown>
+                        <label for="supplierContact">Customer Sector</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <Dropdown :options="customerTypeOptions" v-model="customerCitizenship" optionLabel="name"
+                                style="width: 100%; margin-left: 1px; margin-right:1px;">
+                        </Dropdown>
+                        <label for="supplierContact">Customer Citizenship</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="customerTin" v-model="customerBusinessPlace" />
+                        <!-- class="p-invalid"-->
+                        <label for="supplierContact">Customer Place Of Business</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="customerTin" v-model="customerTin" />
+                        <!-- class="p-invalid"-->
+                        <label for="supplierContact">Customer Passport Number</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="customerTin" v-model="customerTin" />
+                        <!-- class="p-invalid"-->
+                        <label for="supplierContact">Customer Legal Name</label>
+                    </span>
+                </div>
+
+
+
+
                 <div class="field col-12 md:col-12">
                     <span class="p-float-label">
                         <Textarea inputId="supplierDesc" rows="7" v-model="customerDesc"></Textarea>

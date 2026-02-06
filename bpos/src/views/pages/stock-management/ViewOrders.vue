@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
 import qz from 'qz-tray';
+import AppQRCode from './AppQRCode.vue'
 
 const toast = useToast();
 const memberBatch = ref(null);
@@ -19,16 +20,31 @@ const showInvoiceModal = ref(false);
 const printerConfig = ref(null);
 const userData = ref({});
 
+const startDate = ref(null);
+const endDate = ref(null);
+const rowsPerPage = ref(15);
+const searchKeyWord = ref(null);
+const currentPage = ref(1);
+
 
 const getSales = () => {
-    commonService.genericRequest('get-orders', 'get', true, {}).then((response) => {
+    commonService.genericRequest('get-orders?page='+currentPage.value +'&rows_per_page='+rowsPerPage.value+'&search='+searchKeyWord.value+'&start_date='+ ((startDate.value))+'&end_date='+((endDate.value)), 'get', true, {}).then((response) => {
         if (response.status) {
-            memberBatch.value = response.data;
+            memberBatch.value = response?.data;
         } else {
             commonService.showError(toast, response.message);
         }
     })
 }
+
+
+const onPageChange = (event)=>{
+    rowsPerPage.value = event.rows;
+    currentPage.value = Number(event.page) + 1;
+    // alert('hello: '+)
+    getSales();
+}
+
 const viewDetails = (data) => {
     // toggleModal(true);
     orderDetails.value = data;
@@ -350,10 +366,45 @@ onMounted(() => {
 </script>
 <template>
     <div className="card">
-        <h5>View Sales</h5>
-        <!--        <p>Use this page to start from scratch and place your custom content.</p>-->
-        <DataTable :value="memberBatch" :paginator="true" class="p-datatable-gridlines" :rows="10" dataKey="id"
-            :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+        <h5>View Sales-X</h5>
+        <Toolbar class="mb-1">
+            <template #start>
+                <span class="p-float-label mr-2">
+                    <Calendar id="date" showIcon v-model="startDate"></Calendar>
+                    <label for="date">Start Date</label>
+                </span>
+                <span class="p-float-label mr-2">
+                    <Calendar id="date" showIcon fluid iconDisplay="input" v-model="endDate"></Calendar>
+                    <label for="date">End Date</label>
+                </span>
+                <span class="p-float-label mr-2">
+                    <InputText type="text" id="purchasePrice" v-model="searchKeyWord" />
+                    <label for="purchasePrice">Search </label>
+                </span>
+                <Button  @click="getSales" label="SEARCH" icon="pi pi-search" class="mr-2" />
+            </template>
+
+            <template #end>
+                <Button label="EXCEL" icon="pi pi-file-excel" class="mr-2"  />
+                <Button label="CSV" icon="pi pi-file-excel" class="mr-2" severity="success"  />
+                <Button label="PDF" icon="pi pi-file-pdf" severity="danger"  />
+            </template>
+        </Toolbar>
+        <DataTable
+        :value="memberBatch?.data"
+        :paginator="true"
+        stripedRows
+        size="small"
+        :rows="rowsPerPage"
+        dataKey="id"
+        :rowHover="true"
+         :totalRecords="memberBatch?.total"
+        filterDisplay="menu"
+        responsiveLayout="scroll"
+        lazy
+        @page="onPageChange($event)"
+        :rowsPerPageOptions="[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 100]"
+        >
             <Column field="Ref No." header="Ref No." style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.ref_no }}
@@ -588,6 +639,22 @@ onMounted(() => {
 
                 </tfoot>
                 </table>
+
+                <div style='margin-top: 20px; border: 1px solid #000; padding: 10px; background: #f2f2f2;'>
+                <p style="color: #666;"><strong>URA</strong></p>
+                <p style="color: #666;">Invoice No.: {{orderItems[0]?.efris_response ? (JSON.parse(orderItems[0]?.efris_response))?.data?.basicInformation?.invoiceNo :'' }}</p>
+                <p style="color: #666;">FDN: {{orderItems[0]?.efris_response ? (JSON.parse(orderItems[0]?.efris_response))?.data?.basicInformation?.antifakeCode :'' }}</p>
+                <p style="color: #666;">Seller's Ref. No.:  {{orderItems[0]?.efris_response ? (JSON.parse(orderItems[0]?.efris_response))?.data?.sellerDetails?.referenceNo :'' }}</p>
+
+
+                <div class="flex flex-col items-center">
+
+                    <AppQRCode :value="(JSON.parse(orderItems[0]?.efris_response))?.data?.summary?.qrCode" :size="180" />
+                    <!-- <img :src="(JSON.parse(orderItems[0]?.efris_response))?.data?.summary?.qrCode" alt="QR Code" /> -->
+                </div>
+
+                <!-- <p style="color: #666;">2. Please include the invoice number on your check.</p> -->
+                </div>
 
                 <div style='margin-top: 20px; border: 1px solid #000; padding: 10px; background: #f2f2f2;'>
                 <p style="color: #666;"><strong>Other Comments:</strong></p>

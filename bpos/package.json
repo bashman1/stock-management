@@ -15,6 +15,7 @@
         "primeflex": "^3.2.1",
         "primeicons": "^6.0.1",
         "primevue": "3.28.0",
+        "qrcode": "^1.5.4",
         "qz-tray": "^2.2.5",
         "vue": "^3.2.41",
         "vue-meta": "^2.4.0",

@@ -1,0 +1,913 @@
+<script setup>
+import { ref } from 'vue';
+import CommonService from '@/service/CommonService'
+
+import AppMenuItem from './AppMenuItem.vue';
+
+const commonService = new CommonService();
+
+const institutionMenu = ref(
+    {
+        label: 'Institution Management',
+        icon: 'pi pi-fw pi-building',
+        items: []
+    },
+);
+
+const userMenu = ref({
+    label: 'User Management',
+    icon: 'pi pi-fw pi-user-plus',
+    items: []
+});
+
+const memberMenu = ref(
+    {
+        label: 'Member Management',
+        icon: 'pi pi-fw pi-users',
+        items: []
+    },
+);
+
+const bulkMenu = ref(
+    {
+        label: 'Bulk Upload',
+        icon: 'pi pi-fw pi-briefcase',
+        items: []
+    }
+)
+
+const collectionMenu = ref(
+    {
+        label: 'Collections',
+        icon: 'pi pi-fw pi-money-bill',
+        items: []
+    }
+)
+
+const commissionMenu = ref(
+    {
+        label: 'Commissions',
+        icon: 'pi pi-dollar',
+        items: []
+    }
+)
+
+const reportMenu = ref(
+    {
+        label: 'Reports',
+        icon: 'pi pi-fw pi-folder',
+        items: []
+    }
+)
+
+const stockMenu = ref(
+    {
+        label: 'Inventory Management',
+        icon: 'pi pi-flag',
+        items: []
+    }
+)
+
+
+const pointOfSaleMenu = ref(
+    {
+        label: 'Point Of Sale',
+        icon: 'pi pi-credit-card',
+        to: '/point-of-sale'
+    }
+)
+// const chartOfAccountMenu = ref(
+//     {
+//         label: 'Chart Of Accounts',
+//         icon: 'pi pi-bitcoin',
+//         items: []
+//     }
+// )
+
+const invoiceMenu = ref(
+    {
+        label: 'Invoices',
+        icon: 'pi pi-file',
+        items: []
+    }
+)
+
+const salesMenu = ref(
+    {
+        label: 'sales',
+        icon: 'pi pi-flag',
+        to: '/view-sales'
+    }
+)
+
+
+const chartOfAccountMenu = ref(
+    {
+        label: 'Chart Of Accounts',
+        icon: 'pi pi-bitcoin',
+        items: []
+    }
+)
+
+const payableReceivable = ref(
+    {
+        label: 'Payable/Receivable',
+        icon: 'pi pi-wallet',
+        items: []
+    }
+)
+
+const licenseMenu = ref(
+    {
+        label: 'License',
+        icon: 'pi pi-verified',
+        items: []
+    }
+)
+
+const accountMenu = ref(
+    {
+        label: 'Account',
+        icon: 'pi pi-user',
+        items: []
+    }
+)
+
+const investMentMenu = ref(
+    {
+        label: 'Investment',
+        icon: 'pi pi-box',
+        items: []
+    }
+)
+
+const PropertyMenu = ref(
+    {
+        label: 'Estate Management',
+        icon: 'pi pi-building',
+        items: []
+    }
+)
+
+
+
+const logOut = ref({
+    label: 'Log Out',
+    icon: 'pi pi-sign-out',
+    to: '/logout'
+})
+
+
+
+if (commonService.checkPermissions('CanCreateInstitution')) {
+    institutionMenu.value.items.push({ label: 'Create Institution', icon: 'pi pi-fw pi-circle', to: '/create-institution' });
+}
+if (commonService.checkPermissions('CanViewInstitution')) {
+    institutionMenu.value.items.push({
+        label: 'View Institutions',
+        icon: 'pi pi-fw pi-circle',
+        to: '/view-institutions'
+    },);
+}
+
+if (commonService.checkPermissions('ApproveInstitution')) {
+    institutionMenu.value.items.push({
+        label: 'Approve Institutions',
+        icon: 'pi pi-fw pi-circle',
+        to: '/approve-business'
+    },);
+}
+
+if (commonService.checkPermissions('CanCreateBranch')) {
+    institutionMenu.value.items.push({ label: 'Create Branch', icon: 'pi pi-fw pi-circle', to: '/create-branch' });
+}
+
+if (commonService.checkPermissions('ViewBranches')) {
+    institutionMenu.value.items.push({
+        label: 'View Branches',
+        icon: 'pi pi-fw pi-circle',
+        to: '/view-branches'
+    },);
+}
+
+if (commonService.checkPermissions('CreateUser')) {
+    userMenu.value.items.push({
+        label: 'Create User',
+        icon: 'pi pi-fw pi-circle',
+        to: '/create-user'
+    });
+}
+
+if (commonService.checkPermissions('ViewUsers')) {
+    userMenu.value.items.push({
+        label: 'View Users',
+        icon: 'pi pi-fw pi-circle',
+        to: '/view-users'
+    });
+}
+
+if (commonService.checkPermissions('CreatedRole')) {
+    userMenu.value.items.push({
+        label: 'Create Role',
+        icon: 'pi pi-fw pi-circle',
+        to: '/create-role'
+    });
+}
+
+if (commonService.checkPermissions('ViewRoles')) {
+    userMenu.value.items.push(
+        {
+            label: 'View Roles',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-roles'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CreateDefaultRoles')) {
+    userMenu.value.items.push(
+        {
+            label: 'Create Default Role',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-default-role'
+        }
+    );
+}
+if (commonService.checkPermissions('ViewDefaultRoles')) {
+    userMenu.value.items.push(
+        {
+            label: 'View Default Roles',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-default-roles'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CreateMember')) {
+    memberMenu.value.items.push(
+        {
+            label: 'Create Member',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-member'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewMember')) {
+    memberMenu.value.items.push(
+        {
+            label: 'View Members',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-members'
+        }
+    );
+}
+
+if (commonService.checkPermissions('UploadMembers')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Members',
+            icon: 'pi pi-fw pi-circle',
+            to: '/upload-members'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewUploadedMembers')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'View Uploaded Members',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-uploaded-members'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CanUploadBulkProducts')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Products',
+            icon: 'pi pi-fw pi-circle',
+            to: '/upload-products'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewUploadBulkProductsBatch')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'View Upload Products',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-uploaded-products'
+        }
+    );
+}
+
+
+if (commonService.checkPermissions('CanUploadBulkSales')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Sales',
+            icon: 'pi pi-fw pi-circle',
+            to: '/upload-sales'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewUploadBulkSalesBatch')) {
+    bulkMenu.value.items.push(
+        {
+            label: 'View Uploaded Sales',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-uploaded-sales'
+        }
+    );
+}
+
+if (commonService.checkPermissions('BulkUploadBuildings')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Buildings',
+            icon: 'pi pi-fw pi-circle',
+            to: '/bulk-upload-buildings'
+        }
+    );
+
+}
+
+if (commonService.checkPermissions('BulkUploadBuildingUnits')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Building Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/bulk-upload-building-units'
+        }
+    );
+}
+
+if (commonService.checkPermissions('BulkUploadTenantsUnits')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Tenants Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/bulk-upload-tenants-room'
+        }
+    );
+}
+if (commonService.checkPermissions('ApproveBuildingBatch')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Approve Buildings Batch',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-building-uploaded-batches'
+        }
+    );
+
+}
+if (commonService.checkPermissions('ApproveBuildingUnitBatch')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Approve Building Units Batch',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-building-units-uploaded-batches'
+        }
+    );
+}
+if (commonService.checkPermissions('ApproveTenantUnitBatch')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Approve Tenants Units Batch',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-tenants-rooms-uploaded-batches'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CollectMoney')) {
+    collectionMenu.value.items.push(
+        {
+            label: 'Collect Money',
+            icon: 'pi pi-fw pi-circle',
+            to: '/collect-money'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewCollection')) {
+    collectionMenu.value.items.push(
+        {
+            label: 'View Collections',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-collected-money'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ApproveCollection')) {
+    collectionMenu.value.items.push(
+        {
+            label: 'Approve Collections',
+            icon: 'pi pi-fw pi-circle',
+            to: '/approve-collections'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ApprovedCollection')) {
+    collectionMenu.value.items.push(
+        {
+            label: 'Approved Collections',
+            icon: 'pi pi-fw pi-circle',
+            to: '/approved-collections'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewCommission')) {
+    commissionMenu.value.items.push(
+        {
+            label: 'View Commission',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-commissions'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CreateProduct')) {
+    stockMenu.value.items.push(
+        {
+            label: 'Create Product',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-product'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewProducts')) {
+    stockMenu.value.items.push(
+        {
+            label: 'View Products',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-product'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewChartOfAccounts')) {
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'View Chart Of Accounts',
+            icon: 'pi pi-fw pi-circle',
+            to: '/chart-of-accounts'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CreateLedger')) {
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'Create Ledger',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-ledger'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewGlAccounts')) {
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'GL accounts',
+            icon: 'pi pi-fw pi-circle',
+            to: '/gl-accounts'
+        }
+    );
+}
+
+if (commonService.checkPermissions('DebitCredit')) {
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'GL Debit/Credit',
+            icon: 'pi pi-fw pi-circle',
+            to: '/debit-credit-gl'
+        }
+    );
+}
+
+if (commonService.checkPermissions('GlOverView')) {
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'GL overview',
+            icon: 'pi pi-fw pi-circle',
+            to: '/gl-overview'
+        }
+    );
+}
+if (commonService.checkPermissions('ViewCntrlParams')) {
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'Control Accounts',
+            icon: 'pi pi-fw pi-circle',
+            to: '/cntrl-params'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewIncomeStatement')) {
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'Income Statement',
+            icon: 'pi pi-fw pi-circle',
+            to: '/income-statement'
+        }
+    )
+}
+
+if (commonService.checkPermissions('ViewBalanceSheet')) {
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'Balance Sheet',
+            icon: 'pi pi-fw pi-circle',
+            to: '/gl-balance-sheet'
+        }
+    )
+}
+
+if (commonService.checkPermissions('CreateExpenses')) {
+    chartOfAccountMenu.value.items.push(
+        {
+            label: 'Expenses',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-expense'
+        }
+    )
+}
+
+if (commonService.checkPermissions('ViewProductsReport')) {
+    reportMenu.value.items.push(
+        {
+            label: 'Products Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/products-report'
+        }
+    )
+}
+
+if (commonService.checkPermissions('ViewSalesReport')) {
+    reportMenu.value.items.push(
+        {
+            label: 'Sales Transaction Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/sales-report'
+        }
+    )
+}
+
+
+if (commonService.checkPermissions('ViewSalesReport')) {
+    reportMenu.value.items.push(
+        {
+            label: 'Sales Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/sales-item-report'
+        }
+    )
+}
+
+
+
+if (commonService.checkPermissions('ViewCashBook')) {
+    reportMenu.value.items.push(
+        {
+            label: 'Cash Book',
+            icon: 'pi pi-fw pi-circle',
+            to: '/cash-book'
+        }
+    )
+}
+
+
+if (commonService.checkPermissions('ViewVatPayable')) {
+    reportMenu.value.items.push(
+        {
+            label: 'VAT Payable',
+            icon: 'pi pi-fw pi-circle',
+            to: '/vat-payable-report'
+        }
+    )
+}
+
+if (commonService.checkPermissions('RentArrearsReport')) {
+    reportMenu.value.items.push(
+        {
+            label: 'Rent Arrears Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/rental-arrears-report'
+        }
+    )
+}
+
+if (commonService.checkPermissions('LandLoadPaymentReport')){
+        reportMenu.value.items.push(
+        {
+            label: 'Land Load Payment Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/land-load-payment-report'
+        }
+    )
+}
+
+
+if (commonService.checkPermissions('ViewReceivables')) {
+    payableReceivable.value.items.push(
+        {
+            label: 'Receivable',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-receivables'
+        }
+    )
+}
+
+if (commonService.checkPermissions('ViewPayables')) {
+    payableReceivable.value.items.push(
+        {
+            label: 'Payable',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-payable'
+        }
+    )
+}
+
+if (commonService.checkPermissions('ViewInstitutionProfile')) {
+    accountMenu.value.items.push(
+        {
+            label: 'Institution Profile',
+            icon: 'pi pi-fw pi-circle',
+            to: '/institution-profile/' + commonService.getStorage().userData?.institution_id
+        }
+    )
+}
+
+
+if (commonService.checkPermissions('ViewUserProfile')) {
+    accountMenu.value.items.push(
+        {
+            label: 'User Profile',
+            icon: 'pi pi-fw pi-circle',
+            to: '/user-profile/' + commonService.getStorage().userData?.id
+        }
+    )
+}
+
+if (commonService.checkPermissions('ViewSystemLogs')) {
+    accountMenu.value.items.push(
+        {
+            label: 'System Logs',
+            icon: 'pi pi-fw pi-circle',
+            to: '/audit-logs'
+        }
+    )
+}
+
+if (commonService.checkPermissions('CanCreateLicensePackage')) {
+    licenseMenu.value.items.push(
+        {
+            label: 'Create License Package',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-license-package'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CanViewLicensePackages')) {
+    licenseMenu.value.items.push(
+        {
+            label: 'View License Packages',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-license-packages'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CanCreateProject')) {
+    investMentMenu.value.items.push(
+        {
+            label: 'Create Project',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-project'
+        }
+    );
+}
+if (commonService.checkPermissions('ViewProjects')) {
+    investMentMenu.value.items.push(
+        {
+            label: 'View Project',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-projects'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CreateInvestment')) {
+    investMentMenu.value.items.push(
+        {
+            label: 'Invest',
+            icon: 'pi pi-fw pi-circle',
+            to: '/invest'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewInvestment')) {
+    investMentMenu.value.items.push(
+        {
+            label: 'View Investments',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-invest'
+        }
+    );
+}
+
+
+if (commonService.checkPermissions('CanCreateBuilding')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'Create Building',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-building'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewBuildings')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'View Building',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-buildings'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CanCreateBuildingUnit')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'Create Building Unit',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-building-unit'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewBuildingUnits')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'View Building Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-building-units'
+        }
+    );
+}
+
+if (commonService.checkPermissions('RentBuildingUnits')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'Rent Building Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/rent-building-units'
+        }
+    );
+}
+
+
+if (commonService.checkPermissions('ViewRentBuildingUnits')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'View Rent Building Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-building-rentals'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CanCreateInvoice')) {
+    invoiceMenu.value.items.push(
+        {
+            label: 'Create Invoice',
+            icon: 'pi pi-fw pi-circle',
+            to: '/proforma-invoice'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewInvoice')) {
+    invoiceMenu.value.items.push(
+        {
+            label: 'View Invoices',
+            icon: 'pi pi-fw pi-circle',
+            to: '/View-proforma-invoices'
+        }
+    );
+}
+
+
+
+
+
+
+
+
+
+
+const model = ref([{ items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-desktop', to: '/admin' },] }]);
+
+if (commonService.checkPermissions('PointOfSale')) {
+    model.value[0].items.push(pointOfSaleMenu.value);
+}
+
+if (commonService.checkPermissions('ViewSales')) {
+    model.value[0].items.push(salesMenu.value);
+}
+
+if (institutionMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(institutionMenu.value);
+}
+
+if (userMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(userMenu.value);
+}
+
+if (memberMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(memberMenu.value);
+}
+if (bulkMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(bulkMenu.value);
+}
+
+if (collectionMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(collectionMenu.value);
+}
+
+if (commissionMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(commissionMenu.value);
+}
+
+if (reportMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(reportMenu.value);
+}
+
+if (invoiceMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(invoiceMenu.value);
+}
+
+if (stockMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(stockMenu.value);
+}
+
+if (chartOfAccountMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(chartOfAccountMenu.value);
+}
+
+if (payableReceivable?.value?.items?.length > 0) {
+    model.value[0].items.push(payableReceivable.value);
+}
+
+if (investMentMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(investMentMenu.value);
+}
+
+if (PropertyMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(PropertyMenu.value);
+}
+
+if (licenseMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(licenseMenu.value);
+}
+
+if (accountMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(accountMenu.value);
+}
+
+model.value[0].items.push(logOut.value);
+
+</script>
+
+<template>
+    <ul class="layout-menu">
+        <template v-for="(item, i) in model" :key="item">
+            <app-menu-item v-if="!item.separator" :item="item" :index="i"></app-menu-item>
+            <li v-if="item.separator" class="menu-separator"></li>
+        </template>
+        <!-- <template>
+           <app-menu-item ></app-menu-item>
+           <li class="menu-separator">Log Out</li>
+       </template> -->
+        <!-- <li>
+           <a href="https://www.primefaces.org/primeblocks-vue/#/" target="_blank">
+               <i class="pi pi-sign-out"></i>
+               Log out
+           </a>
+      </li>  -->
+    </ul>
+</template>
+
+<style lang="scss" scoped></style>

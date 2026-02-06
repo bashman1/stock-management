@@ -10,6 +10,7 @@ use App\Models\stockHistory;
 use App\Models\Branch;
 use App\Models\TempMember;
 use App\Models\TempProduct;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -20,11 +21,23 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Transaction;
 use Carbon\Carbon;
+use App\Services\EfrisApiService;
+use App\Models\EfrisMeasurementUnits;
+use Illuminate\Support\Arr;
+use App\Models\measurementUnit;
+use App\Models\ProductCategory;
+use App\Models\EfrisComodityCategory;
 
 
 class ProductController extends Controller
 {
 
+    protected EfrisApiService $efrisService;
+
+    public function __construct(EfrisApiService $efrisService)
+    {
+        $this->efrisService = $efrisService;
+    }
     public function createProduct(Request $request)
     {
         $response = $this->createNewProduct($request);
@@ -37,8 +50,11 @@ class ProductController extends Controller
     {
         $userData = $this->getUserLogin();
         $product = null;
+        $institutionData = $this->getUserInstitution();
 
         $institution = Institution::find($userData->institution_id);
+
+        $supplier = Supplier::find($request->supplier_id);
 
         $isEdit = $request->id;
         $refNo = null;
@@ -59,14 +75,24 @@ class ProductController extends Controller
             $message = "Product Created successfully";
         }
 
+        $categoryId = $request->category_id;
+        $unitId = $request->measurement_unit_id;
+        if ($institutionData->efris_enabled) {
+            $efrisCat = $this->createOrReturnProductCategories($categoryId);
+            $categoryId = $efrisCat->id;
+            $efrisUnit = $this->createOrReturnMeasurementUnit($unitId);
+            $unitId = $efrisUnit->id;
+        }
+
+
         DB::beginTransaction();
         $product->name = $request->name;
         $product->product_no = $request->product_no;
-        $product->category_id = $request->category_id;
+        $product->category_id = $categoryId;
         $product->sub_category_id = $request->sub_category_id;
         $product->manufacturer_id = $request->manufacturer_id;
         $product->supplier_id = $request->supplier_id;
-        $product->measurement_unit_id = $request->measurement_unit_id;
+        $product->measurement_unit_id = $unitId;
         $product->description = $request->description;
         $product->institution_id = $userData->institution_id;
         $product->user_id = $userData->id;
@@ -81,6 +107,7 @@ class ProductController extends Controller
             $product->tax_config = $request->tax_config;
         }
         $product->save();
+
 
         if (!isset($isEdit)) {
             $branch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
@@ -233,6 +260,26 @@ class ProductController extends Controller
 
             $onDebitPassage = $this->postGlDR($passageDebitRequest);
             $onCreditPassCash = $this->postGlCR($cashCreditRequest);
+
+
+            if (isset($institutionData->is_tax_enabled) && $institutionData->is_tax_enabled) {
+                // creating product to efris
+
+                // $unit = measurementUnit::find($product->measurement_unit_id);
+                // $efrisUnit = EfrisMeasurementUnits::where(['value' => $unit->efris_code])->first();
+
+                $efrisUnit = $this->getEfrisMeasurementUnitByUnitId($product->measurement_unit_id);
+                // $cat = ProductCategory::find($product->category_id);
+                // $efrisCat = EfrisComodityCategory::where(['commodity_category_code' => $cat->efris_code])->first();
+
+               $efrisCat = $this->getEfrisCommodityCatByProdCatId($product->category_id);
+
+               $this->efrisCreateProduct($request, $refNo, $efrisUnit->value, $efrisCat->commodity_category_code, $efrisCat->excisable);
+
+                // efris adding stock
+
+                $this->efrisCreateOpeningStock($supplier->name, $request->date, $refNo, $request->quantity, $request->selling_price, $efrisUnit->value);
+            }
         } else {
             $updateTransaction = $this->updateTransaction($product->id, $userData->institution_id, $userData->branch_id, $request->quantity * $request->purchase_price);
             $payable = $this->updatePayable($updateTransaction->tran_id, (float) $updateTransaction->tran_amount);
@@ -249,6 +296,24 @@ class ProductController extends Controller
             $history = stockHistory::where(['product_id' => $isEdit, 'stock_id' => $stock->id])->orderBy('created_at', 'desc')->first();
             $history->updated_by = $userData->id;
             $history->updated_on = Carbon::now();
+
+
+            // increase or decrease stock in efris
+            if (isset($institutionData->is_tax_enabled) && $institutionData->is_tax_enabled) {
+
+                if ($stock->quantity > $request->quantity) {
+                    // decrease stock in efris
+                    $difference = $stock->quantity - $request->quantity;
+                    $this->decreaseStock($product->ref_no, $difference, $request->selling_price);
+                } else if ($stock->quantity < $request->quantity) {
+                    // increase stock in efris
+                     $efrisUnit = $this->getEfrisMeasurementUnitByUnitId($product->measurement_unit_id);
+                    $difference = $request->quantity - $stock->quantity;
+                    $this->increaseStock($supplier->name, $request->date, $product->ref_no, $difference, $efrisUnit->value,$request->selling_price);
+                } else {
+                    // no change
+                }
+            }
         } else {
             $stock = new stock();
             $stock->created_by = $userData->id;
@@ -302,6 +367,8 @@ class ProductController extends Controller
     public function restock(Request $request)
     {
         $userData = $this->getUserLogin();
+        $institutionData = $this->getUserInstitution();
+
         // try {
         DB::beginTransaction();
 
@@ -481,6 +548,16 @@ class ProductController extends Controller
         $onDebitPassage = $this->postGlDR($passageDebitRequest);
         $onCreditPassCash = $this->postGlCR($cashCreditRequest);
 
+
+        if (isset($institutionData->is_tax_enabled) && $institutionData->is_tax_enabled) {
+            // updating stock to efris
+            $supplier = Supplier::find($product->supplier_id);
+            $efrisUnit = $this->getEfrisMeasurementUnitByUnitId($product->measurement_unit_id);
+
+            $this->increaseStock($supplier->name, $request->date, $product->ref_no, $request->quantity, $efrisUnit->value,$request->selling_price);
+        }
+
+
         DB::commit();
         return $this->genericResponse(true, "Product restock successfully", 201, $stocks, "restock", $request);
         // } catch (\Throwable $th) {
@@ -553,7 +630,6 @@ class ProductController extends Controller
         } catch (\Throwable $th) {
             // throw new $th;
             throw $th;
-
         }
     }
 
@@ -790,11 +866,11 @@ class ProductController extends Controller
 
             $invoiceItems = InvoiceItem::where(['invoice_id' => $invoice->id])->get();
 
-            $response =  Array();
+            $response =  array();
             foreach ($invoiceItems as $item) {
                 $postData = (object)["id" => $item['product_id']];
 
-                $request->merge(["id"=> $item['product_id']]);
+                $request->merge(["id" => $item['product_id']]);
 
                 $results = $this->getProductList($request);
 
@@ -807,5 +883,273 @@ class ProductController extends Controller
         } catch (\Throwable $th) {
             return $this->genericResponse(false, "Unauthenticated", 401, null, "getInvoiceDetails", $request);
         }
+    }
+
+
+    public function testEfrisProductCreation(Request $request)
+    {
+        $institutionData = $this->getUserInstitution();
+        $payload = [
+            'products' => [
+                [
+                    'goodsName' => 'apple seedsd',
+                    'goodsCode' => 'Z0123',
+                    'measureUnit' => '101',
+                    'unitPrice' => '6999.99',
+                    'currency' => '101',
+                    'commodityCategoryId' => '95141708',
+                    'haveExciseTax' => '102',
+                    'description' => '1',
+                    'stockPrewarning' => '10',
+                    'pieceMeasureUnit' => '',
+                    'havePieceUnit' => '102',
+                    'pieceUnitPrice' => '',
+                    'packageScaledValue' => '',
+                    'pieceScaledValue' => '',
+                    'exciseDutyCode' => '',
+                ],
+            ],
+        ];
+
+        $response = $this->efrisService->request('GET', $institutionData->tin . '/master-data', [], []);
+        // $response = $this->efrisService->request('POST', $institutionData->tin.'/products/create', [], $payload);
+
+        log::info("response");
+
+        // return $response;
+        return $this->genericResponse(true, "Efris product creation", 200, $response->json(), "testEfrisProductCreation", $request);
+    }
+
+
+    public function efrisCreateProduct($request, $refNo, $unit, $category, $excisable)
+    {
+        try {
+            $institutionData = $this->getUserInstitution();
+            $payload = [
+                'products' => [
+                    [
+                        'goodsName' => $request->name,
+                        'goodsCode' => $refNo,
+                        'measureUnit' => $unit,
+                        'unitPrice' => $request->selling_price,
+                        'currency' => '101',
+                        'commodityCategoryId' => $category,
+                        'haveExciseTax' => $excisable,
+                        'description' => '1',
+                        'stockPrewarning' => '10',
+                        'pieceMeasureUnit' => '',
+                        'havePieceUnit' => '102',
+                        'pieceUnitPrice' => '',
+                        'packageScaledValue' => '',
+                        'pieceScaledValue' => '',
+                        'exciseDutyCode' => '',
+                    ],
+                ],
+            ];
+
+
+            // $response = $efrisApiService->request('GET', '1033614630/auth/server-time', [],[]);
+            $response = $this->efrisService->request('POST', $institutionData->tin . '/products/create', [], $payload);
+
+            log::info("**************** EFRIS RESPONSE => Creating product ****************");
+            log::info($response);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+
+    public function efrisCreateOpeningStock($supplier, $date, $refNo, $qty, $price, $unit)
+    {
+        try {
+            $institutionData = $this->getUserInstitution();
+            $payload = [
+                "supplierName" => $supplier,
+                "supplierTin" => "",
+                "stockInDate" => Carbon::parse($date)->format('Y-m-d'),
+                "remarks" => "Opening stock entry",
+                "items" => [
+                    [
+                        "goodsCode" => $refNo,
+                        "measureUnit" => $unit,
+                        "quantity" => $qty,
+                        "unitPrice" => $price
+                    ]
+                ]
+            ];
+            $response = $this->efrisService->request('POST', $institutionData->tin . '/products/add-opening-stock', [], $payload);
+
+            log::info("**************** EFRIS RESPONSE => Creating opening stock ****************");
+            log::info($response);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function increaseStock($supplier, $date, $refNo, $qty, $unit, $price)
+    {
+        try {
+            $institutionData = $this->getUserInstitution();
+            $payload = [
+                "supplierName" => $supplier,
+                "stockInType" => "102",
+                "supplierTin" => "",
+                "stockInDate" => Carbon::parse($date)->format('Y-m-d'),
+                "remarks" => "purchase",
+                "items" => [
+                    [
+                        "goodsCode" => $refNo,
+                        "measureUnit" => $unit,
+                        "quantity" => $qty,
+                        "unitPrice" => $price
+                    ]
+                ]
+            ];
+
+            $response = $this->efrisService->request('POST', $institutionData->tin . '/products/increase-stock', [], $payload);
+
+            log::info("**************** EFRIS RESPONSE => Increasing stock ****************");
+            log::info($response);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function decreaseStock($refNo, $qty, $price)
+    {
+        try {
+
+            $institutionData = $this->getUserInstitution();
+            $payload = [
+                "adjustType" => "102",
+                "remarks" => "Stock adjustment",
+                "items" => [
+                    [
+                        "goodsCode" => $refNo,
+                        "quantity" => $qty,
+                        "unitPrice" => $price
+                    ]
+                ]
+            ];
+
+            $response = $this->efrisService->request('POST', $institutionData->tin . '/products/decrease-stock', [], $payload);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+
+    public function getEfrisMeasurementUnits()
+    {
+        try {
+            $institutionData = $this->getUserInstitution();
+            $response = $this->efrisService->request('GET', $institutionData->tin . '/measure-units', [], []);
+
+            $results = $response->json();
+
+            $efrisResponse = [];
+            foreach ($results['data']['rateUnit'] as $key => $unit) {
+                $efrisResults =  $this->createEfrisMeasurementUnit($unit);
+                $efrisResponse[] = $efrisResults;
+            }
+            return $this->genericResponse(true, "Efris measurement units", 200, $efrisResponse, "getEfrisMeasurementUnits", []);
+        } catch (\Throwable $th) {
+            // throw $th;
+            return $this->genericResponse(false, "Unauthenticated", 401, $th->getMessage(), "getEfrisMeasurementUnits", []);
+        }
+    }
+
+
+
+
+    public function createEfrisMeasurementUnit(array $unit): EfrisMeasurementUnits
+    {
+        return DB::transaction(function () use ($unit) {
+
+            $user = $this->getUserLogin();
+
+            return EfrisMeasurementUnits::firstOrCreate(
+                ['value' => $unit['value']], // unique constraint
+                [
+                    'name'        => $unit['name'],
+                    'value'       => $unit['value'],
+                    'description' => Arr::get($unit, 'description'),
+                    'user_id'     => $user->id,
+                    'created_by'  => $user->id,
+                    'created_at'  => Carbon::now(),
+                    'status'      => 'Active',
+
+                ]
+            );
+        });
+    }
+
+
+    public function createOrReturnMeasurementUnit(int $efrisUnitId): MeasurementUnit
+    {
+        $user = $this->getUserLogin();
+
+        $efrisUnit = EfrisMeasurementUnits::findOrFail($efrisUnitId);
+
+        return MeasurementUnit::firstOrCreate(
+            [
+                // BUSINESS KEY (not id)
+                'efris_code'     => $efrisUnit->value,
+                'institution_id' => $user->institution_id,
+            ],
+            [
+                'name'         => $efrisUnit->name,
+                'description'  => $efrisUnit->description,
+                'branch_id'    => $user->branch_id,
+                'status'       => 'Active',
+                'efris_synced' => true,
+                'created_by'   => $user->id,
+                'user_id'      => $user->id,
+            ]
+        );
+    }
+
+
+
+
+    public function createOrReturnProductCategories(int $efrisCategoryId): ProductCategory
+    {
+        $user = $this->getUserLogin();
+
+        $efrisCategory = EfrisComodityCategory::findOrFail($efrisCategoryId);
+
+        return ProductCategory::firstOrCreate(
+            [
+                // UNIQUE BUSINESS KEY
+                'efris_code'     => $efrisCategory->commodity_category_code,
+                'institution_id' => $user->institution_id,
+            ],
+            [
+                'name'         => $efrisCategory->commodity_category_name,
+                'description'  => $efrisCategory->commodity_category_name,
+                'branch_id'    => $user->branch_id,
+                'status'       => 'Active',
+                'efris_synced' => true,
+                'created_by'   => $user->id,
+                'user_id'      => $user->id,
+            ]
+        );
+    }
+
+
+
+    public function getEfrisMeasurementUnitByUnitId($unitId)
+    {
+        $unit = measurementUnit::find($unitId);
+        $efrisUnit = EfrisMeasurementUnits::where(['value' => $unit->efris_code])->first();
+        return $efrisUnit;
+    }
+
+
+    public function getEfrisCommodityCatByProdCatId($prodCatId)
+    {
+        $cat = ProductCategory::find($prodCatId);
+        $efrisCat = EfrisComodityCategory::where(['commodity_category_code' => $cat->efris_code])->first();
+        return $efrisCat;
     }
 }
