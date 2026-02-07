@@ -15,8 +15,8 @@ class EfrisApiService
 
     public function __construct()
     {
-        $this->baseUrl = env('EFRIS_BASE_URL');
-        $this->bearerToken = env('EFRIS_BEARER_TOKEN');
+        $this->baseUrl = config('services.efris.base_url');
+        $this->bearerToken = config('services.efris.bearer_token');
     }
 
     /**
