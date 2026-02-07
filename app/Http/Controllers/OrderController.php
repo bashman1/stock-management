@@ -335,8 +335,15 @@ class OrderController extends Controller
         $startDate = $this->safeDate($request->input('start_date'));
         $endDate = $this->safeDate($request->input('end_date'));
 
+        log::info("Fetching orders with filters - Start Date: $startDate, End Date: $endDate");
+
 
         $searchKeyword = $request->input('search');
+
+        if ($searchKeyword === 'null') {
+            $searchKeyword = null;
+        }
+
         $orders = $this->getOrdersList($rowsPerPage, $page, $startDate, $endDate, $searchKeyword);
         return $this->genericResponse(true, "Orders fetched successfully", 200, $orders, "getOrders", []);
     }
@@ -345,6 +352,8 @@ class OrderController extends Controller
     {
         $userData = Auth::user();
         $isNotAdmin = $this->isNotAdmin();
+
+        log::info("Fetching orders with filters - Start Date: $startDate, End Date: $endDate, Search Keyword: $searchKeyword, User ID: $userData->id");
 
         $queryString = "SELECT O.id, O.ref_no, O.receipt_no, O.tran_id, O.item_count, O.total,
         O.discount, O.amount_paid, O.user_id, O.customer_id, O.tran_date,
@@ -373,9 +382,10 @@ class OrderController extends Controller
             $queryString .= " AND O.tran_date::date  <= '$endDate'";
             $totalSql .= " AND O.tran_date::date <= '$endDate'";
         }
+        log::info("keyword after trim: '" . $searchKeyword . "'");
         if (!empty(trim($searchKeyword))) {
-            $queryString .= " AND (O.ref_no ILIKE '%".$searchKeyword."%' OR O.receipt_no ILIKE '%".$searchKeyword."%')";
-            $totalSql .= " AND (O.ref_no ILIKE '%".$searchKeyword."%' OR O.receipt_no ILIKE '%".$searchKeyword."%')";
+            $queryString .= " AND (O.ref_no ILIKE '%" . $searchKeyword . "%' OR O.receipt_no ILIKE '%" . $searchKeyword . "%')";
+            $totalSql .= " AND (O.ref_no ILIKE '%" . $searchKeyword . "%' OR O.receipt_no ILIKE '%" . $searchKeyword . "%')";
         }
 
         $queryString .= " ORDER BY O.id DESC";
@@ -738,5 +748,4 @@ class OrderController extends Controller
             throw $th;
         }
     }
-
 }
