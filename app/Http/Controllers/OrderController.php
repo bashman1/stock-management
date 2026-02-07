@@ -360,10 +360,7 @@ class OrderController extends Controller
         O.status, O.payment_status, O.institution_id, O.branch_id, O.created_on,
         O.created_at, O.updated_at FROM orders O";
 
-        $totalSql = "SELECT O.id, O.ref_no, O.receipt_no, O.tran_id, O.item_count, O.total,
-        O.discount, O.amount_paid, O.user_id, O.customer_id, O.tran_date,
-        O.status, O.payment_status, O.institution_id, O.branch_id, O.created_on,
-        O.created_at, O.updated_at FROM orders O";
+        $totalSql = "SELECT  COUNT(O.id) AS total FROM orders O";
 
         if ($isNotAdmin) {
             $queryString .= " WHERE O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id AND O.status='Active' ";
