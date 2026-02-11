@@ -262,7 +262,7 @@ class ProductController extends Controller
             $onCreditPassCash = $this->postGlCR($cashCreditRequest);
 
 
-            if (isset($institutionData->is_tax_enabled) && $institutionData->is_tax_enabled) {
+            if (isset($institutionData->is_tax_enabled) && $institutionData->efris_enabled) {
                 // creating product to efris
 
                 // $unit = measurementUnit::find($product->measurement_unit_id);
@@ -299,7 +299,7 @@ class ProductController extends Controller
 
 
             // increase or decrease stock in efris
-            if (isset($institutionData->is_tax_enabled) && $institutionData->is_tax_enabled) {
+            if (isset($institutionData->is_tax_enabled) && $institutionData->efris_enabled) {
 
                 if ($stock->quantity > $request->quantity) {
                     // decrease stock in efris
@@ -549,7 +549,7 @@ class ProductController extends Controller
         $onCreditPassCash = $this->postGlCR($cashCreditRequest);
 
 
-        if (isset($institutionData->is_tax_enabled) && $institutionData->is_tax_enabled) {
+        if (isset($institutionData->is_tax_enabled) && $institutionData->efris_enabled) {
             // updating stock to efris
             $supplier = Supplier::find($product->supplier_id);
             $efrisUnit = $this->getEfrisMeasurementUnitByUnitId($product->measurement_unit_id);

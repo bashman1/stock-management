@@ -308,7 +308,7 @@ class OrderController extends Controller
             $items->save();
         }
 
-        if (isset($institutionData->is_tax_enabled) && $institutionData->is_tax_enabled) {
+        if (isset($institutionData->is_tax_enabled) && $institutionData->efris_enabled) {
             $efrisResponse = $this->efrisCreateSalesReceipt($order->ref_no, $order->tran_date, $efrisOrderDetailsList);
             if ($request->payment_method == "CREDIT") {
                 $creditNote = $this->createCreditNote($efrisResponse, $request->tran_date, $efrisOrderDetailsList);
