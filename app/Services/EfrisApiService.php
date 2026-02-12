@@ -45,69 +45,70 @@ class EfrisApiService
             default => throw new \InvalidArgumentException('Unsupported HTTP method'),
         };
 
-        $this->createEfrisOutBoundRecord(
-            $endpoint,
-            $data,
-            $res->json(),
-            strtoupper($method)
-        );
-
         return $res;
     }
 
 
 
-    public function createEfrisOutBound($data)
+    // public function createEfrisOutBound($data): EfrisOutBound
+    // {
+    //     try {
+    //         $efrisOutBout = EfrisOutBound::create($data);
+    //         return $efrisOutBout;
+    //     } catch (\Throwable $th) {
+    //         throw $th;
+    //     }
+    // }
+
+
+    // public function consumeEfrisPenningQueue()
+    // {
+    //     // code to consume pending efris outbound queue
+    //     $efrisOutBout = EfrisOutBound::where('is_sent', false)->limit(20)->get();
+    //     foreach ($efrisOutBout as $outBound) {
+    //         // Process each outbound record
+    //        $outBound = $this->request(
+    //             $outBound['http_method'],
+    //             $outBound['uri'],
+    //             [],
+    //             $outBound['payload'],
+    //         );
+
+    //         $outBound = $outBound->json();
+    //     }
+    // }
+
+    public function createEfrisOutBoundRecord($data): ?EfrisOutBound
     {
-        try {
-            $efrisOutBout = EfrisOutBound::create($data);
-            return $efrisOutBout;
-        } catch (\Throwable $th) {
-            throw $th;
-        }
-    }
-
-
-    public function consumeEfrisPenningQueue()
-    {
-        // code to consume pending efris outbound queue
-        $efrisOutBout = EfrisOutBound::where('is_sent', false)->limit(20)->get();
-        foreach ($efrisOutBout as $outBound) {
-            // Process each outbound record
-           $outBound = $this->request(
-                $outBound['http_method'],
-                $outBound['uri'],
-                [],
-                $outBound['payload'],
-            );
-
-            $outBound = $outBound->json();
-        }
-    }
-
-    public function createEfrisOutBoundRecord($uri, $payload, $response, $httpMethod){
         try {
             $userData = Auth::user();
             $uuid = Str::uuid()->toString();
-            $outBound = EfrisOutBound::create([
-                'trnsaction_type' => $uri,
-                'reference_no' => $uuid,
-                'payload' => $payload,
-                'response' => $response,
-                'order_id' => null,
-                'invoice_id' => null,
-                'product_id' => null,
-                'stock_id' => null,
-                'stock_history_id' => null,
-                'status' => 'Active',
-                'is_sent' => true,
-                'uri' => $uri,
-                'http_method' => $httpMethod,
-                'institution_id' => $userData->institution_id,
-                'branch_id' => $userData->branch_id,
-                'created_by' => $userData->id,
-                'created_on' => now(),
-            ]);
+
+            // $data = [
+            //     'trnsaction_type' => $uri,
+            //     'reference_no' => $uuid,
+            //     'payload' => $payload,
+            //     'response' => $response,
+            //     'order_id' => null,
+            //     'invoice_id' => null,
+            //     'product_id' => null,
+            //     'stock_id' => null,
+            //     'stock_history_id' => null,
+            //     'status' => $status,
+            //     'is_sent' => true,
+            //     'uri' => $uri,
+            //     'http_method' => $httpMethod,
+            //     'institution_id' => $userData->institution_id,
+            //     'branch_id' => $userData->branch_id,
+            //     'created_by' => $userData->id,
+            //     'created_on' => now(),
+            // ];
+
+            $outBound = EfrisOutBound::updateOrCreate(
+                // ['id' => $id],
+                $data
+            );
+
             return $outBound;
         } catch (\Throwable $th) {
             throw $th;

@@ -27,6 +27,8 @@ class EfrisOutBound extends Model
         'updated_by',
         'created_on',
         'updated_on',
+        'action',
+        'description'
     ];
 
     protected $casts = [
