@@ -1,894 +1,298 @@
 <script setup>
-import { ref } from 'vue';
-import CommonService from '@/service/CommonService'
-
+import { ref, computed } from 'vue';
+import CommonService from '@/service/CommonService';
 import AppMenuItem from './AppMenuItem.vue';
 
 const commonService = new CommonService();
 
-const institutionMenu = ref(
+// Cache permissions as a Set for O(1) lookups instead of O(n) array iteration
+// Load once during component initialization (uses CommonService's internal cache)
+const permissionsSet = new Set(
+    commonService.getPermissions().map(p => p.name)
+);
+
+// Optimized permission check using cached Set
+const hasPermission = (permission) => {
+    // If no permission required, allow access
+    if (!permission) return true;
+    return permissionsSet.has(permission);
+};
+
+// Get user data for dynamic routes
+const userData = commonService.getStorage()?.userData;
+
+// Declarative menu configuration - keeps all menu items in one place
+const menuConfig = [
     {
+        key: 'pointOfSale',
+        label: 'Point Of Sale',
+        icon: 'pi-credit-card',
+        to: '/point-of-sale',
+        permission: 'PointOfSale',
+        isSubmenu: false
+    },
+    {
+        key: 'sales',
+        label: 'sales',
+        icon: 'pi-flag',
+        to: '/view-sales',
+        permission: 'ViewSales',
+        isSubmenu: false
+    },
+    {
+        key: 'institution',
         label: 'Institution Management',
         icon: 'pi pi-fw pi-building',
-        items: []
+        permission: null, // Always show if has items
+        items: [
+            { label: 'Create Institution', permission: 'CanCreateInstitution', to: '/create-institution' },
+            { label: 'View Institutions', permission: 'CanViewInstitution', to: '/view-institutions' },
+            { label: 'Approve Institutions', permission: 'ApproveInstitution', to: '/approve-business' },
+            { label: 'Create Branch', permission: 'CanCreateBranch', to: '/create-branch' },
+            { label: 'View Branches', permission: 'ViewBranches', to: '/view-branches' }
+        ]
     },
-);
-
-const userMenu = ref({
-    label: 'User Management',
-    icon: 'pi pi-fw pi-user-plus',
-    items: []
-});
-
-const memberMenu = ref(
     {
+        key: 'user',
+        label: 'User Management',
+        icon: 'pi pi-fw pi-user-plus',
+        permission: null,
+        items: [
+            { label: 'Create User', permission: 'CreateUser', to: '/create-user' },
+            { label: 'View Users', permission: 'ViewUsers', to: '/view-users' },
+            { label: 'Create Role', permission: 'CreatedRole', to: '/create-role' },
+            { label: 'View Roles', permission: 'ViewRoles', to: '/view-roles' },
+            { label: 'Create Default Role', permission: 'CreateDefaultRoles', to: '/create-default-role' },
+            { label: 'View Default Roles', permission: 'ViewDefaultRoles', to: '/view-default-roles' }
+        ]
+    },
+    {
+        key: 'member',
         label: 'Member Management',
         icon: 'pi pi-fw pi-users',
-        items: []
+        permission: null,
+        items: [
+            { label: 'Create Member', permission: 'CreateMember', to: '/create-member' },
+            { label: 'View Members', permission: 'ViewMember', to: '/view-members' }
+        ]
     },
-);
-
-const bulkMenu = ref(
     {
+        key: 'bulk',
         label: 'Bulk Upload',
         icon: 'pi pi-fw pi-briefcase',
-        items: []
-    }
-)
-
-const collectionMenu = ref(
+        permission: null,
+        items: [
+            { label: 'Upload Members', permission: 'UploadMembers', to: '/upload-members' },
+            { label: 'View Uploaded Members', permission: 'ViewUploadedMembers', to: '/view-uploaded-members' },
+            { label: 'Upload Products', permission: 'CanUploadBulkProducts', to: '/upload-products' },
+            { label: 'View Upload Products', permission: 'ViewUploadBulkProductsBatch', to: '/view-uploaded-products' },
+            { label: 'Upload Sales', permission: 'CanUploadBulkSales', to: '/upload-sales' },
+            { label: 'View Uploaded Sales', permission: 'ViewUploadBulkSalesBatch', to: '/view-uploaded-sales' },
+            { label: 'Upload Buildings', permission: 'BulkUploadBuildings', to: '/bulk-upload-buildings' },
+            { label: 'Upload Building Units', permission: 'BulkUploadBuildingUnits', to: '/bulk-upload-building-units' },
+            { label: 'Upload Tenants Units', permission: 'BulkUploadTenantsUnits', to: '/bulk-upload-tenants-room' },
+            { label: 'Approve Buildings Batch', permission: 'ApproveBuildingBatch', to: '/view-building-uploaded-batches' },
+            { label: 'Approve Building Units Batch', permission: 'ApproveBuildingUnitBatch', to: '/view-building-units-uploaded-batches' },
+            { label: 'Approve Tenants Units Batch', permission: 'ApproveTenantUnitBatch', to: '/view-tenants-rooms-uploaded-batches' }
+        ]
+    },
     {
+        key: 'collection',
         label: 'Collections',
         icon: 'pi pi-fw pi-money-bill',
-        items: []
-    }
-)
-
-const commissionMenu = ref(
+        permission: null,
+        items: [
+            { label: 'Collect Money', permission: 'CollectMoney', to: '/collect-money' },
+            { label: 'View Collections', permission: 'ViewCollection', to: '/view-collected-money' },
+            { label: 'Approve Collections', permission: 'ApproveCollection', to: '/approve-collections' },
+            { label: 'Approved Collections', permission: 'ApprovedCollection', to: '/approved-collections' }
+        ]
+    },
     {
+        key: 'commission',
         label: 'Commissions',
-        icon: 'pi pi-dollar',
-        items: []
-    }
-)
-
-const reportMenu = ref(
+        icon: 'pi-dollar',
+        permission: null,
+        items: [
+            { label: 'View Commission', permission: 'ViewCommission', to: '/view-commissions' }
+        ]
+    },
     {
+        key: 'report',
         label: 'Reports',
         icon: 'pi pi-fw pi-folder',
-        items: []
-    }
-)
-
-const stockMenu = ref(
+        permission: null,
+        items: [
+            { label: 'Products Report', permission: 'ViewProductsReport', to: '/products-report' },
+            { label: 'Sales Transaction Report', permission: 'ViewSalesReport', to: '/sales-report' },
+            { label: 'Sales Report', permission: 'ViewSalesReport', to: '/sales-item-report' },
+            { label: 'Cash Book', permission: 'ViewCashBook', to: '/cash-book' },
+            { label: 'VAT Payable', permission: 'ViewVatPayable', to: '/vat-payable-report' },
+            { label: 'Rent Arrears Report', permission: 'RentArrearsReport', to: '/rental-arrears-report' },
+            { label: 'Land Load Payment Report', permission: 'LandLoadPaymentReport', to: '/land-load-payment-report' }
+        ]
+    },
     {
-        label: 'Inventory Management',
-        icon: 'pi pi-flag',
-        items: []
-    }
-)
-
-
-const pointOfSaleMenu = ref(
-    {
-        label: 'Point Of Sale',
-        icon: 'pi pi-credit-card',
-        to: '/point-of-sale'
-    }
-)
-// const chartOfAccountMenu = ref(
-//     {
-//         label: 'Chart Of Accounts',
-//         icon: 'pi pi-bitcoin',
-//         items: []
-//     }
-// )
-
-const invoiceMenu = ref(
-    {
+        key: 'invoice',
         label: 'Invoices',
         icon: 'pi pi-file',
-        items: []
-    }
-)
-
-const salesMenu = ref(
+        permission: null,
+        items: [
+            { label: 'Create Invoice', permission: 'CanCreateInvoice', to: '/proforma-invoice' },
+            { label: 'View Invoices', permission: 'ViewInvoice', to: '/View-proforma-invoices' }
+        ]
+    },
     {
-        label: 'sales',
-        icon: 'pi pi-flag',
-        to: '/view-sales'
-    }
-)
-
-
-const chartOfAccountMenu = ref(
+        key: 'stock',
+        label: 'Inventory Management',
+        icon: 'pi-flag',
+        permission: null,
+        items: [
+            { label: 'Create Product', permission: 'CreateProduct', to: '/create-product' },
+            { label: 'View Products', permission: 'ViewProducts', to: '/view-product' }
+        ]
+    },
     {
+        key: 'chartOfAccount',
         label: 'Chart Of Accounts',
-        icon: 'pi pi-bitcoin',
-        items: []
-    }
-)
-
-const payableReceivable = ref(
+        icon: 'pi-bitcoin',
+        permission: null,
+        items: [
+            { label: 'View Chart Of Accounts', permission: 'ViewChartOfAccounts', to: '/chart-of-accounts' },
+            { label: 'Create Ledger', permission: 'CreateLedger', to: '/create-ledger' },
+            { label: 'GL accounts', permission: 'ViewGlAccounts', to: '/gl-accounts' },
+            { label: 'GL Debit/Credit', permission: 'DebitCredit', to: '/debit-credit-gl' },
+            { label: 'GL overview', permission: 'GlOverView', to: '/gl-overview' },
+            { label: 'Control Accounts', permission: 'ViewCntrlParams', to: '/cntrl-params' },
+            { label: 'Income Statement', permission: 'ViewIncomeStatement', to: '/income-statement' },
+            { label: 'Balance Sheet', permission: 'ViewBalanceSheet', to: '/gl-balance-sheet' },
+            { label: 'Expenses', permission: 'CreateExpenses', to: '/create-expense' }
+        ]
+    },
     {
+        key: 'payableReceivable',
         label: 'Payable/Receivable',
-        icon: 'pi pi-wallet',
-        items: []
-    }
-)
-
-const licenseMenu = ref(
+        icon: 'pi-wallet',
+        permission: null,
+        items: [
+            { label: 'Receivable', permission: 'ViewReceivables', to: '/view-receivables' },
+            { label: 'Payable', permission: 'ViewPayables', to: '/view-payable' }
+        ]
+    },
     {
-        label: 'License',
-        icon: 'pi pi-verified',
-        items: []
-    }
-)
-
-const accountMenu = ref(
-    {
-        label: 'Account',
-        icon: 'pi pi-user',
-        items: []
-    }
-)
-
-const investMentMenu = ref(
-    {
+        key: 'investment',
         label: 'Investment',
-        icon: 'pi pi-box',
-        items: []
-    }
-)
-
-const PropertyMenu = ref(
+        icon: 'pi-box',
+        permission: null,
+        items: [
+            { label: 'Create Project', permission: 'CanCreateProject', to: '/create-project' },
+            { label: 'View Project', permission: 'ViewProjects', to: '/view-projects' },
+            { label: 'Invest', permission: 'CreateInvestment', to: '/invest' },
+            { label: 'View Investments', permission: 'ViewInvestment', to: '/view-invest' }
+        ]
+    },
     {
+        key: 'property',
         label: 'Estate Management',
-        icon: 'pi pi-building',
-        items: []
+        icon: 'pi-building',
+        permission: null,
+        items: [
+            { label: 'Create Building', permission: 'CanCreateBuilding', to: '/create-building' },
+            { label: 'View Building', permission: 'ViewBuildings', to: '/view-buildings' },
+            { label: 'Create Building Unit', permission: 'CanCreateBuildingUnit', to: '/create-building-unit' },
+            { label: 'View Building Units', permission: 'ViewBuildingUnits', to: '/view-building-units' },
+            { label: 'Rent Building Units', permission: 'RentBuildingUnits', to: '/rent-building-units' },
+            { label: 'View Rent Building Units', permission: 'ViewRentBuildingUnits', to: '/view-building-rentals' }
+        ]
+    },
+    {
+        key: 'license',
+        label: 'License',
+        icon: 'pi-verified',
+        permission: null,
+        items: [
+            { label: 'Create License Package', permission: 'CanCreateLicensePackage', to: '/create-license-package' },
+            { label: 'View License Packages', permission: 'CanViewLicensePackages', to: '/view-license-packages' }
+        ]
+    },
+    {
+        key: 'account',
+        label: 'Account',
+        icon: 'pi-user',
+        permission: null,
+        items: [
+            { label: 'Institution Profile', permission: 'ViewInstitutionProfile', to: '/institution-profile/' + (userData?.institution_id || '') },
+            { label: 'User Profile', permission: 'ViewUserProfile', to: '/user-profile/' + (userData?.id || '') },
+            { label: 'System Logs', permission: 'ViewSystemLogs', to: '/audit-logs' }
+        ]
+    },
+    {
+        key: 'message',
+        label: 'Messages',
+        icon: 'pi-envelope',
+        permission: null,
+        items: [
+            { label: 'Compose Email', permission: 'ComposeMessage', to: '/upload-mail-receivers' },
+            { label: 'Compose SMS', permission: 'ComposeMessage', to: '/upload-mail-receivers' }
+        ]
+    },
+    {
+        key: 'logout',
+        label: 'Log Out',
+        icon: 'pi-sign-out',
+        to: '/logout',
+        permission: null,
+        isSubmenu: false
     }
-)
+];
 
+// Build menu items with permission filtering
+const buildMenuItems = (config) => {
+    const items = [];
 
+    // Always add Dashboard first
+    items.push({ label: 'Dashboard', icon: 'pi pi-fw pi-desktop', to: '/admin' });
 
-const logOut = ref({
-    label: 'Log Out',
-    icon: 'pi pi-sign-out',
-    to: '/logout'
-})
-
-
-
-if (commonService.checkPermissions('CanCreateInstitution')) {
-    institutionMenu.value.items.push({ label: 'Create Institution', icon: 'pi pi-fw pi-circle', to: '/create-institution' });
-}
-if (commonService.checkPermissions('CanViewInstitution')) {
-    institutionMenu.value.items.push({
-        label: 'View Institutions',
-        icon: 'pi pi-fw pi-circle',
-        to: '/view-institutions'
-    },);
-}
-
-if (commonService.checkPermissions('ApproveInstitution')) {
-    institutionMenu.value.items.push({
-        label: 'Approve Institutions',
-        icon: 'pi pi-fw pi-circle',
-        to: '/approve-business'
-    },);
-}
-
-if (commonService.checkPermissions('CanCreateBranch')) {
-    institutionMenu.value.items.push({ label: 'Create Branch', icon: 'pi pi-fw pi-circle', to: '/create-branch' });
-}
-
-if (commonService.checkPermissions('ViewBranches')) {
-    institutionMenu.value.items.push({
-        label: 'View Branches',
-        icon: 'pi pi-fw pi-circle',
-        to: '/view-branches'
-    },);
-}
-
-if (commonService.checkPermissions('CreateUser')) {
-    userMenu.value.items.push({
-        label: 'Create User',
-        icon: 'pi pi-fw pi-circle',
-        to: '/create-user'
-    });
-}
-
-if (commonService.checkPermissions('ViewUsers')) {
-    userMenu.value.items.push({
-        label: 'View Users',
-        icon: 'pi pi-fw pi-circle',
-        to: '/view-users'
-    });
-}
-
-if (commonService.checkPermissions('CreatedRole')) {
-    userMenu.value.items.push({
-        label: 'Create Role',
-        icon: 'pi pi-fw pi-circle',
-        to: '/create-role'
-    });
-}
-
-if (commonService.checkPermissions('ViewRoles')) {
-    userMenu.value.items.push(
-        {
-            label: 'View Roles',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-roles'
+    // Process each menu config in order
+    for (const menu of config) {
+        // Handle direct menu items (non-submenus)
+        if (!menu.items) {
+            if (!menu.permission || hasPermission(menu.permission)) {
+                items.push({
+                    label: menu.label,
+                    icon: menu.icon.startsWith('pi ') ? menu.icon : `pi pi-fw ${menu.icon}`,
+                    to: menu.to
+                });
+            }
+            continue;
         }
-    );
-}
 
-if (commonService.checkPermissions('CreateDefaultRoles')) {
-    userMenu.value.items.push(
-        {
-            label: 'Create Default Role',
-            icon: 'pi pi-fw pi-circle',
-            to: '/create-default-role'
+        // Handle submenus - filter items by permission
+        const filteredItems = menu.items
+            .filter(item => hasPermission(item.permission))
+            .map(item => ({
+                label: item.label,
+                icon: 'pi pi-fw pi-circle',
+                to: item.to
+            }));
+
+        // Only add submenu if it has visible items
+        if (filteredItems.length > 0) {
+            items.push({
+                label: menu.label,
+                icon: menu.icon.startsWith('pi ') ? menu.icon : `pi pi-fw ${menu.icon}`,
+                items: filteredItems
+            });
         }
-    );
-}
-if (commonService.checkPermissions('ViewDefaultRoles')) {
-    userMenu.value.items.push(
-        {
-            label: 'View Default Roles',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-default-roles'
-        }
-    );
-}
-
-if (commonService.checkPermissions('CreateMember')) {
-    memberMenu.value.items.push(
-        {
-            label: 'Create Member',
-            icon: 'pi pi-fw pi-circle',
-            to: '/create-member'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewMember')) {
-    memberMenu.value.items.push(
-        {
-            label: 'View Members',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-members'
-        }
-    );
-}
-
-if (commonService.checkPermissions('UploadMembers')) {
-    bulkMenu.value.items.push(
-        {
-            label: 'Upload Members',
-            icon: 'pi pi-fw pi-circle',
-            to: '/upload-members'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewUploadedMembers')) {
-    bulkMenu.value.items.push(
-        {
-            label: 'View Uploaded Members',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-uploaded-members'
-        }
-    );
-}
-
-if (commonService.checkPermissions('CanUploadBulkProducts')) {
-    bulkMenu.value.items.push(
-        {
-            label: 'Upload Products',
-            icon: 'pi pi-fw pi-circle',
-            to: '/upload-products'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewUploadBulkProductsBatch')) {
-    bulkMenu.value.items.push(
-        {
-            label: 'View Upload Products',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-uploaded-products'
-        }
-    );
-}
-
-
-if (commonService.checkPermissions('CanUploadBulkSales')) {
-    bulkMenu.value.items.push(
-        {
-            label: 'Upload Sales',
-            icon: 'pi pi-fw pi-circle',
-            to: '/upload-sales'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewUploadBulkSalesBatch')) {
-    bulkMenu.value.items.push(
-        {
-            label: 'View Uploaded Sales',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-uploaded-sales'
-        }
-    );
-}
-
-if (commonService.checkPermissions('BulkUploadBuildings')){
-    bulkMenu.value.items.push(
-        {
-            label: 'Upload Buildings',
-            icon: 'pi pi-fw pi-circle',
-            to: '/bulk-upload-buildings'
-        }
-    );
-
-}
-
-if (commonService.checkPermissions('BulkUploadBuildingUnits')){
-    bulkMenu.value.items.push(
-        {
-            label: 'Upload Building Units',
-            icon: 'pi pi-fw pi-circle',
-            to: '/bulk-upload-building-units'
-        }
-    );
-}
-
-if (commonService.checkPermissions('BulkUploadTenantsUnits')){
-    bulkMenu.value.items.push(
-        {
-            label: 'Upload Tenants Units',
-            icon: 'pi pi-fw pi-circle',
-            to: '/bulk-upload-tenants-room'
-        }
-    );
-}
-if (commonService.checkPermissions('ApproveBuildingBatch')){
-    bulkMenu.value.items.push(
-        {
-            label: 'Approve Buildings Batch',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-building-uploaded-batches'
-        }
-    );
-
-}
-if (commonService.checkPermissions('ApproveBuildingUnitBatch')){
-    bulkMenu.value.items.push(
-        {
-            label: 'Approve Building Units Batch',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-building-units-uploaded-batches'
-        }
-    );
-}
-if (commonService.checkPermissions('ApproveTenantUnitBatch')){
-    bulkMenu.value.items.push(
-        {
-            label: 'Approve Tenants Units Batch',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-tenants-rooms-uploaded-batches'
-        }
-    );
-}
-
-if (commonService.checkPermissions('CollectMoney')) {
-    collectionMenu.value.items.push(
-        {
-            label: 'Collect Money',
-            icon: 'pi pi-fw pi-circle',
-            to: '/collect-money'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewCollection')) {
-    collectionMenu.value.items.push(
-        {
-            label: 'View Collections',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-collected-money'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ApproveCollection')) {
-    collectionMenu.value.items.push(
-        {
-            label: 'Approve Collections',
-            icon: 'pi pi-fw pi-circle',
-            to: '/approve-collections'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ApprovedCollection')) {
-    collectionMenu.value.items.push(
-        {
-            label: 'Approved Collections',
-            icon: 'pi pi-fw pi-circle',
-            to: '/approved-collections'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewCommission')) {
-    commissionMenu.value.items.push(
-        {
-            label: 'View Commission',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-commissions'
-        }
-    );
-}
-
-if (commonService.checkPermissions('CreateProduct')) {
-    stockMenu.value.items.push(
-        {
-            label: 'Create Product',
-            icon: 'pi pi-fw pi-circle',
-            to: '/create-product'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewProducts')) {
-    stockMenu.value.items.push(
-        {
-            label: 'View Products',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-product'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewChartOfAccounts')) {
-    chartOfAccountMenu.value.items.push(
-        {
-            label: 'View Chart Of Accounts',
-            icon: 'pi pi-fw pi-circle',
-            to: '/chart-of-accounts'
-        }
-    );
-}
-
-if (commonService.checkPermissions('CreateLedger')) {
-    chartOfAccountMenu.value.items.push(
-        {
-            label: 'Create Ledger',
-            icon: 'pi pi-fw pi-circle',
-            to: '/create-ledger'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewGlAccounts')) {
-    chartOfAccountMenu.value.items.push(
-        {
-            label: 'GL accounts',
-            icon: 'pi pi-fw pi-circle',
-            to: '/gl-accounts'
-        }
-    );
-}
-
-if (commonService.checkPermissions('DebitCredit')) {
-    chartOfAccountMenu.value.items.push(
-        {
-            label: 'GL Debit/Credit',
-            icon: 'pi pi-fw pi-circle',
-            to: '/debit-credit-gl'
-        }
-    );
-}
-
-if (commonService.checkPermissions('GlOverView')) {
-    chartOfAccountMenu.value.items.push(
-        {
-            label: 'GL overview',
-            icon: 'pi pi-fw pi-circle',
-            to: '/gl-overview'
-        }
-    );
-}
-if (commonService.checkPermissions('ViewCntrlParams')) {
-    chartOfAccountMenu.value.items.push(
-        {
-            label: 'Control Accounts',
-            icon: 'pi pi-fw pi-circle',
-            to: '/cntrl-params'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewIncomeStatement')) {
-    chartOfAccountMenu.value.items.push(
-        {
-            label: 'Income Statement',
-            icon: 'pi pi-fw pi-circle',
-            to: '/income-statement'
-        }
-    )
-}
-
-if (commonService.checkPermissions('ViewBalanceSheet')) {
-    chartOfAccountMenu.value.items.push(
-        {
-            label: 'Balance Sheet',
-            icon: 'pi pi-fw pi-circle',
-            to: '/gl-balance-sheet'
-        }
-    )
-}
-
-if (commonService.checkPermissions('CreateExpenses')) {
-    chartOfAccountMenu.value.items.push(
-        {
-            label: 'Expenses',
-            icon: 'pi pi-fw pi-circle',
-            to: '/create-expense'
-        }
-    )
-}
-
-if (commonService.checkPermissions('ViewProductsReport')) {
-    reportMenu.value.items.push(
-        {
-            label: 'Products Report',
-            icon: 'pi pi-fw pi-circle',
-            to: '/products-report'
-        }
-    )
-}
-
-if (commonService.checkPermissions('ViewSalesReport')) {
-    reportMenu.value.items.push(
-        {
-            label: 'Sales Transaction Report',
-            icon: 'pi pi-fw pi-circle',
-            to: '/sales-report'
-        }
-    )
-}
-
-
-if (commonService.checkPermissions('ViewSalesReport')) {
-    reportMenu.value.items.push(
-        {
-            label: 'Sales Report',
-            icon: 'pi pi-fw pi-circle',
-            to: '/sales-item-report'
-        }
-    )
-}
-
-
-
-if (commonService.checkPermissions('ViewCashBook')) {
-    reportMenu.value.items.push(
-        {
-            label: 'Cash Book',
-            icon: 'pi pi-fw pi-circle',
-            to: '/cash-book'
-        }
-    )
-}
-
-
-if (commonService.checkPermissions('ViewVatPayable')) {
-    reportMenu.value.items.push(
-        {
-            label: 'VAT Payable',
-            icon: 'pi pi-fw pi-circle',
-            to: '/vat-payable-report'
-        }
-    )
-}
-
-if (commonService.checkPermissions('RentArrearsReport')) {
-    reportMenu.value.items.push(
-        {
-            label: 'Rent Arrears Report',
-            icon: 'pi pi-fw pi-circle',
-            to: '/rental-arrears-report'
-        }
-    )
-}
-
-if (commonService.checkPermissions('LandLoadPaymentReport')){
-        reportMenu.value.items.push(
-        {
-            label: 'Land Load Payment Report',
-            icon: 'pi pi-fw pi-circle',
-            to: '/land-load-payment-report'
-        }
-    )
-}
-
-
-if (commonService.checkPermissions('ViewReceivables')) {
-    payableReceivable.value.items.push(
-        {
-            label: 'Receivable',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-receivables'
-        }
-    )
-}
-
-if (commonService.checkPermissions('ViewPayables')) {
-    payableReceivable.value.items.push(
-        {
-            label: 'Payable',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-payable'
-        }
-    )
-}
-
-if (commonService.checkPermissions('ViewInstitutionProfile')) {
-    accountMenu.value.items.push(
-        {
-            label: 'Institution Profile',
-            icon: 'pi pi-fw pi-circle',
-            to: '/institution-profile/' + commonService.getStorage().userData?.institution_id
-        }
-    )
-}
-
-
-if (commonService.checkPermissions('ViewUserProfile')) {
-    accountMenu.value.items.push(
-        {
-            label: 'User Profile',
-            icon: 'pi pi-fw pi-circle',
-            to: '/user-profile/' + commonService.getStorage().userData?.id
-        }
-    )
-}
-
-if (commonService.checkPermissions('ViewSystemLogs')) {
-    accountMenu.value.items.push(
-        {
-            label: 'System Logs',
-            icon: 'pi pi-fw pi-circle',
-            to: '/audit-logs'
-        }
-    )
-}
-
-if (commonService.checkPermissions('CanCreateLicensePackage')) {
-    licenseMenu.value.items.push(
-        {
-            label: 'Create License Package',
-            icon: 'pi pi-fw pi-circle',
-            to: '/create-license-package'
-        }
-    );
-}
-
-if (commonService.checkPermissions('CanViewLicensePackages')) {
-    licenseMenu.value.items.push(
-        {
-            label: 'View License Packages',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-license-packages'
-        }
-    );
-}
-
-if (commonService.checkPermissions('CanCreateProject')) {
-    investMentMenu.value.items.push(
-        {
-            label: 'Create Project',
-            icon: 'pi pi-fw pi-circle',
-            to: '/create-project'
-        }
-    );
-}
-if (commonService.checkPermissions('ViewProjects')) {
-    investMentMenu.value.items.push(
-        {
-            label: 'View Project',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-projects'
-        }
-    );
-}
-
-if (commonService.checkPermissions('CreateInvestment')) {
-    investMentMenu.value.items.push(
-        {
-            label: 'Invest',
-            icon: 'pi pi-fw pi-circle',
-            to: '/invest'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewInvestment')) {
-    investMentMenu.value.items.push(
-        {
-            label: 'View Investments',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-invest'
-        }
-    );
-}
-
-
-if (commonService.checkPermissions('CanCreateBuilding')) {
-    PropertyMenu.value.items.push(
-        {
-            label: 'Create Building',
-            icon: 'pi pi-fw pi-circle',
-            to: '/create-building'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewBuildings')) {
-    PropertyMenu.value.items.push(
-        {
-            label: 'View Building',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-buildings'
-        }
-    );
-}
-
-if (commonService.checkPermissions('CanCreateBuildingUnit')) {
-    PropertyMenu.value.items.push(
-        {
-            label: 'Create Building Unit',
-            icon: 'pi pi-fw pi-circle',
-            to: '/create-building-unit'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewBuildingUnits')) {
-    PropertyMenu.value.items.push(
-        {
-            label: 'View Building Units',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-building-units'
-        }
-    );
-}
-
-if (commonService.checkPermissions('RentBuildingUnits')) {
-    PropertyMenu.value.items.push(
-        {
-            label: 'Rent Building Units',
-            icon: 'pi pi-fw pi-circle',
-            to: '/rent-building-units'
-        }
-    );
-}
-
-
-if (commonService.checkPermissions('ViewRentBuildingUnits')) {
-    PropertyMenu.value.items.push(
-        {
-            label: 'View Rent Building Units',
-            icon: 'pi pi-fw pi-circle',
-            to: '/view-building-rentals'
-        }
-    );
-}
-
-if (commonService.checkPermissions('CanCreateInvoice')) {
-    invoiceMenu.value.items.push(
-        {
-            label: 'Create Invoice',
-            icon: 'pi pi-fw pi-circle',
-            to: '/proforma-invoice'
-        }
-    );
-}
-
-if (commonService.checkPermissions('ViewInvoice')) {
-    invoiceMenu.value.items.push(
-        {
-            label: 'View Invoices',
-            icon: 'pi pi-fw pi-circle',
-            to: '/View-proforma-invoices'
-        }
-    );
-}
-
-
-
-
-
-
-
-
-
-
-const model = ref([{ items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-desktop', to: '/admin' },] }]);
-
-if (commonService.checkPermissions('PointOfSale')) {
-    model.value[0].items.push(pointOfSaleMenu.value);
-}
-
-if (commonService.checkPermissions('ViewSales')) {
-    model.value[0].items.push(salesMenu.value);
-}
-
-if (institutionMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(institutionMenu.value);
-}
-
-if (userMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(userMenu.value);
-}
-
-if (memberMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(memberMenu.value);
-}
-if (bulkMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(bulkMenu.value);
-}
-
-if (collectionMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(collectionMenu.value);
-}
-
-if (commissionMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(commissionMenu.value);
-}
-
-if (reportMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(reportMenu.value);
-}
-
-if (invoiceMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(invoiceMenu.value);
-}
-
-if (stockMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(stockMenu.value);
-}
-
-if (chartOfAccountMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(chartOfAccountMenu.value);
-}
-
-if (payableReceivable?.value?.items?.length > 0) {
-    model.value[0].items.push(payableReceivable.value);
-}
-
-if (investMentMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(investMentMenu.value);
-}
-
-if (PropertyMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(PropertyMenu.value);
-}
-
-if (licenseMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(licenseMenu.value);
-}
-
-if (accountMenu?.value?.items?.length > 0) {
-    model.value[0].items.push(accountMenu.value);
-}
-
-model.value[0].items.push(logOut.value);
-
+    }
+
+    return items;
+};
+
+// Computed menu model - rebuilds only when needed
+const model = computed(() => {
+    return [{ items: buildMenuItems(menuConfig) }];
+});
 </script>
 
 <template>
@@ -897,16 +301,6 @@ model.value[0].items.push(logOut.value);
             <app-menu-item v-if="!item.separator" :item="item" :index="i"></app-menu-item>
             <li v-if="item.separator" class="menu-separator"></li>
         </template>
-        <!-- <template>
-           <app-menu-item ></app-menu-item>
-           <li class="menu-separator">Log Out</li>
-       </template> -->
-        <!-- <li>
-           <a href="https://www.primefaces.org/primeblocks-vue/#/" target="_blank">
-               <i class="pi pi-sign-out"></i>
-               Log out
-           </a>
-      </li>  -->
     </ul>
 </template>
 

@@ -13,7 +13,8 @@ const commonService = new CommonService();
  const logOut = () => {
     commonService.genericRequest('log-out', 'get', true, {}).then((response) => {
         if (response.status) {
-            commonService.removeStorage()
+            commonService.removeStorage();
+            commonService.clearPermissionsCache(); // Clear cached permissions on logout
             commonService.redirect(router,"/auth/login");
         } else {
             commonService.showError(toast, response.message);
@@ -30,6 +31,6 @@ const commonService = new CommonService();
 <template>
     <div className="card">
         <h5>Log Out</h5>
-        <p>Use this page to start from scratch and place your custom content.</p>
+        <p>Logging you out in a few seconds...</p>
     </div>
 </template>

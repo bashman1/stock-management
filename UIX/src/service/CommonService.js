@@ -651,12 +651,36 @@ export default class CommonService {
 
 
     /**
+     * caching for permissions to avoid repeated localStorage parsing and array iteration
+     */
+    _permissionsCache = null;
+
+    /**
+     * Get cached permissions or load from storage
+     * @returns {Array} permissions array
+     */
+    getPermissions = () => {
+        if (this._permissionsCache === null) {
+            const storage = this.getStorage();
+            this._permissionsCache = storage?.userData?.permissions || [];
+        }
+        return this._permissionsCache;
+    }
+
+    /**
+     * Clear permissions cache (call after login/logout)
+     */
+    clearPermissionsCache = () => {
+        this._permissionsCache = null;
+    }
+
+    /**
      * checking if permission exists
      * @param {*} permission
      * @returns
      */
-    checkPermissions=(permission)=>{
-        let permissions=this.getStorage()?.userData?.permissions;
+    checkPermissions = (permission) => {
+        const permissions = this.getPermissions();
         return permissions.some(element => element.name == permission);
     }
 

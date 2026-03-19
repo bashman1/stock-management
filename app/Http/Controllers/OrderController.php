@@ -625,7 +625,6 @@ class OrderController extends Controller
     }
 
 
-
     public function efrisCreateSalesReceipt($refNo, $date, $efrisProductDetails,)
     {
         try {
@@ -664,11 +663,7 @@ class OrderController extends Controller
                     "buyerReferenceNo" => ""
                 ],
                 "goodsDetails" => $efrisProductDetails
-
             ];
-
-
-
 
             log::info($payload);
 
