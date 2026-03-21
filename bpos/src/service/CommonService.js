@@ -660,16 +660,36 @@ export default class CommonService {
         return permissions.some(element => element.name == permission);
     }
 
-    formatDate=(date)=> {
-        const pad = (num) => String(num).padStart(2, '0');
-        const day = pad(date.getDate());
-        const month = pad(date.getMonth() + 1); // Months are zero-based
-        const year = date.getFullYear();
-        const hours = pad(date.getHours());
-        const minutes = pad(date.getMinutes());
-        const seconds = pad(date.getSeconds());
-        return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
-    }
+    // formatDate=(date)=> {
+    //     const pad = (num) => String(num).padStart(2, '0');
+    //     const day = pad(date.getDate());
+    //     const month = pad(date.getMonth() + 1); // Months are zero-based
+    //     const year = date.getFullYear();
+    //     const hours = pad(date.getHours());
+    //     const minutes = pad(date.getMinutes());
+    //     const seconds = pad(date.getSeconds());
+    //     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    // }
+
+    formatDate = (date) => {
+    if (!date) return '';
+
+    // Convert to Date if it's not already
+    const d = (date instanceof Date) ? date : new Date(date);
+
+    if (isNaN(d)) return ''; // invalid date guard
+
+    const pad = (num) => String(num).padStart(2, '0');
+
+    const day = pad(d.getDate());
+    const month = pad(d.getMonth() + 1);
+    const year = d.getFullYear();
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    const seconds = pad(d.getSeconds());
+
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+};
 
 
     generateUUID=()=> {

@@ -9,6 +9,15 @@ const commonService = new CommonService();
 // Data refs
 const efrisQueue = ref(null);
 
+// Modal refs
+const showDetailsDialog = ref(false);
+const selectedRecord = ref(null);
+
+// Retry confirmation dialog
+const showRetryDialog = ref(false);
+const retryRecordId = ref(null);
+const retryLoading = ref(false);
+
 // Pagination
 const rowsPerPage = ref(15);
 const currentPage = ref(1);
@@ -109,6 +118,62 @@ const clearFilters = () => {
     action.value = null;
     currentPage.value = 1;
     getEfrisOutBound();
+};
+
+// View details function
+const viewDetails = (data) => {
+    selectedRecord.value = data;
+    showDetailsDialog.value = true;
+};
+
+// Parse JSON safely
+const parseJson = (jsonString) => {
+    if (!jsonString) return null;
+    try {
+        return JSON.parse(jsonString);
+    } catch (e) {
+        return null;
+    }
+};
+
+// Get status info
+const getStatusInfo = (record) => {
+    const response = parseJson(record.response);
+    if (!response || !response.status) {
+        return { success: null, returnCode: record.status, returnMessage: record.status };
+    }
+    return response.status;
+};
+
+// Retry functions
+const confirmRetry = (data) => {
+    retryRecordId.value = data.id;
+    showRetryDialog.value = true;
+};
+
+const retryTransaction = () => {
+    if (!retryRecordId.value) return;
+
+    retryLoading.value = true;
+    const postData = { id: retryRecordId.value };
+
+    commonService.genericRequest('consume-efris-outbound', 'POST', true, postData)
+        .then((response) => {
+            if (response.status) {
+                commonService.showSuccess(toast, 'Transaction retry initiated successfully');
+                getEfrisOutBound();
+            } else {
+                commonService.showError(toast, response.message || 'Failed to retry transaction');
+            }
+        })
+        .catch((error) => {
+            commonService.showError(toast, 'Error retrying transaction: ' + error.message);
+        })
+        .finally(() => {
+            retryLoading.value = false;
+            showRetryDialog.value = false;
+            retryRecordId.value = null;
+        });
 };
 
 // Initialize on mount
@@ -258,17 +323,108 @@ onMounted(() => {
 
             <Column field="created_at" header="Date" style="min-width: 12rem">
                 <template #body="{ data }">
-                    {{ data.created_at }}
+                    {{ commonService.formatDate(data.created_at) }}
                 </template>
             </Column>
 
             <Column headerStyle="min-width: 10rem;">
                 <template #body="{ data }">
-                    <Button icon="pi pi-eye" v-tooltip="'View Details'" class="p-button-primary mr-2" />
-                    <Button icon="pi pi-refresh" v-tooltip="'Retry'" class="p-button-warning mr-2" v-if="!data.is_sent" />
+                    <Button icon="pi pi-eye" v-tooltip="'View Details'" class="p-button-primary mr-2" @click="viewDetails(data)" />
+                    <Button icon="pi pi-refresh" v-tooltip="'Retry'" class="p-button-warning mr-2" v-if="!data.is_sent" @click="confirmRetry(data)" />
                     <Button icon="pi pi-download" v-tooltip="'Download'" class="p-button-success mr-2" />
                 </template>
             </Column>
         </DataTable>
+
+        <!-- Retry Confirmation Dialog -->
+        <Dialog v-model:visible="showRetryDialog" modal header="Confirm Retry" :style="{ width: '30vw' }">
+            <div class="flex align-items-center justify-content-center mb-3">
+                <i class="pi pi-exclamation-triangle mr-2 text-4xl text-yellow-500"></i>
+                <span>Are you sure you want to retry this transaction?</span>
+            </div>
+            <div class="flex justify-content-end gap-2">
+                <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="showRetryDialog = false" :disabled="retryLoading" />
+                <Button label="Retry" icon="pi pi-refresh" class="p-button-warning" @click="retryTransaction" :loading="retryLoading" />
+            </div>
+        </Dialog>
+
+        <!-- View Details Dialog -->
+        <Dialog v-model:visible="showDetailsDialog" modal header="Transaction Details" :style="{ width: '80vw' }" :maximizable="true">
+            <div v-if="selectedRecord" class="grid">
+                <!-- Basic Info -->
+                <div class="col-12 md:col-6">
+                    <Panel header="Basic Information" class="mb-2">
+                        <div class="grid">
+                            <div class="col-6 font-bold">Reference No:</div>
+                            <div class="col-6">{{ selectedRecord.reference_no }}</div>
+                            <div class="col-6 font-bold">Status:</div>
+                            <div class="col-6">
+                                <Tag :severity="getStatusInfo(selectedRecord).success === true ? 'success' : getStatusInfo(selectedRecord).success === false ? 'danger' : 'warn'">
+                                    {{ getStatusInfo(selectedRecord).returnMessage || selectedRecord.status }}
+                                </Tag>
+                            </div>
+                            <div class="col-6 font-bold">Return Code:</div>
+                            <div class="col-6">{{ getStatusInfo(selectedRecord).returnCode }}</div>
+                            <div class="col-6 font-bold">URI:</div>
+                            <div class="col-6">{{ selectedRecord.uri }}</div>
+                            <div class="col-6 font-bold">HTTP Method:</div>
+                            <div class="col-6">{{ selectedRecord.http_method }}</div>
+                            <div class="col-6 font-bold">Sent:</div>
+                            <div class="col-6">{{ selectedRecord.is_sent ? 'Yes' : 'No' }}</div>
+                            <div class="col-6 font-bold">Created:</div>
+                            <div class="col-6">{{ selectedRecord.created_at }}</div>
+                        </div>
+                    </Panel>
+                </div>
+
+                <!-- Request/Response Status -->
+                <div class="col-12 md:col-6">
+                    <Panel header="Response Summary" class="mb-2">
+                        <div class="grid">
+                            <div class="col-6 font-bold">Success:</div>
+                            <div class="col-6">
+                                <Tag v-if="getStatusInfo(selectedRecord).success === true" severity="success">SUCCESS</Tag>
+                                <Tag v-else-if="getStatusInfo(selectedRecord).success === false" severity="danger">FAILED</Tag>
+                                <Tag v-else severity="warn">PENDING</Tag>
+                            </div>
+                            <div class="col-6 font-bold">Message:</div>
+                            <div class="col-6">{{ getStatusInfo(selectedRecord).returnMessage || 'N/A' }}</div>
+                        </div>
+                    </Panel>
+                </div>
+
+                <!-- Payload -->
+                <div class="col-12">
+                    <Panel header="Request Payload" toggleable collapsed class="mb-2">
+                        <pre class="p-3 surface-50 border-round" style="max-height: 400px; overflow: auto;">{{ parseJson(selectedRecord.payload) ? JSON.stringify(parseJson(selectedRecord.payload), null, 2) : selectedRecord.payload }}</pre>
+                    </Panel>
+                </div>
+
+                <!-- Response -->
+                <div class="col-12">
+                    <Panel header="Response" toggleable collapsed class="mb-2">
+                        <pre class="p-3 surface-50 border-round" style="max-height: 400px; overflow: auto;">{{ parseJson(selectedRecord.response) ? JSON.stringify(parseJson(selectedRecord.response), null, 2) : selectedRecord.response || 'No response yet' }}</pre>
+                    </Panel>
+                </div>
+
+                <!-- Additional Details -->
+                <div class="col-12 md:col-6" v-if="selectedRecord.order_id">
+                    <Panel header="Order Info" class="mb-2">
+                        <div class="grid">
+                            <div class="col-6 font-bold">Order ID:</div>
+                            <div class="col-6">{{ selectedRecord.order_id }}</div>
+                            <div class="col-6 font-bold">Invoice ID:</div>
+                            <div class="col-6">{{ selectedRecord.invoice_id || 'N/A' }}</div>
+                        </div>
+                    </Panel>
+                </div>
+
+                <div class="col-12 md:col-6" v-if="selectedRecord.description">
+                    <Panel header="Description" class="mb-2">
+                        <p>{{ selectedRecord.description }}</p>
+                    </Panel>
+                </div>
+            </div>
+        </Dialog>
     </div>
 </template>

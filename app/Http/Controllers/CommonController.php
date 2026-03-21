@@ -8,9 +8,17 @@ use App\Models\NotificationType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\EfrisApiService;
 
 class CommonController extends Controller
 {
+
+    protected EfrisApiService $efrisService;
+
+    public function __construct(EfrisApiService $efrisService)
+    {
+        $this->efrisService = $efrisService;
+    }
 
     public function getDashboardStats()
     {
@@ -331,6 +339,56 @@ class CommonController extends Controller
         } catch (\Throwable $th) {
             Log::error("Error fetching EfrisOutBound: " . $th->getMessage());
             return $this->genericResponse(false, $th->getMessage(), 500, [], "getEfrisOutBound", $request);
+        }
+    }
+
+
+    public function consumePaddingEfrisOutBound(Request $request){
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+
+            $message = "";
+
+            $outBound = EfrisOutBound::where(['is_sent' => false, 'id' => $request->id, 'institution_id' => $userData->institution_id, 'branch_id' => $userData->branch_id])->first();
+
+            if (!$outBound) {
+                return $this->genericResponse(false, "EfrisOutBound record not found or already sent", 404, [], "consumePaddingEfrisOutBound", $request);
+            }
+
+            $response = $this->efrisService->request(
+                $outBound['http_method'],
+                $outBound['uri'],
+                [],
+                $outBound['payload'],
+            );
+
+            $res = $response->json();
+
+            if (isset($res) && isset($res['status'])){
+
+                if($res['status']['success']){
+                    $message = "EfrisOutBound record consumed successfully and sent to Efris";
+                }else{
+                    $message = "EfrisOutBound record consumed but failed to send to Efris: " . ($res['status']['returnMessage'] ?? 'Unknown error');
+                }
+                $outBound->is_sent = $res['status']['success'];
+                $outBound->status = "Active";
+                $outBound->return_code = $res['status']['returnCode'];
+                $outBound->return_message = $res['status']['returnMessage'];
+            }else{
+                $message = "EfrisOutBound record consumed but received invalid response from Efris";
+            }
+
+            $outBound->response = $res;
+
+            $outBound->save();
+
+            return $this->genericResponse(true, $message, 200, $outBound, "consumePaddingEfrisOutBound", $request);
+
+        }catch (\Throwable $th) {
+            Log::error("Error consuming pending EfrisOutBound: " . $th->getMessage());
+            return $this->genericResponse(false, $th->getMessage(), 500, [], "consumePaddingEfrisOutBound", $request);
         }
     }
 

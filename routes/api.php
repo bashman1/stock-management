@@ -279,4 +279,5 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get("efris-commodity-categories", [ProductCategoryController::class, "iteratePages"]);
     Route::post("search-efris-commodity-categories", [ProductCategoryController::class, "searchEfrisCommodityCategories"]);
     Route::get("efris-outbound-transactions", [CommonController::class, "getEfrisOutBound"]);
+    Route::post("consume-efris-outbound", [CommonController::class, "consumePaddingEfrisOutBound"]);
 });
