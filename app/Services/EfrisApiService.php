@@ -7,6 +7,7 @@ use Illuminate\Http\Client\Response;
 use App\Models\EfrisOutBound;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class EfrisApiService
 {
@@ -46,6 +47,77 @@ class EfrisApiService
         };
 
         return $res;
+    }
+
+
+    public function queueRequest(
+        string $method,
+        string $endpoint,
+        array $query = [],
+        array $data = [],
+        Object $institutionData
+    ) {
+        try {
+            $userData = Auth::user();
+            $uuid = Str::uuid()->toString();
+            $res = null;
+            $type = null;
+            $payload = [
+                'http_method' => $method,
+                'trnsaction_type' => $endpoint,
+                'reference_no' => $uuid,
+                'payload' => $data,
+                'response' => null,
+                'order_id' => null,
+                'invoice_id' => null,
+                'product_id' => null,
+                'stock_id' => null,
+                'stock_history_id' => null,
+                'status' => '',
+                'is_sent' => false,
+                'uri' => $endpoint,
+                'institution_id' => $institutionData->id,
+                'branch_id' => $userData->branch_id,
+                'created_by' => $userData->id,
+                'created_on' => now(),
+            ];
+
+            if (!empty($institutionData)) {
+                if ($institutionData->call_efris_direct) {
+                    $response = $this->request($method, $endpoint, $query, $data);
+                    $res = $response->json();
+                    $payload['response'] = $res;
+                    $payload['is_sent'] = true;
+                    $payload['status'] = "Active";
+                    $payload['success'] = $res->status->success;
+                    $payload['return_code'] = $res->status->returnCode;
+                    $payload['return_message'] = $res->status->returnMessage;
+                    $type = "Direct";
+                    // log::info("**************** EFRIS RESPONSE => Creating receipt ****************");
+                    // log::info($response->json());
+                } else {
+
+                        $payload['status'] = "Pending";
+                        $type = "Queued";
+                        // log::info("**************** EFRIS RESPONSE => Queued for processing ****************");
+                        // log::info($payload);
+
+                }
+            }
+            $this->createEfrisOutBoundRecord($payload);
+            // $payload = [
+            //     'http_method' => strtoupper($method),
+            //     'uri' => $endpoint,
+            //     'payload' => json_encode($data),
+            //     'is_sent' => false,
+            // ];
+
+            return ['res' => $res, 'type'=> $type];
+
+            // $this->createEfrisOutBoundRecord($payload);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
 
@@ -104,7 +176,7 @@ class EfrisApiService
             //     'created_on' => now(),
             // ];
 
-            $outBound = EfrisOutBound::updateOrCreate(
+            $outBound = EfrisOutBound::create(
                 // ['id' => $id],
                 $data
             );

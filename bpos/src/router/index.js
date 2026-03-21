@@ -719,7 +719,7 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
-                        {
+                {
                     path: '/view-invest',
                     name: 'ViewInvestments',
                     component: () => import('@/views/pages/investment/ViewInvestments.vue'),
@@ -727,6 +727,15 @@ const router = createRouter({
                         requiresAuth: true, // This route requires authentication
                     },
                 },
+                {
+                    path: '/efris-transactions',
+                    name: 'EfrisTransactions',
+                    component: () => import('@/views/pages/stock-management/EfrisQueue.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+
             ]
         },
         {

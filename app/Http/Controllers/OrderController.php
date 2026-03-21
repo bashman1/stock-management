@@ -631,7 +631,7 @@ class OrderController extends Controller
             $institutionData = $this->getUserInstitution();
             $user = $this->getUserLogin();
             $payload = [
-                "referenceNo" => $refNo,
+                "referenceNo" => (string) $refNo,
                 "invoiceDiscountTotal" => "",
                 "basicInformation" => [
                     "invoiceNo" => "",
@@ -665,15 +665,18 @@ class OrderController extends Controller
                 "goodsDetails" => $efrisProductDetails
             ];
 
-            log::info($payload);
+            // log::info($payload);
 
             // $response = $efrisApiService->request('GET', '1033614630/auth/server-time', [],[]);
-            $response = $this->efrisService->request('POST', $institutionData->tin . '/invoices/create', [], $payload);
+            // $response = $this->efrisService->request('POST', $institutionData->tin . '/invoices/create', [], $payload);
+            $response = $this->efrisService->queueRequest('POST', $institutionData->tin . '/invoices/create', [], $payload, $institutionData);
+
+            // if ($institutionData->)
 
 
             log::info("**************** EFRIS RESPONSE => Creating receipt ****************");
             log::info($response);
-            return $response->json();
+            return $response['res'];
         } catch (\Throwable $th) {
             throw $th;
         }

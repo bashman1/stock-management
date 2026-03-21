@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EfrisOutBound;
 use App\Models\Notification;
 use App\Models\NotificationType;
 use Illuminate\Http\Request;
@@ -254,5 +255,83 @@ class CommonController extends Controller
         }
     }
 
+    /**
+     * Get paginated EfrisOutBound records with search and filtering
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getEfrisOutBound(Request $request)
+    {
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+
+            // Get pagination parameters
+            $perPage = $request->input('per_page', 15);
+            $page = $request->input('page', 1);
+
+            // Build query
+            $query = EfrisOutBound::query();
+
+            // Apply institution and branch filtering for non-admin users
+            if ($isNotAdmin) {
+                $query->where('institution_id', $userData->institution_id)
+                      ->where('branch_id', $userData->branch_id);
+            }
+
+            // Search functionality
+            if ($request->has('search') && $request->search) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('reference_no', 'like', "%{$search}%")
+                      ->orWhere('trnsaction_type', 'like', "%{$search}%")
+                      ->orWhere('status', 'like', "%{$search}%")
+                      ->orWhere('action', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%")
+                      ->orWhere('uri', 'like', "%{$search}%");
+                });
+            }
+
+            // Filter by status
+            if ($request->has('status') && $request->status) {
+                $query->where('status', $request->status);
+            }
+
+            // Filter by is_sent
+            if ($request->has('is_sent') && $request->is_sent !== null && $request->is_sent !== '') {
+                $query->where('is_sent', $request->is_sent);
+            }
+
+            // Filter by transaction type
+            if ($request->has('trnsaction_type') && $request->trnsaction_type) {
+                $query->where('trnsaction_type', 'like', "%{$request->trnsaction_type}%");
+            }
+
+            // Filter by action
+            if ($request->has('action') && $request->action) {
+                $query->where('action', 'like', "%{$request->action}%");
+            }
+
+            // Filter by date range
+            if ($request->has('start_date') && $request->start_date) {
+                $query->whereDate('created_on', '>=', $request->start_date);
+            }
+            if ($request->has('end_date') && $request->end_date) {
+                $query->whereDate('created_on', '<=', $request->end_date);
+            }
+
+            // Order by created_on descending (most recent first)
+            $query->orderBy('id', 'desc');
+
+            // Paginate results
+            $efrisOutBound = $query->paginate($perPage, ['*'], 'page', $page);
+
+            return $this->genericResponse(true, "EfrisOutBound records retrieved successfully", 200, $efrisOutBound, "getEfrisOutBound", $request);
+        } catch (\Throwable $th) {
+            Log::error("Error fetching EfrisOutBound: " . $th->getMessage());
+            return $this->genericResponse(false, $th->getMessage(), 500, [], "getEfrisOutBound", $request);
+        }
+    }
 
 }
