@@ -144,6 +144,15 @@ const investMentMenu = ref(
 )
 
 
+const efrisMenu = ref(
+    {
+        label: 'EFRIS',
+        icon: 'pi pi-box',
+        items: []
+    }
+)
+
+
 
 const logOut = ref({
     label: 'Log Out',
@@ -664,6 +673,15 @@ if (commonService.checkPermissions('ViewInvoice')) {
     );
 }
 
+if (commonService.checkPermissions('EfrisReconciliations')) {
+    efrisMenu.value.items.push(
+        {
+            label: 'Efris Queue',
+            icon: 'pi pi-fw pi-circle',
+            to: '/efris-transactions'
+        }
+    );
+}
 
 
 
@@ -734,6 +752,10 @@ if (licenseMenu?.value?.items?.length > 0) {
 
 if (accountMenu?.value?.items?.length > 0) {
     model.value[0].items.push(accountMenu.value);
+}
+
+if (efrisMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(efrisMenu.value);
 }
 
 model.value[0].items.push(logOut.value);

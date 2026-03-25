@@ -207,6 +207,7 @@ onMounted(() => {
                         showClear
                         @change="onFilterChange"
                     ></Dropdown>
+                    <label for="status">Status</label>
                 </span>
                 <!-- <span class="p-float-label mr-2">
                     <Dropdown
@@ -240,6 +241,7 @@ onMounted(() => {
                 </span> -->
                 <span class="p-float-label mr-2">
                     <InputText type="text" id="search" v-model="searchKeyWord" placeholder="Search..." @keyup.enter="searchRecords" />
+                    <label for="search">Search</label>
                 </span>
                 <Button @click="searchRecords" label="SEARCH" icon="pi pi-search" class="mr-2" />
                 <Button @click="clearFilters" label="CLEAR" icon="pi pi-times" class="p-button-outlined p-button-secondary" />
@@ -287,6 +289,8 @@ onMounted(() => {
                 </template>
             </Column> -->
 
+
+
             <Column field="status" header="Status" style="min-width: 10rem">
                 <template #body="{ data }">
                     <Tag :severity="data.status === 'Completed' ? 'success' : data.status === 'Pending' ? 'warn' : data.status === 'Failed' ? 'danger' : 'info'">
@@ -295,17 +299,17 @@ onMounted(() => {
                 </template>
             </Column>
 
-            <!-- <Column field="action" header="Action" style="min-width: 10rem">
+            <Column field="action" header="Return Code" style="min-width: 10rem">
                 <template #body="{ data }">
-                    {{ data.action }}
+                    {{ data.return_code }}
                 </template>
-            </Column> -->
+            </Column>
 
-            <!-- <Column field="description" header="Description" style="min-width: 15rem">
+            <Column field="description" header="Message" style="min-width: 15rem">
                 <template #body="{ data }">
-                    {{ data.description }}
+                    {{ data.return_message }}
                 </template>
-            </Column> -->
+            </Column>
 
             <Column field="is_sent" header="Sent" style="min-width: 8rem">
                 <template #body="{ data }">
@@ -331,7 +335,7 @@ onMounted(() => {
                 <template #body="{ data }">
                     <Button icon="pi pi-eye" v-tooltip="'View Details'" class="p-button-primary mr-2" @click="viewDetails(data)" />
                     <Button icon="pi pi-refresh" v-tooltip="'Retry'" class="p-button-warning mr-2" v-if="!data.is_sent" @click="confirmRetry(data)" />
-                    <Button icon="pi pi-download" v-tooltip="'Download'" class="p-button-success mr-2" />
+                    <!-- <Button icon="pi pi-download" v-tooltip="'Download'" class="p-button-success mr-2" /> -->
                 </template>
             </Column>
         </DataTable>
