@@ -441,6 +441,8 @@ class ProductController extends Controller
         $cash = GlAccounts::where('acct_no', $cgl)->first();
 
         $sgl = str_replace('***', $branch->code, $sti->param_value);
+
+        log::info("**************** SGL ****************=>>   " . $sgl);
         $stock = GlAccounts::where('acct_no', $sgl)->first();
 
         $piagl = str_replace('***', $branch->code, $pia->param_value);

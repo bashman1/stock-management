@@ -289,6 +289,8 @@ class InstitutionController extends Controller
             $stock->save();
         }
 
+        $this->createBranchGlAccounts($request->institution_id, $branch->code, $branch->id);
+
         DB::commit();
         return $this->genericResponse(true, "Branch created successfully", 201, $branch, "createBranch", $request);
     }
