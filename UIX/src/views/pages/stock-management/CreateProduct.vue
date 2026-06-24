@@ -119,10 +119,19 @@ const paymentMethodOptions=ref([
 
 const paymentMethod=ref( {id:1, name: "Cash", value:"CASH"})
 
-const weight = ref(null);
-const weightUnit = ref(null);
-const weightPrice = ref(null);
+// Additional (non-base) units of measure. The base unit is the "Measurement Unit"
+// dropdown above with conversion_factor = 1. Each extra row converts to the base
+// unit via conversion_factor (base units contained in one of this unit).
+const additionalUnits = ref([]);
 const src = ref([]);
+
+const addUnitRow = () => {
+    additionalUnits.value.push({ unit: null, conversion_factor: null, purchase_price: null, selling_price: null });
+};
+
+const removeUnitRow = (index) => {
+    additionalUnits.value.splice(index, 1);
+};
 
 
 // ********************************************************
@@ -209,6 +218,40 @@ const onSubmit= ()=>{
         return
     }
 
+    // Build the units of measure: the base unit (the "Measurement Unit" dropdown
+    // with conversion_factor 1) plus any additional configured units.
+    const baseUnit = {
+        measurement_unit_id: measurementUnit?.value?.id,
+        conversion_factor: 1,
+        purchase_price: Number(purchasePrice?.value) || 0,
+        selling_price: Number(sellingPrice?.value) || 0,
+        is_base: true,
+    };
+
+    const extraUnits = additionalUnits.value
+        .filter(u => u.unit)
+        .map(u => ({
+            measurement_unit_id: u.unit?.id,
+            conversion_factor: Number(u.conversion_factor),
+            purchase_price: Number(u.purchase_price) || 0,
+            selling_price: Number(u.selling_price) || 0,
+            is_base: false,
+        }));
+
+    for (const u of extraUnits) {
+        if (!u.conversion_factor || u.conversion_factor <= 0) {
+            commonService.showError(toast, "Each additional unit needs a conversion factor greater than 0");
+            return;
+        }
+    }
+
+    const units = [baseUnit, ...extraUnits];
+    const unitIds = units.map(u => u.measurement_unit_id);
+    if (new Set(unitIds).size !== unitIds.length) {
+        commonService.showError(toast, "A measurement unit can only be added once per product");
+        return;
+    }
+
     let postData={
         id:editId.value,
         name: name?.value,
@@ -232,9 +275,7 @@ const onSubmit= ()=>{
         type_id: prodType?.value?.id,
         gauge_id: prodGauge?.value?.id,
         payment_method:paymentMethod?.value.value,
-        secondary_weight: weight?.value,
-        secondary_measurement_unit_id:weightUnit?.value?.id,
-        secondary_price:weightPrice?.value,
+        units: units,
     }
 
     commonService.genericRequest('create-product', 'post', true, postData).then((response) => {
@@ -263,9 +304,7 @@ const onSubmit= ()=>{
             expiryDate.value=null;
             prodType.value=null;
             prodGauge.value=null;
-            weight.value=null;
-            weightUnit.value=null;
-            weightPrice.value=null;
+            additionalUnits.value=[];
             // tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'};
             paymentMethod.value={id:1, name: "Cash", value:"CASH"};
 
@@ -626,6 +665,27 @@ const getProductDetails=(prodId)=>{
             prodType.value =productTypeList.value?.find(cat=>cat.id ==productDetails.value.type_id)
             prodGauge.value =productGaugeList.value?.find(cat=>cat.id ==productDetails.value.gauge_id)
             taxConfig.value = taxOptions.value?.find(tax=>tax.value ==productDetails.value.tax_config)
+
+            // hydrate the additional (non-base) units
+            if (productDetails.value.units && productDetails.value.units.length) {
+                additionalUnits.value = productDetails.value.units
+                    .filter(u => !u.is_base)
+                    .map(u => ({
+                        unit: measurementUnitsData.value?.find(m => m.id == u.measurement_unit_id),
+                        conversion_factor: u.conversion_factor,
+                        purchase_price: u.purchase_price,
+                        selling_price: u.selling_price,
+                    }));
+            } else if (productDetails.value.secondary_measurement_unit_id) {
+                // fallback for products created before the multi-unit migration:
+                // legacy secondary_weight is the inverse of conversion_factor
+                additionalUnits.value = [{
+                    unit: measurementUnitsData.value?.find(m => m.id == productDetails.value.secondary_measurement_unit_id),
+                    conversion_factor: productDetails.value.secondary_weight ? (1 / Number(productDetails.value.secondary_weight)) : null,
+                    purchase_price: productDetails.value.purchase_price,
+                    selling_price: productDetails.value.secondary_price,
+                }];
+            }
         } else {
             commonService.showError(toast, response.message);
         }
@@ -809,40 +869,55 @@ onMounted(() => {
                     <div class="field col-12 md:col-6">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
-                                <Dropdown id="measurementUnit" :options="measurementUnitsData" filter @blur="onInputBlur(measurementUnit, 'measurementUnit')" v-model="measurementUnit" :class="{ 'p-invalid': formError?.measurementUnit }" optionLabel="name">
+                                <Dropdown id="measurementUnit" :options="measurementUnitsData" filter :disabled="isEdit" @blur="onInputBlur(measurementUnit, 'measurementUnit')" v-model="measurementUnit" :class="{ 'p-invalid': formError?.measurementUnit }" optionLabel="name">
                                 </Dropdown>
-                                <label for="measurementUnit">Measurement Unit</label>
+                                <label for="measurementUnit">Base Measurement Unit</label>
                             </span>
-                            <Button @click="toggleMeasurementUnitModal(true)" icon="pi pi-plus" />
+                            <Button @click="toggleMeasurementUnitModal(true)" icon="pi pi-plus" :disabled="isEdit" />
                         </div>
                     </div>
                     <div class="field col-12 md:col-12">
-                        <p class="text-900">Secondary units represent the weight or quantity of secondary components contained within a single primary unit.</p>
+                        <p class="text-900">The base measurement unit holds the stock quantity (set above) and its purchase/selling prices (below). Add other units a customer can buy in — each with how many base units it contains (conversion factor) and its own prices.</p>
                     </div>
 
-                    <div class="field col-12 md:col-4">
-                        <span class="p-float-label">
-                            <InputText type="text" id="secondaryWeight" v-model="weight" />
-                            <label for="secondaryWeight">Secondary Unit</label>
-                        </span>
-                    </div>
-
-                    <div class="field col-12 md:col-5">
-                        <div class="p-inputgroup">
-                            <span class="p-float-label">
-                                <Dropdown id="secondaryMeasurementUnit" :options="measurementUnitsData" filter v-model="weightUnit"  optionLabel="name">
-                                </Dropdown>
-                                <label for="secondaryMeasurementUnit">Secondary Measurement Unit</label>
-                            </span>
-                            <Button @click="toggleMeasurementUnitModal(true)" icon="pi pi-plus" />
+                    <div class="field col-12 md:col-12" v-for="(row, index) in additionalUnits" :key="index">
+                        <div class="grid">
+                            <div class="field col-12 md:col-4 mb-0">
+                                <div class="p-inputgroup">
+                                    <span class="p-float-label">
+                                        <Dropdown :id="'unit-' + index" :options="measurementUnitsData" filter v-model="row.unit" optionLabel="name">
+                                        </Dropdown>
+                                        <label :for="'unit-' + index">Unit</label>
+                                    </span>
+                                    <Button @click="toggleMeasurementUnitModal(true)" icon="pi pi-plus" />
+                                </div>
+                            </div>
+                            <div class="field col-12 md:col-3 mb-0">
+                                <span class="p-float-label">
+                                    <InputText type="text" :id="'cf-' + index" v-model="row.conversion_factor" />
+                                    <label :for="'cf-' + index">Base units per unit</label>
+                                </span>
+                            </div>
+                            <div class="field col-12 md:col-2 mb-0">
+                                <span class="p-float-label">
+                                    <InputText type="text" :id="'pp-' + index" v-model="row.purchase_price" />
+                                    <label :for="'pp-' + index">Purchase Price</label>
+                                </span>
+                            </div>
+                            <div class="field col-12 md:col-2 mb-0">
+                                <span class="p-float-label">
+                                    <InputText type="text" :id="'sp-' + index" v-model="row.selling_price" />
+                                    <label :for="'sp-' + index">Selling Price</label>
+                                </span>
+                            </div>
+                            <div class="field col-12 md:col-1 mb-0 flex align-items-center">
+                                <Button @click="removeUnitRow(index)" icon="pi pi-trash" class="p-button-danger p-button-outlined" />
+                            </div>
                         </div>
                     </div>
 
-                    <div class="field col-12 md:col-3">
-                        <span class="p-float-label">
-                            <InputText type="text" id="secondaryPrice" v-model="weightPrice" />
-                            <label for="secondaryPrice">Secondary Price</label>
-                        </span>
+                    <div class="field col-12 md:col-12">
+                        <Button @click="addUnitRow" label="Add Unit" icon="pi pi-plus" class="p-button-outlined" />
                     </div>
                 </div>
             </div>
@@ -854,7 +929,7 @@ onMounted(() => {
                     <div class="field col-12 md:col-6">
                         <span class="p-float-label">
                             <InputText type="text" id="purchasePrice" v-model="purchasePrice"  />
-                            <label for="purchasePrice">Unit Purchase Price </label>
+                            <label for="purchasePrice">Base Unit Purchase Price </label>
                         </span>
                     </div>
 
@@ -903,7 +978,7 @@ onMounted(() => {
                     <div class="field col-12 md:col-6">
                         <span class="p-float-label">
                             <InputText type="text" @blur="onInputBlur(sellingPrice, 'sellingPrice')" id="sellingPrice" v-model="sellingPrice" :class="{ 'p-invalid': formError?.sellingPrice }"/>
-                            <label for="sellingPrice">Unit Selling Price </label>
+                            <label for="sellingPrice">Base Unit Selling Price </label>
                         </span>
                     </div>
                     <div class="field col-12 md:col-6" v-if="institutionDetails?.is_tax_enabled && taxableConfigs.value ==  'TAX_STANDARD_RATED'">

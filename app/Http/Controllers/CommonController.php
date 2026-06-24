@@ -45,7 +45,7 @@ class CommonController extends Controller
             (SELECT COALESCE(sum(amount), 0) FROM collections WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_approved_collection,
             (SELECT COUNT(id) FROM products WHERE status ='Active' AND institution_id = $userData->institution_id) AS products,
             (SELECT COUNT(id) FROM orders WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS sales,
-            (SELECT COALESCE(SUM(O.qty * S.selling_price), 0) FROM order_items O INNER JOIN stocks S ON O.product_id = S.product_id AND  O.branch_id = S.branch_id WHERE O.status ='Active' AND O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id) AS product_sold,
+            (SELECT COALESCE(SUM(O.qty * COALESCE(O.selling_price, S.selling_price)), 0) FROM order_items O INNER JOIN stocks S ON O.product_id = S.product_id AND  O.branch_id = S.branch_id WHERE O.status ='Active' AND O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id) AS product_sold,
             (SELECT COALESCE(SUM(tran_amount), 0) FROM gl_histories WHERE acct_no = '$inventoryAcct' AND reversal_flag = 'N') AS total_stock_value,
             (SELECT COALESCE(SUM(tran_amount), 0) FROM gl_histories WHERE acct_no = '$inventoryAcct' AND reversal_flag = 'N' AND DATE(transaction_date) = CURRENT_DATE) AS today_stock_value,
             (SELECT COALESCE(SUM(tran_amount), 0) FROM gl_histories WHERE acct_no = '$salesAcct' AND reversal_flag = 'N') AS total_sales_value,
@@ -91,7 +91,7 @@ class CommonController extends Controller
             AND c.institution_id = $userData->institution_id AND c.branch_id=$userData->branch_id
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
 
-            $bestSellingProduct = DB::select("SELECT P.name, S.purchase_price, S.selling_price, SUM(I.qty) AS quantity
+            $bestSellingProduct = DB::select("SELECT P.name, S.purchase_price, S.selling_price, SUM(COALESCE(I.base_qty, I.qty)) AS quantity
             FROM orders O INNER JOIN order_items I ON O.id = I.order_id
             INNER JOIN products P ON P.id = I.product_id
             INNER JOIN stocks S ON P.id = S.product_id
@@ -125,7 +125,7 @@ class CommonController extends Controller
             (SELECT COUNT(id) FROM investments WHERE status ='Withdrawn' ) AS total_withdrawn_investments,
             (SELECT COALESCE(SUM(I.quantity * P.monitory) ,0) FROM investments I INNER JOIN projects P ON P.id = I.project_id) AS total_investment_value,
           --  (SELECT COUNT(id) FROM order_items WHERE status ='Active') AS product_sold
-            (SELECT COALESCE(SUM(O.qty * S.selling_price), 0) FROM order_items O INNER JOIN stocks S ON O.product_id = S.product_id AND  O.branch_id = S.branch_id WHERE O.status ='Active') AS product_sold,
+            (SELECT COALESCE(SUM(O.qty * COALESCE(O.selling_price, S.selling_price)), 0) FROM order_items O INNER JOIN stocks S ON O.product_id = S.product_id AND  O.branch_id = S.branch_id WHERE O.status ='Active') AS product_sold,
             (SELECT COUNT(id) FROM buildings WHERE status ='Active') AS total_buildings,
             (SELECT COUNT(id) FROM building_units WHERE status ='Active') AS total_building_units_available,
             (SELECT COUNT(id) FROM building_units WHERE status ='Occupied') AS total_building_units_occupied,

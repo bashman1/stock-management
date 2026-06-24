@@ -265,8 +265,18 @@ class OrderController extends Controller
             $items = new OrderItem();
             $items->order_id = $order->id;
             $items->product_id = $value['id'];
-            $items->qty =  (float) $value['quantity'] * (1 / $value['selected']['weight']);
+            // selected.weight carries the unit's conversion_factor (base units per
+            // one of the chosen unit). qty stays in the chosen unit (for receipts/
+            // reports); base_qty is the base-unit equivalent (for stock/EFRIS).
+            $conversion = (float) $value['selected']['weight'];
+            $chosenQty = (float) $value['quantity'];
+            $baseQty = $chosenQty * $conversion;
+            // per-chosen-unit cost = base purchase price * units-of-base-per-chosen
+            $chosenPurchasePrice = (float) $stock->purchase_price * $conversion;
+            $items->qty =  $chosenQty;
+            $items->base_qty =  $baseQty;
             $items->selling_price =  (float) $value['price'];
+            $items->purchase_price =  $chosenPurchasePrice;
             $items->status = $request->status;
             $items->institution_id = $userData->institution_id;
             $items->branch_id = $userData->branch_id;
@@ -274,15 +284,18 @@ class OrderController extends Controller
             $items->measurement_unit_id = $value['selected']['unit_id'];
             $items->created_on = now();
 
-            $stock->quantity =  (float) $stock->quantity - $value['quantity'];
+            // stock is held in base units, so deduct the converted quantity
+            $stock->quantity =  (float) $stock->quantity - $baseQty;
             $stock->save();
 
-            // setting efris details
+            // setting efris details — EFRIS records goods in the base measure unit,
+            // so send base quantity with the per-base-unit price.
+            $baseUnitPrice = $conversion > 0 ? ((float) $value['price'] / $conversion) : (float) $value['price'];
             $product = Product::find($value['id']);
             $efrisProductDetails['item'] = $product->name;
             $efrisProductDetails['itemCode'] = $product->ref_no;
-            $efrisProductDetails['qty'] = (float) $value['quantity'] * (1 / $value['selected']['weight']);
-            $efrisProductDetails['unitPrice'] = $value['price'];
+            $efrisProductDetails['qty'] = $baseQty;
+            $efrisProductDetails['unitPrice'] = $baseUnitPrice;
             $efrisProductDetails['total'] = $efrisProductDetails['qty'] * $efrisProductDetails['unitPrice'];
             // $efrisProductDetails['tax'] = $efrisProductDetails['total'] * $efrisProductDetails['taxRate'];
 
@@ -291,8 +304,8 @@ class OrderController extends Controller
             $creditStock = $debitRequest;
             $debitGoodsForSale = $creditRequest;
 
-            $amount = $stock->purchase_price * $value['quantity'];
-            // $amount = $stock->purchase_price * $value['quantity'];
+            // purchase_price is per base unit, so cost uses the base quantity
+            $amount = $stock->purchase_price * $baseQty;
 
             $creditStock->acct_no = $stInGl;
             $creditStock->acct_type = $stInGlType->acct_type;
@@ -615,7 +628,8 @@ class OrderController extends Controller
             // updating the stock
             $stock = stock::where(['product_id' => $item->product_id, 'branch_id' => $order->branch_id])->first();
             if (isset($stock)) {
-                $stock->quantity = $stock->quantity + $item->qty;
+                // restore in base units (fall back to qty for pre-migration rows)
+                $stock->quantity = $stock->quantity + ($item->base_qty ?? $item->qty);
                 $stock->save();
             }
         }

@@ -118,11 +118,15 @@ class ReportController extends Controller
         $isNotAdmin = $this->isNotAdmin();
         $sqlString = "SELECT P.name AS product_name, O.id, O.order_id, O.product_id, O.qty AS quantity, O.status,
         O.institution_id, O.created_on,S.ref_no, S.receipt_no, S.tran_id,I.name AS institution_name,
-        CONCAT(U.first_name,' ',U.last_name,' ', U.other_name) AS user_name, K.purchase_price,
-        K.selling_price FROM order_items O
+        CONCAT(U.first_name,' ',U.last_name,' ', U.other_name) AS user_name,
+        COALESCE(O.purchase_price, K.purchase_price) AS purchase_price,
+        COALESCE(O.selling_price, K.selling_price) AS selling_price,
+        COALESCE(X.name, M.name) AS measurement_unit FROM order_items O
         INNER JOIN orders S ON S.id = O.order_id
         INNER JOIN products P ON P.id = O.product_id
         INNER JOIN stocks K ON K.product_id = O.product_id
+        INNER JOIN measurement_units M ON M.id = P.measurement_unit_id
+        LEFT JOIN measurement_units X ON X.id = O.measurement_unit_id
         INNER JOIN institutions I ON I.id =  O.institution_id
         LEFT JOIN users U ON U.id = O.created_by";
         // $sqlString .= " WHERE O.product_id= $request->productId";
@@ -223,12 +227,13 @@ class ReportController extends Controller
         $sqlString = "SELECT O.id, O.order_id, O.product_id, O.qty AS quantity, O.status, O.institution_id, O.branch_id,
             O.created_by, O.updated_by, O.updated_on, O.created_at, O.updated_at, P.name AS product_name,
             P.description, P.product_no, P.ref_no, Q.ref_no AS transaction_ref, Q.receipt_no, Q.tran_id,
-            COALESCE(R.selling_price, S.selling_price) AS selling_price, S.purchase_price, M.name as measurement_unit FROM order_items O
+            COALESCE(O.selling_price, S.selling_price) AS selling_price, COALESCE(O.purchase_price, S.purchase_price) AS purchase_price,
+            COALESCE(X.name, M.name) AS measurement_unit FROM order_items O
             INNER JOIN products P ON O.product_id = P.id
             INNER JOIN orders Q ON Q.id = O.order_id
             INNER JOIN stocks S ON S.branch_id = O.branch_id AND S.product_id = O.product_id
             INNER JOIN measurement_units  M ON M.id = P.measurement_unit_id
-            LEFT JOIN order_items R ON Q.id = R.order_id AND R.product_id = O.product_id";
+            LEFT JOIN measurement_units X ON X.id = O.measurement_unit_id";
 
         // $sqlString .= " WHERE O.status = '$request->status' ";
         // if ($isNotAdmin) {

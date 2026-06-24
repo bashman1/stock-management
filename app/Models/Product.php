@@ -38,6 +38,16 @@ class Product extends Model
 
     public function stock()
     {
-        return $this->belongsTo(stock::class, 'id', 'product_id');
+        return $this->hasOne(stock::class, 'product_id', 'id');
+    }
+
+    public function units()
+    {
+        return $this->hasMany(ProductUnit::class, 'product_id', 'id');
+    }
+
+    public function baseUnit()
+    {
+        return $this->hasOne(ProductUnit::class, 'product_id', 'id')->where('is_base', true);
     }
 }

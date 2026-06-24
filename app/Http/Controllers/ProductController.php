@@ -25,6 +25,7 @@ use App\Services\EfrisApiService;
 use App\Models\EfrisMeasurementUnits;
 use Illuminate\Support\Arr;
 use App\Models\measurementUnit;
+use App\Models\ProductUnit;
 use App\Models\ProductCategory;
 use App\Models\EfrisComodityCategory;
 
@@ -41,6 +42,10 @@ class ProductController extends Controller
     public function createProduct(Request $request)
     {
         $response = $this->createNewProduct($request);
+
+        if (isset($response->error) && $response->error) {
+            return $this->genericResponse(false, $response->message, 400, null, "createProduct", $request);
+        }
 
         return $this->genericResponse(true, $response->message, 201, $response->product, "createProduct", $request);
     }
@@ -75,6 +80,36 @@ class ProductController extends Controller
             $message = "Product Created successfully";
         }
 
+        // --- Multiple units of measure -------------------------------------
+        // When the client sends a `units` array, the base unit is the single
+        // source of truth for the product's measurement_unit_id and for the
+        // stock/GL/EFRIS prices. Validate before touching the database.
+        $units = $request->units ?? null;
+        $baseUnit = null;
+        if (is_array($units) && count($units) > 0) {
+            $unitsError = $this->validateProductUnits($units);
+            if ($unitsError !== true) {
+                return (object)['message' => $unitsError, 'product' => null, 'error' => true];
+            }
+            foreach ($units as $u) {
+                if (!empty($u['is_base'])) {
+                    $baseUnit = $u;
+                    break;
+                }
+            }
+            if ($request instanceof Request) {
+                $request->merge([
+                    'measurement_unit_id' => $baseUnit['measurement_unit_id'],
+                    'purchase_price'      => $baseUnit['purchase_price'],
+                    'selling_price'       => $baseUnit['selling_price'],
+                ]);
+            } else {
+                $request->measurement_unit_id = $baseUnit['measurement_unit_id'];
+                $request->purchase_price      = $baseUnit['purchase_price'];
+                $request->selling_price       = $baseUnit['selling_price'];
+            }
+        }
+
         $categoryId = $request->category_id;
         $unitId = $request->measurement_unit_id;
         if ($institutionData->efris_enabled) {
@@ -107,6 +142,12 @@ class ProductController extends Controller
             $product->tax_config = $request->tax_config;
         }
         $product->save();
+
+        // persist the product's units of measure ($unitId is the base unit,
+        // possibly remapped above when EFRIS is enabled)
+        if (is_array($units) && count($units) > 0) {
+            $this->syncProductUnits($product, $units, $unitId, $userData, $institutionData->efris_enabled);
+        }
 
 
         if (!isset($isEdit)) {
@@ -278,7 +319,7 @@ class ProductController extends Controller
 
                 // efris adding stock
 
-                $this->efrisCreateOpeningStock($supplier->name, $request->date, $refNo, $request->quantity, $request->selling_price, $efrisUnit->value);
+                $this->efrisCreateOpeningStock($supplier?->name ?? '', $request->date, $refNo, $request->quantity, $request->selling_price, $efrisUnit->value);
             }
         } else {
             $updateTransaction = $this->updateTransaction($product->id, $userData->institution_id, $userData->branch_id, $request->quantity * $request->purchase_price);
@@ -309,7 +350,7 @@ class ProductController extends Controller
                     // increase stock in efris
                      $efrisUnit = $this->getEfrisMeasurementUnitByUnitId($product->measurement_unit_id);
                     $difference = $request->quantity - $stock->quantity;
-                    $this->increaseStock($supplier->name, $request->date, $product->ref_no, $difference, $efrisUnit->value,$request->selling_price);
+                    $this->increaseStock($supplier?->name ?? '', $request->date, $product->ref_no, $difference, $efrisUnit->value,$request->selling_price);
                 } else {
                     // no change
                 }
@@ -363,6 +404,104 @@ class ProductController extends Controller
         return  (object)['message' => $message, 'product' => $product];
     }
 
+    /**
+     * Validate the units-of-measure list submitted with a product.
+     * Returns true when valid, otherwise an error message string.
+     */
+    private function validateProductUnits($units)
+    {
+        if (!is_array($units) || count($units) === 0) {
+            return "At least one unit of measure is required";
+        }
+
+        $baseCount = 0;
+        $seen = [];
+        foreach ($units as $u) {
+            if (empty($u['measurement_unit_id'])) {
+                return "Each unit must have a measurement unit selected";
+            }
+            $muId = $u['measurement_unit_id'];
+            if (in_array($muId, $seen)) {
+                return "A measurement unit can only be added once per product";
+            }
+            $seen[] = $muId;
+
+            $isBase = !empty($u['is_base']);
+            if ($isBase) {
+                $baseCount++;
+                if ((float) $u['conversion_factor'] != 1.0) {
+                    return "The base unit must have a conversion factor of 1";
+                }
+            } elseif (!isset($u['conversion_factor']) || (float) $u['conversion_factor'] <= 0) {
+                return "Conversion factor must be greater than 0";
+            }
+        }
+
+        if ($baseCount !== 1) {
+            return "Exactly one base unit must be selected";
+        }
+
+        return true;
+    }
+
+    /**
+     * Create/update the product_units rows for a product.
+     * Existing rows are matched by measurement_unit_id; rows no longer present
+     * are soft-archived (never deleted) because past order/invoice items may
+     * still reference them. $baseUnitId is the (possibly EFRIS-remapped) base unit.
+     */
+    private function syncProductUnits($product, array $units, $baseUnitId, $userData, $efrisEnabled = false)
+    {
+        $now = Carbon::now();
+        $existing = ProductUnit::where('product_id', $product->id)->get()->keyBy('measurement_unit_id');
+        $incomingUnitIds = [];
+
+        foreach ($units as $u) {
+            $isBase = !empty($u['is_base']);
+            // base unit is already remapped to a local id ($baseUnitId); non-base
+            // units carry EFRIS unit ids when EFRIS is enabled, so map them to a
+            // local measurement_unit so their names/conversions resolve everywhere.
+            if ($isBase) {
+                $muId = $baseUnitId;
+            } elseif ($efrisEnabled) {
+                $muId = $this->createOrReturnMeasurementUnit($u['measurement_unit_id'])->id;
+            } else {
+                $muId = $u['measurement_unit_id'];
+            }
+            $incomingUnitIds[] = $muId;
+
+            $row = $existing->get($muId) ?? new ProductUnit();
+            if (!$row->exists) {
+                $row->product_id = $product->id;
+                $row->institution_id = $userData->institution_id;
+                $row->branch_id = $userData->branch_id;
+                $row->created_by = $userData->id;
+                $row->created_on = $now;
+            } else {
+                $row->updated_by = $userData->id;
+                $row->updated_on = $now;
+            }
+
+            $row->measurement_unit_id = $muId;
+            $row->conversion_factor = $isBase ? 1 : (float) $u['conversion_factor'];
+            $row->purchase_price = (float) $u['purchase_price'];
+            $row->selling_price = (float) $u['selling_price'];
+            $row->is_base = $isBase;
+            $row->status = 'Active';
+            $row->save();
+        }
+
+        // soft-archive units that were removed in this edit
+        foreach ($existing as $muId => $row) {
+            if (!in_array($muId, $incomingUnitIds) && $row->status !== 'Archived') {
+                $row->status = 'Archived';
+                $row->updated_by = $userData->id;
+                $row->updated_on = $now;
+                $row->save();
+            }
+        }
+    }
+
 
     public function restock(Request $request)
     {
@@ -378,6 +517,10 @@ class ProductController extends Controller
         }
 
         $stocks =  stock::where(["product_id" => $request->productId, "institution_id" => $userData->institution_id, "branch_id" => $userData->branch_id])->first();
+
+        if (!isset($stocks)) {
+            return $this->genericResponse(false, "Stock record not found for this product", 400, null, "restock", $request);
+        }
 
         $stocks->updated_by = $userData->id;
         $stocks->updated_on = Carbon::now();
@@ -473,8 +616,8 @@ class ProductController extends Controller
             "created_on" => now(),
             // "member_id"=>null,
             "product_id" => $product->id,
-            "stock_id" => $stock->id,
-            "ext_ref" => $stock->id,
+            "stock_id" => $stocks->id,
+            "ext_ref" => $product->ref_no,
             "tran" => "Stocking Product",
             // "reversal_reason"=>null,
             // "reversed_by"=>null,
@@ -556,7 +699,7 @@ class ProductController extends Controller
             $supplier = Supplier::find($product->supplier_id);
             $efrisUnit = $this->getEfrisMeasurementUnitByUnitId($product->measurement_unit_id);
 
-            $this->increaseStock($supplier->name, $request->date, $product->ref_no, $request->quantity, $efrisUnit->value,$request->selling_price);
+            $this->increaseStock($supplier?->name ?? '', $request->date, $product->ref_no, $request->quantity, $efrisUnit->value,$request->selling_price);
         }
 
 
@@ -628,11 +771,50 @@ class ProductController extends Controller
             $sqlString .= " ORDER BY P.id DESC ";
 
             $products = $this->paginate($request->rowPerPage, $totalSql, $sqlString);
+
+            // attach the configured units of measure to every product
+            $ids = collect($products->items())->pluck('id')->all();
+            $unitsByProduct = $this->getUnitsForProducts($ids);
+            $products->getCollection()->transform(function ($row) use ($unitsByProduct) {
+                $row->units = $unitsByProduct->get($row->id, collect())->values();
+                return $row;
+            });
+
             return $products;
         } catch (\Throwable $th) {
             // throw new $th;
             throw $th;
         }
+    }
+
+    /**
+     * Load Active product_units for the given product ids, shaped for the
+     * frontend (CreateProduct edit-load + POS), grouped by product_id.
+     */
+    private function getUnitsForProducts($productIds)
+    {
+        if (empty($productIds)) {
+            return collect();
+        }
+
+        return ProductUnit::with('measurement')
+            ->whereIn('product_id', $productIds)
+            ->where('status', 'Active')
+            ->orderByDesc('is_base')
+            ->get()
+            ->map(function ($u) {
+                return (object)[
+                    'id'                  => $u->id,
+                    'product_id'          => $u->product_id,
+                    'measurement_unit_id' => $u->measurement_unit_id,
+                    'name'                => $u->measurement->name ?? null,
+                    'conversion_factor'   => (float) $u->conversion_factor,
+                    'purchase_price'      => (float) $u->purchase_price,
+                    'selling_price'       => (float) $u->selling_price,
+                    'is_base'             => (bool) $u->is_base,
+                ];
+            })
+            ->groupBy('product_id');
     }
 
 
@@ -746,6 +928,12 @@ class ProductController extends Controller
         $sqlString .= " ORDER BY P.id DESC";
         $product = DB::select($sqlString);
 
+        // attach the configured units of measure
+        if (!empty($product)) {
+            $unitsByProduct = $this->getUnitsForProducts([$product[0]->id]);
+            $product[0]->units = $unitsByProduct->get($product[0]->id, collect())->values();
+        }
+
         return $this->genericResponse(true, "Product list", 200, $product, "getProductDetails", $request);
     }
 
@@ -783,7 +971,15 @@ class ProductController extends Controller
                 'secondary_measurement_unit_id' => null,
                 'secondary_weight' => null,
                 'secondary_price' => null,
-                'payment_method' => 'CASH'
+                'payment_method' => 'CASH',
+                // single base unit so bulk-approved products get a product_units row
+                'units' => [[
+                    'measurement_unit_id' => $newProduct->measurement_unit_id,
+                    'conversion_factor'   => 1,
+                    'purchase_price'      => $newProduct->purchase_price,
+                    'selling_price'       => $newProduct->selling_price,
+                    'is_base'             => true,
+                ]],
             ];
 
             $response = $this->createNewProduct($newRequest);

@@ -40,14 +40,14 @@ class GlAccountsController extends Controller
                     $queryString = "SELECT G.acct_no, G.gl_no, G.description, G.gl_cat_no, G.gl_sub_cat_no, G.gl_type_no, G.acct_type, G.branch_cd, G.status,
                    G.institution_id, G.branch_id, G.created_by, G.updated_by, G.created_on, G.updated_on, G.created_at, G.updated_at,
                    T.description AS type_desc, S.description AS sub_cat_desc, C.description AS cat_desc, I.name AS institution_name,
-                   B.name AS branch_name, K.balance
+                   B.name AS branch_name, COALESCE(K.balance, 0) AS balance
                    FROM gl_accounts G
                    INNER JOIN gl_types T ON G.gl_type_no = T.gl_no
                    INNER JOIN gl_sub_cats S ON S.gl_no = G.gl_sub_cat_no
                    INNER JOIN gl_cats C ON C.gl_no= G.gl_cat_no
                    INNER JOIN institutions I ON I.id = G.institution_id
                    INNER JOIN branches B ON B.id = G.branch_id
-                   INNER JOIN gl_balances K ON K.acct_no = G.acct_no ";
+                   LEFT JOIN gl_balances K ON K.acct_no = G.acct_no ";
                     $queryString .= " WHERE G.gl_type_no=  '" . $glType->gl_no . "' ";
                     if ($isNotAdmin) {
                         $queryString .= " AND G.institution_id = $userData->institution_id  ";
@@ -611,15 +611,21 @@ class GlAccountsController extends Controller
             $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
             $tempArray = array();
+
+            // Purchase passage / contra accounts that net to zero in the purchase
+            // double-entry and must not be presented as standalone balance-sheet
+            // items (1305001 = Prepaid Expenses/PIA passage, 1307001 = Advances to party).
+            $excludedGlNos = ['1305001', '1307001'];
+            $excludedGlList = "'" . implode("','", $excludedGlNos) . "'";
+
             $glSubCat = GlSubCat::all();
             foreach ($glSubCat as $key => $value) {
                 $queryString = "SELECT A.acct_no, A.gl_no, A.description,A.gl_cat_no,
                 A.gl_type_no, A.acct_type, A.status, B.balance
                 FROM gl_accounts A INNER JOIN gl_balances B
-                ON A.acct_no = B.acct_no WHERE (B.balance >0 OR  B.balance < 0) AND (A.gl_no <> '1305001' AND  A.gl_no <> '1307001') AND
+                ON A.acct_no = B.acct_no WHERE (B.balance >0 OR  B.balance < 0) AND A.gl_no NOT IN ($excludedGlList) AND
                 A.gl_sub_cat_no = '" . $value['gl_no'] . "' ";
 
-                // 1305001 1307001
                 if ($isNotAdmin) {
                     $queryString .= " AND A.institution_id = $userData->institution_id AND A.branch_id =$userData->branch_id  ";
                 }
@@ -707,8 +713,8 @@ class GlAccountsController extends Controller
                 COALESCE(I.selling_price, S.selling_price) AS selling_price,
                 O.ref_no, O.receipt_no, O.tran_id, O.user_id, O.customer_id,
                 P.name, P.product_no, P.ref_no AS product_ref, P.tax_config,
-                S.purchase_price, N.name AS institution_name, N.is_tax_enabled,
-                S.purchase_price*I.qty AS total_purchases,
+                COALESCE(I.purchase_price, S.purchase_price) AS purchase_price, N.name AS institution_name, N.is_tax_enabled,
+                COALESCE(I.purchase_price, S.purchase_price) * I.qty AS total_purchases,
                 COALESCE(Y.name, 'Cash') AS customer_name,
                 -- Calculate the amount
                 COALESCE(I.qty * I.selling_price, I.qty * S.selling_price) AS amount,

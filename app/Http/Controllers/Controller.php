@@ -242,8 +242,8 @@ class Controller extends BaseController
             $acctNo = str_replace('braCd', $branchCd, $acctNo);
             $acctNo = str_replace('glNo', $value['gl_no'], $acctNo);
 
-            $checkExistingGlAcct = GlAccounts::where('acct_no', $acctNo)->get();
-            if (!isset($checkExistingGlAcct)  || !empty($checkExistingGlAcct)) {
+            $checkExistingGlAcct = GlAccounts::where('acct_no', $acctNo)->first();
+            if (!isset($checkExistingGlAcct)) {
                 $glAcct = new GlAccounts();
                 $glAcct->gl_no = $value['gl_no'];
                 $glAcct->acct_no = $acctNo;
@@ -259,8 +259,8 @@ class Controller extends BaseController
                 $glAcct->created_on = now();
                 $glAcct->save();
             }
-            $checkExistingGlBal = GlBalances::where('acct_no', $acctNo)->get();
-            if (!isset($checkExistingGlBal) || !empty($checkExistingGlBal)) {
+            $checkExistingGlBal = GlBalances::where('acct_no', $acctNo)->first();
+            if (!isset($checkExistingGlBal)) {
                 $glBal = new GlBalances();
                 $glBal->acct_no =  $acctNo;
                 $glBal->acct_type = $value['acct_type'];

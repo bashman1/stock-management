@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import CommonService from '@/service/CommonService';
 import AppMenuItem from './AppMenuItem.vue';
 
@@ -21,8 +21,8 @@ const hasPermission = (permission) => {
 // Get user data for dynamic routes
 const userData = commonService.getStorage()?.userData;
 
-// Declarative menu configuration - keeps all menu items in one place
-const menuConfig = [
+// Operational / day-to-day menu groups (shown in the main, unlabeled section)
+const operationalConfig = [
     {
         key: 'pointOfSale',
         label: 'Point Of Sale',
@@ -38,33 +38,6 @@ const menuConfig = [
         to: '/view-sales',
         permission: 'ViewSales',
         isSubmenu: false
-    },
-    {
-        key: 'institution',
-        label: 'Institution Management',
-        icon: 'pi pi-fw pi-building',
-        permission: null, // Always show if has items
-        items: [
-            { label: 'Create Institution', permission: 'CanCreateInstitution', to: '/create-institution' },
-            { label: 'View Institutions', permission: 'CanViewInstitution', to: '/view-institutions' },
-            { label: 'Approve Institutions', permission: 'ApproveInstitution', to: '/approve-business' },
-            { label: 'Create Branch', permission: 'CanCreateBranch', to: '/create-branch' },
-            { label: 'View Branches', permission: 'ViewBranches', to: '/view-branches' }
-        ]
-    },
-    {
-        key: 'user',
-        label: 'User Management',
-        icon: 'pi pi-fw pi-user-plus',
-        permission: null,
-        items: [
-            { label: 'Create User', permission: 'CreateUser', to: '/create-user' },
-            { label: 'View Users', permission: 'ViewUsers', to: '/view-users' },
-            { label: 'Create Role', permission: 'CreatedRole', to: '/create-role' },
-            { label: 'View Roles', permission: 'ViewRoles', to: '/view-roles' },
-            { label: 'Create Default Role', permission: 'CreateDefaultRoles', to: '/create-default-role' },
-            { label: 'View Default Roles', permission: 'ViewDefaultRoles', to: '/view-default-roles' }
-        ]
     },
     {
         key: 'member',
@@ -206,16 +179,6 @@ const menuConfig = [
         ]
     },
     {
-        key: 'license',
-        label: 'License',
-        icon: 'pi-verified',
-        permission: null,
-        items: [
-            { label: 'Create License Package', permission: 'CanCreateLicensePackage', to: '/create-license-package' },
-            { label: 'View License Packages', permission: 'CanViewLicensePackages', to: '/view-license-packages' }
-        ]
-    },
-    {
         key: 'account',
         label: 'Account',
         icon: 'pi-user',
@@ -235,52 +198,95 @@ const menuConfig = [
             { label: 'Compose Email', permission: 'ComposeMessage', to: '/upload-mail-receivers' },
             { label: 'Compose SMS', permission: 'ComposeMessage', to: '/upload-mail-receivers' }
         ]
-    },
-    {
-        key: 'logout',
-        label: 'Log Out',
-        icon: 'pi-sign-out',
-        to: '/logout',
-        permission: null,
-        isSubmenu: false
     }
 ];
 
-// Build menu items with permission filtering
-const buildMenuItems = (config) => {
+// Administration groups (shown under the "Administration" section header).
+// Each sub-item carries its own icon for clearer scanning.
+const adminConfig = [
+    {
+        key: 'users',
+        label: 'Users',
+        icon: 'pi pi-fw pi-users',
+        permission: null,
+        items: [
+            { label: 'Create User', permission: 'CreateUser', to: '/create-user', icon: 'pi-user-plus' },
+            { label: 'View Users', permission: 'ViewUsers', to: '/view-users', icon: 'pi-users' }
+        ]
+    },
+    {
+        key: 'roles',
+        label: 'Roles & Permissions',
+        icon: 'pi pi-fw pi-shield',
+        permission: null,
+        items: [
+            { label: 'Create Role', permission: 'CreatedRole', to: '/create-role', icon: 'pi-plus' },
+            { label: 'View Roles', permission: 'ViewRoles', to: '/view-roles', icon: 'pi-list' },
+            { label: 'Create Default Role', permission: 'CreateDefaultRoles', to: '/create-default-role', icon: 'pi-plus-circle' },
+            { label: 'View Default Roles', permission: 'ViewDefaultRoles', to: '/view-default-roles', icon: 'pi-th-large' }
+        ]
+    },
+    {
+        key: 'business',
+        label: 'Business',
+        icon: 'pi pi-fw pi-building',
+        permission: null,
+        items: [
+            { label: 'Create Business', permission: 'CanCreateInstitution', to: '/create-institution', icon: 'pi-plus' },
+            { label: 'View Businesses', permission: 'CanViewInstitution', to: '/view-institutions', icon: 'pi-list' },
+            { label: 'Approve Businesses', permission: 'ApproveInstitution', to: '/approve-business', icon: 'pi-check-circle' },
+            { label: 'Create Branch', permission: 'CanCreateBranch', to: '/create-branch', icon: 'pi-sitemap' },
+            { label: 'View Branches', permission: 'ViewBranches', to: '/view-branches', icon: 'pi-share-alt' }
+        ]
+    },
+    {
+        key: 'license',
+        label: 'License',
+        icon: 'pi pi-fw pi-verified',
+        permission: null,
+        items: [
+            { label: 'Create License Package', permission: 'CanCreateLicensePackage', to: '/create-license-package', icon: 'pi-plus' },
+            { label: 'View License Packages', permission: 'CanViewLicensePackages', to: '/view-license-packages', icon: 'pi-id-card' }
+        ]
+    }
+];
+
+// Normalize an icon string to the full `pi pi-fw ...` form
+const normalizeIcon = (icon, fallback = 'pi pi-fw pi-circle') => {
+    if (!icon) return fallback;
+    return icon.startsWith('pi ') ? icon : `pi pi-fw ${icon}`;
+};
+
+// Build a section's items from a config array, filtering by permission
+const buildSectionItems = (config) => {
     const items = [];
 
-    // Always add Dashboard first
-    items.push({ label: 'Dashboard', icon: 'pi pi-fw pi-desktop', to: '/admin' });
-
-    // Process each menu config in order
     for (const menu of config) {
-        // Handle direct menu items (non-submenus)
+        // Direct menu items (non-submenus)
         if (!menu.items) {
             if (!menu.permission || hasPermission(menu.permission)) {
                 items.push({
                     label: menu.label,
-                    icon: menu.icon.startsWith('pi ') ? menu.icon : `pi pi-fw ${menu.icon}`,
+                    icon: normalizeIcon(menu.icon),
                     to: menu.to
                 });
             }
             continue;
         }
 
-        // Handle submenus - filter items by permission
+        // Submenus - filter children by permission, keep per-item icons
         const filteredItems = menu.items
             .filter(item => hasPermission(item.permission))
             .map(item => ({
                 label: item.label,
-                icon: 'pi pi-fw pi-circle',
+                icon: normalizeIcon(item.icon),
                 to: item.to
             }));
 
-        // Only add submenu if it has visible items
         if (filteredItems.length > 0) {
             items.push({
                 label: menu.label,
-                icon: menu.icon.startsWith('pi ') ? menu.icon : `pi pi-fw ${menu.icon}`,
+                icon: normalizeIcon(menu.icon),
                 items: filteredItems
             });
         }
@@ -289,9 +295,27 @@ const buildMenuItems = (config) => {
     return items;
 };
 
-// Computed menu model - rebuilds only when needed
+// Computed menu model - grouped into labeled sections
 const model = computed(() => {
-    return [{ items: buildMenuItems(menuConfig) }];
+    const sections = [];
+
+    // Main section: Dashboard + operational groups (no header)
+    const mainItems = [
+        { label: 'Dashboard', icon: 'pi pi-fw pi-desktop', to: '/admin' },
+        ...buildSectionItems(operationalConfig)
+    ];
+    sections.push({ items: mainItems });
+
+    // Administration section (only if the user can see at least one item)
+    const adminItems = buildSectionItems(adminConfig);
+    if (adminItems.length > 0) {
+        sections.push({ label: 'Administration', items: adminItems });
+    }
+
+    // Log out always last
+    sections.push({ items: [{ label: 'Log Out', icon: 'pi pi-fw pi-sign-out', to: '/logout' }] });
+
+    return sections;
 });
 </script>
 
