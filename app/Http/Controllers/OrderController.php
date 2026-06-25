@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\stock;
 use App\Models\Branch;
 use App\Models\GlAccounts;
+use App\Models\GlBalances;
 use App\Models\CntrlParameter;
 use App\Models\GlHistory;
 use App\Models\Institution;
@@ -556,6 +557,11 @@ class OrderController extends Controller
         if (!isset($order)) {
             return $this->genericResponse(false, "Order not found", 400, $order, "deleteOrder", $request->id);
         }
+        // idempotency: never reverse an already-reversed order (prevents cascade)
+        if ($order->status === "Deleted") {
+            DB::rollBack();
+            return $this->genericResponse(false, "Order has already been reversed", 400, $order, "deleteOrder", $request->id);
+        }
         $order->status = "Deleted";
         $order->updated_by = Auth::user()->id;
         $order->updated_on = now();
@@ -580,35 +586,34 @@ class OrderController extends Controller
             $orderTransaction->save();
         }
 
-        // updating the debit and credit history
-        $debit = GlHistory::where(['tran_id' => $orderTransaction->tran_id, 'tran_cd' => 'STO', 'dr_cr_ind' => 'Dr'])->get();
-        foreach ($debit as $item) {
+        // Reverse the GL effect of this transaction's LIVE entries (flag-and-exclude):
+        // undo each posting's impact on gl_balances using the account's TRUE acct_type
+        // (looked up from gl_accounts, since gl_histories has no acct_type), then mark
+        // the row reversed. No opposite history rows are created, so re-deletes cannot
+        // cascade and the wrong-direction acct_type bug is avoided.
+        $glRows = GlHistory::where(['tran_id' => $orderTransaction->tran_id, 'reversal_flag' => 'N'])->get();
+        foreach ($glRows as $item) {
+            $glAccount = GlAccounts::where('acct_no', $item->acct_no)->first();
+            $acctType = $glAccount?->acct_type;
+            $balance = GlBalances::where('acct_no', $item->acct_no)->first();
+            if (isset($balance)) {
+                $isDebitNormal = ($acctType == 'ASSET' || $acctType == 'EXPENSE');
+                $amt = (float) $item->tran_amount;
+                // apply the OPPOSITE of the original posting's effect
+                if ($item->dr_cr_ind == 'Dr') {
+                    $balance->balance = $isDebitNormal ? $balance->balance - $amt : $balance->balance + $amt;
+                } else { // original was a credit
+                    $balance->balance = $isDebitNormal ? $balance->balance + $amt : $balance->balance - $amt;
+                }
+                $balance->updated_on = now();
+                $balance->save();
+            }
+
             $item->status = "Deleted";
             $item->reversal_flag = "Y";
             $item->updated_by = Auth::user()->id;
-            $item['tran_amount'] = $item->tran_amount;
-            // $item['tran_amt']= $item->tran_amount;
             $item->updated_on = now();
             $item->save();
-            $item->tran_amt = $item->tran_amount;
-            // then do a credit transaction of that history
-            $this->postGlCR($item);
-        }
-
-
-        $credit = GlHistory::where(['tran_id' => $orderTransaction->tran_id, 'tran_cd' => 'STO', 'dr_cr_ind' => 'Cr'])->get();
-        foreach ($credit as $item) {
-            $item->status = "Deleted";
-            $item->reversal_flag = "Y";
-            $item->updated_by = Auth::user()->id;
-            $item['tran_amount'] = $item->tran_amount;
-            // $item['tran_amt']= $item->tran_amount;
-            $item->updated_on = now();
-            $item->save();
-
-            $item->tran_amt = $item->tran_amount;
-            // then do a credit transaction of that history
-            $this->postGlDR($item);
         }
 
 

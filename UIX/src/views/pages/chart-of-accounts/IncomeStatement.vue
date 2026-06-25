@@ -186,6 +186,11 @@ const checkDateFormat=(event)=>{
                         <td class="text-900"></td>
                         <td class="text-900"></td>
                     </tr>
+                    <tr v-for="(exp, i) in incomeStatementData?.operatingExpenses" :key="i">
+                        <th class="text-900" style="font-weight: normal">{{ exp.description }}</th>
+                        <td class="text-900">{{ commonService.commaSeparator(exp.amount) }}</td>
+                        <td class="text-900"></td>
+                    </tr>
                     <tr>
                         <th class="text-900">Total operating expenses</th>
                         <td class="text-900"></td>

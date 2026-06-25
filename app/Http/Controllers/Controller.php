@@ -357,6 +357,9 @@ class Controller extends BaseController
             ->where('gl_no', '4040001')
             ->first();
 
+        if (!isset($sl)) {
+            return false;
+        }
         $isSlExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($sl->replaced_acct_no)])->exists();
         if (!$isSlExisting) {
             $newSti = new CntrlParameter();
@@ -376,6 +379,9 @@ class Controller extends BaseController
             ->where('gl_no', '1305001')
             ->first();
 
+        if (!isset($pia)) {
+            return false;
+        }
         $isPiaExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($pia->replaced_acct_no)])->exists();
         if (!$isPiaExisting) {
             $newSti = new CntrlParameter();
@@ -394,6 +400,9 @@ class Controller extends BaseController
             ->where('gl_no', '2205001')
             ->first();
 
+        if (!isset($pil)) {
+            return false;
+        }
         $isPilExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($pil->replaced_acct_no)])->exists();
         if (!$isPilExisting) {
             $newSti = new CntrlParameter();
@@ -413,6 +422,9 @@ class Controller extends BaseController
             ->where('gl_no', '5020001')
             ->first();
 
+        if (!isset($pp)) {
+            return false;
+        }
         $isPpExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($pp->replaced_acct_no)])->exists();
         if (!$isPpExisting) {
             $newSti = new CntrlParameter();
@@ -432,6 +444,9 @@ class Controller extends BaseController
             ->where('gl_no', '4050001')
             ->first();
 
+        if (!isset($pd)) {
+            return false;
+        }
         $isPdExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($pd->replaced_acct_no)])->exists();
         if (!$isPdExisting) {
             $newSti = new CntrlParameter();
@@ -451,6 +466,9 @@ class Controller extends BaseController
             ->where('gl_no', '5010001')
             ->first();
 
+        if (!isset($rin)) {
+            return false;
+        }
         $isRinExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($rin->replaced_acct_no)])->exists();
         if (!$isRinExisting) {
             $newSti = new CntrlParameter();
@@ -470,6 +488,9 @@ class Controller extends BaseController
             ->where('gl_no', '5030001')
             ->first();
 
+        if (!isset($rot)) {
+            return false;
+        }
         $isRotExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($rot->replaced_acct_no)])->exists();
         if (!$isRotExisting) {
             $newSti = new CntrlParameter();
@@ -489,6 +510,9 @@ class Controller extends BaseController
             ->where('gl_no', '5040001')
             ->first();
 
+        if (!isset($ope)) {
+            return false;
+        }
         $isOpeExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($ope->replaced_acct_no)])->exists();
         if (!$isOpeExisting) {
             $newSti = new CntrlParameter();
@@ -507,6 +531,9 @@ class Controller extends BaseController
             ->where('gl_no', '1307001')
             ->first();
 
+        if (!isset($gfs)) {
+            return false;
+        }
         $isGfsExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($gfs->replaced_acct_no)])->exists();
         if (!$isGfsExisting) {
             $newSti = new CntrlParameter();
@@ -525,6 +552,9 @@ class Controller extends BaseController
             ->where('gl_no', '2203001')
             ->first();
 
+        if (!isset($tax)) {
+            return false;
+        }
         $isTaxExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($tax->replaced_acct_no)])->exists();
         if (!$isTaxExisting) {
             $newSti = new CntrlParameter();
@@ -545,6 +575,9 @@ class Controller extends BaseController
             ->where('gl_no', '1303001')
             ->first();
 
+        if (!isset($rcbl)) {
+            return false;
+        }
         $isRcblExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($rcbl->replaced_acct_no)])->exists();
         if (!$isRcblExisting) {
             $newSti = new CntrlParameter();
@@ -564,6 +597,9 @@ class Controller extends BaseController
             ->where('gl_no', '2202001')
             ->first();
 
+        if (!isset($pybl)) {
+            return false;
+        }
         $isPyblExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($pybl->replaced_acct_no)])->exists();
         if (!$isPyblExisting) {
             $newSti = new CntrlParameter();
@@ -589,10 +625,42 @@ class Controller extends BaseController
      * @return void
      * @author bsh <email>
      */
+    /**
+     * Fetch the gl_balances row for an account, creating a zero-balance row if
+     * one does not yet exist (incomplete setup). Throws a descriptive exception
+     * if the GL account itself is missing, so the caller's transaction rolls back
+     * instead of crashing on a null dereference.
+     */
+    private function resolveGlBalance($acctNo): GlBalances
+    {
+        $glBalances = GlBalances::where('acct_no', $acctNo)->first();
+        if (isset($glBalances)) {
+            return $glBalances;
+        }
+
+        $glAccount = GlAccounts::where('acct_no', $acctNo)->first();
+        if (!isset($glAccount)) {
+            throw new \RuntimeException("GL account $acctNo not found; cannot post to its balance.");
+        }
+
+        $glBalances = new GlBalances();
+        $glBalances->acct_no = $glAccount->acct_no;
+        $glBalances->acct_type = $glAccount->acct_type;
+        $glBalances->balance = 0;
+        $glBalances->branch_cd = $glAccount->branch_cd;
+        $glBalances->status = $glAccount->status;
+        $glBalances->institution_id = $glAccount->institution_id;
+        $glBalances->branch_id = $glAccount->branch_id;
+        $glBalances->created_on = now();
+        $glBalances->save();
+
+        return $glBalances;
+    }
+
     public function postGlDR($data): GlHistory
     {
         DB::beginTransaction();
-        $glBalances = GlBalances::where('acct_no', $data->acct_no)->first();
+        $glBalances = $this->resolveGlBalance($data->acct_no);
 
         if ($data->acct_type == 'ASSET' || $data->acct_type == 'EXPENSE') {
             $glBalances->balance = $glBalances->balance + $data->tran_amt;
@@ -635,7 +703,7 @@ class Controller extends BaseController
     public function postGlCR($data): GlHistory
     {
         DB::beginTransaction();
-        $glBalances = GlBalances::where('acct_no', $data->acct_no)->first();
+        $glBalances = $this->resolveGlBalance($data->acct_no);
 
         if ($data->acct_type == 'ASSET' || $data->acct_type == 'EXPENSE') {
             $glBalances->balance = $glBalances->balance - $data->tran_amt;
@@ -715,10 +783,13 @@ class Controller extends BaseController
      * @return void
      * @author bsh <email>
      */
-    public function getControlAcctByCode($code): array|string
+    public function getControlAcctByCode($code): array|string|null
     {
         $cntrl = CntrlParameter::where(["param_cd" => $code, "institution_id" => Auth::user()->institution_id])->first();
         $branch = Branch::find(Auth::user()->branch_id);
+        if (!isset($cntrl) || !isset($branch)) {
+            return null;
+        }
         return str_replace("***", $branch->code, $cntrl->param_value);
     }
 
@@ -765,7 +836,8 @@ class Controller extends BaseController
             $queryString = "SELECT H.*, B.acct_type
                         FROM gl_histories H
                         INNER JOIN gl_balances B ON H.acct_no = B.acct_no
-                        WHERE H.acct_no = :acctNo";
+                        WHERE H.acct_no = :acctNo
+                        AND COALESCE(H.reversal_flag, 'N') = 'N'";
 
             // Add date filtering if both start and end dates are provided
             if ($startDate && $endDate) {
@@ -805,6 +877,47 @@ class Controller extends BaseController
         } catch (\Throwable $th) {
             throw $th; // Rethrow the exception after logging it if needed
         }
+    }
+
+    /**
+     * Signed GL balance for an account cumulatively up to a date.
+     * Uses the same Dr/Cr normal-balance logic as getGlBalancesAsOf, but as a
+     * running balance "as of" $asOfDate (needed for opening/closing stock).
+     *
+     * @param string $acctNo
+     * @param string $asOfDate
+     * @param bool   $inclusive  true => transaction_date <= date, false => < date
+     * @return float
+     */
+    public function getGlBalanceAsOf($acctNo, $asOfDate, $inclusive = true): float
+    {
+        $operator = $inclusive ? '<=' : '<';
+
+        $queryString = "SELECT H.tran_amount, H.dr_cr_ind, B.acct_type
+                        FROM gl_histories H
+                        INNER JOIN gl_balances B ON H.acct_no = B.acct_no
+                        WHERE H.acct_no = :acctNo
+                        AND COALESCE(H.reversal_flag, 'N') = 'N'
+                        AND H.transaction_date::date $operator :asOfDate
+                        ORDER BY H.id ASC";
+
+        $glHistory = DB::select($queryString, ['acctNo' => $acctNo, 'asOfDate' => $asOfDate]);
+
+        $sum = 0;
+        foreach ($glHistory as $value) {
+            $tranAmount = (float) $value->tran_amount;
+            if (($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') && $value->dr_cr_ind == 'Dr') {
+                $sum += $tranAmount;
+            } elseif (($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') && $value->dr_cr_ind == 'Cr') {
+                $sum -= $tranAmount;
+            } elseif (($value->acct_type == 'LIABILITY' || $value->acct_type == 'INCOME') && $value->dr_cr_ind == 'Cr') {
+                $sum += $tranAmount;
+            } elseif (($value->acct_type == 'LIABILITY' || $value->acct_type == 'INCOME') && $value->dr_cr_ind == 'Dr') {
+                $sum -= $tranAmount;
+            }
+        }
+
+        return $sum;
     }
 
 
@@ -1309,6 +1422,9 @@ class Controller extends BaseController
     public function getCntParameterByCd($param_cd, $institution_id, $branch_cd)
     {
         $cnt = CntrlParameter::where(['param_cd' => $param_cd, 'institution_id' => $institution_id])->first();
+        if (!isset($cnt)) {
+            return null;
+        }
         $cntGl = str_replace('***', $branch_cd, $cnt->param_value);
         $acct = GlAccounts::where('acct_no', $cntGl)->first();
         return $acct;
