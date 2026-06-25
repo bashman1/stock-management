@@ -100,6 +100,7 @@ const operationalConfig = [
             { label: 'Sales Transaction Report', permission: 'ViewSalesReport', to: '/sales-report' },
             { label: 'Sales Report', permission: 'ViewSalesReport', to: '/sales-item-report' },
             { label: 'Cash Book', permission: 'ViewCashBook', to: '/cash-book' },
+            { label: 'Expenses Report', permission: 'CreateExpenses', to: '/view-expenses' },
             { label: 'VAT Payable', permission: 'ViewVatPayable', to: '/vat-payable-report' },
             { label: 'Rent Arrears Report', permission: 'RentArrearsReport', to: '/rental-arrears-report' },
             { label: 'Land Load Payment Report', permission: 'LandLoadPaymentReport', to: '/land-load-payment-report' }

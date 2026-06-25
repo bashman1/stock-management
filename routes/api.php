@@ -28,6 +28,7 @@ use App\Http\Controllers\GLBalanceController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\MtnPaymentsController;
 use App\Http\Controllers\GlAccountsController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TempProductController;
 use App\Http\Controllers\TempSaleController;
@@ -173,6 +174,9 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('gl-search', [GlAccountsController::class, "searchGl"]);
     Route::get('gl-cats', [GlAccountsController::class, "getLedgerCategories"]);
     Route::post('debit-credit-acct', [GlAccountsController::class, "debitCreditGl"]);
+    Route::post('create-expense', [ExpenseController::class, "createExpense"]);
+    Route::post('get-expenses', [ExpenseController::class, "getExpenses"]);
+    Route::post('pay-expense', [ExpenseController::class, "payExpense"]);
     Route::post('create-gl-account', [GlAccountsController::class, "createGlAcct"]);
     Route::post('get-product-details', [ProductController::class, "getProductDetails"]);
     Route::post('download-product-report-pdf', [ReportController::class, "downLoadProductPdfReport"]);

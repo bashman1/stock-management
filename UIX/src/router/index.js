@@ -566,6 +566,14 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: '/view-expenses',
+                    name: 'ViewExpenses',
+                    component: () => import('@/views/pages/reports/ViewExpenses.vue'),
+                    meta: {
+                        requiresAuth: true,
+                    },
+                },
+                {
                     path: '/sales-item-report',
                     name: 'SalesItemReport',
                     component: () => import('@/views/pages/reports/SalesItemReport.vue'),
