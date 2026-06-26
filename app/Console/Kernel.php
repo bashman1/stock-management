@@ -15,7 +15,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Post monthly depreciation for all due fixed assets (idempotent per period).
+        $schedule->command('assets:depreciate')->monthlyOn(1, '01:00');
     }
 
     /**

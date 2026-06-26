@@ -422,6 +422,18 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: '/journal-entry',
+                    name: 'JournalEntry',
+                    component: () => import('@/views/pages/chart-of-accounts/JournalEntry.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
+                    path: '/journal-entries',
+                    name: 'JournalEntries',
+                    component: () => import('@/views/pages/chart-of-accounts/JournalEntries.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
                     path: '/gl-statement/:acctNo',
                     name: 'GlStatement',
                     component: () => import('@/views/pages/chart-of-accounts/GlHistory.vue'),
@@ -572,6 +584,36 @@ const router = createRouter({
                     meta: {
                         requiresAuth: true,
                     },
+                },
+                {
+                    path: '/create-asset',
+                    name: 'CreateAsset',
+                    component: () => import('@/views/pages/assets/CreateAsset.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
+                    path: '/asset-register',
+                    name: 'AssetRegister',
+                    component: () => import('@/views/pages/assets/AssetRegister.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
+                    path: '/asset-transfers',
+                    name: 'AssetTransfers',
+                    component: () => import('@/views/pages/assets/AssetTransfers.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
+                    path: '/asset-maintenance',
+                    name: 'AssetMaintenance',
+                    component: () => import('@/views/pages/assets/AssetMaintenance.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
+                    path: '/depreciation-rates',
+                    name: 'DepreciationRates',
+                    component: () => import('@/views/pages/assets/DepreciationRates.vue'),
+                    meta: { requiresAuth: true },
                 },
                 {
                     path: '/sales-item-report',

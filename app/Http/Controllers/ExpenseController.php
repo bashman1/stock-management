@@ -12,79 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class ExpenseController extends Controller
 {
-    // map a payment method to the control-parameter code for the credited account
-    private function payParamCode($method): string
-    {
-        switch (strtoupper((string) $method)) {
-            case 'BANK':
-                return 'CGL';
-            case 'CREDIT':
-                return 'AP';
-            case 'CASH':
-            default:
-                return 'CL';
-        }
-    }
-
-    // resolve a branch GL account (acct_no + acct_type) from a control-parameter code
-    private function resolveControlAccount($paramCd, $instId, $branchCode)
-    {
-        $cp = CntrlParameter::where(['param_cd' => $paramCd, 'institution_id' => $instId])->first();
-        if (!isset($cp)) {
-            return null;
-        }
-        $acctNo = str_replace('***', $branchCode, $cp->param_value);
-        return GlAccounts::where('acct_no', $acctNo)->first();
-    }
-
-    // post a balanced journal (one Dr, one Cr) + the transaction record
-    private function postJournal($drAcctNo, $drType, $crAcctNo, $crType, $amount, $tranId, $desc, $date, $userData, $tranCd, $label): void
-    {
-        $tran = (array) [
-            'acct_no' => $drAcctNo,
-            'acct_type' => $drType,
-            'contra_acct_no' => $crAcctNo,
-            'contra_acct_type' => $crType,
-            'description' => $desc,
-            'dr_cr_ind' => 'DR/CR',
-            'tran_amount' => $amount,
-            'reversal_flag' => 'N',
-            'tran_date' => $date,
-            'tran_cd' => $tranCd,
-            'tran_id' => $tranId,
-            'status' => 'Active',
-            'institution_id' => $userData->institution_id,
-            'branch_id' => $userData->branch_id,
-            'created_by' => $userData->id,
-            'created_on' => now(),
-            'ext_ref' => $drAcctNo,
-            'tran' => $label,
-        ];
-        $this->postTransaction($tran);
-
-        $base = [
-            'tran_amt' => $amount,
-            'reversal_flag' => 'N',
-            'description' => $desc,
-            'transaction_date' => $date,
-            'tran_type' => $label,
-            'tran_cd' => $tranCd,
-            'tran_id' => $tranId,
-            'institution_id' => $userData->institution_id,
-            'branch_id' => $userData->branch_id,
-            'created_by' => $userData->id,
-            'status' => 'Active',
-        ];
-
-        $this->postGlDR((object) array_merge($base, [
-            'acct_no' => $drAcctNo, 'acct_type' => $drType,
-            'contra_acct_no' => $crAcctNo, 'contra_acct_type' => $crType,
-        ]));
-        $this->postGlCR((object) array_merge($base, [
-            'acct_no' => $crAcctNo, 'acct_type' => $crType,
-            'contra_acct_no' => $drAcctNo, 'contra_acct_type' => $drType,
-        ]));
-    }
+    // payParamCode(), resolveControlAccount() and postJournal() are now shared
+    // protected helpers on the base Controller (reused by the Asset module too).
 
     public function createExpense(Request $request)
     {

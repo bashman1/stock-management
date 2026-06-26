@@ -70,22 +70,35 @@ class Controller extends BaseController
      */
     public function genericResponse($status, $message, $code, $data, $action = null, $request = null)
     {
+        // Only audit meaningful events — writes, auth, exports and any failure.
+        // Routine successful reads are skipped (kills noise + self-logging of the log viewer).
+        if ($this->isAuditable($action, $status)) {
+            $meta = $this->deriveAuditMeta($action, $code, $status, $data);
+            $req = request();
 
-        $log = [
-            "action" => $action,
-            "ip" => IpRequest::ip(),
-            "http_code" => $code,
-            "request" => $request instanceof Request ? $request->all() : $request,
-            "response" => $data,
-            "return_status" => $status,
-            "return_message" => $message,
-            "user_id" => Auth::user() ? Auth::user()->id : null,
-            "institution_id" => Auth::user() ? Auth::user()->institution_id : null,
-            "branch_id" => Auth::user() ? Auth::user()->branch_id : null,
-            "created_on" => now()
-        ];
-        $this->setLogs($log);
-
+            $log = [
+                "uuid" => (string) Str::uuid(),
+                "action" => $action,
+                "entity_type" => $meta['entity_type'],
+                "entity_id" => $meta['entity_id'],
+                "ip" => IpRequest::ip(),
+                "user_agent" => $req ? substr((string) $req->userAgent(), 0, 255) : null,
+                "method" => $req ? $req->method() : null,
+                "route" => $req ? substr((string) $req->path(), 0, 255) : null,
+                "http_code" => $code,
+                "severity" => $meta['severity'],
+                "event_category" => $meta['event_category'],
+                "request" => $this->sanitizeForAudit($request instanceof Request ? $request->all() : $request),
+                "response" => $this->sanitizeForAudit($data),
+                "return_status" => $status,
+                "return_message" => $message,
+                "user_id" => Auth::user() ? Auth::user()->id : null,
+                "institution_id" => Auth::user() ? Auth::user()->institution_id : null,
+                "branch_id" => Auth::user() ? Auth::user()->branch_id : null,
+                "created_on" => now(),
+            ];
+            $this->setLogs($log);
+        }
 
         return response()->json([
             "status" => $status,
@@ -93,6 +106,117 @@ class Controller extends BaseController
             "message" => $message,
             "data" => $data
         ], $code);
+    }
+
+    /**
+     * Audit only writes / auth / exports / failures; skip routine successful reads.
+     */
+    private function isAuditable($action, $status): bool
+    {
+        $action = (string) $action;
+        if ($status === false) {
+            return true; // always audit failures
+        }
+        if (preg_match('/^(download|export)/i', $action)) {
+            return true; // exports/downloads are auditable
+        }
+        // routine reads are not auditable
+        return !preg_match('/^(get|view|list|fetch|search)/i', $action);
+    }
+
+    /**
+     * Recursively redact secrets and cap the size of audit payloads.
+     */
+    private function sanitizeForAudit($value)
+    {
+        $redactKeys = [
+            'password', 'password_confirmation', 'current_password', 'new_password',
+            'token', 'access_token', 'auth_token', 'secret', 'otp', 'pin',
+            'receipt', 'image', 'base64', 'src', 'logo',
+        ];
+
+        $clean = function ($data) use (&$clean, $redactKeys) {
+            if (is_object($data)) {
+                $data = json_decode(json_encode($data), true);
+            }
+            if (!is_array($data)) {
+                return $data;
+            }
+            $out = [];
+            foreach ($data as $k => $v) {
+                if (is_string($k) && in_array(strtolower($k), $redactKeys, true)) {
+                    $out[$k] = '***REDACTED***';
+                } else {
+                    $out[$k] = (is_array($v) || is_object($v)) ? $clean($v) : $v;
+                }
+            }
+            return $out;
+        };
+
+        $cleaned = $clean($value);
+
+        // size cap: store a summary instead of huge blobs
+        $encoded = json_encode($cleaned);
+        if ($encoded !== false && strlen($encoded) > 8192) {
+            return [
+                '_truncated' => true,
+                'size' => strlen($encoded),
+                'keys' => is_array($cleaned) ? array_slice(array_keys($cleaned), 0, 20) : [],
+            ];
+        }
+
+        return $cleaned;
+    }
+
+    /**
+     * Derive entity, severity and event category from the action + outcome.
+     */
+    private function deriveAuditMeta($action, $code, $status, $data): array
+    {
+        $action = (string) $action;
+
+        // entity type = action with the leading verb stripped (createExpense -> Expense)
+        $entityType = preg_replace('/^(create|update|delete|get|restock|pay|approve|archive|reverse|new)/i', '', $action);
+        $entityType = $entityType !== '' ? ucfirst($entityType) : null;
+
+        // entity id from a saved model/object response
+        $entityId = null;
+        if (is_object($data) && isset($data->id)) {
+            $entityId = (string) $data->id;
+        } elseif (is_array($data) && isset($data['id'])) {
+            $entityId = (string) $data['id'];
+        }
+
+        // severity
+        if ((int) $code >= 500) {
+            $severity = 'ERROR';
+        } elseif ($status === false || (int) $code >= 400) {
+            $severity = 'WARNING';
+        } elseif (preg_match('/^(delete|reverse|archive)/i', $action)) {
+            $severity = 'CRITICAL';
+        } else {
+            $severity = 'INFO';
+        }
+
+        // event category
+        if (preg_match('/(login|logout|logOut)/i', $action)) {
+            $category = 'AUTH';
+        } elseif (preg_match('/(expense|order|invoice|gl|payable|receivable|pay|restock|stock|sale|product|reconcile)/i', $action)) {
+            $category = 'FINANCIAL';
+        } elseif (preg_match('/^(download|export)/i', $action)) {
+            $category = 'EXPORT';
+        } elseif (preg_match('/^(create|update|delete|approve|archive|new)/i', $action)) {
+            $category = 'DATA';
+        } else {
+            $category = 'SYSTEM';
+        }
+
+        return [
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'severity' => $severity,
+            'event_category' => $category,
+        ];
     }
 
 
@@ -527,7 +651,8 @@ class Controller extends BaseController
         $gfs = DB::table('gl_accounts')
             ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
             ->where('institution_id', $instId)
-            ->where('acct_type', 'ASSET')
+            // 1307001 was reclassified from ASSET to EXPENSE (Cost of Goods Sold)
+            ->where('acct_type', 'EXPENSE')
             ->where('gl_no', '1307001')
             ->first();
 
@@ -611,7 +736,47 @@ class Controller extends BaseController
             $newSti->save();
         }
 
+        // Accumulated Depreciation (contra-asset) for the asset module
+        $accDep = DB::table('gl_accounts')
+            ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+            ->where('institution_id', $instId)
+            ->where('acct_type', 'ASSET')
+            ->where('gl_no', '1113001')
+            ->first();
+        if (!isset($accDep)) {
+            return false;
+        }
+        $isAdExisting = CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($accDep->replaced_acct_no)])->exists();
+        if (!$isAdExisting) {
+            $newSti = new CntrlParameter();
+            $newSti->param_name = "Accumulated Depreciation AD";
+            $newSti->param_cd = "AD";
+            $newSti->param_value = strrev($accDep->replaced_acct_no);
+            $newSti->institution_id = $instId;
+            $newSti->created_on = now();
+            $newSti->save();
+        }
 
+        // Depreciation Expense for the asset module
+        $depExp = DB::table('gl_accounts')
+            ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+            ->where('institution_id', $instId)
+            ->where('acct_type', 'EXPENSE')
+            ->where('gl_no', '5250001')
+            ->first();
+        if (!isset($depExp)) {
+            return false;
+        }
+        $isDexExisting = CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($depExp->replaced_acct_no)])->exists();
+        if (!$isDexExisting) {
+            $newSti = new CntrlParameter();
+            $newSti->param_name = "Depreciation Expense DEX";
+            $newSti->param_cd = "DEX";
+            $newSti->param_value = strrev($depExp->replaced_acct_no);
+            $newSti->institution_id = $instId;
+            $newSti->created_on = now();
+            $newSti->save();
+        }
 
         DB::commit();
         return true;
@@ -804,6 +969,88 @@ class Controller extends BaseController
     {
         $response = Payable::create($payable);
         return $response;
+    }
+
+    // --- Shared balanced-journal helpers (used by Expense + Asset modules) -----
+
+    /**
+     * Map a payment method to the control-parameter code for the credited account.
+     */
+    protected function payParamCode($method): string
+    {
+        switch (strtoupper((string) $method)) {
+            case 'BANK':
+                return 'CGL';
+            case 'CREDIT':
+                return 'AP';
+            case 'CASH':
+            default:
+                return 'CL';
+        }
+    }
+
+    /**
+     * Resolve a branch GL account (acct_no + acct_type) from a control-parameter code.
+     */
+    protected function resolveControlAccount($paramCd, $instId, $branchCode)
+    {
+        $cp = CntrlParameter::where(['param_cd' => $paramCd, 'institution_id' => $instId])->first();
+        if (!isset($cp)) {
+            return null;
+        }
+        $acctNo = str_replace('***', $branchCode, $cp->param_value);
+        return GlAccounts::where('acct_no', $acctNo)->first();
+    }
+
+    /**
+     * Post one balanced journal (a single Dr and Cr) plus the transaction record.
+     */
+    protected function postJournal($drAcctNo, $drType, $crAcctNo, $crType, $amount, $tranId, $desc, $date, $userData, $tranCd, $label): void
+    {
+        $tran = (array) [
+            'acct_no' => $drAcctNo,
+            'acct_type' => $drType,
+            'contra_acct_no' => $crAcctNo,
+            'contra_acct_type' => $crType,
+            'description' => $desc,
+            'dr_cr_ind' => 'DR/CR',
+            'tran_amount' => $amount,
+            'reversal_flag' => 'N',
+            'tran_date' => $date,
+            'tran_cd' => $tranCd,
+            'tran_id' => $tranId,
+            'status' => 'Active',
+            'institution_id' => $userData->institution_id,
+            'branch_id' => $userData->branch_id,
+            'created_by' => $userData->id,
+            'created_on' => now(),
+            'ext_ref' => $drAcctNo,
+            'tran' => $label,
+        ];
+        $this->postTransaction($tran);
+
+        $base = [
+            'tran_amt' => $amount,
+            'reversal_flag' => 'N',
+            'description' => $desc,
+            'transaction_date' => $date,
+            'tran_type' => $label,
+            'tran_cd' => $tranCd,
+            'tran_id' => $tranId,
+            'institution_id' => $userData->institution_id,
+            'branch_id' => $userData->branch_id,
+            'created_by' => $userData->id,
+            'status' => 'Active',
+        ];
+
+        $this->postGlDR((object) array_merge($base, [
+            'acct_no' => $drAcctNo, 'acct_type' => $drType,
+            'contra_acct_no' => $crAcctNo, 'contra_acct_type' => $crType,
+        ]));
+        $this->postGlCR((object) array_merge($base, [
+            'acct_no' => $crAcctNo, 'acct_type' => $crType,
+            'contra_acct_no' => $drAcctNo, 'contra_acct_type' => $drType,
+        ]));
     }
 
 

@@ -136,6 +136,8 @@ const operationalConfig = [
             { label: 'Create Ledger', permission: 'CreateLedger', to: '/create-ledger' },
             { label: 'GL accounts', permission: 'ViewGlAccounts', to: '/gl-accounts' },
             { label: 'GL Debit/Credit', permission: 'DebitCredit', to: '/debit-credit-gl' },
+            { label: 'Journal Entry', permission: 'DebitCredit', to: '/journal-entry' },
+            { label: 'Journal Register', permission: 'DebitCredit', to: '/journal-entries' },
             { label: 'GL overview', permission: 'GlOverView', to: '/gl-overview' },
             { label: 'Control Accounts', permission: 'ViewCntrlParams', to: '/cntrl-params' },
             { label: 'Income Statement', permission: 'ViewIncomeStatement', to: '/income-statement' },
@@ -177,6 +179,19 @@ const operationalConfig = [
             { label: 'View Building Units', permission: 'ViewBuildingUnits', to: '/view-building-units' },
             { label: 'Rent Building Units', permission: 'RentBuildingUnits', to: '/rent-building-units' },
             { label: 'View Rent Building Units', permission: 'ViewRentBuildingUnits', to: '/view-building-rentals' }
+        ]
+    },
+    {
+        key: 'assets',
+        label: 'Asset Tracking',
+        icon: 'pi-desktop',
+        permission: null,
+        items: [
+            { label: 'Add Asset', permission: 'ManageAssets', to: '/create-asset' },
+            { label: 'Asset Register', permission: 'ManageAssets', to: '/asset-register' },
+            { label: 'Asset Transfers', permission: 'ManageAssets', to: '/asset-transfers' },
+            { label: 'Maintenance', permission: 'ManageAssets', to: '/asset-maintenance' },
+            { label: 'Depreciation Rates', permission: 'ManageAssets', to: '/depreciation-rates' }
         ]
     },
     {
