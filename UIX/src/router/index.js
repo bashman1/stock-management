@@ -610,6 +610,42 @@ const router = createRouter({
                     meta: { requiresAuth: true },
                 },
                 {
+                    path: '/warehouses',
+                    name: 'Warehouses',
+                    component: () => import('@/views/pages/warehouse/Warehouses.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
+                    path: '/warehouse-locations',
+                    name: 'WarehouseLocations',
+                    component: () => import('@/views/pages/warehouse/WarehouseLocations.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
+                    path: '/warehouse-stock',
+                    name: 'WarehouseStock',
+                    component: () => import('@/views/pages/warehouse/WarehouseStock.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
+                    path: '/warehouse-transfers',
+                    name: 'WarehouseTransfers',
+                    component: () => import('@/views/pages/warehouse/WarehouseTransfers.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
+                    path: '/bills-of-materials',
+                    name: 'BillsOfMaterials',
+                    component: () => import('@/views/pages/manufacturing/BillsOfMaterials.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
+                    path: '/production-orders',
+                    name: 'ProductionOrders',
+                    component: () => import('@/views/pages/manufacturing/ProductionOrders.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
                     path: '/depreciation-rates',
                     name: 'DepreciationRates',
                     component: () => import('@/views/pages/assets/DepreciationRates.vue'),

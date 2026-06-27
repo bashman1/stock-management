@@ -78,7 +78,10 @@ const OnSelectItem = (data) => {
         commonService.showError(toast, "Product not found");
         return;
     }
-    if(Number(actualProduct?.quantity) <= 0){
+    // Only inventory-tracked (STOCK) products are subject to stock checks.
+    // Services, digital, non-stock and bundle items are not held in inventory.
+    const tracksStock = (actualProduct?.nature ?? 'STOCK') === 'STOCK';
+    if (tracksStock && Number(actualProduct?.quantity) <= 0){
         commonService.showError(toast, "Product out of stock");
         return;
     }
@@ -146,10 +149,12 @@ const updateQty = (event, data) => {
         return;
     }
 
-    // stock is held in base units; convert the entered (chosen-unit) qty to base
+    // stock is held in base units; convert the entered (chosen-unit) qty to base.
+    // Only enforce the cap for inventory-tracked (STOCK) products.
+    const tracksStock = (actualProduct?.nature ?? 'STOCK') === 'STOCK';
     const conversion = Number(data?.selected?.weight) || 1;
     const maxChosen = Number(actualProduct?.quantity) / conversion;
-    if (newQty > maxChosen) {
+    if (tracksStock && newQty > maxChosen) {
         commonService.showError(toast, "Quantity exceeds available stock " + maxChosen + " " + (data?.selected?.name || ''));
         newQty = maxChosen;
         // return;
@@ -191,9 +196,10 @@ const increaseReduce = (data, action) => {
 
 
     if (action == 'Add'){
-        // compare in base units (chosen qty * conversion factor)
+        // compare in base units (chosen qty * conversion factor); skip for non-stock natures
+        const tracksStock = (actualProduct?.nature ?? 'STOCK') === 'STOCK';
         const conversion = Number(selectedItm?.selected?.weight) || 1;
-        if ((Number(selectedItm?.quantity) + 1) * conversion > Number(actualProduct?.quantity)) {
+        if (tracksStock && (Number(selectedItm?.quantity) + 1) * conversion > Number(actualProduct?.quantity)) {
             commonService.showError(toast, "Quantity exceeds available stock "+actualProduct?.quantity);
             return;
         }

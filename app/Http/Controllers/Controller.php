@@ -1770,4 +1770,48 @@ class Controller extends BaseController
         // Kill the epoch date here
         return $date === '1970-01-01' ? null : $date;
     }
+
+    /**
+     * Keep the warehouse stock sub-ledger in step with branch stock movements.
+     * Applies a signed base-unit delta to a product's row in the branch's default
+     * warehouse (or the given warehouse). Best-effort: any failure is logged, not
+     * thrown, so it can never break a sale or product save.
+     */
+    protected function adjustWarehouseStock($productId, $branchId, $deltaBaseQty, $warehouseId = null)
+    {
+        try {
+            if (!$warehouseId) {
+                $wh = \App\Models\Warehouse::where(['branch_id' => $branchId, 'is_default' => true])->first()
+                    ?: \App\Models\Warehouse::where('branch_id', $branchId)->first();
+                if (!$wh) {
+                    return; // no warehouse for this branch yet
+                }
+                $warehouseId = $wh->id;
+            } else {
+                $wh = \App\Models\Warehouse::find($warehouseId);
+            }
+
+            $row = \App\Models\WarehouseStock::where([
+                'warehouse_id' => $warehouseId,
+                'product_id' => $productId,
+            ])->whereNull('location_id')->first();
+
+            if (!$row) {
+                $row = new \App\Models\WarehouseStock();
+                $row->warehouse_id = $warehouseId;
+                $row->location_id = null;
+                $row->product_id = $productId;
+                $row->quantity = 0;
+                $row->institution_id = $wh->institution_id ?? null;
+                $row->branch_id = $branchId;
+                $row->status = 'Active';
+                $row->created_on = now();
+            }
+            $row->quantity = (float) $row->quantity + (float) $deltaBaseQty;
+            $row->updated_on = now();
+            $row->save();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('adjustWarehouseStock failed: ' . $e->getMessage());
+        }
+    }
 }

@@ -26,6 +26,8 @@ use App\Models\EfrisMeasurementUnits;
 use Illuminate\Support\Arr;
 use App\Models\measurementUnit;
 use App\Models\ProductUnit;
+use App\Models\ProductType;
+use App\Models\ProductComponent;
 use App\Models\ProductCategory;
 use App\Models\EfrisComodityCategory;
 
@@ -141,6 +143,19 @@ class ProductController extends Controller
         if (isset($institution->is_tax_enabled) && $institution->is_tax_enabled) {
             $product->tax_config = $request->tax_config;
         }
+
+        // Resolve the product's behaviour from its type (defaults to STOCK so
+        // legacy products are unchanged). `nature` drives the stock + GL branching
+        // below: only STOCK items track inventory and post inventory/COGS.
+        $nature = 'STOCK';
+        if (!empty($request->type_id)) {
+            $pt = ProductType::find($request->type_id);
+            if ($pt && !empty($pt->nature)) {
+                $nature = $pt->nature;
+            }
+        }
+        $product->nature = $nature;
+        $product->tracks_stock = ($nature === 'STOCK');
         $product->save();
 
         // persist the product's units of measure ($unitId is the base unit,
@@ -149,8 +164,13 @@ class ProductController extends Controller
             $this->syncProductUnits($product, $units, $unitId, $userData, $institutionData->efris_enabled);
         }
 
+        // BUNDLE: persist the component products that get decremented on sale
+        if ($nature === 'BUNDLE') {
+            $this->syncBundleComponents($product, $request->components ?? [], $userData);
+        }
 
-        if (!isset($isEdit)) {
+
+        if (!isset($isEdit) && $nature === 'STOCK') {
             $branch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
             $cl = null;
             if (isset($request->payment_method)) {
@@ -321,7 +341,17 @@ class ProductController extends Controller
 
                 $this->efrisCreateOpeningStock($supplier?->name ?? '', $request->date, $refNo, $request->quantity, $request->selling_price, $efrisUnit->value);
             }
-        } else {
+        }
+
+        // Non-stock items are expensed at purchase (no inventory asset):
+        // Dr COGS-expense / Cr Cash|AP for the opening quantity x cost.
+        if (!isset($isEdit) && $nature === 'NON_STOCK'
+            && (float) $request->quantity > 0 && (float) $request->purchase_price > 0) {
+            $this->postNonStockPurchase($request, $product, $refNo, $userData);
+        }
+
+        // Editing a stock product re-values the original stock-in posting.
+        if (isset($isEdit) && $nature === 'STOCK') {
             $updateTransaction = $this->updateTransaction($product->id, $userData->institution_id, $userData->branch_id, $request->quantity * $request->purchase_price);
             $payable = $this->updatePayable($updateTransaction->tran_id, (float) $updateTransaction->tran_amount);
             $updateHistory = $this->updateGlHistory($updateTransaction->tran_id, (float)$updateTransaction->tran_amount, (float)$updateTransaction->old_amount);
@@ -365,6 +395,8 @@ class ProductController extends Controller
             $history->created_on = Carbon::now();
         }
 
+        // warehouse ledger follows the change in branch stock quantity
+        $oldQty = (float) ($stock->quantity ?? 0);
         $stock->purchase_price =  (float) $request->purchase_price;
         $stock->selling_price = (float) $request->selling_price;
         $stock->discount = $request->discount;
@@ -381,6 +413,9 @@ class ProductController extends Controller
         $stock->user_id = $userData->id;
         $stock->status = $request->status;
         $stock->save();
+
+        // mirror the delta into the branch's default warehouse sub-ledger
+        $this->adjustWarehouseStock($product->id, $userData->branch_id, ((float) $request->quantity) - $oldQty);
 
         $history->purchase_price = (float) $request->purchase_price;
         $history->selling_price = (float) $request->selling_price;
@@ -402,6 +437,94 @@ class ProductController extends Controller
 
         DB::commit();
         return  (object)['message' => $message, 'product' => $product];
+    }
+
+    /**
+     * Replace a bundle product's component list. Components are decremented from
+     * their own stock when the bundle sells (see OrderController::newSale).
+     */
+    private function syncBundleComponents($product, $components, $userData)
+    {
+        ProductComponent::where('bundle_product_id', $product->id)->delete();
+        foreach ((array) $components as $c) {
+            $compId = $c['component_product_id'] ?? $c['id'] ?? null;
+            if (empty($compId)) {
+                continue;
+            }
+            ProductComponent::create([
+                'bundle_product_id'    => $product->id,
+                'component_product_id' => $compId,
+                'quantity'             => (float) ($c['quantity'] ?? 1),
+                'measurement_unit_id'  => $c['measurement_unit_id'] ?? null,
+                'institution_id'       => $userData->institution_id,
+                'branch_id'            => $userData->branch_id,
+                'created_by'           => $userData->id,
+                'created_on'           => now(),
+            ]);
+        }
+    }
+
+    /**
+     * Post the purchase of a NON_STOCK item: cost is expensed immediately rather
+     * than capitalised as inventory. Dr COGS-expense (GFS) / Cr Cash|Bank|AP, and
+     * raise a payable when bought on credit.
+     */
+    private function postNonStockPurchase($request, $product, $refNo, $userData)
+    {
+        $branch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
+
+        if ($request->payment_method == 'BANK') {
+            $cl = CntrlParameter::where(['param_cd' => 'CGL', 'institution_id' => $userData->institution_id])->first();
+        } elseif ($request->payment_method == 'CREDIT') {
+            $cl = CntrlParameter::where(['param_cd' => 'AP', 'institution_id' => $userData->institution_id])->first();
+        } else {
+            $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+        }
+        $gfs = CntrlParameter::where(['param_cd' => 'GFS', 'institution_id' => $userData->institution_id])->first();
+
+        $cgl = str_replace('***', $branch->code, $cl->param_value);
+        $cash = GlAccounts::where('acct_no', $cgl)->first();
+        $expGl = str_replace('***', $branch->code, $gfs->param_value);
+        $exp = GlAccounts::where('acct_no', $expGl)->first();
+
+        $amount = (float) $request->quantity * (float) $request->purchase_price;
+        $tranId = $this->generateUuid();
+        $desc = "Purchase non-stock item:- $product->name on " . date('Y-m-d H:i:s');
+
+        $this->postTransaction((array) [
+            'acct_no' => $expGl, 'acct_type' => $exp->acct_type,
+            'contra_acct_no' => $cgl, 'contra_acct_type' => $cash->acct_type,
+            'description' => $desc, 'dr_cr_ind' => 'DR/CR', 'tran_amount' => $amount,
+            'reversal_flag' => 'N', 'tran_date' => $request->date ?? now(), 'tran_cd' => 'EXP',
+            'tran_id' => $tranId, 'status' => 'Active', 'institution_id' => $userData->institution_id,
+            'branch_id' => $userData->branch_id, 'created_by' => $userData->id, 'created_on' => now(),
+            'product_id' => $product->id, 'ext_ref' => $refNo, 'tran' => 'Purchase Non-stock',
+        ]);
+
+        $base = [
+            'tran_amt' => $amount, 'reversal_flag' => 'N', 'description' => $desc,
+            'transaction_date' => $request->date ?? now(), 'tran_type' => 'PURCHASE', 'tran_cd' => 'EXP',
+            'tran_id' => $tranId, 'institution_id' => $userData->institution_id, 'branch_id' => $userData->branch_id,
+            'created_by' => $userData->id, 'status' => 'Active',
+        ];
+        $this->postGlDR((object) array_merge($base, [
+            'acct_no' => $expGl, 'acct_type' => $exp->acct_type,
+            'contra_acct_no' => $cgl, 'contra_acct_type' => $cash->acct_type,
+        ]));
+        $this->postGlCR((object) array_merge($base, [
+            'acct_no' => $cgl, 'acct_type' => $cash->acct_type,
+            'contra_acct_no' => $expGl, 'contra_acct_type' => $exp->acct_type,
+        ]));
+
+        if ($request->payment_method == 'CREDIT') {
+            $this->createPayable((array) [
+                'ref_no' => $refNo, 'tran_id' => $tranId, 'supplier_id' => $request->supplier_id,
+                'product_id' => $product->id, 'manufacturer_id' => $request->manufacturer_id,
+                'amount' => $amount, 'amount_paid' => 0, 'status' => 'Active',
+                'institution_id' => $userData->institution_id, 'branch_id' => $userData->branch_id,
+                'created_by' => $userData->id, 'created_on' => Carbon::now(),
+            ]);
+        }
     }
 
     /**
@@ -535,6 +658,9 @@ class ProductController extends Controller
         $stocks->branch_id = $userData->branch_id;
         $stocks->user_id = $userData->id;
         $stocks->save();
+
+        // add the restocked quantity to the branch's default warehouse sub-ledger
+        $this->adjustWarehouseStock($request->productId, $userData->branch_id, (float) $request->quantity);
 
         $history = new stockHistory();
         $history->created_by = $userData->id;
@@ -720,7 +846,8 @@ class ProductController extends Controller
             $sqlString = "SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
             P.institution_id, P.user_id, P.status, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.ref_no, P.updated_at, C.name AS category_name,
             S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
-            E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name,  P.tax_config, Y.name AS secondary_unit, P.secondary_weight, P.secondary_price, P.secondary_measurement_unit_id
+            E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name,  P.tax_config, Y.name AS secondary_unit, P.secondary_weight, P.secondary_price, P.secondary_measurement_unit_id,
+            P.nature, P.tracks_stock
             FROM products P INNER JOIN product_categories C ON C.id = P.category_id
             LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
             LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id

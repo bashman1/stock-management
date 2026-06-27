@@ -41,6 +41,8 @@ use App\Http\Controllers\FixedAssetController;
 use App\Http\Controllers\DepreciationRateController;
 use App\Http\Controllers\AssetTransferController;
 use App\Http\Controllers\AssetMaintenanceController;
+use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\ManufacturingController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LicensePackageController;
 use App\Http\Controllers\MailReceiverController;
@@ -255,6 +257,27 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-asset-transfers", [AssetTransferController::class, "getTransfers"]);
     Route::post("create-asset-maintenance", [AssetMaintenanceController::class, "createMaintenance"]);
     Route::post("get-asset-maintenances", [AssetMaintenanceController::class, "getMaintenances"]);
+    // Warehouse management
+    Route::post("create-warehouse", [WarehouseController::class, "createWarehouse"]);
+    Route::post("update-warehouse", [WarehouseController::class, "updateWarehouse"]);
+    Route::post("get-warehouses", [WarehouseController::class, "getWarehouses"]);
+    Route::post("create-warehouse-location", [WarehouseController::class, "createLocation"]);
+    Route::post("get-warehouse-locations", [WarehouseController::class, "getLocations"]);
+    Route::post("get-warehouse-stock", [WarehouseController::class, "getWarehouseStock"]);
+    Route::post("create-warehouse-transfer", [WarehouseController::class, "createTransfer"]);
+    Route::post("put-away-stock", [WarehouseController::class, "putAway"]);
+    Route::post("get-warehouse-transfers", [WarehouseController::class, "getTransfers"]);
+    // Manufacturing
+    Route::post("create-bom", [ManufacturingController::class, "createBom"]);
+    Route::post("get-boms", [ManufacturingController::class, "getBoms"]);
+    Route::post("get-bom", [ManufacturingController::class, "getBom"]);
+    Route::post("create-production-order", [ManufacturingController::class, "createProductionOrder"]);
+    Route::post("get-production-orders", [ManufacturingController::class, "getProductionOrders"]);
+    Route::post("get-production-order", [ManufacturingController::class, "getProductionOrder"]);
+    Route::post("issue-materials", [ManufacturingController::class, "issueMaterials"]);
+    Route::post("record-scrap", [ManufacturingController::class, "recordScrap"]);
+    Route::post("complete-production", [ManufacturingController::class, "completeProduction"]);
+    Route::post("cancel-production-order", [ManufacturingController::class, "cancelProductionOrder"]);
     Route::post("create-project", [ProjectController::class, "createProject"]);
     Route::get("get-projects", [ProjectController::class, "getProjects"]);
     Route::post("create-investment", [InvestmentController::class, "createInvestment"]);

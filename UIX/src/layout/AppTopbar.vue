@@ -99,6 +99,7 @@ const userName = computed(() =>
         .join(' ') || '—'
 );
 const roleName = computed(() => userData.value.role_name || '—');
+const isLaraLightIndigo = computed(() => layoutConfig.theme.value === 'lara-light-indigo');
 const businessName = computed(() => userData.value.institution_name || '—');
 const branchName = computed(() => userData.value.branch_name || '—');
 const licensePackage = computed(() => license.value.package_name || '—');
@@ -153,31 +154,31 @@ const licenseTooltip = computed(() => {
             <div class="context-pill" title="Signed-in user">
                 <i class="pi pi-user"></i>
                 <span class="context-label">User</span>
-                <span class="context-value">{{ userName }}</span>
+                <span class="context-value"  :class="{ 'text-800': isLaraLightIndigo }">{{ userName }}</span>
             </div>
 
             <div class="context-pill" title="Role">
                 <i class="pi pi-id-card"></i>
                 <span class="context-label">Role</span>
-                <span class="context-value">{{ roleName }}</span>
+                <span class="context-value" :class="{ 'text-800': isLaraLightIndigo }">{{ roleName }}</span>
             </div>
 
             <div class="context-pill" title="Business">
                 <i class="pi pi-building"></i>
                 <span class="context-label">Business</span>
-                <span class="context-value">{{ businessName }}</span>
+                <span class="context-value" :class="{ 'text-800': isLaraLightIndigo }">{{ businessName }}</span>
             </div>
 
             <div class="context-pill" title="Branch">
                 <i class="pi pi-sitemap"></i>
                 <span class="context-label">Branch</span>
-                <span class="context-value">{{ branchName }}</span>
+                <span class="context-value" :class="{ 'text-800': isLaraLightIndigo }">{{ branchName }}</span>
             </div>
 
             <div class="context-pill" :title="licenseTooltip">
                 <i class="pi pi-verified"></i>
                 <span class="context-label">License</span>
-                <span class="context-value">{{ licensePackage }}</span>
+                <span class="context-value" :class="{ 'text-800': isLaraLightIndigo }">{{ licensePackage }}</span>
                 <Tag :value="licenseStatusLabel" :severity="licenseSeverity" class="ml-1"></Tag>
             </div>
         </div>

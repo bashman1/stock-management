@@ -195,6 +195,28 @@ const operationalConfig = [
         ]
     },
     {
+        key: 'warehouses',
+        label: 'Warehouses',
+        icon: 'pi-building',
+        permission: null,
+        items: [
+            { label: 'Warehouses', permission: 'ManageWarehouses', to: '/warehouses' },
+            { label: 'Locations (Rack/Shelf/Bin)', permission: 'ManageWarehouses', to: '/warehouse-locations' },
+            { label: 'Warehouse Stock', permission: 'ManageWarehouses', to: '/warehouse-stock' },
+            { label: 'Warehouse Transfers', permission: 'ManageWarehouses', to: '/warehouse-transfers' }
+        ]
+    },
+    {
+        key: 'manufacturing',
+        label: 'Manufacturing',
+        icon: 'pi-cog',
+        permission: null,
+        items: [
+            { label: 'Bills of Materials', permission: 'ManageManufacturing', to: '/bills-of-materials' },
+            { label: 'Production Orders', permission: 'ManageManufacturing', to: '/production-orders' }
+        ]
+    },
+    {
         key: 'account',
         label: 'Account',
         icon: 'pi-user',

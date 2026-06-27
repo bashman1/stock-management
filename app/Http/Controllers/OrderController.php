@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ProductComponent;
 use App\Models\stock;
 use App\Models\Branch;
 use App\Models\GlAccounts;
@@ -121,6 +122,37 @@ class OrderController extends Controller
         $gfsGlType = GlAccounts::where('acct_no', $gfsGl)->first();
         $stInGlType = GlAccounts::where('acct_no', $stInGl)->first();
 
+        // Capture the resolved accounts into clearly-named vars (the $stock var is
+        // reused for the per-item inventory row inside the loop, so grab the Sales
+        // account type now before it is clobbered).
+        $cashAcctNo = $cgl;
+        $cashAcctType = $cash->acct_type;
+        $salesAcctNo = $sgl;
+        $salesAcctType = $stock->acct_type;   // INCOME (main Sales / SL)
+        $cogsAcctNo = $gfsGl;
+        $cogsAcctType = $gfsGlType->acct_type; // EXPENSE (COGS)
+        $invAcctNo = $stInGl;
+        $invAcctType = $stInGlType->acct_type; // ASSET (Inventory)
+
+        // Dedicated revenue accounts for service / digital products (fall back to
+        // the main Sales account if a control parameter is missing).
+        $svrParam = CntrlParameter::where(['param_cd' => 'SVR', 'institution_id' => $userData->institution_id])->first();
+        $dgsParam = CntrlParameter::where(['param_cd' => 'DGS', 'institution_id' => $userData->institution_id])->first();
+        $svrAcctNo = $svrParam ? str_replace('***', $branch->code, $svrParam->param_value) : $salesAcctNo;
+        $dgsAcctNo = $dgsParam ? str_replace('***', $branch->code, $dgsParam->param_value) : $salesAcctNo;
+        $svrAcct = GlAccounts::where('acct_no', $svrAcctNo)->first();
+        $dgsAcct = GlAccounts::where('acct_no', $dgsAcctNo)->first();
+        $svrAcctType = $svrAcct->acct_type ?? $salesAcctType;
+        $dgsAcctType = $dgsAcct->acct_type ?? $salesAcctType;
+
+        // Total revenue to recognise (sale total net of VAT) is split across items
+        // by their gross share, then credited to each item's revenue account.
+        $totalRevenue = (float) $request->total - $totalVATPayable;
+        $grossSum = 0;
+        foreach ($request->items as $gv) {
+            $grossSum += (float) $gv['price'] * (float) $gv['quantity'];
+        }
+
         $tran = (array)[
             "acct_no" => $sgl,
             "acct_type" => $stock->acct_type,
@@ -202,8 +234,31 @@ class OrderController extends Controller
             "created_by" => $userData->id,
             "status" => 'Active',
         ];
+        // Debit Cash/Bank/AR for the full order total. The contra credit is no
+        // longer a single Sales posting — revenue is credited per item below to
+        // each item's own revenue account (Sales / Service Revenue / Digital Sales).
         $debit = $this->postGlDR($debitRequest);
-        $credit = $this->postGlCR($creditRequest);
+
+        // Builds a GL Dr/Cr request object for a posting in this sale.
+        $mkGl = function ($acctNo, $acctType, $amt, $contraNo, $contraType) use ($postTran, $userData) {
+            return (object) [
+                "acct_no" => $acctNo,
+                "acct_type" => $acctType,
+                "tran_amt" => $amt,
+                "reversal_flag" => 'N',
+                "description" => $postTran->description ?? '',
+                "transaction_date" => $postTran->tran_date ?? now(),
+                "contra_acct_no" => $contraNo,
+                "contra_acct_type" => $contraType,
+                "tran_type" => 'STOCK OUT',
+                "tran_cd" => 'STO',
+                "tran_id" => $postTran->tran_id ?? null,
+                "institution_id" => $userData->institution_id,
+                "branch_id" => $userData->branch_id,
+                "created_by" => $userData->id,
+                "status" => 'Active',
+            ];
+        };
 
 
 
@@ -261,7 +316,14 @@ class OrderController extends Controller
 
         $efrisOrderDetailsList = [];
 
+        $itemIndex = 0;
+        $itemCount = count($request->items);
+        $allocatedRevenue = 0;
         foreach ($request->items as $value) {
+            $itemIndex++;
+            $product = Product::find($value['id']);
+            $nature = $product->nature ?? 'STOCK';
+
             $stock = stock::where(['product_id' => $value['id'], 'branch_id' => $userData->branch_id])->first();
             $items = new OrderItem();
             $items->order_id = $order->id;
@@ -273,7 +335,7 @@ class OrderController extends Controller
             $chosenQty = (float) $value['quantity'];
             $baseQty = $chosenQty * $conversion;
             // per-chosen-unit cost = base purchase price * units-of-base-per-chosen
-            $chosenPurchasePrice = (float) $stock->purchase_price * $conversion;
+            $chosenPurchasePrice = (float) ($stock->purchase_price ?? 0) * $conversion;
             $items->qty =  $chosenQty;
             $items->base_qty =  $baseQty;
             $items->selling_price =  (float) $value['price'];
@@ -285,39 +347,71 @@ class OrderController extends Controller
             $items->measurement_unit_id = $value['selected']['unit_id'];
             $items->created_on = now();
 
-            // stock is held in base units, so deduct the converted quantity
-            $stock->quantity =  (float) $stock->quantity - $baseQty;
-            $stock->save();
+            // --- Recognise revenue to this item's account (Sales / Service / Digital) ---
+            $gross = (float) $value['price'] * $chosenQty;
+            if ($itemIndex === $itemCount) {
+                $itemNet = round($totalRevenue - $allocatedRevenue, 2); // remainder avoids rounding drift
+            } else {
+                $itemNet = $grossSum > 0 ? round($totalRevenue * $gross / $grossSum, 2) : 0;
+                $allocatedRevenue += $itemNet;
+            }
+            if ($nature === 'SERVICE') {
+                $revAcctNo = $svrAcctNo;
+                $revAcctType = $svrAcctType;
+            } elseif ($nature === 'DIGITAL') {
+                $revAcctNo = $dgsAcctNo;
+                $revAcctType = $dgsAcctType;
+            } else {
+                $revAcctNo = $salesAcctNo;
+                $revAcctType = $salesAcctType;
+            }
+            if ($itemNet != 0) {
+                $this->postGlCR($mkGl($revAcctNo, $revAcctType, $itemNet, $cashAcctNo, $cashAcctType));
+            }
+
+            // --- Cost of sales + stock movement, by nature ---
+            if ($nature === 'STOCK' && isset($stock)) {
+                // stock is held in base units, so deduct the converted quantity
+                $stock->quantity =  (float) $stock->quantity - $baseQty;
+                $stock->save();
+                // keep the warehouse sub-ledger in step (default warehouse)
+                $this->adjustWarehouseStock($value['id'], $userData->branch_id, -$baseQty);
+                $cost = (float) $stock->purchase_price * $baseQty;
+                if ($cost != 0) {
+                    $this->postGlDR($mkGl($cogsAcctNo, $cogsAcctType, $cost, $invAcctNo, $invAcctType));
+                    $this->postGlCR($mkGl($invAcctNo, $invAcctType, $cost, $cogsAcctNo, $cogsAcctType));
+                }
+            } elseif ($nature === 'BUNDLE') {
+                // a bundle decrements each component's stock; COGS = sum of components
+                $components = ProductComponent::where('bundle_product_id', $product->id)->get();
+                foreach ($components as $comp) {
+                    $compStock = stock::where(['product_id' => $comp->component_product_id, 'branch_id' => $userData->branch_id])->first();
+                    if (!isset($compStock)) {
+                        continue;
+                    }
+                    $compBaseQty = (float) $comp->quantity * $chosenQty; // component base units per bundle x bundles sold
+                    $compStock->quantity = (float) $compStock->quantity - $compBaseQty;
+                    $compStock->save();
+                    $this->adjustWarehouseStock($comp->component_product_id, $userData->branch_id, -$compBaseQty);
+                    $compCost = (float) $compStock->purchase_price * $compBaseQty;
+                    if ($compCost != 0) {
+                        $this->postGlDR($mkGl($cogsAcctNo, $cogsAcctType, $compCost, $invAcctNo, $invAcctType));
+                        $this->postGlCR($mkGl($invAcctNo, $invAcctType, $compCost, $cogsAcctNo, $cogsAcctType));
+                    }
+                }
+            }
+            // NON_STOCK / SERVICE / DIGITAL: revenue only, no stock movement or COGS.
 
             // setting efris details — EFRIS records goods in the base measure unit,
             // so send base quantity with the per-base-unit price.
             $baseUnitPrice = $conversion > 0 ? ((float) $value['price'] / $conversion) : (float) $value['price'];
-            $product = Product::find($value['id']);
             $efrisProductDetails['item'] = $product->name;
             $efrisProductDetails['itemCode'] = $product->ref_no;
             $efrisProductDetails['qty'] = $baseQty;
             $efrisProductDetails['unitPrice'] = $baseUnitPrice;
             $efrisProductDetails['total'] = $efrisProductDetails['qty'] * $efrisProductDetails['unitPrice'];
-            // $efrisProductDetails['tax'] = $efrisProductDetails['total'] * $efrisProductDetails['taxRate'];
 
             $efrisOrderDetailsList[] = $efrisProductDetails;
-
-            $creditStock = $debitRequest;
-            $debitGoodsForSale = $creditRequest;
-
-            // purchase_price is per base unit, so cost uses the base quantity
-            $amount = $stock->purchase_price * $baseQty;
-
-            $creditStock->acct_no = $stInGl;
-            $creditStock->acct_type = $stInGlType->acct_type;
-            $creditStock->tran_amt = $amount;
-
-            $debitGoodsForSale->acct_no = $gfsGl;
-            $debitGoodsForSale->acct_type = $gfsGlType->acct_type;
-            $debitGoodsForSale->tran_amt = $amount;
-
-            $this->postGlDR($debitGoodsForSale);
-            $this->postGlCR($creditStock);
 
             $items->save();
         }
@@ -634,8 +728,10 @@ class OrderController extends Controller
             $stock = stock::where(['product_id' => $item->product_id, 'branch_id' => $order->branch_id])->first();
             if (isset($stock)) {
                 // restore in base units (fall back to qty for pre-migration rows)
-                $stock->quantity = $stock->quantity + ($item->base_qty ?? $item->qty);
+                $restoreQty = ($item->base_qty ?? $item->qty);
+                $stock->quantity = $stock->quantity + $restoreQty;
                 $stock->save();
+                $this->adjustWarehouseStock($item->product_id, $order->branch_id, $restoreQty);
             }
         }
 

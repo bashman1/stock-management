@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
@@ -81,6 +81,25 @@ const expiryDate=ref(null);
 
 const prodType=ref(null);
 const prodGauge=ref(null);
+
+// Product nature drives which sections of the form apply. It comes from the
+// selected product type (defaults to STOCK so existing types behave as before).
+const nature = computed(() => prodType?.value?.nature || 'STOCK');
+const showQuantity = computed(() => ['STOCK', 'NON_STOCK'].includes(nature.value));
+const showStockLevels = computed(() => nature.value === 'STOCK');
+const showPurchaseInfo = computed(() => ['STOCK', 'NON_STOCK'].includes(nature.value));
+const isBundle = computed(() => nature.value === 'BUNDLE');
+
+// Bundle components: products whose stock is decremented when the bundle sells.
+const bundleComponents = ref([]);
+const componentProductsList = ref([]);
+const addComponentRow = () => bundleComponents.value.push({ product: null, quantity: 1 });
+const removeComponentRow = (i) => bundleComponents.value.splice(i, 1);
+const getComponentProducts = () => {
+    commonService.genericRequest('get-products', 'POST', true, { page: 1, rowPerPage: 1000 }).then((response) => {
+        if (response.status) componentProductsList.value = response.data?.data || response.data || [];
+    });
+};
 
 const typeName=ref(null);
 const typeDesc=ref(null);
@@ -206,7 +225,8 @@ const onGaugeInputBlur=(value, key)=>{
 const onSubmit= ()=>{
     formError.value.name=commonService.validateFormField(name.value);
     formError.value.category=commonService.validateFormField(category.value);
-    formError.value.quantity=commonService.validateFormField(quantity.value);
+    // quantity only matters for inventory/non-stock natures
+    formError.value.quantity = showQuantity.value ? commonService.validateFormField(quantity.value) : null;
     formError.value.measurementUnit=commonService.validateFormField(measurementUnit.value);
     formError.value.sellingPrice=commonService.validateFormField(sellingPrice.value);
     formError.value.prodType=commonService.validateFormField(prodType.value);
@@ -216,6 +236,18 @@ const onSubmit= ()=>{
     if(invalid){
         commonService.showError(toast, "Please fill in the missing field");
         return
+    }
+
+    // A bundle must list at least one component product to draw stock from.
+    let bundlePayload = [];
+    if (isBundle.value) {
+        bundlePayload = bundleComponents.value
+            .filter(c => c.product && Number(c.quantity) > 0)
+            .map(c => ({ component_product_id: c.product.id, quantity: Number(c.quantity) }));
+        if (!bundlePayload.length) {
+            commonService.showError(toast, "Add at least one component (with quantity) to the bundle");
+            return;
+        }
     }
 
     // Build the units of measure: the base unit (the "Measurement Unit" dropdown
@@ -261,7 +293,7 @@ const onSubmit= ()=>{
         supplier_id:supplier?.value?.id,
         product_no: productId?.value,
         description: description?.value,
-        quantity: quantity?.value,
+        quantity: showQuantity.value ? (quantity?.value || 0) : 0,
         min_quantity:minStock?.value,
         max_quantity: maxStock?.value,
         measurement_unit_id: measurementUnit?.value?.id,
@@ -276,6 +308,7 @@ const onSubmit= ()=>{
         gauge_id: prodGauge?.value?.id,
         payment_method:paymentMethod?.value.value,
         units: units,
+        components: bundlePayload,
     }
 
     commonService.genericRequest('create-product', 'post', true, postData).then((response) => {
@@ -305,6 +338,7 @@ const onSubmit= ()=>{
             prodType.value=null;
             prodGauge.value=null;
             additionalUnits.value=[];
+            bundleComponents.value=[];
             // tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'};
             paymentMethod.value={id:1, name: "Cash", value:"CASH"};
 
@@ -714,6 +748,7 @@ onMounted(() => {
     getProductTypes();
     getProductGauge();
     getInstitutionDetails();
+    getComponentProducts();
     if(route.params.id != null){
         editId.value=Number(route.params.id);
         isEdit.value = true;
@@ -847,20 +882,20 @@ onMounted(() => {
             <div class="card">
                 <h5>Stock Info</h5><br>
                 <div class="grid">
-                    <div class="field col-12 md:col-6">
+                    <div class="field col-12 md:col-6" v-if="showQuantity">
                         <span class="p-float-label">
                             <InputText type="text" id="quantity" @blur="onInputBlur(quantity, 'quantity')" v-model.trim="quantity" :class="{ 'p-invalid': formError?.quantity }"/>
-                            <label for="quantity">Quantity</label>
+                            <label for="quantity">{{ nature === 'NON_STOCK' ? 'Quantity Purchased' : 'Quantity' }}</label>
                         </span>
                     </div>
 
-                    <div class="field col-12 md:col-6">
+                    <div class="field col-12 md:col-6" v-if="showStockLevels">
                         <span class="p-float-label">
                             <InputText type="text" id="minStock" v-model="minStock" />
                             <label for="minStock">Minimum Stock Level</label>
                         </span>
                     </div>
-                    <div class="field col-12 md:col-6">
+                    <div class="field col-12 md:col-6" v-if="showStockLevels">
                         <span class="p-float-label">
                             <InputText type="text" id="maxStock" v-model="maxStock" />
                             <label for="maxStock">Maximum Stock Level</label>
@@ -877,7 +912,8 @@ onMounted(() => {
                         </div>
                     </div>
                     <div class="field col-12 md:col-12">
-                        <p class="text-900">The base measurement unit holds the stock quantity (set above) and its purchase/selling prices (below). Add other units a customer can buy in — each with how many base units it contains (conversion factor) and its own prices.</p>
+                        <p class="text-900" v-if="nature === 'STOCK'">The base measurement unit holds the stock quantity (set above) and its purchase/selling prices (below). Add other units a customer can buy in — each with how many base units it contains (conversion factor) and its own prices.</p>
+                        <p class="text-900" v-else>This is a <b>{{ nature.replace('_',' ').toLowerCase() }}</b> item — it is not held in inventory. The base measurement unit just carries its selling price. Add other units it can be sold in if needed.</p>
                     </div>
 
                     <div class="field col-12 md:col-12" v-for="(row, index) in additionalUnits" :key="index">
@@ -922,14 +958,39 @@ onMounted(() => {
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" v-if="isBundle">
+                <h5>Bundle Components</h5><br>
+                <p class="text-900">Pick the products this bundle is made of. When the bundle sells, each component's stock is reduced and its cost becomes the bundle's cost of sales.</p>
+                <div class="grid" v-for="(row, index) in bundleComponents" :key="index">
+                    <div class="field col-12 md:col-7 mb-0">
+                        <span class="p-float-label">
+                            <Dropdown :id="'comp-' + index" :options="componentProductsList" filter v-model="row.product" optionLabel="name"></Dropdown>
+                            <label :for="'comp-' + index">Component product</label>
+                        </span>
+                    </div>
+                    <div class="field col-12 md:col-3 mb-0">
+                        <span class="p-float-label">
+                            <InputText type="text" :id="'compq-' + index" v-model="row.quantity" />
+                            <label :for="'compq-' + index">Qty per bundle</label>
+                        </span>
+                    </div>
+                    <div class="field col-12 md:col-2 mb-0 flex align-items-center">
+                        <Button @click="removeComponentRow(index)" icon="pi pi-trash" class="p-button-danger p-button-outlined" />
+                    </div>
+                </div>
+                <div class="field col-12 md:col-12">
+                    <Button @click="addComponentRow" label="Add Component" icon="pi pi-plus" class="p-button-outlined" />
+                </div>
+            </div>
+
+            <div class="card" v-if="showPurchaseInfo">
                 <h5>Purchase Info</h5><br>
                 <div class="grid">
 
                     <div class="field col-12 md:col-6">
                         <span class="p-float-label">
                             <InputText type="text" id="purchasePrice" v-model="purchasePrice"  />
-                            <label for="purchasePrice">Base Unit Purchase Price </label>
+                            <label for="purchasePrice">{{ nature === 'NON_STOCK' ? 'Unit Cost' : 'Base Unit Purchase Price' }} </label>
                         </span>
                     </div>
 
