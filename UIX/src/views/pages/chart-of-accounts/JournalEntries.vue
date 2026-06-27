@@ -11,7 +11,7 @@ const fromDate = ref(null);
 const toDate = ref(null);
 const search = ref(null);
 
-const expanded = ref({});
+const expanded = ref([]);
 const lines = ref({}); // entryId -> lines
 
 const fmtDate = (d) => { if (!d) return null; const dt = new Date(d); return isNaN(dt.getTime()) ? null : dt.toISOString().slice(0, 10); };
@@ -27,7 +27,7 @@ const getEntries = () => {
 const onRowExpand = (event) => {
     const id = event.data.id;
     commonService.genericRequest('get-journal-entry', 'post', true, { id }).then((r) => {
-        if (r.status) lines.value[id] = r.data?.lines ?? [];
+        if (r.status) lines.value = { ...lines.value, [id]: r.data?.lines ?? [] };
     });
 };
 
