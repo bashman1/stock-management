@@ -156,6 +156,9 @@ class ProductController extends Controller
         }
         $product->nature = $nature;
         $product->tracks_stock = ($nature === 'STOCK');
+        $product->valuation_method = in_array($request->valuation_method, ['FIFO', 'LIFO', 'WAVG', 'STANDARD'])
+            ? $request->valuation_method : 'WAVG';
+        $product->standard_cost = (float) ($request->standard_cost ?? 0);
         $product->save();
 
         // persist the product's units of measure ($unitId is the base unit,
@@ -417,6 +420,13 @@ class ProductController extends Controller
         // mirror the delta into the branch's default warehouse sub-ledger
         $this->adjustWarehouseStock($product->id, $userData->branch_id, ((float) $request->quantity) - $oldQty);
 
+        // record opening stock as a cost layer (new STOCK products only); $branch and
+        // $postTran were resolved in the GL block above under the same condition
+        if (!isset($isEdit) && $nature === 'STOCK' && (float) $request->quantity > 0) {
+            $variance = $this->receiveStock($product->id, $userData->branch_id, (float) $request->quantity, (float) $request->purchase_price, 'OPENING', $refNo, $request->date, $userData, $postTran->tran_id ?? null);
+            $this->postStandardVariance($userData, $branch, $variance, $postTran->tran_id ?? null, "Opening stock variance for $product->name");
+        }
+
         $history->purchase_price = (float) $request->purchase_price;
         $history->selling_price = (float) $request->selling_price;
         $history->discount = $request->discount;
@@ -647,7 +657,8 @@ class ProductController extends Controller
 
         $stocks->updated_by = $userData->id;
         $stocks->updated_on = Carbon::now();
-        $stocks->purchase_price = (float) $request->purchase_price;
+        // cost is no longer overwritten here — receiveStock() below records a cost
+        // layer at this purchase price and refreshes the cached weighted-average cost
         $stocks->selling_price = (float) $request->selling_price;
         $stocks->quantity = (float) $stocks->quantity + $request->quantity;
         $stocks->min_quantity = (float) $request->min_quantity;
@@ -828,6 +839,10 @@ class ProductController extends Controller
             $this->increaseStock($supplier?->name ?? '', $request->date, $product->ref_no, $request->quantity, $efrisUnit->value,$request->selling_price);
         }
 
+        // record the purchase as a cost layer (valuation engine); carry inventory at
+        // standard for STANDARD-cost products via the returned variance
+        $variance = $this->receiveStock($request->productId, $userData->branch_id, (float) $request->quantity, (float) $request->purchase_price, 'PURCHASE', $product->ref_no, $request->date, $userData, $postTran?->tran_id);
+        $this->postStandardVariance($userData, $branch, $variance, $postTran?->tran_id, "Purchase price variance for $product->name");
 
         DB::commit();
         return $this->genericResponse(true, "Product restock successfully", 201, $stocks, "restock", $request);

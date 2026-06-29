@@ -646,6 +646,18 @@ const router = createRouter({
                     meta: { requiresAuth: true },
                 },
                 {
+                    path: '/stock-valuation',
+                    name: 'StockValuation',
+                    component: () => import('@/views/pages/stock-control/StockValuation.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
+                    path: '/stock-adjustments',
+                    name: 'StockAdjustments',
+                    component: () => import('@/views/pages/stock-control/StockAdjustments.vue'),
+                    meta: { requiresAuth: true },
+                },
+                {
                     path: '/depreciation-rates',
                     name: 'DepreciationRates',
                     component: () => import('@/views/pages/assets/DepreciationRates.vue'),

@@ -217,6 +217,16 @@ const operationalConfig = [
         ]
     },
     {
+        key: 'stockcontrol',
+        label: 'Stock Control',
+        icon: 'pi-sliders-h',
+        permission: null,
+        items: [
+            { label: 'Stock Valuation', permission: 'ManageStockControl', to: '/stock-valuation' },
+            { label: 'Stock Adjustments', permission: 'ManageStockControl', to: '/stock-adjustments' }
+        ]
+    },
+    {
         key: 'account',
         label: 'Account',
         icon: 'pi-user',

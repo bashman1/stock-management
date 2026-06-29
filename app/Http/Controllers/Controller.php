@@ -1814,4 +1814,161 @@ class Controller extends BaseController
             \Illuminate\Support\Facades\Log::warning('adjustWarehouseStock failed: ' . $e->getMessage());
         }
     }
+
+    // ============================ Inventory valuation engine ================
+    // Perpetual cost layers: every receipt records a costed layer; every issue
+    // consumes layers by the product's valuation_method and returns the cost the
+    // caller posts to the GL. These manage COST only — callers still own the
+    // stocks.quantity change, so SUM(remaining) stays == stocks.quantity.
+
+    /**
+     * Record a stock receipt as a cost layer. Returns the standard-cost variance
+     * (0 unless the product is STANDARD-costed): (actual - standard) * qty. Refreshes
+     * the cached stocks.purchase_price to the weighted average and logs an IN movement.
+     * The caller posts the receipt GL (and postStandardVariance for the returned value).
+     */
+    protected function receiveStock($productId, $branchId, $qty, $actualUnitCost, $sourceType, $sourceRef, $date, $userData, $tranId = null)
+    {
+        $qty = (float) $qty;
+        if ($qty <= 0) {
+            return 0;
+        }
+        $product = \App\Models\Product::find($productId);
+        $method = $product->valuation_method ?? 'WAVG';
+        $standard = (float) ($product->standard_cost ?? 0);
+        $layerCost = ($method === 'STANDARD') ? $standard : (float) $actualUnitCost;
+        $variance = ($method === 'STANDARD') ? (((float) $actualUnitCost - $standard) * $qty) : 0;
+
+        \App\Models\InventoryCostLayer::create([
+            'product_id' => $productId, 'branch_id' => $branchId, 'institution_id' => $userData->institution_id,
+            'source_type' => $sourceType, 'source_ref' => $sourceRef, 'receipt_date' => $date ?? now(),
+            'quantity' => $qty, 'remaining_quantity' => $qty, 'unit_cost' => $layerCost,
+            'status' => 'Active', 'created_by' => $userData->id ?? null, 'created_on' => now(),
+        ]);
+
+        $this->refreshStockCost($productId, $branchId);
+
+        \App\Models\InventoryMovement::create([
+            'product_id' => $productId, 'branch_id' => $branchId, 'institution_id' => $userData->institution_id,
+            'direction' => 'IN', 'quantity' => $qty, 'unit_cost' => $layerCost, 'total_cost' => $layerCost * $qty,
+            'method' => $method, 'source_type' => $sourceType, 'ref_no' => $sourceRef, 'tran_id' => $tranId,
+            'created_by' => $userData->id ?? null, 'created_on' => now(),
+        ]);
+
+        return $variance;
+    }
+
+    /**
+     * Issue stock from the cost-layer ledger by the product's valuation method and
+     * return the total cost consumed. Decrements remaining_quantity, refreshes the
+     * cached cost, logs an OUT movement. The caller posts the GL with this cost.
+     */
+    protected function issueStock($productId, $branchId, $qty, $userData, $sourceType = 'SALE', $sourceRef = null, $tranId = null)
+    {
+        $qty = (float) $qty;
+        if ($qty <= 0) {
+            return 0;
+        }
+        $product = \App\Models\Product::find($productId);
+        $method = $product->valuation_method ?? 'WAVG';
+        $standard = (float) ($product->standard_cost ?? 0);
+
+        $base = \App\Models\InventoryCostLayer::where([
+            'product_id' => $productId, 'branch_id' => $branchId, 'status' => 'Active',
+        ])->where('remaining_quantity', '>', 0);
+
+        // pooled weighted-average across open layers (used by WAVG)
+        $avg = 0;
+        if ($method === 'WAVG') {
+            $totRem = 0; $totVal = 0;
+            foreach ((clone $base)->get() as $l) {
+                $totRem += (float) $l->remaining_quantity;
+                $totVal += (float) $l->remaining_quantity * (float) $l->unit_cost;
+            }
+            $avg = $totRem > 0 ? $totVal / $totRem : 0;
+        }
+
+        $layers = $method === 'LIFO'
+            ? (clone $base)->orderBy('receipt_date', 'desc')->orderBy('id', 'desc')->get()
+            : (clone $base)->orderBy('receipt_date', 'asc')->orderBy('id', 'asc')->get();
+
+        $remainingToIssue = $qty;
+        $totalCost = 0;
+        foreach ($layers as $layer) {
+            if ($remainingToIssue <= 0) {
+                break;
+            }
+            $take = min((float) $layer->remaining_quantity, $remainingToIssue);
+            if ($method === 'WAVG') {
+                $unit = $avg;
+            } elseif ($method === 'STANDARD') {
+                $unit = $standard;
+            } else {
+                $unit = (float) $layer->unit_cost; // FIFO / LIFO
+            }
+            $totalCost += $take * $unit;
+            $layer->remaining_quantity = (float) $layer->remaining_quantity - $take;
+            $layer->updated_on = now();
+            $layer->save();
+            $remainingToIssue -= $take;
+        }
+        // not enough layered quantity (e.g. legacy drift): cost the remainder sensibly
+        if ($remainingToIssue > 0.00001) {
+            $unit = ($method === 'STANDARD') ? $standard : (($method === 'WAVG') ? $avg : (float) ($product->standard_cost ?? 0));
+            $totalCost += $remainingToIssue * $unit;
+        }
+
+        $this->refreshStockCost($productId, $branchId);
+
+        \App\Models\InventoryMovement::create([
+            'product_id' => $productId, 'branch_id' => $branchId, 'institution_id' => $userData->institution_id,
+            'direction' => 'OUT', 'quantity' => $qty, 'unit_cost' => $qty > 0 ? $totalCost / $qty : 0, 'total_cost' => $totalCost,
+            'method' => $method, 'source_type' => $sourceType, 'ref_no' => $sourceRef, 'tran_id' => $tranId,
+            'created_by' => $userData->id ?? null, 'created_on' => now(),
+        ]);
+
+        return $totalCost;
+    }
+
+    /**
+     * Recompute the cached stocks.purchase_price as the weighted average of the
+     * product's open cost layers (display/last-cost convenience only).
+     */
+    protected function refreshStockCost($productId, $branchId)
+    {
+        $layers = \App\Models\InventoryCostLayer::where([
+            'product_id' => $productId, 'branch_id' => $branchId, 'status' => 'Active',
+        ])->where('remaining_quantity', '>', 0)->get();
+        $totRem = 0; $totVal = 0;
+        foreach ($layers as $l) {
+            $totRem += (float) $l->remaining_quantity;
+            $totVal += (float) $l->remaining_quantity * (float) $l->unit_cost;
+        }
+        if ($totRem > 0) {
+            \App\Models\stock::where(['product_id' => $productId, 'branch_id' => $branchId])
+                ->update(['purchase_price' => $totVal / $totRem]);
+        }
+    }
+
+    /**
+     * For STANDARD-cost products, move the actual-vs-standard difference out of
+     * Inventory into Purchase Price Variance, so inventory is carried at standard.
+     * variance > 0 = paid above standard (Dr PPV / Cr Inventory); < 0 = below.
+     */
+    protected function postStandardVariance($userData, $branch, $variance, $tranId, $desc)
+    {
+        if (abs((float) $variance) < 0.0001) {
+            return;
+        }
+        $inv = $this->resolveControlAccount('STI', $userData->institution_id, $branch->code);
+        $ppv = $this->resolveControlAccount('PPV', $userData->institution_id, $branch->code);
+        if (!$inv || !$ppv) {
+            return;
+        }
+        if ($variance > 0) {
+            $this->postJournal($ppv->acct_no, $ppv->acct_type, $inv->acct_no, $inv->acct_type, (float) $variance, $tranId, $desc, now(), $userData, 'PPV', 'Purchase Price Variance');
+        } else {
+            $this->postJournal($inv->acct_no, $inv->acct_type, $ppv->acct_no, $ppv->acct_type, abs((float) $variance), $tranId, $desc, now(), $userData, 'PPV', 'Purchase Price Variance');
+        }
+    }
 }

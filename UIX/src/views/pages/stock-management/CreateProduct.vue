@@ -85,6 +85,16 @@ const prodGauge=ref(null);
 // Product nature drives which sections of the form apply. It comes from the
 // selected product type (defaults to STOCK so existing types behave as before).
 const nature = computed(() => prodType?.value?.nature || 'STOCK');
+// Inventory valuation method (how COGS is costed) — only relevant for stocked items.
+const valuationMethod = ref('WAVG');
+const standardCost = ref(null);
+const valuationOptions = [
+    { label: 'Weighted Average', value: 'WAVG' },
+    { label: 'FIFO (first-in first-out)', value: 'FIFO' },
+    { label: 'LIFO (last-in first-out)', value: 'LIFO' },
+    { label: 'Standard Cost', value: 'STANDARD' }
+];
+const showValuation = computed(() => nature.value === 'STOCK');
 const showQuantity = computed(() => ['STOCK', 'NON_STOCK'].includes(nature.value));
 const showStockLevels = computed(() => nature.value === 'STOCK');
 const showPurchaseInfo = computed(() => ['STOCK', 'NON_STOCK'].includes(nature.value));
@@ -305,6 +315,8 @@ const onSubmit= ()=>{
         expiry_date:expiryDate?.value,
         tax_config: taxConfig?.value?.value,
         type_id: prodType?.value?.id,
+        valuation_method: valuationMethod?.value,
+        standard_cost: Number(standardCost?.value) || 0,
         gauge_id: prodGauge?.value?.id,
         payment_method:paymentMethod?.value.value,
         units: units,
@@ -339,6 +351,8 @@ const onSubmit= ()=>{
             prodGauge.value=null;
             additionalUnits.value=[];
             bundleComponents.value=[];
+            valuationMethod.value='WAVG';
+            standardCost.value=null;
             // tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'};
             paymentMethod.value={id:1, name: "Cash", value:"CASH"};
 
@@ -882,6 +896,18 @@ onMounted(() => {
             <div class="card">
                 <h5>Stock Info</h5><br>
                 <div class="grid">
+                    <div class="field col-12 md:col-6" v-if="showValuation">
+                        <span class="p-float-label">
+                            <Dropdown id="valmethod" :options="valuationOptions" v-model="valuationMethod" optionLabel="label" optionValue="value" />
+                            <label for="valmethod">Valuation Method</label>
+                        </span>
+                    </div>
+                    <div class="field col-12 md:col-6" v-if="showValuation && valuationMethod === 'STANDARD'">
+                        <span class="p-float-label">
+                            <InputText type="text" id="stdcost" v-model="standardCost" />
+                            <label for="stdcost">Standard Cost (per base unit)</label>
+                        </span>
+                    </div>
                     <div class="field col-12 md:col-6" v-if="showQuantity">
                         <span class="p-float-label">
                             <InputText type="text" id="quantity" @blur="onInputBlur(quantity, 'quantity')" v-model.trim="quantity" :class="{ 'p-invalid': formError?.quantity }"/>

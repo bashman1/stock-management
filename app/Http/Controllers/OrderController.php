@@ -376,7 +376,8 @@ class OrderController extends Controller
                 $stock->save();
                 // keep the warehouse sub-ledger in step (default warehouse)
                 $this->adjustWarehouseStock($value['id'], $userData->branch_id, -$baseQty);
-                $cost = (float) $stock->purchase_price * $baseQty;
+                // COGS comes from consuming cost layers by the product's valuation method
+                $cost = $this->issueStock($value['id'], $userData->branch_id, $baseQty, $userData, 'SALE', $ref, $postTran->tran_id ?? null);
                 if ($cost != 0) {
                     $this->postGlDR($mkGl($cogsAcctNo, $cogsAcctType, $cost, $invAcctNo, $invAcctType));
                     $this->postGlCR($mkGl($invAcctNo, $invAcctType, $cost, $cogsAcctNo, $cogsAcctType));
@@ -393,7 +394,7 @@ class OrderController extends Controller
                     $compStock->quantity = (float) $compStock->quantity - $compBaseQty;
                     $compStock->save();
                     $this->adjustWarehouseStock($comp->component_product_id, $userData->branch_id, -$compBaseQty);
-                    $compCost = (float) $compStock->purchase_price * $compBaseQty;
+                    $compCost = $this->issueStock($comp->component_product_id, $userData->branch_id, $compBaseQty, $userData, 'SALE', $ref, $postTran->tran_id ?? null);
                     if ($compCost != 0) {
                         $this->postGlDR($mkGl($cogsAcctNo, $cogsAcctType, $compCost, $invAcctNo, $invAcctType));
                         $this->postGlCR($mkGl($invAcctNo, $invAcctType, $compCost, $cogsAcctNo, $cogsAcctType));
@@ -733,6 +734,16 @@ class OrderController extends Controller
                 $stock->save();
                 $this->adjustWarehouseStock($item->product_id, $order->branch_id, $restoreQty);
             }
+        }
+
+        // restore the cost layers this sale consumed (exact issued cost per product,
+        // covering both direct STOCK items and bundle components)
+        $outMovements = \App\Models\InventoryMovement::where([
+            'tran_id' => $orderTransaction->tran_id, 'direction' => 'OUT',
+        ])->get();
+        foreach ($outMovements as $mv) {
+            $unit = (float) $mv->quantity > 0 ? (float) $mv->total_cost / (float) $mv->quantity : (float) $mv->unit_cost;
+            $this->receiveStock($mv->product_id, $order->branch_id, (float) $mv->quantity, $unit, 'RETURN', $order->ref_no, now(), Auth::user(), $orderTransaction->tran_id);
         }
 
         DB::commit();

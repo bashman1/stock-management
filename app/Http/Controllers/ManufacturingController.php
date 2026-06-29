@@ -225,15 +225,16 @@ class ManufacturingController extends Controller
             foreach ($order->materials as $m) {
                 $qty = (float) $m->quantity_required;
                 $st = stock::where(['product_id' => $m->material_product_id, 'branch_id' => $userData->branch_id])->first();
-                $unitCost = (float) $st->purchase_price;
-                $cost = $unitCost * $qty;
 
                 $st->quantity = (float) $st->quantity - $qty;
                 $st->save();
                 $this->adjustWarehouseStock($m->material_product_id, $userData->branch_id, -$qty);
 
+                // cost the consumed materials by the product's valuation method
+                $cost = $this->issueStock($m->material_product_id, $userData->branch_id, $qty, $userData, 'PRODUCTION', $order->order_no, $tranId);
+
                 $m->quantity_consumed = $qty;
-                $m->unit_cost = $unitCost;
+                $m->unit_cost = $qty > 0 ? $cost / $qty : 0;
                 $m->updated_on = now();
                 $m->save();
 
@@ -383,16 +384,15 @@ class ManufacturingController extends Controller
                 $fgStock->created_by = $userData->id;
                 $fgStock->created_on = now();
             }
-            $oldQty = (float) $fgStock->quantity;
-            $newQty = $oldQty + $doneQty;
-            $fgStock->purchase_price = $newQty > 0
-                ? (($oldQty * (float) $fgStock->purchase_price) + $fgCost) / $newQty
-                : $unitCost;
-            $fgStock->quantity = $newQty;
+            $fgStock->quantity = (float) $fgStock->quantity + $doneQty;
             $fgStock->updated_by = $userData->id;
             $fgStock->updated_on = now();
             $fgStock->save();
             $this->adjustWarehouseStock($order->product_id, $userData->branch_id, $doneQty);
+
+            // record the finished goods as a cost layer (refreshes the cached cost);
+            // for STANDARD-cost products this returns the actual-vs-standard variance
+            $variance = $this->receiveStock($order->product_id, $userData->branch_id, $doneQty, $unitCost, 'PRODUCTION', $order->order_no, now(), $userData, $tranId);
 
             if ($fgCost > 0) {
                 $this->postJournal(
@@ -401,6 +401,8 @@ class ManufacturingController extends Controller
                     now(), $userData, 'PRD', 'Production Complete'
                 );
             }
+            // carry finished inventory at standard for STANDARD-cost products
+            $this->postStandardVariance($userData, $branch, $variance, $tranId, "Production variance $order->order_no");
 
             $order->wip_cost = (float) $order->wip_cost - $fgCost;
             $order->quantity_completed = (float) $order->quantity_completed + $doneQty;

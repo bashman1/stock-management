@@ -13,7 +13,7 @@ class Product extends Model
         "name", "product_no", "category_id", "sub_category_id", "manufacturer_id", "supplier_id", "measurement_unit_id",
         "description", "institution_id", "user_id", "status", "created_by", "updated_by", "created_on", "updated_on",
         "type_id", "gauge_id", "ref_no", "tax_config", "secondary_measurement_unit_id", "secondary_weight", "secondary_price",
-        "nature", "tracks_stock"
+        "nature", "tracks_stock", "valuation_method", "standard_cost"
     ];
 
 

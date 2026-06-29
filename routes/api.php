@@ -43,6 +43,7 @@ use App\Http\Controllers\AssetTransferController;
 use App\Http\Controllers\AssetMaintenanceController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\ManufacturingController;
+use App\Http\Controllers\StockControlController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LicensePackageController;
 use App\Http\Controllers\MailReceiverController;
@@ -278,6 +279,10 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("record-scrap", [ManufacturingController::class, "recordScrap"]);
     Route::post("complete-production", [ManufacturingController::class, "completeProduction"]);
     Route::post("cancel-production-order", [ManufacturingController::class, "cancelProductionOrder"]);
+    // Stock control (valuation + adjustments)
+    Route::post("get-cost-layers", [StockControlController::class, "getCostLayers"]);
+    Route::post("create-stock-adjustment", [StockControlController::class, "createStockAdjustment"]);
+    Route::post("get-stock-adjustments", [StockControlController::class, "getStockAdjustments"]);
     Route::post("create-project", [ProjectController::class, "createProject"]);
     Route::get("get-projects", [ProjectController::class, "getProjects"]);
     Route::post("create-investment", [InvestmentController::class, "createInvestment"]);
