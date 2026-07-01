@@ -131,12 +131,64 @@ class UserController extends Controller
     }
 
 
+    /**
+     * Server-side paginated + filtered user list for the Users table (lazy load).
+     * Filters: search (name/email/phone/institution/role), status, created date range.
+     */
+    public function getUsersList(Request $request){
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+
+            $select = "SELECT U.id, U.first_name, U.last_name, U.other_name, U.phone_number, U.gender, U.email,
+                U.status, U.role_id, U.institution_id, U.branch_id, U.created_at,
+                R.name AS role, I.name AS institution, B.name AS branch,
+                CONCAT(V.first_name,' ', V.last_name,' ', V.other_name) as created_by ";
+            $from = " FROM users U
+                LEFT JOIN roles R ON R.id = U.role_id
+                LEFT JOIN institutions I ON I.id = U.institution_id
+                LEFT JOIN branches B ON B.id = U.branch_id
+                LEFT JOIN users V ON V.id = U.created_by ";
+
+            $where = " WHERE 1=1 ";
+            if ($isNotAdmin) {
+                $where .= " AND U.institution_id = " . (int) $userData->institution_id . " AND U.branch_id = " . (int) $userData->branch_id . " ";
+            }
+            if (!empty(trim($request->search ?? ''))) {
+                $s = str_replace("'", "", trim($request->search));
+                $where .= " AND (U.first_name ILIKE '%$s%' OR U.last_name ILIKE '%$s%' OR U.other_name ILIKE '%$s%'
+                    OR U.email ILIKE '%$s%' OR U.phone_number ILIKE '%$s%' OR I.name ILIKE '%$s%' OR R.name ILIKE '%$s%') ";
+            }
+            if (!empty($request->status)) {
+                $st = str_replace("'", "", $request->status);
+                $where .= " AND U.status = '$st' ";
+            }
+            if (!empty($request->startDate)) {
+                $sd = date('Y-m-d', strtotime($request->startDate));
+                $where .= " AND U.created_at::date >= '$sd' ";
+            }
+            if (!empty($request->endDate)) {
+                $ed = date('Y-m-d', strtotime($request->endDate));
+                $where .= " AND U.created_at::date <= '$ed' ";
+            }
+
+            $queryString = $select . $from . $where . " ORDER BY U.id DESC ";
+            $totalSql = " SELECT COUNT(U.id) AS total " . $from . $where;
+
+            $users = $this->paginate($request->rowPerPage, $totalSql, $queryString);
+            return $this->genericResponse(true, "Users retrieved successfully", 200, $users, "getUsersList", []);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, "Users could not be retrieved", 500, [], "getUsersList", []);
+        }
+    }
+
+
     public function getUserDetails(Request $request){
         try {
             $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
 
-            $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email,
+            $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email, U.image,
             U.status, U.user_type, U.user_category, U.street, U.p_o_box, U.description, U.role_id, U.institution_id, U.branch_id, U.created_at,
             U.created_on,U.updated_at, C.name AS city, R.name AS role, I.name AS institution, B.name AS branch,
             CONCAT(V.first_name,' ', V.last_name,' ', V.other_name) as created_by

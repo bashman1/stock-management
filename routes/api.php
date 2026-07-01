@@ -146,6 +146,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get('get-institutions', [InstitutionController::class, 'getInstitutions']);
     Route::get('get-institutions/{status}', [InstitutionController::class, 'getInstitutionsByStatus']);
     Route::get('get-users', [UserController::class, 'getUsers']);
+    Route::post('get-users-list', [UserController::class, 'getUsersList']);
     Route::get('get-members', [MemberController::class,'getMembers']);
     Route::get('get-role/{id}', [RoleController::class, 'getRoleById']);
     Route::get('get-permissions', [RoleController::class, 'getPermissions']);
