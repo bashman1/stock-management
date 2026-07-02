@@ -24,14 +24,15 @@ $gutter: 1rem; //for primeflex grid system
 }
 
 .income-statement td, .income-statement th {
-    border: 1px solid #ddd;
+    border: 1px solid var(--surface-border);
     padding: 5px;
     font-size: 15px;
   }
 
-.income-statement tr:nth-child(even){background-color: #f2f2f2;}
+/* use theme surface variables so the report stays readable in dark mode */
+.income-statement tr:nth-child(even){background-color: var(--surface-100);}
 
-.income-statement tr:hover {background-color: #ddd;}
+.income-statement tr:hover {background-color: var(--surface-200);}
 
 .income-statement th{
     text-align: left;
