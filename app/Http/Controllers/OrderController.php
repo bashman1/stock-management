@@ -35,6 +35,25 @@ class OrderController extends Controller
     }
     public function createOrder(Request $request)
     {
+        // Credit-limit enforcement: block a CREDIT sale that would push the
+        // customer past their limit (nothing is created on rejection).
+        if ($request->payment_method == 'CREDIT') {
+            $custId = $request->customer_id ?? $request->customerId;
+            if ($custId) {
+                $customer = \App\Models\Customer::find($custId);
+                $limit = (float) ($customer->credit_limit ?? 0);
+                if ($customer && $limit > 0) {
+                    $outstanding = (float) \App\Models\CustomerReceivable::where(['customer_id' => $custId, 'status' => 'Active'])
+                        ->sum(DB::raw('amount - amount_paid'));
+                    if ($outstanding + (float) $request->total > $limit) {
+                        return $this->genericResponse(false,
+                            "Credit limit exceeded — outstanding " . number_format($outstanding) . " + this sale " . number_format((float) $request->total) . " exceeds the limit " . number_format($limit),
+                            400, null, "createOrder", $request);
+                    }
+                }
+            }
+        }
+
         $response = $this->newSale($request);
 
         return $this->genericResponse(true, "Order submitted successfully", 201, $response, "createOrder", $request);

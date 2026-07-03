@@ -114,6 +114,11 @@ const OnSelectItem = (data) => {
         units,
         selected: baseUnit
     };
+    // apply the selected customer's price override for this product, if any
+    const custPrice = customerPricing.value?.prices?.[data.id];
+    if (custPrice != null) {
+        obj.price = Number(custPrice);
+    }
     const foundItem = selectedProduct.value.find(item => item.id === obj.id);
     if (foundItem) {
         foundItem.quantity += obj.quantity;
@@ -397,9 +402,33 @@ const getCustomers = () => {
     })
 }
 
+// customer-specific pricing/discount (merged group + customer overrides)
+const customerPricing = ref({ discount_percent: 0, prices: {} });
+
+const applyCustomerPricing = () => {
+    const pmap = customerPricing.value?.prices || {};
+    selectedProduct.value = selectedProduct.value.map(p => {
+        if (p.id != null && pmap[p.id] != null) return { ...p, price: Number(pmap[p.id]) };
+        return p;
+    });
+    const pct = Number(customerPricing.value?.discount_percent) || 0;
+    if (pct > 0) {
+        const gross = totalPrice(selectedProduct.value);
+        discount.value = Math.round(gross * pct / 100);
+    }
+    if (institutionDetails?.value?.is_tax_enabled) computeVAT();
+}
+
 const onCustomerChange = (event) => {
-    if (event.value.address) {
+    if (event.value?.address) {
         billingAddress.value = event.value.address
+    }
+    // load the customer's effective discount + price overrides and apply to the cart
+    customerPricing.value = { discount_percent: 0, prices: {} };
+    if (event.value?.id) {
+        commonService.genericRequest('get-customer-pricing', 'post', true, { customer_id: event.value.id }).then((r) => {
+            if (r.status) { customerPricing.value = r.data || { discount_percent: 0, prices: {} }; applyCustomerPricing(); }
+        });
     }
 }
 

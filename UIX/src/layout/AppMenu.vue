@@ -227,6 +227,44 @@ const operationalConfig = [
         ]
     },
     {
+        key: 'analytics',
+        label: 'Analytics',
+        icon: 'pi-chart-bar',
+        permission: null,
+        items: [
+            { label: 'Analytics Dashboard', permission: 'ManageAnalytics', to: '/analytics-dashboard' },
+            { label: 'Activity Calendar', permission: 'ManageAnalytics', to: '/activity-calendar' }
+        ]
+    },
+    {
+        key: 'suppliers',
+        label: 'Suppliers',
+        icon: 'pi-truck',
+        permission: null,
+        items: [
+            { label: 'Suppliers', permission: 'ManageSuppliers', to: '/suppliers' }
+        ]
+    },
+    {
+        key: 'manufacturers',
+        label: 'Manufacturers',
+        icon: 'pi-cog',
+        permission: null,
+        items: [
+            { label: 'Manufacturers', permission: 'ManageManufacturers', to: '/manufacturers' }
+        ]
+    },
+    {
+        key: 'customers',
+        label: 'Customers',
+        icon: 'pi-users',
+        permission: null,
+        items: [
+            { label: 'Customers', permission: 'ManageCustomers', to: '/customers' },
+            { label: 'Customer Groups', permission: 'ManageCustomers', to: '/customer-groups' }
+        ]
+    },
+    {
         key: 'account',
         label: 'Account',
         icon: 'pi-user',

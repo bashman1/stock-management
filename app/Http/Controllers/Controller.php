@@ -1656,6 +1656,37 @@ class Controller extends BaseController
         return null;
     }
 
+    /**
+     * Save a base64 data-URL of any supported document (images, PDF, Office docs)
+     * to the public disk and return its asset URL. Used for supplier contracts and
+     * documents. Returns null if the input is not a recognised base64 data URL.
+     */
+    protected function saveBase64File(string $base64, string $directory = 'documents'): ?string
+    {
+        if (!preg_match('#^data:([\w.+/-]+);base64,#', $base64, $m)) {
+            return null;
+        }
+        $mime = strtolower($m[1]);
+        $map = [
+            'image/jpeg' => 'jpg', 'image/jpg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif',
+            'image/webp' => 'webp', 'application/pdf' => 'pdf', 'text/plain' => 'txt', 'text/csv' => 'csv',
+            'application/msword' => 'doc',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+            'application/vnd.ms-excel' => 'xls',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+        ];
+        if (!isset($map[$mime])) {
+            throw new \Exception('Unsupported document type');
+        }
+        $data = base64_decode(substr($base64, strpos($base64, ',') + 1));
+        if ($data === false) {
+            throw new \Exception('Base64 decode failed');
+        }
+        $filePath = $directory . '/' . now()->format('Y_m_d_His') . '_' . Str::uuid() . '.' . $map[$mime];
+        Storage::disk('public')->put($filePath, $data);
+        return asset(Storage::url($filePath));
+    }
+
 
 
     /**
