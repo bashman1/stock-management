@@ -88,7 +88,8 @@ const calendarOptions = reactive({
     },
     buttonText: { today: 'Today', day: 'Day', week: 'Week', month: 'Month', year: 'Year' },
     views: { multiMonthYear: { type: 'multiMonthYear', multiMonthMaxColumns: 4 } },
-    height: 720,
+    height: 'auto',
+    expandRows: true,
     dayMaxEvents: 3,
     nowIndicator: true,
     weekNumbers: false,
@@ -204,7 +205,7 @@ onMounted(() => {
     --fc-border-color: var(--surface-border);
     --fc-page-bg-color: var(--surface-card);
     --fc-neutral-bg-color: var(--surface-100);
-    --fc-neutral-text-color: var(--text-color-secondary);
+    --fc-neutral-text-color: var(--text-color);
     --fc-today-bg-color: rgba(99, 102, 241, 0.12);
     --fc-now-indicator-color: #ef4444;
     --fc-list-event-hover-bg-color: var(--surface-100);
@@ -261,4 +262,23 @@ onMounted(() => {
 .fc-theme-wrap .fc .fc-multimonth { border-color: var(--surface-border); }
 .fc-theme-wrap .fc .fc-multimonth-daygrid,
 .fc-theme-wrap .fc .fc-daygrid-body { background: var(--surface-card); }
+
+/* -------- Year (multiMonth) view — FullCalendar hides its grid borders and
+   crushes rows, so dates go invisible. Restore borders, give cells height,
+   and make each month read as a titled block. -------- */
+.fc-theme-wrap .fc .fc-multimonth .fc-daygrid-day-frame { min-height: 3.25rem; }
+.fc-theme-wrap .fc .fc-multimonth-daygrid-table,
+.fc-theme-wrap .fc .fc-multimonth-daygrid-table th,
+.fc-theme-wrap .fc .fc-multimonth-daygrid-table td,
+.fc-theme-wrap .fc .fc-multimonth-header-table th {
+    border-style: solid !important;
+    border-color: var(--surface-border) !important;
+}
+.fc-theme-wrap .fc .fc-multimonth-title {
+    background: var(--surface-100);
+    border-bottom: 1px solid var(--surface-border);
+    padding: 0.5em 0 !important;
+}
+.fc-theme-wrap .fc .fc-multimonth .fc-daygrid-day-number { color: var(--text-color) !important; font-weight: 500; }
+.fc-theme-wrap .fc .fc-day-other .fc-daygrid-day-top { opacity: 0.55; }
 </style>
