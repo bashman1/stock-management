@@ -25,6 +25,9 @@ use App\Services\EfrisApiService;
 use App\Models\EfrisMeasurementUnits;
 use Illuminate\Support\Arr;
 use App\Models\measurementUnit;
+use App\Models\ProductUnit;
+use App\Models\ProductType;
+use App\Models\ProductComponent;
 use App\Models\ProductCategory;
 use App\Models\EfrisComodityCategory;
 
@@ -41,6 +44,10 @@ class ProductController extends Controller
     public function createProduct(Request $request)
     {
         $response = $this->createNewProduct($request);
+
+        if (isset($response->error) && $response->error) {
+            return $this->genericResponse(false, $response->message, 400, null, "createProduct", $request);
+        }
 
         return $this->genericResponse(true, $response->message, 201, $response->product, "createProduct", $request);
     }
@@ -75,6 +82,36 @@ class ProductController extends Controller
             $message = "Product Created successfully";
         }
 
+        // --- Multiple units of measure -------------------------------------
+        // When the client sends a `units` array, the base unit is the single
+        // source of truth for the product's measurement_unit_id and for the
+        // stock/GL/EFRIS prices. Validate before touching the database.
+        $units = $request->units ?? null;
+        $baseUnit = null;
+        if (is_array($units) && count($units) > 0) {
+            $unitsError = $this->validateProductUnits($units);
+            if ($unitsError !== true) {
+                return (object)['message' => $unitsError, 'product' => null, 'error' => true];
+            }
+            foreach ($units as $u) {
+                if (!empty($u['is_base'])) {
+                    $baseUnit = $u;
+                    break;
+                }
+            }
+            if ($request instanceof Request) {
+                $request->merge([
+                    'measurement_unit_id' => $baseUnit['measurement_unit_id'],
+                    'purchase_price'      => $baseUnit['purchase_price'],
+                    'selling_price'       => $baseUnit['selling_price'],
+                ]);
+            } else {
+                $request->measurement_unit_id = $baseUnit['measurement_unit_id'];
+                $request->purchase_price      = $baseUnit['purchase_price'];
+                $request->selling_price       = $baseUnit['selling_price'];
+            }
+        }
+
         $categoryId = $request->category_id;
         $unitId = $request->measurement_unit_id;
         if ($institutionData->efris_enabled) {
@@ -106,10 +143,37 @@ class ProductController extends Controller
         if (isset($institution->is_tax_enabled) && $institution->is_tax_enabled) {
             $product->tax_config = $request->tax_config;
         }
+
+        // Resolve the product's behaviour from its type (defaults to STOCK so
+        // legacy products are unchanged). `nature` drives the stock + GL branching
+        // below: only STOCK items track inventory and post inventory/COGS.
+        $nature = 'STOCK';
+        if (!empty($request->type_id)) {
+            $pt = ProductType::find($request->type_id);
+            if ($pt && !empty($pt->nature)) {
+                $nature = $pt->nature;
+            }
+        }
+        $product->nature = $nature;
+        $product->tracks_stock = ($nature === 'STOCK');
+        $product->valuation_method = in_array($request->valuation_method, ['FIFO', 'LIFO', 'WAVG', 'STANDARD'])
+            ? $request->valuation_method : 'WAVG';
+        $product->standard_cost = (float) ($request->standard_cost ?? 0);
         $product->save();
 
+        // persist the product's units of measure ($unitId is the base unit,
+        // possibly remapped above when EFRIS is enabled)
+        if (is_array($units) && count($units) > 0) {
+            $this->syncProductUnits($product, $units, $unitId, $userData, $institutionData->efris_enabled);
+        }
 
-        if (!isset($isEdit)) {
+        // BUNDLE: persist the component products that get decremented on sale
+        if ($nature === 'BUNDLE') {
+            $this->syncBundleComponents($product, $request->components ?? [], $userData);
+        }
+
+
+        if (!isset($isEdit) && $nature === 'STOCK') {
             $branch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
             $cl = null;
             if (isset($request->payment_method)) {
@@ -278,9 +342,19 @@ class ProductController extends Controller
 
                 // efris adding stock
 
-                $this->efrisCreateOpeningStock($supplier->name, $request->date, $refNo, $request->quantity, $request->selling_price, $efrisUnit->value);
+                $this->efrisCreateOpeningStock($supplier?->name ?? '', $request->date, $refNo, $request->quantity, $request->selling_price, $efrisUnit->value);
             }
-        } else {
+        }
+
+        // Non-stock items are expensed at purchase (no inventory asset):
+        // Dr COGS-expense / Cr Cash|AP for the opening quantity x cost.
+        if (!isset($isEdit) && $nature === 'NON_STOCK'
+            && (float) $request->quantity > 0 && (float) $request->purchase_price > 0) {
+            $this->postNonStockPurchase($request, $product, $refNo, $userData);
+        }
+
+        // Editing a stock product re-values the original stock-in posting.
+        if (isset($isEdit) && $nature === 'STOCK') {
             $updateTransaction = $this->updateTransaction($product->id, $userData->institution_id, $userData->branch_id, $request->quantity * $request->purchase_price);
             $payable = $this->updatePayable($updateTransaction->tran_id, (float) $updateTransaction->tran_amount);
             $updateHistory = $this->updateGlHistory($updateTransaction->tran_id, (float)$updateTransaction->tran_amount, (float)$updateTransaction->old_amount);
@@ -309,7 +383,7 @@ class ProductController extends Controller
                     // increase stock in efris
                      $efrisUnit = $this->getEfrisMeasurementUnitByUnitId($product->measurement_unit_id);
                     $difference = $request->quantity - $stock->quantity;
-                    $this->increaseStock($supplier->name, $request->date, $product->ref_no, $difference, $efrisUnit->value,$request->selling_price);
+                    $this->increaseStock($supplier?->name ?? '', $request->date, $product->ref_no, $difference, $efrisUnit->value,$request->selling_price);
                 } else {
                     // no change
                 }
@@ -324,6 +398,8 @@ class ProductController extends Controller
             $history->created_on = Carbon::now();
         }
 
+        // warehouse ledger follows the change in branch stock quantity
+        $oldQty = (float) ($stock->quantity ?? 0);
         $stock->purchase_price =  (float) $request->purchase_price;
         $stock->selling_price = (float) $request->selling_price;
         $stock->discount = $request->discount;
@@ -340,6 +416,16 @@ class ProductController extends Controller
         $stock->user_id = $userData->id;
         $stock->status = $request->status;
         $stock->save();
+
+        // mirror the delta into the branch's default warehouse sub-ledger
+        $this->adjustWarehouseStock($product->id, $userData->branch_id, ((float) $request->quantity) - $oldQty);
+
+        // record opening stock as a cost layer (new STOCK products only); $branch and
+        // $postTran were resolved in the GL block above under the same condition
+        if (!isset($isEdit) && $nature === 'STOCK' && (float) $request->quantity > 0) {
+            $variance = $this->receiveStock($product->id, $userData->branch_id, (float) $request->quantity, (float) $request->purchase_price, 'OPENING', $refNo, $request->date, $userData, $postTran->tran_id ?? null);
+            $this->postStandardVariance($userData, $branch, $variance, $postTran->tran_id ?? null, "Opening stock variance for $product->name");
+        }
 
         $history->purchase_price = (float) $request->purchase_price;
         $history->selling_price = (float) $request->selling_price;
@@ -363,6 +449,192 @@ class ProductController extends Controller
         return  (object)['message' => $message, 'product' => $product];
     }
 
+    /**
+     * Replace a bundle product's component list. Components are decremented from
+     * their own stock when the bundle sells (see OrderController::newSale).
+     */
+    private function syncBundleComponents($product, $components, $userData)
+    {
+        ProductComponent::where('bundle_product_id', $product->id)->delete();
+        foreach ((array) $components as $c) {
+            $compId = $c['component_product_id'] ?? $c['id'] ?? null;
+            if (empty($compId)) {
+                continue;
+            }
+            ProductComponent::create([
+                'bundle_product_id'    => $product->id,
+                'component_product_id' => $compId,
+                'quantity'             => (float) ($c['quantity'] ?? 1),
+                'measurement_unit_id'  => $c['measurement_unit_id'] ?? null,
+                'institution_id'       => $userData->institution_id,
+                'branch_id'            => $userData->branch_id,
+                'created_by'           => $userData->id,
+                'created_on'           => now(),
+            ]);
+        }
+    }
+
+    /**
+     * Post the purchase of a NON_STOCK item: cost is expensed immediately rather
+     * than capitalised as inventory. Dr COGS-expense (GFS) / Cr Cash|Bank|AP, and
+     * raise a payable when bought on credit.
+     */
+    private function postNonStockPurchase($request, $product, $refNo, $userData)
+    {
+        $branch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
+
+        if ($request->payment_method == 'BANK') {
+            $cl = CntrlParameter::where(['param_cd' => 'CGL', 'institution_id' => $userData->institution_id])->first();
+        } elseif ($request->payment_method == 'CREDIT') {
+            $cl = CntrlParameter::where(['param_cd' => 'AP', 'institution_id' => $userData->institution_id])->first();
+        } else {
+            $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+        }
+        $gfs = CntrlParameter::where(['param_cd' => 'GFS', 'institution_id' => $userData->institution_id])->first();
+
+        $cgl = str_replace('***', $branch->code, $cl->param_value);
+        $cash = GlAccounts::where('acct_no', $cgl)->first();
+        $expGl = str_replace('***', $branch->code, $gfs->param_value);
+        $exp = GlAccounts::where('acct_no', $expGl)->first();
+
+        $amount = (float) $request->quantity * (float) $request->purchase_price;
+        $tranId = $this->generateUuid();
+        $desc = "Purchase non-stock item:- $product->name on " . date('Y-m-d H:i:s');
+
+        $this->postTransaction((array) [
+            'acct_no' => $expGl, 'acct_type' => $exp->acct_type,
+            'contra_acct_no' => $cgl, 'contra_acct_type' => $cash->acct_type,
+            'description' => $desc, 'dr_cr_ind' => 'DR/CR', 'tran_amount' => $amount,
+            'reversal_flag' => 'N', 'tran_date' => $request->date ?? now(), 'tran_cd' => 'EXP',
+            'tran_id' => $tranId, 'status' => 'Active', 'institution_id' => $userData->institution_id,
+            'branch_id' => $userData->branch_id, 'created_by' => $userData->id, 'created_on' => now(),
+            'product_id' => $product->id, 'ext_ref' => $refNo, 'tran' => 'Purchase Non-stock',
+        ]);
+
+        $base = [
+            'tran_amt' => $amount, 'reversal_flag' => 'N', 'description' => $desc,
+            'transaction_date' => $request->date ?? now(), 'tran_type' => 'PURCHASE', 'tran_cd' => 'EXP',
+            'tran_id' => $tranId, 'institution_id' => $userData->institution_id, 'branch_id' => $userData->branch_id,
+            'created_by' => $userData->id, 'status' => 'Active',
+        ];
+        $this->postGlDR((object) array_merge($base, [
+            'acct_no' => $expGl, 'acct_type' => $exp->acct_type,
+            'contra_acct_no' => $cgl, 'contra_acct_type' => $cash->acct_type,
+        ]));
+        $this->postGlCR((object) array_merge($base, [
+            'acct_no' => $cgl, 'acct_type' => $cash->acct_type,
+            'contra_acct_no' => $expGl, 'contra_acct_type' => $exp->acct_type,
+        ]));
+
+        if ($request->payment_method == 'CREDIT') {
+            $this->createPayable((array) [
+                'ref_no' => $refNo, 'tran_id' => $tranId, 'supplier_id' => $request->supplier_id,
+                'product_id' => $product->id, 'manufacturer_id' => $request->manufacturer_id,
+                'amount' => $amount, 'amount_paid' => 0, 'status' => 'Active',
+                'institution_id' => $userData->institution_id, 'branch_id' => $userData->branch_id,
+                'created_by' => $userData->id, 'created_on' => Carbon::now(),
+            ]);
+        }
+    }
+
+    /**
+     * Validate the units-of-measure list submitted with a product.
+     * Returns true when valid, otherwise an error message string.
+     */
+    private function validateProductUnits($units)
+    {
+        if (!is_array($units) || count($units) === 0) {
+            return "At least one unit of measure is required";
+        }
+
+        $baseCount = 0;
+        $seen = [];
+        foreach ($units as $u) {
+            if (empty($u['measurement_unit_id'])) {
+                return "Each unit must have a measurement unit selected";
+            }
+            $muId = $u['measurement_unit_id'];
+            if (in_array($muId, $seen)) {
+                return "A measurement unit can only be added once per product";
+            }
+            $seen[] = $muId;
+
+            $isBase = !empty($u['is_base']);
+            if ($isBase) {
+                $baseCount++;
+                if ((float) $u['conversion_factor'] != 1.0) {
+                    return "The base unit must have a conversion factor of 1";
+                }
+            } elseif (!isset($u['conversion_factor']) || (float) $u['conversion_factor'] <= 0) {
+                return "Conversion factor must be greater than 0";
+            }
+        }
+
+        if ($baseCount !== 1) {
+            return "Exactly one base unit must be selected";
+        }
+
+        return true;
+    }
+
+    /**
+     * Create/update the product_units rows for a product.
+     * Existing rows are matched by measurement_unit_id; rows no longer present
+     * are soft-archived (never deleted) because past order/invoice items may
+     * still reference them. $baseUnitId is the (possibly EFRIS-remapped) base unit.
+     */
+    private function syncProductUnits($product, array $units, $baseUnitId, $userData, $efrisEnabled = false)
+    {
+        $now = Carbon::now();
+        $existing = ProductUnit::where('product_id', $product->id)->get()->keyBy('measurement_unit_id');
+        $incomingUnitIds = [];
+
+        foreach ($units as $u) {
+            $isBase = !empty($u['is_base']);
+            // base unit is already remapped to a local id ($baseUnitId); non-base
+            // units carry EFRIS unit ids when EFRIS is enabled, so map them to a
+            // local measurement_unit so their names/conversions resolve everywhere.
+            if ($isBase) {
+                $muId = $baseUnitId;
+            } elseif ($efrisEnabled) {
+                $muId = $this->createOrReturnMeasurementUnit($u['measurement_unit_id'])->id;
+            } else {
+                $muId = $u['measurement_unit_id'];
+            }
+            $incomingUnitIds[] = $muId;
+
+            $row = $existing->get($muId) ?? new ProductUnit();
+            if (!$row->exists) {
+                $row->product_id = $product->id;
+                $row->institution_id = $userData->institution_id;
+                $row->branch_id = $userData->branch_id;
+                $row->created_by = $userData->id;
+                $row->created_on = $now;
+            } else {
+                $row->updated_by = $userData->id;
+                $row->updated_on = $now;
+            }
+
+            $row->measurement_unit_id = $muId;
+            $row->conversion_factor = $isBase ? 1 : (float) $u['conversion_factor'];
+            $row->purchase_price = (float) $u['purchase_price'];
+            $row->selling_price = (float) $u['selling_price'];
+            $row->is_base = $isBase;
+            $row->status = 'Active';
+            $row->save();
+        }
+
+        // soft-archive units that were removed in this edit
+        foreach ($existing as $muId => $row) {
+            if (!in_array($muId, $incomingUnitIds) && $row->status !== 'Archived') {
+                $row->status = 'Archived';
+                $row->updated_by = $userData->id;
+                $row->updated_on = $now;
+                $row->save();
+            }
+        }
+    }
+
 
     public function restock(Request $request)
     {
@@ -379,9 +651,14 @@ class ProductController extends Controller
 
         $stocks =  stock::where(["product_id" => $request->productId, "institution_id" => $userData->institution_id, "branch_id" => $userData->branch_id])->first();
 
+        if (!isset($stocks)) {
+            return $this->genericResponse(false, "Stock record not found for this product", 400, null, "restock", $request);
+        }
+
         $stocks->updated_by = $userData->id;
         $stocks->updated_on = Carbon::now();
-        $stocks->purchase_price = (float) $request->purchase_price;
+        // cost is no longer overwritten here — receiveStock() below records a cost
+        // layer at this purchase price and refreshes the cached weighted-average cost
         $stocks->selling_price = (float) $request->selling_price;
         $stocks->quantity = (float) $stocks->quantity + $request->quantity;
         $stocks->min_quantity = (float) $request->min_quantity;
@@ -392,6 +669,9 @@ class ProductController extends Controller
         $stocks->branch_id = $userData->branch_id;
         $stocks->user_id = $userData->id;
         $stocks->save();
+
+        // add the restocked quantity to the branch's default warehouse sub-ledger
+        $this->adjustWarehouseStock($request->productId, $userData->branch_id, (float) $request->quantity);
 
         $history = new stockHistory();
         $history->created_by = $userData->id;
@@ -473,8 +753,8 @@ class ProductController extends Controller
             "created_on" => now(),
             // "member_id"=>null,
             "product_id" => $product->id,
-            "stock_id" => $stock->id,
-            "ext_ref" => $stock->id,
+            "stock_id" => $stocks->id,
+            "ext_ref" => $product->ref_no,
             "tran" => "Stocking Product",
             // "reversal_reason"=>null,
             // "reversed_by"=>null,
@@ -556,9 +836,13 @@ class ProductController extends Controller
             $supplier = Supplier::find($product->supplier_id);
             $efrisUnit = $this->getEfrisMeasurementUnitByUnitId($product->measurement_unit_id);
 
-            $this->increaseStock($supplier->name, $request->date, $product->ref_no, $request->quantity, $efrisUnit->value,$request->selling_price);
+            $this->increaseStock($supplier?->name ?? '', $request->date, $product->ref_no, $request->quantity, $efrisUnit->value,$request->selling_price);
         }
 
+        // record the purchase as a cost layer (valuation engine); carry inventory at
+        // standard for STANDARD-cost products via the returned variance
+        $variance = $this->receiveStock($request->productId, $userData->branch_id, (float) $request->quantity, (float) $request->purchase_price, 'PURCHASE', $product->ref_no, $request->date, $userData, $postTran?->tran_id);
+        $this->postStandardVariance($userData, $branch, $variance, $postTran?->tran_id, "Purchase price variance for $product->name");
 
         DB::commit();
         return $this->genericResponse(true, "Product restock successfully", 201, $stocks, "restock", $request);
@@ -577,7 +861,8 @@ class ProductController extends Controller
             $sqlString = "SELECT P.id,P.name, P.product_no, P.category_id, P.sub_category_id, P.manufacturer_id, P.supplier_id, P.measurement_unit_id, P.description,
             P.institution_id, P.user_id, P.status, P.created_by, P.updated_by, P.created_on, P.updated_on, P.created_at, P.ref_no, P.updated_at, C.name AS category_name,
             S.name AS sub_category_name, M.name AS manufacturer, Q.name AS supplier, T.name AS unit, E.purchase_price, E.selling_price, E.discount, E.quantity,
-            E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name,  P.tax_config, Y.name AS secondary_unit, P.secondary_weight, P.secondary_price, P.secondary_measurement_unit_id
+            E.min_quantity, E.max_quantity, B.name AS branch_name, I.name AS institution_name,  P.tax_config, Y.name AS secondary_unit, P.secondary_weight, P.secondary_price, P.secondary_measurement_unit_id,
+            P.nature, P.tracks_stock
             FROM products P INNER JOIN product_categories C ON C.id = P.category_id
             LEFT JOIN product_sub_categories S ON P.sub_category_id = S.id
             LEFT JOIN manufacturers M ON  P.manufacturer_id = M.id
@@ -628,11 +913,50 @@ class ProductController extends Controller
             $sqlString .= " ORDER BY P.id DESC ";
 
             $products = $this->paginate($request->rowPerPage, $totalSql, $sqlString);
+
+            // attach the configured units of measure to every product
+            $ids = collect($products->items())->pluck('id')->all();
+            $unitsByProduct = $this->getUnitsForProducts($ids);
+            $products->getCollection()->transform(function ($row) use ($unitsByProduct) {
+                $row->units = $unitsByProduct->get($row->id, collect())->values();
+                return $row;
+            });
+
             return $products;
         } catch (\Throwable $th) {
             // throw new $th;
             throw $th;
         }
+    }
+
+    /**
+     * Load Active product_units for the given product ids, shaped for the
+     * frontend (CreateProduct edit-load + POS), grouped by product_id.
+     */
+    private function getUnitsForProducts($productIds)
+    {
+        if (empty($productIds)) {
+            return collect();
+        }
+
+        return ProductUnit::with('measurement')
+            ->whereIn('product_id', $productIds)
+            ->where('status', 'Active')
+            ->orderByDesc('is_base')
+            ->get()
+            ->map(function ($u) {
+                return (object)[
+                    'id'                  => $u->id,
+                    'product_id'          => $u->product_id,
+                    'measurement_unit_id' => $u->measurement_unit_id,
+                    'name'                => $u->measurement->name ?? null,
+                    'conversion_factor'   => (float) $u->conversion_factor,
+                    'purchase_price'      => (float) $u->purchase_price,
+                    'selling_price'       => (float) $u->selling_price,
+                    'is_base'             => (bool) $u->is_base,
+                ];
+            })
+            ->groupBy('product_id');
     }
 
 
@@ -746,6 +1070,12 @@ class ProductController extends Controller
         $sqlString .= " ORDER BY P.id DESC";
         $product = DB::select($sqlString);
 
+        // attach the configured units of measure
+        if (!empty($product)) {
+            $unitsByProduct = $this->getUnitsForProducts([$product[0]->id]);
+            $product[0]->units = $unitsByProduct->get($product[0]->id, collect())->values();
+        }
+
         return $this->genericResponse(true, "Product list", 200, $product, "getProductDetails", $request);
     }
 
@@ -783,7 +1113,15 @@ class ProductController extends Controller
                 'secondary_measurement_unit_id' => null,
                 'secondary_weight' => null,
                 'secondary_price' => null,
-                'payment_method' => 'CASH'
+                'payment_method' => 'CASH',
+                // single base unit so bulk-approved products get a product_units row
+                'units' => [[
+                    'measurement_unit_id' => $newProduct->measurement_unit_id,
+                    'conversion_factor'   => 1,
+                    'purchase_price'      => $newProduct->purchase_price,
+                    'selling_price'       => $newProduct->selling_price,
+                    'is_base'             => true,
+                ]],
             ];
 
             $response = $this->createNewProduct($newRequest);

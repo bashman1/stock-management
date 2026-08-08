@@ -10,6 +10,12 @@
         "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
     },
     "dependencies": {
+        "@fullcalendar/core": "^6.1.21",
+        "@fullcalendar/daygrid": "^6.1.21",
+        "@fullcalendar/interaction": "^6.1.21",
+        "@fullcalendar/multimonth": "^6.1.21",
+        "@fullcalendar/timegrid": "^6.1.21",
+        "@fullcalendar/vue3": "^6.1.21",
         "@vueup/vue-quill": "^1.2.0",
         "chart.js": "3.3.2",
         "jsrsasign": "^11.1.0",

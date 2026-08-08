@@ -40,14 +40,14 @@ class GlAccountsController extends Controller
                     $queryString = "SELECT G.acct_no, G.gl_no, G.description, G.gl_cat_no, G.gl_sub_cat_no, G.gl_type_no, G.acct_type, G.branch_cd, G.status,
                    G.institution_id, G.branch_id, G.created_by, G.updated_by, G.created_on, G.updated_on, G.created_at, G.updated_at,
                    T.description AS type_desc, S.description AS sub_cat_desc, C.description AS cat_desc, I.name AS institution_name,
-                   B.name AS branch_name, K.balance
+                   B.name AS branch_name, COALESCE(K.balance, 0) AS balance
                    FROM gl_accounts G
                    INNER JOIN gl_types T ON G.gl_type_no = T.gl_no
                    INNER JOIN gl_sub_cats S ON S.gl_no = G.gl_sub_cat_no
                    INNER JOIN gl_cats C ON C.gl_no= G.gl_cat_no
                    INNER JOIN institutions I ON I.id = G.institution_id
                    INNER JOIN branches B ON B.id = G.branch_id
-                   INNER JOIN gl_balances K ON K.acct_no = G.acct_no ";
+                   LEFT JOIN gl_balances K ON K.acct_no = G.acct_no ";
                     $queryString .= " WHERE G.gl_type_no=  '" . $glType->gl_no . "' ";
                     if ($isNotAdmin) {
                         $queryString .= " AND G.institution_id = $userData->institution_id  ";
@@ -484,8 +484,36 @@ class GlAccountsController extends Controller
         $purchases = CntrlParameter::where(["param_cd" => "PIA", "institution_id" => $userData->institution_id])->first();
         $purchaseAcctNo = str_replace("***", $branch->code,  $purchases->param_value);
 
-        $operatingExpenses = CntrlParameter::where(["param_cd" => "OPE", "institution_id" => $userData->institution_id])->first();
-        $operatingExpenseAcctNo = str_replace("***", $branch->code,  $operatingExpenses->param_value);
+        // Operating expenses = every EXPENSE account for this branch EXCEPT the ones
+        // already consumed by the gross-profit / COGS / returns logic: COGS/GFS,
+        // passage/PP, return-inwards/RIN, return-outwards/ROT. Resolved dynamically
+        // from control parameters (not hardcoded) so nothing is double-counted.
+        $excludeAcctNos = [];
+        foreach (['GFS', 'PP', 'RIN', 'ROT'] as $cd) {
+            $cp = CntrlParameter::where(["param_cd" => $cd, "institution_id" => $userData->institution_id])->first();
+            if ($cp) {
+                $excludeAcctNos[] = str_replace("***", $branch->code, $cp->param_value);
+            }
+        }
+
+        $opexQuery = DB::table('gl_histories as h')
+            ->join('gl_accounts as a', 'a.acct_no', '=', 'h.acct_no')
+            ->where('a.acct_type', 'EXPENSE')
+            ->where('a.institution_id', $userData->institution_id)
+            ->where('a.branch_id', $branch->id)
+            ->whereRaw("COALESCE(h.reversal_flag, 'N') = 'N'");
+        if (!empty($excludeAcctNos)) {
+            $opexQuery->whereNotIn('a.acct_no', $excludeAcctNos);
+        }
+        if ($request->fromDate && $request->toDate) {
+            $opexQuery->whereRaw("h.transaction_date::date BETWEEN ? AND ?", [$request->fromDate, $request->toDate]);
+        }
+        $operatingExpenses = $opexQuery
+            ->groupBy('a.acct_no', 'a.description')
+            ->selectRaw("a.acct_no, a.description, SUM(CASE WHEN h.dr_cr_ind = 'Dr' THEN h.tran_amount ELSE -h.tran_amount END) AS amount")
+            ->havingRaw("SUM(CASE WHEN h.dr_cr_ind = 'Dr' THEN h.tran_amount ELSE -h.tran_amount END) <> 0")
+            ->orderByRaw("amount DESC")
+            ->get();
 
         $passage = CntrlParameter::where(["param_cd" => "PP", "institution_id" => $userData->institution_id])->first();
         $passageAcctNo = str_replace("***", $branch->code,  $passage->param_value);
@@ -511,10 +539,8 @@ class GlAccountsController extends Controller
         //     ->where('transaction_date', '<', $request->fromDate)
         //     ->sum('tran_amount');
 
-        $totalOpenStock = (float) DB::table('gl_histories')
-            ->where('acct_no', $stockAcctNo)
-            ->where('transaction_date', '<=', $request->fromDate)
-            ->sum('tran_amount');
+        // Opening stock = signed STI balance strictly before the period start
+        $totalOpenStock = $this->getGlBalanceAsOf($stockAcctNo, $request->fromDate, false);
 
         // $totalCloseStock = (double) DB::table('gl_histories')
         //     ->where('acct_no', $stockAcctNo)
@@ -527,12 +553,8 @@ class GlAccountsController extends Controller
         //     ->sum('tran_amount');
         $totalPurchases = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $purchaseAcctNo);
 
-        // $totalOperatingExpenses = (float) DB::table('gl_histories')
-        //     ->where('acct_no', $operatingExpenseAcctNo)
-        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-        //     ->sum('tran_amount');
-
-        $totalOperatingExpenses = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $operatingExpenseAcctNo);
+        // total operating expenses = sum of the per-category breakdown computed above
+        $totalOperatingExpenses = (float) $operatingExpenses->sum('amount');
 
         // $totalPassage = (float) DB::table('gl_histories')
         //     ->where('acct_no', $passageAcctNo)
@@ -563,12 +585,8 @@ class GlAccountsController extends Controller
         // closing stock is Opening Stock+Purchases−Sales+Sales Returns−Purchase Returns±Adjustments
         // $totalCloseStock = $totalOpenStock + $totalPurchases - $totalSales;
 
-        $totalCloseStock = (float) DB::table('gl_histories')
-            ->where('acct_no', $stockAcctNo)
-            // ->where('transaction_date', '>', $request->fromDate) dr_cr_ind
-            ->where('dr_cr_ind', 'Dr') //dr_cr_ind
-            ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-            ->sum('tran_amount');
+        // Closing stock = signed STI balance as of the period end
+        $totalCloseStock = $this->getGlBalanceAsOf($stockAcctNo, $request->toDate, true);
 
 
         // cost of sale = goods available for sale - closing stock
@@ -592,6 +610,7 @@ class GlAccountsController extends Controller
             'netProfit' => $netProfit,
             'totalPassage' => $totalPassage,
             'totalOperatingExpenses' => $totalOperatingExpenses,
+            'operatingExpenses' => $operatingExpenses,
             'totalPurchases' => $totalPurchases,
             'totalIncome' => $totalIncome,
             'profitBeforeInterestAndTax' => $profitBeforeInterestAndTax,
@@ -609,21 +628,23 @@ class GlAccountsController extends Controller
         try {
             // $userData = auth()->user();
             $userData = $this->getUserLogin();
-            $isNotAdmin = $this->isNotAdmin();
+            // A balance sheet is per entity, so always scope to the user's branch.
+            $instId = intval($userData->institution_id);
+            $branchId = intval($userData->branch_id);
             $tempArray = array();
+
+            // Asset / Liability (and Equity/Capital) sections, grouped by sub-category.
+            // All accounts are included — excluding one side of a balanced pair (the
+            // old PIA-only exclusion) is what previously unbalanced the sheet.
             $glSubCat = GlSubCat::all();
             foreach ($glSubCat as $key => $value) {
-                $queryString = "SELECT A.acct_no, A.gl_no, A.description,A.gl_cat_no,
+                $queryString = "SELECT A.acct_no, A.gl_no, A.description, A.gl_cat_no,
                 A.gl_type_no, A.acct_type, A.status, B.balance
-                FROM gl_accounts A INNER JOIN gl_balances B
-                ON A.acct_no = B.acct_no WHERE (B.balance >0 OR  B.balance < 0) AND (A.gl_no <> '1305001' AND  A.gl_no <> '1307001') AND
-                A.gl_sub_cat_no = '" . $value['gl_no'] . "' ";
-
-                // 1305001 1307001
-                if ($isNotAdmin) {
-                    $queryString .= " AND A.institution_id = $userData->institution_id AND A.branch_id =$userData->branch_id  ";
-                }
-                $queryString .= " ORDER BY A.id ASC ";
+                FROM gl_accounts A INNER JOIN gl_balances B ON A.acct_no = B.acct_no
+                WHERE (B.balance > 0 OR B.balance < 0)
+                AND A.gl_sub_cat_no = '" . $value['gl_no'] . "'
+                AND A.institution_id = $instId AND A.branch_id = $branchId
+                ORDER BY A.id ASC ";
                 $glList = DB::select($queryString);
                 array_push($glList, ['description' => 'Total', 'balance' => null, 'total' => $this->getTotalLedgerBalances($glList)]);
                 $value['list'] = $glList;
@@ -631,7 +652,38 @@ class GlAccountsController extends Controller
                     array_push($tempArray, $value);
                 }
             }
-            return $this->genericResponse(true, 'Balance sheet', 200, $tempArray, "getBalanceSheet", $request);
+
+            // Totals by account type for this branch, used for the equity section and
+            // the Assets = Liabilities + Equity balance check.
+            $byType = DB::table('gl_balances')
+                ->select('acct_type', DB::raw('COALESCE(SUM(balance), 0) as total'))
+                ->where('institution_id', $instId)
+                ->where('branch_id', $branchId)
+                ->groupBy('acct_type')
+                ->pluck('total', 'acct_type');
+
+            $totalAssets = (float) ($byType['ASSET'] ?? 0);
+            $totalLiabilities = (float) ($byType['LIABILITY'] ?? 0);
+            $totalEquity = (float) ($byType['EQUITY'] ?? 0) + (float) ($byType['CAPITAL'] ?? 0);
+            $totalIncome = (float) ($byType['INCOME'] ?? 0);
+            $totalExpense = (float) ($byType['EXPENSE'] ?? 0);
+            // Retained earnings = accumulated net profit (now includes COGS as an expense)
+            $retainedEarnings = $totalIncome - $totalExpense;
+            $totalEquityAndRetained = $totalEquity + $retainedEarnings;
+            $balanceCheck = $totalAssets - ($totalLiabilities + $totalEquityAndRetained);
+
+            $summary = [
+                'totalAssets' => $totalAssets,
+                'totalLiabilities' => $totalLiabilities,
+                'totalEquity' => $totalEquity,
+                'retainedEarnings' => $retainedEarnings,
+                'totalEquityAndRetained' => $totalEquityAndRetained,
+                'totalLiabilitiesAndEquity' => $totalLiabilities + $totalEquityAndRetained,
+                'balanceCheck' => $balanceCheck,
+                'balanced' => abs($balanceCheck) < 0.01,
+            ];
+
+            return $this->genericResponse(true, 'Balance sheet', 200, ['sections' => $tempArray, 'summary' => $summary], "getBalanceSheet", $request);
         } catch (\Throwable $th) {
             return $this->genericResponse(false, $th->getMessage(), 400, $th, "getBalanceSheet", $request);
         }
@@ -650,39 +702,85 @@ class GlAccountsController extends Controller
 
     public function getCashBook(Request $request)
     {
-        // $userData = auth()->user();
         $userData = $this->getUserLogin();
-        $isNotAdmin = $this->isNotAdmin();
-        $queryString = "SELECT * FROM cntrl_parameters WHERE status = 'Active' AND (param_cd = 'CL' OR param_cd = 'CGL' OR param_cd = 'PD') ";
-
-        if ($isNotAdmin) {
-            $queryString .= " AND institution_id = $userData->institution_id ";
+        $instId = intval($userData->institution_id);
+        $branchId = intval($userData->branch_id);
+        $branch = Branch::find($branchId);
+        if (!isset($branch)) {
+            return $this->genericResponse(false, "Branch not found", 400, null, "getCashBook", $request);
         }
 
-        $queryString .= " ORDER BY id ASC ";
-        $contraAcct = DB::select($queryString);
+        $from = $request->fromDate ?? null;
+        $to = $request->toDate ?? null;
 
-        $tempArray = [];
-        foreach ($contraAcct as $acct) {
-            if ($isNotAdmin) {
-                $branch = Branch::find($userData->branch_id);
-                if ($branch) {
-                    $acctNo = str_replace('***', $branch->code, $acct->param_value); // Changed to object property access
-                    $glHistory = GlHistory::where([
-                        "acct_no" => $acctNo,
-                        "institution_id" => $userData->institution_id,
-                        "branch_id" => $userData->branch_id
-                    ])->get(); // Ensure get() to return collection
+        // Cash (CL), Bank (CGL) and Purchase-Discount (PD) accounts for this branch
+        $params = CntrlParameter::where('status', 'Active')
+            ->where('institution_id', $instId)
+            ->whereIn('param_cd', ['CL', 'CGL', 'PD'])
+            ->get();
 
-                    foreach ($glHistory as $history) {
-                        $history->ind = $acct->param_cd; // Changed to object property access
-                        $tempArray[] = $history;
-                    }
-                }
+        $entries = [];
+        $acctByCd = [];
+        foreach ($params as $p) {
+            $acctNo = str_replace('***', $branch->code, $p->param_value);
+            $acctByCd[$p->param_cd] = $acctNo;
+
+            $q = GlHistory::where([
+                    'acct_no' => $acctNo,
+                    'institution_id' => $instId,
+                    'branch_id' => $branchId,
+                ])
+                // exclude reversed / deleted entries to match the rest of the ledger
+                ->whereRaw("COALESCE(reversal_flag, 'N') = 'N'")
+                ->where(function ($w) {
+                    $w->whereNull('status')->orWhere('status', '!=', 'Deleted');
+                });
+            if ($from) { $q->whereDate('transaction_date', '>=', $from); }
+            if ($to)   { $q->whereDate('transaction_date', '<=', $to); }
+
+            foreach ($q->get() as $h) {
+                $h->ind = $p->param_cd;
+                $entries[] = $h;
             }
         }
 
-        return $this->genericResponse(true, "Cash book fetched successfully", 200, $tempArray, "getCashBook", $request);
+        // chronological order across all cash accounts
+        usort($entries, fn($a, $b) => strcmp((string) $a->transaction_date, (string) $b->transaction_date));
+
+        // Opening balances (signed, strictly before the period). Cash/Bank are assets,
+        // so the opening balance is the net Dr-Cr up to the start date.
+        $openingCash = ($from && isset($acctByCd['CL'])) ? $this->getGlBalanceAsOf($acctByCd['CL'], $from, false) : 0;
+        $openingBank = ($from && isset($acctByCd['CGL'])) ? $this->getGlBalanceAsOf($acctByCd['CGL'], $from, false) : 0;
+
+        $sum = function ($cd, $dc) use ($entries) {
+            $t = 0;
+            foreach ($entries as $h) {
+                if ($h->ind === $cd && $h->dr_cr_ind === $dc) {
+                    $t += (float) $h->tran_amount;
+                }
+            }
+            return $t;
+        };
+
+        $cashReceipts = $sum('CL', 'Dr');
+        $cashPayments = $sum('CL', 'Cr');
+        $bankReceipts = $sum('CGL', 'Dr');
+        $bankPayments = $sum('CGL', 'Cr');
+
+        $summary = [
+            'openingCash'      => $openingCash,
+            'cashReceipts'     => $cashReceipts,
+            'cashPayments'     => $cashPayments,
+            'closingCash'      => $openingCash + $cashReceipts - $cashPayments,
+            'openingBank'      => $openingBank,
+            'bankReceipts'     => $bankReceipts,
+            'bankPayments'     => $bankPayments,
+            'closingBank'      => $openingBank + $bankReceipts - $bankPayments,
+            'discountAllowed'  => $sum('PD', 'Dr'),
+            'discountReceived' => $sum('PD', 'Cr'),
+        ];
+
+        return $this->genericResponse(true, "Cash book fetched successfully", 200, ['entries' => $entries, 'summary' => $summary], "getCashBook", $request);
     }
 
 
@@ -707,8 +805,8 @@ class GlAccountsController extends Controller
                 COALESCE(I.selling_price, S.selling_price) AS selling_price,
                 O.ref_no, O.receipt_no, O.tran_id, O.user_id, O.customer_id,
                 P.name, P.product_no, P.ref_no AS product_ref, P.tax_config,
-                S.purchase_price, N.name AS institution_name, N.is_tax_enabled,
-                S.purchase_price*I.qty AS total_purchases,
+                COALESCE(I.purchase_price, S.purchase_price) AS purchase_price, N.name AS institution_name, N.is_tax_enabled,
+                COALESCE(I.purchase_price, S.purchase_price) * I.qty AS total_purchases,
                 COALESCE(Y.name, 'Cash') AS customer_name,
                 -- Calculate the amount
                 COALESCE(I.qty * I.selling_price, I.qty * S.selling_price) AS amount,

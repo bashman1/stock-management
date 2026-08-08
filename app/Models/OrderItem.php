@@ -9,7 +9,7 @@ class OrderItem extends Model
 {
     use HasFactory;
 
-    protected $fillable=["order_id", "product_id", "qty", "status", "institution_id", "branch_id", "created_by", "updated_by", "created_on", "updated_on", "selling_price"];
+    protected $fillable=["order_id", "product_id", "qty", "base_qty", "status", "institution_id", "branch_id", "created_by", "updated_by", "created_on", "updated_on", "selling_price", "purchase_price", "measurement_unit_id"];
 
     public function product()
     {
@@ -23,7 +23,7 @@ class OrderItem extends Model
 
     public function stock()
     {
-        return $this->hasOne(Stock::class, 'product_id', 'product_id');
+        return $this->hasOne(stock::class, 'product_id', 'product_id');
     }
 
     public function institution()

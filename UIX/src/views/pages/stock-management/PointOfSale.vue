@@ -78,18 +78,46 @@ const OnSelectItem = (data) => {
         commonService.showError(toast, "Product not found");
         return;
     }
-    if(Number(actualProduct?.quantity) <= 0){
+    // Only inventory-tracked (STOCK) products are subject to stock checks.
+    // Services, digital, non-stock and bundle items are not held in inventory.
+    const tracksStock = (actualProduct?.nature ?? 'STOCK') === 'STOCK';
+    if (tracksStock && Number(actualProduct?.quantity) <= 0){
         commonService.showError(toast, "Product out of stock");
         return;
     }
 
+    // Build the sellable units from the product's configured units of measure.
+    // `weight` carries the conversion_factor (base units per one of this unit).
+    let units;
+    if (data.units && data.units.length) {
+        units = data.units.map((u, i) => ({
+            id: i + 1,
+            ind: u.is_base ? "Base" : "Alt",
+            name: u.name,
+            weight: Number(u.conversion_factor),
+            price: Number(u.selling_price),
+            unit_id: u.measurement_unit_id
+        }));
+    } else {
+        // fallback for products created before the multi-unit migration
+        units = [{ id: 1, ind: "Primary", name: data.unit, weight: 1, price: Number(data.selling_price), unit_id: data?.measurement_unit_id }];
+        if (data.secondary_unit && Number(data?.secondary_weight)) {
+            // legacy secondary_weight = secondary components per base unit; the
+            // conversion factor (base units per secondary unit) is its inverse.
+            units.push({ id: 2, ind: "Secondary", name: data.secondary_unit, weight: 1 / Number(data?.secondary_weight), price: Number(data?.secondary_price), unit_id: data?.secondary_measurement_unit_id });
+        }
+    }
+    const baseUnit = units.find(u => u.ind === "Base") || units[0];
+
     let obj = {
-        id: data.id, price: Number(data.selling_price), quantity: 1, discount: 0, name: data.name, tax_config: data.tax_config,
-        units: [{ id: 1, ind: "Primary", name: data.unit, weight: 1, price: Number(data.selling_price), unit_id: data?.measurement_unit_id }],
-        selected: { id: 1, ind: "Primary", name: data.unit, weight: 1, price: Number(data.selling_price), unit_id: data?.measurement_unit_id }
+        id: data.id, price: Number(baseUnit.price), quantity: 1, discount: 0, name: data.name, tax_config: data.tax_config,
+        units,
+        selected: baseUnit
     };
-    if (data.secondary_unit) {
-        obj.units.push({ id: 2, ind: "Secondary", name: data.secondary_unit, weight: Number(data?.secondary_weight), price: Number(data?.secondary_price), unit_id: data?.secondary_measurement_unit_id });
+    // apply the selected customer's price override for this product, if any
+    const custPrice = customerPricing.value?.prices?.[data.id];
+    if (custPrice != null) {
+        obj.price = Number(custPrice);
     }
     const foundItem = selectedProduct.value.find(item => item.id === obj.id);
     if (foundItem) {
@@ -126,9 +154,14 @@ const updateQty = (event, data) => {
         return;
     }
 
-    if (Number(event.target.value) > Number(actualProduct?.quantity)) {
-        commonService.showError(toast, "Quantity exceeds available stock "+actualProduct?.quantity);
-        newQty = Number(actualProduct?.quantity);
+    // stock is held in base units; convert the entered (chosen-unit) qty to base.
+    // Only enforce the cap for inventory-tracked (STOCK) products.
+    const tracksStock = (actualProduct?.nature ?? 'STOCK') === 'STOCK';
+    const conversion = Number(data?.selected?.weight) || 1;
+    const maxChosen = Number(actualProduct?.quantity) / conversion;
+    if (tracksStock && newQty > maxChosen) {
+        commonService.showError(toast, "Quantity exceeds available stock " + maxChosen + " " + (data?.selected?.name || ''));
+        newQty = maxChosen;
         // return;
     }
 
@@ -168,7 +201,10 @@ const increaseReduce = (data, action) => {
 
 
     if (action == 'Add'){
-        if (Number(selectedItm?.quantity) >= Number(actualProduct?.quantity)) {
+        // compare in base units (chosen qty * conversion factor); skip for non-stock natures
+        const tracksStock = (actualProduct?.nature ?? 'STOCK') === 'STOCK';
+        const conversion = Number(selectedItm?.selected?.weight) || 1;
+        if (tracksStock && (Number(selectedItm?.quantity) + 1) * conversion > Number(actualProduct?.quantity)) {
             commonService.showError(toast, "Quantity exceeds available stock "+actualProduct?.quantity);
             return;
         }
@@ -366,9 +402,33 @@ const getCustomers = () => {
     })
 }
 
+// customer-specific pricing/discount (merged group + customer overrides)
+const customerPricing = ref({ discount_percent: 0, prices: {} });
+
+const applyCustomerPricing = () => {
+    const pmap = customerPricing.value?.prices || {};
+    selectedProduct.value = selectedProduct.value.map(p => {
+        if (p.id != null && pmap[p.id] != null) return { ...p, price: Number(pmap[p.id]) };
+        return p;
+    });
+    const pct = Number(customerPricing.value?.discount_percent) || 0;
+    if (pct > 0) {
+        const gross = totalPrice(selectedProduct.value);
+        discount.value = Math.round(gross * pct / 100);
+    }
+    if (institutionDetails?.value?.is_tax_enabled) computeVAT();
+}
+
 const onCustomerChange = (event) => {
-    if (event.value.address) {
+    if (event.value?.address) {
         billingAddress.value = event.value.address
+    }
+    // load the customer's effective discount + price overrides and apply to the cart
+    customerPricing.value = { discount_percent: 0, prices: {} };
+    if (event.value?.id) {
+        commonService.genericRequest('get-customer-pricing', 'post', true, { customer_id: event.value.id }).then((r) => {
+            if (r.status) { customerPricing.value = r.data || { discount_percent: 0, prices: {} }; applyCustomerPricing(); }
+        });
     }
 }
 

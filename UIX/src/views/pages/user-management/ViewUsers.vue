@@ -10,20 +10,62 @@ const commonService = new CommonService();
 const displayConfirmation = ref(false);
 const selectedUser = ref({});
 
+// filters + lazy-load state
+const searchKeyWord = ref(null);
+const statusFilter = ref(null);
+const startDate = ref(null);
+const endDate = ref(null);
+const rowsPerPage = ref(15);
+const currentPage = ref(1);
+const loading = ref(false);
+const statusOptions = ref([
+    { label: 'Active', value: 'Active' },
+    { label: 'Archived', value: 'Archived' },
+    { label: 'Inactive', value: 'Inactive' }
+]);
+
 const router = useRouter();
 
-const AddRolesPermissions = (role) => {
-    alert(JSON.stringify(role))
-}
+const fmtDate = (d) => { if (!d) return null; const dt = new Date(d); return isNaN(dt.getTime()) ? null : dt.toISOString().slice(0, 10); };
 
 const getAllUsers = () => {
-    commonService.genericRequest('get-users', 'get', true, {}).then((response) => {
+    loading.value = true;
+    const postData = {
+        page: currentPage.value,
+        rowPerPage: rowsPerPage.value,
+        search: searchKeyWord.value,
+        status: statusFilter.value,
+        startDate: fmtDate(startDate.value),
+        endDate: fmtDate(endDate.value),
+    }
+    commonService.genericRequest('get-users-list', 'post', true, postData).then((response) => {
+        loading.value = false;
         if (response.status) {
             users.value = response.data;
         } else {
             commonService.showError(toast, response.message);
         }
-    })
+    }).catch(() => { loading.value = false; })
+}
+
+const onPageChange = (event) => {
+    rowsPerPage.value = event.rows;
+    currentPage.value = Number(event.page) + 1;
+    getAllUsers();
+}
+
+const applyFilters = () => {
+    currentPage.value = 1;
+    getAllUsers();
+}
+
+const resetFilters = () => {
+    searchKeyWord.value = null;
+    statusFilter.value = null;
+    startDate.value = null;
+    endDate.value = null;
+    currentPage.value = 1;
+    getAllUsers();
 }
 
 const editUser = (event) => {
@@ -66,12 +108,47 @@ onMounted(() => {
         <div class="col-12">
             <div class="card">
                 <h5>Users</h5>
-                <DataTable :value="users" :paginator="true" class="p-datatable-gridlines" :rows="10" dataKey="id"
-                    :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+                <Toolbar class="mb-3">
+                    <template #start>
+                        <span class="p-float-label mr-2">
+                            <InputText id="search" type="text" v-model="searchKeyWord" @keyup.enter="applyFilters" />
+                            <label for="search">Search name / email / phone</label>
+                        </span>
+                        <span class="p-float-label mr-2">
+                            <Dropdown id="statusF" :options="statusOptions" v-model="statusFilter" optionLabel="label" optionValue="value" showClear class="w-10rem" />
+                            <label for="statusF">Status</label>
+                        </span>
+                        <span class="p-float-label mr-2">
+                            <Calendar id="sd" showIcon v-model="startDate" dateFormat="yy-mm-dd" />
+                            <label for="sd">From</label>
+                        </span>
+                        <span class="p-float-label mr-2">
+                            <Calendar id="ed" showIcon v-model="endDate" dateFormat="yy-mm-dd" />
+                            <label for="ed">To</label>
+                        </span>
+                    </template>
+                    <template #end>
+                        <Button label="Search" icon="pi pi-search" class="mr-2" @click="applyFilters" />
+                        <Button label="Reset" icon="pi pi-times" severity="secondary" outlined @click="resetFilters" />
+                    </template>
+                </Toolbar>
+                <DataTable :value="users?.data" :paginator="true" class="p-datatable-gridlines" :rows="rowsPerPage" dataKey="id"
+                    :rowHover="true" :totalRecords="users?.total" :loading="loading" lazy @page="onPageChange($event)"
+                    :rowsPerPageOptions="[10, 15, 20, 25, 50, 100]" responsiveLayout="scroll">
 
                     <Column field="name" header="Name" style="min-width: 10rem">
                         <template #body="{ data }">
                             {{ data.first_name + " " + data.last_name + " " + data.other_name }}
+                        </template>
+                    </Column>
+                    <Column header="Email / Username" style="min-width: 14rem">
+                        <template #body="{ data }">
+                            {{ data.email }}
+                        </template>
+                    </Column>
+                    <Column header="Institution" style="min-width: 12rem">
+                        <template #body="{ data }">
+                            {{ data.institution }}
                         </template>
                     </Column>
                     <Column header="Gender" style="min-width: 10rem">

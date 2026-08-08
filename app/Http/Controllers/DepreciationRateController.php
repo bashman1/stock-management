@@ -7,59 +7,31 @@ use Illuminate\Http\Request;
 
 class DepreciationRateController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function createDepreciationRate(Request $request)
     {
-        //
+        $userData = $this->getUserLogin();
+        if (empty($request->name) || (float) $request->rate <= 0) {
+            return $this->genericResponse(false, 'A name and a rate greater than 0 are required', 400, null, 'createDepreciationRate', $request);
+        }
+
+        $rate = DepreciationRate::create([
+            'name' => $request->name,
+            'rate' => (float) $request->rate,
+            'description' => $request->description,
+            'duration_id' => $request->duration_id,
+            'status' => 'Active',
+            'institution_id' => $userData->institution_id,
+            'branch_id' => $userData->branch_id,
+            'created_by' => $userData->id,
+            'created_on' => now(),
+        ]);
+
+        return $this->genericResponse(true, 'Depreciation rate created successfully', 201, $rate, 'createDepreciationRate', $request);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function getDepreciationRates()
     {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(DepreciationRate $depreciationRate)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(DepreciationRate $depreciationRate)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, DepreciationRate $depreciationRate)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(DepreciationRate $depreciationRate)
-    {
-        //
+        $rates = DepreciationRate::with('duration')->where('status', 'Active')->orderBy('id', 'asc')->get();
+        return $this->genericResponse(true, 'Depreciation rates fetched successfully', 200, $rates, 'getDepreciationRates', []);
     }
 }

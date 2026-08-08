@@ -89,6 +89,52 @@ const getStorageData=()=>{
     storageData.value = commonService.getStorage()
 }
 
+// --- Topbar context (user / role / business / branch / license) ----------
+const userData = computed(() => storageData.value?.userData || {});
+const license = computed(() => storageData.value?.license || {});
+
+const userName = computed(() =>
+    [userData.value.first_name, userData.value.last_name, userData.value.other_name]
+        .filter(Boolean)
+        .join(' ') || '—'
+);
+const roleName = computed(() => userData.value.role_name || '—');
+const isLaraLightIndigo = computed(() => layoutConfig.theme.value === 'lara-light-indigo');
+const businessName = computed(() => userData.value.institution_name || '—');
+const branchName = computed(() => userData.value.branch_name || '—');
+const licensePackage = computed(() => license.value.package_name || '—');
+
+// License validity → status tag colour + label, with details for the tooltip
+const licenseDaysLeft = computed(() => {
+    if (!license.value.end_date) return null;
+    const end = new Date(license.value.end_date);
+    const now = new Date();
+    if (isNaN(end.getTime())) return null;
+    return Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+});
+const licenseSeverity = computed(() => {
+    const d = licenseDaysLeft.value;
+    if (d === null) return 'info';
+    if (d < 0) return 'danger';
+    if (d <= 7) return 'warning';
+    return 'success';
+});
+const licenseStatusLabel = computed(() => {
+    const d = licenseDaysLeft.value;
+    if (d === null) return 'N/A';
+    if (d < 0) return 'Expired';
+    if (d === 0) return 'Ends today';
+    return `${d} day${d === 1 ? '' : 's'} left`;
+});
+const licenseTooltip = computed(() => {
+    const parts = [];
+    if (license.value.package_name) parts.push(`Package: ${license.value.package_name}`);
+    if (license.value.duration) parts.push(`Plan: ${license.value.duration}`);
+    if (license.value.start_date) parts.push(`Started: ${license.value.start_date}`);
+    if (license.value.end_date) parts.push(`Ends: ${license.value.end_date}`);
+    return parts.join('\n');
+});
+
 
 </script>
 
@@ -104,7 +150,38 @@ const getStorageData=()=>{
             <i class="pi pi-bars"></i>
         </button>
 
-        <span class="hidden lg:block text-500 font-bold text-sl ml-3">{{ "User: "+ storageData?.userData?.first_name+" "+storageData?.userData?.last_name+" "+storageData?.userData?.other_name +" | Role: "+ storageData?.userData?.role_name+" | Business: "+ storageData?.userData?.institution_name+" | Branch: "+storageData?.userData?.branch_name+" | License: "+  storageData?.license?.package_name+" Plan: "+storageData?.license?.duration +" Started: "+ storageData?.license?.start_date+" Ends: "+storageData?.license?.end_date}}</span>
+        <div class="topbar-context hidden lg:flex align-items-center gap-2 ml-3 flex-1 min-w-0 overflow-x-auto">
+            <div class="context-pill" title="Signed-in user">
+                <i class="pi pi-user"></i>
+                <span class="context-label">User</span>
+                <span class="context-value"  :class="{ 'text-800': isLaraLightIndigo }">{{ userName }}</span>
+            </div>
+
+            <div class="context-pill" title="Role">
+                <i class="pi pi-id-card"></i>
+                <span class="context-label">Role</span>
+                <span class="context-value" :class="{ 'text-800': isLaraLightIndigo }">{{ roleName }}</span>
+            </div>
+
+            <div class="context-pill" title="Business">
+                <i class="pi pi-building"></i>
+                <span class="context-label">Business</span>
+                <span class="context-value" :class="{ 'text-800': isLaraLightIndigo }">{{ businessName }}</span>
+            </div>
+
+            <div class="context-pill" title="Branch">
+                <i class="pi pi-sitemap"></i>
+                <span class="context-label">Branch</span>
+                <span class="context-value" :class="{ 'text-800': isLaraLightIndigo }">{{ branchName }}</span>
+            </div>
+
+            <div class="context-pill" :title="licenseTooltip">
+                <i class="pi pi-verified"></i>
+                <span class="context-label">License</span>
+                <span class="context-value" :class="{ 'text-800': isLaraLightIndigo }">{{ licensePackage }}</span>
+                <Tag :value="licenseStatusLabel" :severity="licenseSeverity" class="ml-1"></Tag>
+            </div>
+        </div>
 
         <button class="p-link layout-topbar-menu-button layout-topbar-button" @click="onTopBarMenuButton()">
             <i class="pi pi-ellipsis-v"></i>
@@ -148,4 +225,41 @@ const getStorageData=()=>{
     </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.topbar-context {
+    scrollbar-width: thin;
+}
+
+.context-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    background: var(--surface-50);
+    border: 1px solid var(--surface-border);
+    white-space: nowrap;
+
+    i {
+        color: var(--primary-color);
+        font-size: 1rem;
+    }
+}
+
+.context-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--primary-color);
+}
+
+.context-value {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-color);
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+</style>

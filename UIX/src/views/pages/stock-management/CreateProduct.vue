@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
@@ -82,6 +82,35 @@ const expiryDate=ref(null);
 const prodType=ref(null);
 const prodGauge=ref(null);
 
+// Product nature drives which sections of the form apply. It comes from the
+// selected product type (defaults to STOCK so existing types behave as before).
+const nature = computed(() => prodType?.value?.nature || 'STOCK');
+// Inventory valuation method (how COGS is costed) — only relevant for stocked items.
+const valuationMethod = ref('WAVG');
+const standardCost = ref(null);
+const valuationOptions = [
+    { label: 'Weighted Average', value: 'WAVG' },
+    { label: 'FIFO (first-in first-out)', value: 'FIFO' },
+    { label: 'LIFO (last-in first-out)', value: 'LIFO' },
+    { label: 'Standard Cost', value: 'STANDARD' }
+];
+const showValuation = computed(() => nature.value === 'STOCK');
+const showQuantity = computed(() => ['STOCK', 'NON_STOCK'].includes(nature.value));
+const showStockLevels = computed(() => nature.value === 'STOCK');
+const showPurchaseInfo = computed(() => ['STOCK', 'NON_STOCK'].includes(nature.value));
+const isBundle = computed(() => nature.value === 'BUNDLE');
+
+// Bundle components: products whose stock is decremented when the bundle sells.
+const bundleComponents = ref([]);
+const componentProductsList = ref([]);
+const addComponentRow = () => bundleComponents.value.push({ product: null, quantity: 1 });
+const removeComponentRow = (i) => bundleComponents.value.splice(i, 1);
+const getComponentProducts = () => {
+    commonService.genericRequest('get-products', 'POST', true, { page: 1, rowPerPage: 1000 }).then((response) => {
+        if (response.status) componentProductsList.value = response.data?.data || response.data || [];
+    });
+};
+
 const typeName=ref(null);
 const typeDesc=ref(null);
 const gaugeName=ref(null);
@@ -119,10 +148,19 @@ const paymentMethodOptions=ref([
 
 const paymentMethod=ref( {id:1, name: "Cash", value:"CASH"})
 
-const weight = ref(null);
-const weightUnit = ref(null);
-const weightPrice = ref(null);
+// Additional (non-base) units of measure. The base unit is the "Measurement Unit"
+// dropdown above with conversion_factor = 1. Each extra row converts to the base
+// unit via conversion_factor (base units contained in one of this unit).
+const additionalUnits = ref([]);
 const src = ref([]);
+
+const addUnitRow = () => {
+    additionalUnits.value.push({ unit: null, conversion_factor: null, purchase_price: null, selling_price: null });
+};
+
+const removeUnitRow = (index) => {
+    additionalUnits.value.splice(index, 1);
+};
 
 
 // ********************************************************
@@ -197,7 +235,8 @@ const onGaugeInputBlur=(value, key)=>{
 const onSubmit= ()=>{
     formError.value.name=commonService.validateFormField(name.value);
     formError.value.category=commonService.validateFormField(category.value);
-    formError.value.quantity=commonService.validateFormField(quantity.value);
+    // quantity only matters for inventory/non-stock natures
+    formError.value.quantity = showQuantity.value ? commonService.validateFormField(quantity.value) : null;
     formError.value.measurementUnit=commonService.validateFormField(measurementUnit.value);
     formError.value.sellingPrice=commonService.validateFormField(sellingPrice.value);
     formError.value.prodType=commonService.validateFormField(prodType.value);
@@ -209,6 +248,52 @@ const onSubmit= ()=>{
         return
     }
 
+    // A bundle must list at least one component product to draw stock from.
+    let bundlePayload = [];
+    if (isBundle.value) {
+        bundlePayload = bundleComponents.value
+            .filter(c => c.product && Number(c.quantity) > 0)
+            .map(c => ({ component_product_id: c.product.id, quantity: Number(c.quantity) }));
+        if (!bundlePayload.length) {
+            commonService.showError(toast, "Add at least one component (with quantity) to the bundle");
+            return;
+        }
+    }
+
+    // Build the units of measure: the base unit (the "Measurement Unit" dropdown
+    // with conversion_factor 1) plus any additional configured units.
+    const baseUnit = {
+        measurement_unit_id: measurementUnit?.value?.id,
+        conversion_factor: 1,
+        purchase_price: Number(purchasePrice?.value) || 0,
+        selling_price: Number(sellingPrice?.value) || 0,
+        is_base: true,
+    };
+
+    const extraUnits = additionalUnits.value
+        .filter(u => u.unit)
+        .map(u => ({
+            measurement_unit_id: u.unit?.id,
+            conversion_factor: Number(u.conversion_factor),
+            purchase_price: Number(u.purchase_price) || 0,
+            selling_price: Number(u.selling_price) || 0,
+            is_base: false,
+        }));
+
+    for (const u of extraUnits) {
+        if (!u.conversion_factor || u.conversion_factor <= 0) {
+            commonService.showError(toast, "Each additional unit needs a conversion factor greater than 0");
+            return;
+        }
+    }
+
+    const units = [baseUnit, ...extraUnits];
+    const unitIds = units.map(u => u.measurement_unit_id);
+    if (new Set(unitIds).size !== unitIds.length) {
+        commonService.showError(toast, "A measurement unit can only be added once per product");
+        return;
+    }
+
     let postData={
         id:editId.value,
         name: name?.value,
@@ -218,7 +303,7 @@ const onSubmit= ()=>{
         supplier_id:supplier?.value?.id,
         product_no: productId?.value,
         description: description?.value,
-        quantity: quantity?.value,
+        quantity: showQuantity.value ? (quantity?.value || 0) : 0,
         min_quantity:minStock?.value,
         max_quantity: maxStock?.value,
         measurement_unit_id: measurementUnit?.value?.id,
@@ -230,11 +315,12 @@ const onSubmit= ()=>{
         expiry_date:expiryDate?.value,
         tax_config: taxConfig?.value?.value,
         type_id: prodType?.value?.id,
+        valuation_method: valuationMethod?.value,
+        standard_cost: Number(standardCost?.value) || 0,
         gauge_id: prodGauge?.value?.id,
         payment_method:paymentMethod?.value.value,
-        secondary_weight: weight?.value,
-        secondary_measurement_unit_id:weightUnit?.value?.id,
-        secondary_price:weightPrice?.value,
+        units: units,
+        components: bundlePayload,
     }
 
     commonService.genericRequest('create-product', 'post', true, postData).then((response) => {
@@ -263,9 +349,10 @@ const onSubmit= ()=>{
             expiryDate.value=null;
             prodType.value=null;
             prodGauge.value=null;
-            weight.value=null;
-            weightUnit.value=null;
-            weightPrice.value=null;
+            additionalUnits.value=[];
+            bundleComponents.value=[];
+            valuationMethod.value='WAVG';
+            standardCost.value=null;
             // tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'};
             paymentMethod.value={id:1, name: "Cash", value:"CASH"};
 
@@ -626,6 +713,27 @@ const getProductDetails=(prodId)=>{
             prodType.value =productTypeList.value?.find(cat=>cat.id ==productDetails.value.type_id)
             prodGauge.value =productGaugeList.value?.find(cat=>cat.id ==productDetails.value.gauge_id)
             taxConfig.value = taxOptions.value?.find(tax=>tax.value ==productDetails.value.tax_config)
+
+            // hydrate the additional (non-base) units
+            if (productDetails.value.units && productDetails.value.units.length) {
+                additionalUnits.value = productDetails.value.units
+                    .filter(u => !u.is_base)
+                    .map(u => ({
+                        unit: measurementUnitsData.value?.find(m => m.id == u.measurement_unit_id),
+                        conversion_factor: u.conversion_factor,
+                        purchase_price: u.purchase_price,
+                        selling_price: u.selling_price,
+                    }));
+            } else if (productDetails.value.secondary_measurement_unit_id) {
+                // fallback for products created before the multi-unit migration:
+                // legacy secondary_weight is the inverse of conversion_factor
+                additionalUnits.value = [{
+                    unit: measurementUnitsData.value?.find(m => m.id == productDetails.value.secondary_measurement_unit_id),
+                    conversion_factor: productDetails.value.secondary_weight ? (1 / Number(productDetails.value.secondary_weight)) : null,
+                    purchase_price: productDetails.value.purchase_price,
+                    selling_price: productDetails.value.secondary_price,
+                }];
+            }
         } else {
             commonService.showError(toast, response.message);
         }
@@ -654,6 +762,7 @@ onMounted(() => {
     getProductTypes();
     getProductGauge();
     getInstitutionDetails();
+    getComponentProducts();
     if(route.params.id != null){
         editId.value=Number(route.params.id);
         isEdit.value = true;
@@ -787,20 +896,32 @@ onMounted(() => {
             <div class="card">
                 <h5>Stock Info</h5><br>
                 <div class="grid">
-                    <div class="field col-12 md:col-6">
+                    <div class="field col-12 md:col-6" v-if="showValuation">
+                        <span class="p-float-label">
+                            <Dropdown id="valmethod" :options="valuationOptions" v-model="valuationMethod" optionLabel="label" optionValue="value" />
+                            <label for="valmethod">Valuation Method</label>
+                        </span>
+                    </div>
+                    <div class="field col-12 md:col-6" v-if="showValuation && valuationMethod === 'STANDARD'">
+                        <span class="p-float-label">
+                            <InputText type="text" id="stdcost" v-model="standardCost" />
+                            <label for="stdcost">Standard Cost (per base unit)</label>
+                        </span>
+                    </div>
+                    <div class="field col-12 md:col-6" v-if="showQuantity">
                         <span class="p-float-label">
                             <InputText type="text" id="quantity" @blur="onInputBlur(quantity, 'quantity')" v-model.trim="quantity" :class="{ 'p-invalid': formError?.quantity }"/>
-                            <label for="quantity">Quantity</label>
+                            <label for="quantity">{{ nature === 'NON_STOCK' ? 'Quantity Purchased' : 'Quantity' }}</label>
                         </span>
                     </div>
 
-                    <div class="field col-12 md:col-6">
+                    <div class="field col-12 md:col-6" v-if="showStockLevels">
                         <span class="p-float-label">
                             <InputText type="text" id="minStock" v-model="minStock" />
                             <label for="minStock">Minimum Stock Level</label>
                         </span>
                     </div>
-                    <div class="field col-12 md:col-6">
+                    <div class="field col-12 md:col-6" v-if="showStockLevels">
                         <span class="p-float-label">
                             <InputText type="text" id="maxStock" v-model="maxStock" />
                             <label for="maxStock">Maximum Stock Level</label>
@@ -809,52 +930,93 @@ onMounted(() => {
                     <div class="field col-12 md:col-6">
                         <div class="p-inputgroup">
                             <span class="p-float-label">
-                                <Dropdown id="measurementUnit" :options="measurementUnitsData" filter @blur="onInputBlur(measurementUnit, 'measurementUnit')" v-model="measurementUnit" :class="{ 'p-invalid': formError?.measurementUnit }" optionLabel="name">
+                                <Dropdown id="measurementUnit" :options="measurementUnitsData" filter :disabled="isEdit" @blur="onInputBlur(measurementUnit, 'measurementUnit')" v-model="measurementUnit" :class="{ 'p-invalid': formError?.measurementUnit }" optionLabel="name">
                                 </Dropdown>
-                                <label for="measurementUnit">Measurement Unit</label>
+                                <label for="measurementUnit">Base Measurement Unit</label>
                             </span>
-                            <Button @click="toggleMeasurementUnitModal(true)" icon="pi pi-plus" />
+                            <Button @click="toggleMeasurementUnitModal(true)" icon="pi pi-plus" :disabled="isEdit" />
                         </div>
                     </div>
                     <div class="field col-12 md:col-12">
-                        <p class="text-900">Secondary units represent the weight or quantity of secondary components contained within a single primary unit.</p>
+                        <p class="text-900" v-if="nature === 'STOCK'">The base measurement unit holds the stock quantity (set above) and its purchase/selling prices (below). Add other units a customer can buy in — each with how many base units it contains (conversion factor) and its own prices.</p>
+                        <p class="text-900" v-else>This is a <b>{{ nature.replace('_',' ').toLowerCase() }}</b> item — it is not held in inventory. The base measurement unit just carries its selling price. Add other units it can be sold in if needed.</p>
                     </div>
 
-                    <div class="field col-12 md:col-4">
-                        <span class="p-float-label">
-                            <InputText type="text" id="secondaryWeight" v-model="weight" />
-                            <label for="secondaryWeight">Secondary Unit</label>
-                        </span>
-                    </div>
-
-                    <div class="field col-12 md:col-5">
-                        <div class="p-inputgroup">
-                            <span class="p-float-label">
-                                <Dropdown id="secondaryMeasurementUnit" :options="measurementUnitsData" filter v-model="weightUnit"  optionLabel="name">
-                                </Dropdown>
-                                <label for="secondaryMeasurementUnit">Secondary Measurement Unit</label>
-                            </span>
-                            <Button @click="toggleMeasurementUnitModal(true)" icon="pi pi-plus" />
+                    <div class="field col-12 md:col-12" v-for="(row, index) in additionalUnits" :key="index">
+                        <div class="grid">
+                            <div class="field col-12 md:col-4 mb-0">
+                                <div class="p-inputgroup">
+                                    <span class="p-float-label">
+                                        <Dropdown :id="'unit-' + index" :options="measurementUnitsData" filter v-model="row.unit" optionLabel="name">
+                                        </Dropdown>
+                                        <label :for="'unit-' + index">Unit</label>
+                                    </span>
+                                    <Button @click="toggleMeasurementUnitModal(true)" icon="pi pi-plus" />
+                                </div>
+                            </div>
+                            <div class="field col-12 md:col-3 mb-0">
+                                <span class="p-float-label">
+                                    <InputText type="text" :id="'cf-' + index" v-model="row.conversion_factor" />
+                                    <label :for="'cf-' + index">Base units per unit</label>
+                                </span>
+                            </div>
+                            <div class="field col-12 md:col-2 mb-0">
+                                <span class="p-float-label">
+                                    <InputText type="text" :id="'pp-' + index" v-model="row.purchase_price" />
+                                    <label :for="'pp-' + index">Purchase Price</label>
+                                </span>
+                            </div>
+                            <div class="field col-12 md:col-2 mb-0">
+                                <span class="p-float-label">
+                                    <InputText type="text" :id="'sp-' + index" v-model="row.selling_price" />
+                                    <label :for="'sp-' + index">Selling Price</label>
+                                </span>
+                            </div>
+                            <div class="field col-12 md:col-1 mb-0 flex align-items-center">
+                                <Button @click="removeUnitRow(index)" icon="pi pi-trash" class="p-button-danger p-button-outlined" />
+                            </div>
                         </div>
                     </div>
 
-                    <div class="field col-12 md:col-3">
-                        <span class="p-float-label">
-                            <InputText type="text" id="secondaryPrice" v-model="weightPrice" />
-                            <label for="secondaryPrice">Secondary Price</label>
-                        </span>
+                    <div class="field col-12 md:col-12">
+                        <Button @click="addUnitRow" label="Add Unit" icon="pi pi-plus" class="p-button-outlined" />
                     </div>
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" v-if="isBundle">
+                <h5>Bundle Components</h5><br>
+                <p class="text-900">Pick the products this bundle is made of. When the bundle sells, each component's stock is reduced and its cost becomes the bundle's cost of sales.</p>
+                <div class="grid" v-for="(row, index) in bundleComponents" :key="index">
+                    <div class="field col-12 md:col-7 mb-0">
+                        <span class="p-float-label">
+                            <Dropdown :id="'comp-' + index" :options="componentProductsList" filter v-model="row.product" optionLabel="name"></Dropdown>
+                            <label :for="'comp-' + index">Component product</label>
+                        </span>
+                    </div>
+                    <div class="field col-12 md:col-3 mb-0">
+                        <span class="p-float-label">
+                            <InputText type="text" :id="'compq-' + index" v-model="row.quantity" />
+                            <label :for="'compq-' + index">Qty per bundle</label>
+                        </span>
+                    </div>
+                    <div class="field col-12 md:col-2 mb-0 flex align-items-center">
+                        <Button @click="removeComponentRow(index)" icon="pi pi-trash" class="p-button-danger p-button-outlined" />
+                    </div>
+                </div>
+                <div class="field col-12 md:col-12">
+                    <Button @click="addComponentRow" label="Add Component" icon="pi pi-plus" class="p-button-outlined" />
+                </div>
+            </div>
+
+            <div class="card" v-if="showPurchaseInfo">
                 <h5>Purchase Info</h5><br>
                 <div class="grid">
 
                     <div class="field col-12 md:col-6">
                         <span class="p-float-label">
                             <InputText type="text" id="purchasePrice" v-model="purchasePrice"  />
-                            <label for="purchasePrice">Unit Purchase Price </label>
+                            <label for="purchasePrice">{{ nature === 'NON_STOCK' ? 'Unit Cost' : 'Base Unit Purchase Price' }} </label>
                         </span>
                     </div>
 
@@ -903,7 +1065,7 @@ onMounted(() => {
                     <div class="field col-12 md:col-6">
                         <span class="p-float-label">
                             <InputText type="text" @blur="onInputBlur(sellingPrice, 'sellingPrice')" id="sellingPrice" v-model="sellingPrice" :class="{ 'p-invalid': formError?.sellingPrice }"/>
-                            <label for="sellingPrice">Unit Selling Price </label>
+                            <label for="sellingPrice">Base Unit Selling Price </label>
                         </span>
                     </div>
                     <div class="field col-12 md:col-6" v-if="institutionDetails?.is_tax_enabled && taxableConfigs.value ==  'TAX_STANDARD_RATED'">

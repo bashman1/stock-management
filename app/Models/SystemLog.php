@@ -36,6 +36,13 @@ class SystemLog extends Model
         'isp',
         'time_zone',
         'uuid',
+        'user_agent',
+        'method',
+        'route',
+        'entity_type',
+        'entity_id',
+        'severity',
+        'event_category',
     ];
 
     protected $casts = [

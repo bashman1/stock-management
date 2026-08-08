@@ -14,6 +14,7 @@ const router = useRouter();
 const route = useRoute();
 
 const glOverView = ref([]);
+const summary = ref(null);
 
 
 const customers = ref();
@@ -64,7 +65,9 @@ const calculateCustomerTotal = (name) => {
 const getGlAccountsOverView = () => {
     commonService.genericRequest('get-balance-sheet', 'post', true, {}).then((response) => {
         if (response.status) {
-            glOverView.value = response.data;
+            // response.data = { sections, summary }
+            glOverView.value = response.data?.sections ?? [];
+            summary.value = response.data?.summary ?? null;
         } else {
             commonService.showError(toast, response.message);
         }
@@ -137,8 +140,42 @@ onMounted(() => {
                                 <td class="bold text-900">{{ commonService.commaSeparator(acct.total) }}</td>
                             </tr>
                         </template>
+
+                        <!-- Equity section: retained earnings (accumulated net profit) -->
+                        <template v-if="summary">
+                            <tr>
+                                <th colspan="3" class="bold text-900">EQUITY</th>
+                            </tr>
+                            <tr>
+                                <td class="left-align text-900">Retained Earnings</td>
+                                <td class="text-900">{{ commonService.commaSeparator(summary.retainedEarnings) }}</td>
+                                <td class="text-900"></td>
+                            </tr>
+                            <tr>
+                                <td class="left-align bold text-900">Total Equity</td>
+                                <td class="text-900"></td>
+                                <td class="bold text-900">{{ commonService.commaSeparator(summary.totalEquityAndRetained) }}</td>
+                            </tr>
+                        </template>
                     </tbody>
                 </table>
+
+                <!-- Balance check: Assets vs Liabilities + Equity -->
+                <div v-if="summary" class="mt-4">
+                    <div class="flex justify-content-between border-top-1 surface-border pt-3">
+                        <span class="bold text-900">Total Assets</span>
+                        <span class="bold text-900">{{ commonService.commaSeparator(summary.totalAssets) }}</span>
+                    </div>
+                    <div class="flex justify-content-between">
+                        <span class="bold text-900">Total Liabilities + Equity</span>
+                        <span class="bold text-900">{{ commonService.commaSeparator(summary.totalLiabilitiesAndEquity) }}</span>
+                    </div>
+                    <div class="mt-2">
+                        <Tag v-if="summary.balanced" severity="success" value="Balanced ✓"></Tag>
+                        <Tag v-else severity="danger"
+                            :value="'Out of balance by ' + commonService.commaSeparator(summary.balanceCheck)"></Tag>
+                    </div>
+                </div>
         </div>
     </div>
 </template>

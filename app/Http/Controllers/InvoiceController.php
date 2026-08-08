@@ -37,11 +37,14 @@ class InvoiceController extends Controller
 
 
             foreach ($request->items as $item) {
+                // selected.weight is the conversion_factor (base units per chosen unit).
+                // qty stays in the chosen unit; base_qty is the base-unit equivalent.
+                $conversion = (double) $item['selected']['weight'];
                 $invoiceItems = InvoiceItem::create(([
                     'invoice_id' => $invoice->id,
-                    'product_id' => $item['quantity'],
-                    'qty' => (double) $item['quantity'] * (1/$item['selected']['weight']),
-                    // 'price' => $item['price'],
+                    'product_id' => $item['id'],
+                    'qty' => (double) $item['quantity'],
+                    'base_qty' => (double) $item['quantity'] * $conversion,
                     // 'total' => $item['total'],
                     'created_by' => $userData->id,
                     'created_on' => now(),
