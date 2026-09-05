@@ -55,14 +55,19 @@ onMounted(() => {
                             {{ data.type }}
                         </template>
                     </Column>
-                    <Column header="Description"  style="min-width: 12rem">
+                    <!-- <Column header="Description"  style="min-width: 12rem">
                         <template #body="{ data }">
                             {{ data.description }}
                         </template>
-                    </Column>
+                    </Column> -->
                     <Column header="Status"  style="min-width: 10rem">
                         <template #body="{ data }">
                             {{ data.status }}
+                        </template>
+                    </Column>
+                    <Column header="Institution"  style="min-width: 12rem">
+                        <template #body="{ data }">
+                            {{ data.institution_name }}
                         </template>
                     </Column>
                     <Column header="Created By"  style="min-width: 10rem">
