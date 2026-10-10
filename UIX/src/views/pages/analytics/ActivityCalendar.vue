@@ -31,11 +31,8 @@ const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate(
 
 const window = reactive({ from: null, to: null });
 
-const themeText = () => ((getComputedStyle(document.documentElement).getPropertyValue('--text-color') || '').trim() || '#495057');
-
 const loadFeed = () => {
     if (!window.from || !window.to) return;
-    const text = themeText();
     commonService.genericRequest('get-calendar-feed', 'post', true, { from: window.from, to: window.to }).then((r) => {
         if (!r.status) { commonService.showError(toast, r.message); return; }
         calendarOptions.events = (r.data || []).map((e) => {
@@ -47,7 +44,7 @@ const loadFeed = () => {
                 end: e.end || e.start,
                 backgroundColor: color + '33',
                 borderColor: color,
-                textColor: text, // adapt to the active theme (dark text in light mode, light in dark)
+                // text colour comes from CSS (--fc-event-text-color) so it follows the active theme
                 extendedProps: { type: e.type, editable: e.editable, route: e.route, amount: e.amount, rawId: e.id, description: e.description }
             };
         });
@@ -147,7 +144,7 @@ onMounted(() => {
             <div class="flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
                 <h5 class="m-0">Activity Calendar</h5>
                 <div class="flex align-items-center gap-3 flex-wrap">
-                    <span v-for="l in legend" :key="l.type" class="flex align-items-center text-sm">
+                    <span v-for="l in legend" :key="l.type" class="fc-legend-item flex align-items-center text-sm">
                         <span class="border-round mr-1" :style="{ background: l.color, width: '0.75rem', height: '0.75rem', display: 'inline-block' }" />
                         {{ l.label }}
                     </span>
@@ -199,18 +196,27 @@ onMounted(() => {
 /* -------- Theme FullCalendar to the app (light + dark) --------
    FullCalendar injects its own CSS at runtime, so we drive it through its
    official CSS variables AND back the visible bits with !important so its
-   default blue buttons / yellow "today" / dark text never clash. */
+   default blue buttons / yellow "today" / dark text never clash.
+
+   Text uses --surface-900, NOT --text-color: this app's themes override
+   --text-color to #ffffff (see public/themes/lara-light-indigo/theme.css),
+   which is invisible on the white --surface-card. --surface-900 is the
+   inverse-of-card token in every bundled theme, so it reads in light + dark. */
 .fc-theme-wrap {
     /* structural */
     --fc-border-color: var(--surface-border);
     --fc-page-bg-color: var(--surface-card);
     --fc-neutral-bg-color: var(--surface-100);
-    --fc-neutral-text-color: var(--text-color);
+    --fc-neutral-text-color: var(--surface-900);
     --fc-today-bg-color: rgba(99, 102, 241, 0.12);
     --fc-now-indicator-color: #ef4444;
     --fc-list-event-hover-bg-color: var(--surface-100);
+    /* events: FC defaults these to white text / grey chips, unreadable on our pale event fills */
+    --fc-event-text-color: var(--surface-900);
+    --fc-more-link-bg-color: var(--surface-200);
+    --fc-more-link-text-color: var(--surface-900);
     /* toolbar buttons */
-    --fc-button-text-color: var(--text-color);
+    --fc-button-text-color: var(--surface-900);
     --fc-button-bg-color: var(--surface-100);
     --fc-button-border-color: var(--surface-border);
     --fc-button-hover-bg-color: var(--surface-200);
@@ -218,8 +224,11 @@ onMounted(() => {
     --fc-button-active-bg-color: var(--primary-color);
     --fc-button-active-border-color: var(--primary-color);
     background: var(--surface-card);
-    color: var(--text-color);
+    color: var(--surface-900);
 }
+
+/* legend chips sit on the card and inherit body's white --text-color */
+.fc-legend-item { color: var(--surface-900); }
 
 /* text elements — always the theme text colour (never white-on-white) */
 .fc-theme-wrap .fc,
@@ -231,7 +240,7 @@ onMounted(() => {
 .fc-theme-wrap .fc .fc-timegrid-slot-label-cushion,
 .fc-theme-wrap .fc .fc-timegrid-axis-cushion,
 .fc-theme-wrap .fc .fc-list-day-text,
-.fc-theme-wrap .fc .fc-toolbar-title { color: var(--text-color) !important; text-decoration: none; }
+.fc-theme-wrap .fc .fc-toolbar-title { color: var(--surface-900) !important; text-decoration: none; }
 .fc-theme-wrap .fc .fc-toolbar-title { font-size: 1.15rem; }
 
 /* backgrounds/borders onto theme surfaces */
@@ -247,7 +256,7 @@ onMounted(() => {
 .fc-theme-wrap .fc .fc-button-primary {
     background: var(--surface-100) !important;
     border-color: var(--surface-border) !important;
-    color: var(--text-color) !important;
+    color: var(--surface-900) !important;
     text-transform: capitalize; box-shadow: none !important;
 }
 .fc-theme-wrap .fc .fc-button-primary:not(:disabled).fc-button-active,
@@ -257,6 +266,16 @@ onMounted(() => {
     color: var(--primary-color-text) !important;
 }
 .fc-theme-wrap .fc .fc-button-primary:disabled { opacity: 0.5; }
+
+/* FullCalendar hard-codes .fc-h-event/.fc-v-event .fc-event-main to --fc-event-text-color
+   (#fff by default), which wins over the event's own colour. Force the theme text instead. */
+.fc-theme-wrap .fc .fc-event,
+.fc-theme-wrap .fc .fc-h-event .fc-event-main,
+.fc-theme-wrap .fc .fc-v-event .fc-event-main,
+.fc-theme-wrap .fc .fc-event-main-frame,
+.fc-theme-wrap .fc .fc-event-title,
+.fc-theme-wrap .fc .fc-event-time,
+.fc-theme-wrap .fc .fc-daygrid-dot-event .fc-event-title { color: var(--surface-900) !important; }
 
 .fc-theme-wrap .fc .fc-event { cursor: pointer; font-size: 0.75rem; padding: 0 2px; }
 .fc-theme-wrap .fc .fc-multimonth { border-color: var(--surface-border); }
@@ -279,6 +298,6 @@ onMounted(() => {
     border-bottom: 1px solid var(--surface-border);
     padding: 0.5em 0 !important;
 }
-.fc-theme-wrap .fc .fc-multimonth .fc-daygrid-day-number { color: var(--text-color) !important; font-weight: 500; }
+.fc-theme-wrap .fc .fc-multimonth .fc-daygrid-day-number { color: var(--surface-900) !important; font-weight: 500; }
 .fc-theme-wrap .fc .fc-day-other .fc-daygrid-day-top { opacity: 0.55; }
 </style>

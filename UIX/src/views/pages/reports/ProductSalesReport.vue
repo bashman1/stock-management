@@ -106,34 +106,27 @@ onMounted(() => {
             :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
             <ColumnGroup type="header">
                 <Row>
-                    <Column header="Product Info" :rowspan="3" />
-                    <Column :header="'Account Name: '" :colspan="6" />
-                </Row>
-                <Row>
-                    <Column :header="'Account Number : '" :colspan="6" />
-                </Row>
-                <Row>
-                    <Column :header="'Opening Balance: '+0" :colspan="6" />
-                </Row>
-                <Row>
-                    <Column header="Transaction Date" sortable field="transaction_date" />
+                    <Column header="Transaction Date" sortable field="tran_date" />
                     <Column header="Name" sortable field="product_name" />
-                    <!-- <Column header="Debit" sortable field="dr" /> -->
-                    <Column header="Purchase Price" sortable field="purchase_price" />
+                    <Column header="Receipt No." sortable field="receipt_no" />
+                    <Column header="Selling Price" sortable field="selling_price" />
                     <Column header="Quantity" sortable field="quantity" />
-                    <!-- <Column header="Reversed" sortable field="reversal_flag" /> -->
-                    <!-- <Column header="Posted By" sortable field="user_name" /> -->
                 </Row>
 
             </ColumnGroup>
-            <Column field="transaction_date" header="Transaction Date" style="min-width: 12rem">
+            <Column field="tran_date" header="Transaction Date" style="min-width: 12rem">
                 <template #body="{ data }">
-                    {{ data.stock_date }}
+                    {{ data.tran_date }}
                 </template>
             </Column>
             <Column field="description" header="Name" style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.product_name }}
+                </template>
+            </Column>
+            <Column field="receipt_no" header="Receipt No." style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ data.receipt_no }}
                 </template>
             </Column>
             <!-- <Column field="dr" header="Debit" style="min-width: 10rem">
@@ -146,14 +139,14 @@ onMounted(() => {
                     {{ data.dr_cr_ind == 'Cr' ? commonService.commaSeparator(data.tran_amount) : '' }}
                 </template>
             </Column> -->
-            <Column field="balance" header="Purchase Price" style="min-width: 10rem">
+            <Column field="selling_price" header="Selling Price" style="min-width: 10rem">
                 <template #body="{ data }">
-                    {{ commonService.commaSeparator(data.purchase_price) }}
+                    {{ commonService.commaSeparator(data.selling_price) }}
                 </template>
             </Column>
-            <Column field="balance" header="Quantity" style="min-width: 10rem">
+            <Column field="quantity" header="Quantity" style="min-width: 10rem">
                 <template #body="{ data }">
-                    {{ commonService.commaSeparator(data.quantity) }}
+                    {{ commonService.commaSeparator(data.quantity) }} {{ data.measurement_unit }}
                 </template>
             </Column>
             <!-- <Column field="reversal_flag" header="Reversed" style="max-width: 10rem">
@@ -168,25 +161,7 @@ onMounted(() => {
             </Column> -->
         </DataTable>
 
-        <Dialog header="Update Ledger Name" v-model:visible="updateGlModal" :style="{ width: '30vw' }" :modal="true"
-            class="p-fluid">
-            <!-- <p style="padding-top: 20px;"> -->
-            <div class="grid p-fluid">
-                <div class="field col-12 md:col-12">
-                    <span class="p-float-label">
-                        <Textarea inputId="description" @blur="onInputBlur(description, 'description')" rows="7"
-                            v-model="description" :class="{ 'p-invalid': formError?.description }"></Textarea>
-                        <label for="description">Description</label>
-                    </span>
-                </div>
-            </div>
-            <!-- </p> -->
-            <template #footer>
-                <Button label="Cancel" @click="toggleEditModal(false)" icon="pi pi-times"
-                    class="p-button-outlined p-button-danger mr-2 mb-2" />
-                <Button @click="updateGlName" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
-            </template>
-        </Dialog>
+
 
     </div>
 </template>

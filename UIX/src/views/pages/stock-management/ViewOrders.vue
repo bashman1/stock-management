@@ -148,6 +148,7 @@ const trayzPrinter = async () => {
       currency: printerConfig.value?.currency || 'UGX',
       date: new Date().toLocaleString(),
       receiptNo: orderItems.value[0]?.receipt_no,
+      physicalReceiptNo: orderItems.value[0]?.physical_receipt_no,
       customer: orderItems.value[0]?.customer_name ? orderItems.value[0]?.customer_name: 'Cash',
       items:updatedItems,
       taxRate: 0.18
@@ -184,6 +185,8 @@ const trayzPrinter = async () => {
       padLine('='.repeat(LINE_WIDTH)) + '\n',
       '\x1B\x61\x00',    // Left align
       padLine(`Receipt No. : ${receipt.receiptNo}`) + '\n',
+      // only printed when the customer brought a physical receipt
+      ...(receipt.physicalReceiptNo ? [padLine(`Phys. Rcpt  : ${receipt.physicalReceiptNo}`) + '\n'] : []),
       padLine(`Cashier : ${receipt.cashier}`) + '\n',
       padLine(`Date    : ${receipt.date}`) + '\n',
       '-'.repeat(LINE_WIDTH) + '\n',
@@ -286,6 +289,7 @@ const printInvoice = () => {
         </div>
         <div style='text-align: right;'>
           <p style="color: #000;"><strong>Receipt #:</strong> ${ orderItems.value[0]?.receipt_no}</p>
+          ${orderItems.value[0]?.physical_receipt_no ? `<p style="color: #000;"><strong>Physical Receipt #:</strong> ${orderItems.value[0].physical_receipt_no}</p>` : ''}
           <p style="color: #000;"><strong>Date:</strong> ${commonService.formatDate(commonService.getCurrentTimestamp())}</p>
 
         </div>
@@ -412,6 +416,11 @@ onMounted(() => {
             <Column field="Receipt No." header="Receipt No." style="min-width: 10rem">
                 <template #body="{ data }">
                     {{ data.receipt_no }}
+                </template>
+            </Column>
+            <Column header="Physical Receipt No" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ data.physical_receipt_no }}
                 </template>
             </Column>
             <Column field="name" header="Item Count" style="min-width: 10rem">
@@ -584,6 +593,7 @@ onMounted(() => {
                     </div>
                     <div style='text-align: right;'>
                     <p style="color: #666;"><strong>Receipt #:</strong> {{ orderItems[0]?.receipt_no}}</p>
+                    <p style="color: #666;" v-if="orderItems[0]?.physical_receipt_no"><strong>Physical Receipt #:</strong> {{ orderItems[0]?.physical_receipt_no }}</p>
                     <p style="color: #666;"><strong>Date:</strong> {{ commonService.formatDate(commonService.getCurrentTimestamp()) }}</p>
                     <!-- <p style="color: #666;"><strong>Due Date:</strong> 26/02/2019</p> -->
                     </div>

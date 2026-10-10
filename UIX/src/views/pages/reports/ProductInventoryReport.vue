@@ -106,16 +106,6 @@ onMounted(() => {
             :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
             <ColumnGroup type="header">
                 <Row>
-                    <Column header="Product Info" :rowspan="3" />
-                    <Column :header="'Account Name: '" :colspan="6" />
-                </Row>
-                <Row>
-                    <Column :header="'Account Number : '" :colspan="6" />
-                </Row>
-                <Row>
-                    <Column :header="'Opening Balance: '+0" :colspan="6" />
-                </Row>
-                <Row>
                     <Column header="Transaction Date" sortable field="transaction_date" />
                     <Column header="Name" sortable field="product_name" />
                     <!-- <Column header="Debit" sortable field="dr" /> -->
@@ -168,25 +158,7 @@ onMounted(() => {
             </Column> -->
         </DataTable>
 
-        <Dialog header="Update Ledger Name" v-model:visible="updateGlModal" :style="{ width: '30vw' }" :modal="true"
-            class="p-fluid">
-            <!-- <p style="padding-top: 20px;"> -->
-            <div class="grid p-fluid">
-                <div class="field col-12 md:col-12">
-                    <span class="p-float-label">
-                        <Textarea inputId="description" @blur="onInputBlur(description, 'description')" rows="7"
-                            v-model="description" :class="{ 'p-invalid': formError?.description }"></Textarea>
-                        <label for="description">Description</label>
-                    </span>
-                </div>
-            </div>
-            <!-- </p> -->
-            <template #footer>
-                <Button label="Cancel" @click="toggleEditModal(false)" icon="pi pi-times"
-                    class="p-button-outlined p-button-danger mr-2 mb-2" />
-                <Button @click="updateGlName" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
-            </template>
-        </Dialog>
+
 
     </div>
 </template>

@@ -260,7 +260,8 @@ const onSubmitOrder = () => {
         vatEx: totalExclusiveTax.value,
         payment_method: payBy?.value.value,
         address: billingAddress.value,
-        customer_id: customer?.value?.id
+        customer_id: customer?.value?.id,
+        physical_receipt_no: physicalReceiptNo.value || null
     }
 
     commonService.genericRequest('create-order', 'post', true, postData).then((response) => {
@@ -456,6 +457,8 @@ const payBy = ref({ id: 1, name: "Cash", value: "CASH" })
 const billingAddress = ref(null);
 const customer = ref(null);
 const saleDate = ref(new Date());
+// Optional: the customer's own physical/manual receipt number, linked to our generated one.
+const physicalReceiptNo = ref(null);
 const newTotal = ref(0);
 const paidAmount = ref(0);
 
@@ -819,7 +822,7 @@ onMounted(() => {
 
 
 
-        <div class="field col-12 md:col-3">
+        <div class="field col-12 md:col-2">
             <span class="p-float-label">
                 <Dropdown id="paymentMethod" :options="paymentOptions" filter v-model="payBy" optionLabel="name">
                 </Dropdown>
@@ -846,7 +849,7 @@ onMounted(() => {
             </span>
         </div>
 
-        <div class="field col-12 md:col-3">
+        <div class="field col-12 md:col-2">
             <span class="p-float-label">
                 <Calendar id="date" v-model="saleDate"></Calendar>
                 <label for="date">Sales Date</label>
@@ -855,7 +858,16 @@ onMounted(() => {
 
 
         <!-- start testing editable table -->
-        <div class="col-12 md:col-3"></div>
+        <!-- Physical receipt the customer already holds — links their book/manual
+             receipt to the one we generate. Not applicable to proformas; the
+             v-else spacer keeps the 4-column grid intact when hidden. -->
+        <div class="field col-12 md:col-2" v-if="!isProforma">
+            <span class="p-float-label">
+                <InputText type="text" id="physicalReceiptNo" v-model="physicalReceiptNo" />
+                <label for="physicalReceiptNo">Physical Receipt No</label>
+            </span>
+        </div>
+        <div class="col-12 md:col-3" v-else></div>
         <div class="col-12 md:col-3"></div>
         <div class="col-12 md:col-3"></div>
         <div class="col-12 md:col-3">

@@ -367,9 +367,9 @@ class ProductController extends Controller
             $stock->updated_by = $userData->id;
             $stock->updated_on = Carbon::now();
 
+            // may legitimately be null (32 stock rows have no history row at all);
+            // assigning onto null used to fatal here
             $history = stockHistory::where(['product_id' => $isEdit, 'stock_id' => $stock->id])->orderBy('created_at', 'desc')->first();
-            $history->updated_by = $userData->id;
-            $history->updated_on = Carbon::now();
 
 
             // increase or decrease stock in efris
@@ -427,23 +427,53 @@ class ProductController extends Controller
             $this->postStandardVariance($userData, $branch, $variance, $postTran->tran_id ?? null, "Opening stock variance for $product->name");
         }
 
-        $history->purchase_price = (float) $request->purchase_price;
-        $history->selling_price = (float) $request->selling_price;
-        $history->discount = $request->discount;
-        $history->product_id = $product->id;
-        $history->stock_id = $stock->id;
-        $history->quantity = (float) $request->quantity;
-        $history->min_quantity = (float) $request->min_quantity;
-        $history->max_quantity = (float) $request->max_quantity;
-        $history->institution_id = $userData->institution_id;
-        $history->stock_date = $request->date;
-        $history->manufactured_date = $request->manufactured_date;
-        $history->expiry_date = $request->expiry_date;
-        $history->payment_method = $request->payment_method;
-        $history->branch_id = $userData->branch_id;
-        $history->user_id = $userData->id;
-        $history->status = $request->status;
-        $history->save();
+        // --- stock_histories is an append-only movement ledger -------------------
+        // Every row is a CHANGE in quantity, never a snapshot: opening stock on
+        // create, the received quantity in restock(), and the difference here when
+        // an edit changes quantity. Editing used to overwrite the newest row with
+        // the new absolute quantity, which destroyed the movement and left the
+        // stock statement unable to reconcile against stock on hand.
+        $qtyDelta = (float) $request->quantity - $oldQty;
+
+        $fillHistory = function ($h, $qty, $sourceType) use ($request, $product, $stock, $userData) {
+            $h->purchase_price = (float) $request->purchase_price;
+            $h->selling_price = (float) $request->selling_price;
+            $h->discount = $request->discount;
+            $h->product_id = $product->id;
+            $h->stock_id = $stock->id;
+            $h->quantity = $qty;
+            $h->min_quantity = (float) $request->min_quantity;
+            $h->max_quantity = (float) $request->max_quantity;
+            $h->institution_id = $userData->institution_id;
+            $h->stock_date = $request->date;
+            $h->manufactured_date = $request->manufactured_date;
+            $h->expiry_date = $request->expiry_date;
+            $h->payment_method = $request->payment_method;
+            $h->branch_id = $userData->branch_id;
+            $h->user_id = $userData->id;
+            $h->status = $request->status;
+            $h->source_type = $sourceType;
+            $h->save();
+        };
+
+        if (!isset($isEdit)) {
+            $fillHistory($history, (float) $request->quantity, 'OPENING');
+        } elseif ($qtyDelta != 0.0) {
+            // a correction, not a receipt — negative when the edit reduces stock
+            $adjustment = new stockHistory();
+            $adjustment->created_by = $userData->id;
+            $adjustment->created_on = Carbon::now();
+            $fillHistory($adjustment, $qtyDelta, 'ADJUSTMENT');
+        } elseif (isset($history)) {
+            // quantity unchanged: refresh the prices on the latest movement, but
+            // leave its quantity alone so the ledger keeps its history
+            $history->purchase_price = (float) $request->purchase_price;
+            $history->selling_price = (float) $request->selling_price;
+            $history->discount = $request->discount;
+            $history->updated_by = $userData->id;
+            $history->updated_on = Carbon::now();
+            $history->save();
+        }
 
         DB::commit();
         return  (object)['message' => $message, 'product' => $product];
@@ -691,6 +721,7 @@ class ProductController extends Controller
         $history->branch_id = $userData->branch_id;
         $history->user_id = $userData->id;
         $history->status = $request->status;
+        $history->source_type = 'RESTOCK'; // a genuine goods receipt
         $history->save();
 
 

@@ -14,7 +14,7 @@ class ReportsService extends Controller {
 
         $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
-        $sqlString = "SELECT O.id, O.ref_no, O.receipt_no, O.tran_id, O.item_count, O.total, O.discount,
+        $sqlString = "SELECT O.id, O.ref_no, O.receipt_no, O.physical_receipt_no, O.tran_id, O.item_count, O.total, O.discount,
         O.amount_paid, O.user_id, O.customer_id, O.tran_date, O.status, O.payment_status,
         O.institution_id, O.branch_id, O.created_by, O.updated_by, O.created_on, O.updated_on,
         O.created_at, O.updated_at, I.name AS institution_name, B.name AS branch_name
@@ -46,6 +46,7 @@ class ReportsService extends Controller {
         if (isset($request->searchKey)){
             $searchKey = addslashes($request->searchKey);
             $conditions[] = "(O.ref_no LIKE '%$searchKey%' OR O.receipt_no LIKE '%$searchKey%'
+            OR O.physical_receipt_no LIKE '%$searchKey%'
             OR O.tran_id LIKE '%$searchKey%' OR O.payment_status LIKE '%$searchKey%'
             OR I.name LIKE '%$searchKey%' OR B.name LIKE '%$searchKey%')";
         }

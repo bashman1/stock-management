@@ -95,6 +95,11 @@ const totalItemCount = computed(() =>
                         {{ data.receipt_no }}
                     </template>
                 </Column>
+                <Column field="name" header="Physical receipt no." style="min-width: 10rem">
+                    <template #body="{ data }">
+                        {{ data.physical_receipt_no }}
+                    </template>
+                </Column>
                 <Column field="name" header="Amount" style="min-width: 10rem">
                     <template #body="{ data }">
                         {{ commonService.commaSeparator(data.total) }}

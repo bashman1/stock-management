@@ -117,20 +117,24 @@ class ReportController extends Controller
         $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $sqlString = "SELECT P.name AS product_name, O.id, O.order_id, O.product_id, O.qty AS quantity, O.status,
-        O.institution_id, O.created_on,S.ref_no, S.receipt_no, S.tran_id,I.name AS institution_name,
+        O.institution_id, O.created_on, COALESCE(S.tran_date, O.created_on) AS tran_date,
+        S.ref_no, S.receipt_no, S.tran_id,I.name AS institution_name,
         CONCAT(U.first_name,' ',U.last_name,' ', U.other_name) AS user_name,
         COALESCE(O.purchase_price, K.purchase_price) AS purchase_price,
         COALESCE(O.selling_price, K.selling_price) AS selling_price,
         COALESCE(X.name, M.name) AS measurement_unit FROM order_items O
         INNER JOIN orders S ON S.id = O.order_id
         INNER JOIN products P ON P.id = O.product_id
-        INNER JOIN stocks K ON K.product_id = O.product_id
+        -- stocks holds one row per product PER BRANCH; joining on product_id alone
+        -- duplicated every sale line for a product stocked in several branches
+        LEFT JOIN stocks K ON K.product_id = O.product_id AND K.branch_id = O.branch_id
         INNER JOIN measurement_units M ON M.id = P.measurement_unit_id
         LEFT JOIN measurement_units X ON X.id = O.measurement_unit_id
         INNER JOIN institutions I ON I.id =  O.institution_id
         LEFT JOIN users U ON U.id = O.created_by";
-        // $sqlString .= " WHERE O.product_id= $request->productId";
         $sqlString .= " WHERE O.product_id= $request->productId";
+        // reversed sales restore stock, so they are not sales history
+        $sqlString .= " AND COALESCE(O.status,'') <> 'Deleted' AND COALESCE(S.status,'') <> 'Deleted'";
         if ($isNotAdmin) {
             $sqlString .= " AND O.institution_id = $userData->institution_id AND O.branch_id = $userData->branch_id";
         }
@@ -140,7 +144,121 @@ class ReportController extends Controller
         return $this->genericResponse(true, "Product list", 200, $salesHistory, "getSalesHistoryReport", $request);
     }
 
+    /**
+     * Stock statement: every restock (in) and sale (out) for every product on one
+     * timeline, with a per-product running balance — a bank statement for stock.
+     *
+     * Quantities are in the product's BASE unit so both sides are comparable:
+     * stock_histories.quantity is already base, while order_items.qty is in the
+     * unit the cashier sold in (base_qty is its base equivalent). Money is the
+     * other way round — order_items.selling_price is per CHOSEN unit, so value is
+     * qty * selling_price, not base_qty * selling_price.
+     *
+     * The running balance is computed over each product's whole history and the
+     * date range is applied afterwards, so a filtered statement still opens at the
+     * correct balance instead of restarting at zero.
+     */
+    public function getStockStatement(Request $request)
+    {
+        $userData = $this->getUserLogin();
+        $isNotAdmin = $this->isNotAdmin();
 
+        $scope = "";
+        if ($isNotAdmin) {
+            $scope = " AND %s.institution_id = " . intval($userData->institution_id)
+                   . " AND %s.branch_id = " . intval($userData->branch_id);
+        }
+
+        // --- movement filters applied BEFORE the running balance ---
+        // User input is bound, not interpolated: addslashes (used elsewhere in this
+        // file) is not a valid escape for PostgreSQL, which treats a backslash in a
+        // literal as an ordinary character under standard_conforming_strings.
+        $bindings = [];
+        $movementWhere = [];
+        if (!empty($request->productId)) {
+            $movementWhere[] = "product_id = " . intval($request->productId);
+        }
+        if (!empty(trim((string) $request->searchKey))) {
+            $like = '%' . trim($request->searchKey) . '%';
+            $movementWhere[] = "(product_name ILIKE ? OR product_no ILIKE ? OR COALESCE(reference,'') ILIKE ?)";
+            array_push($bindings, $like, $like, $like);
+        }
+        $movementSql = count($movementWhere) ? " WHERE " . implode(" AND ", $movementWhere) : "";
+
+        $restocks = "SELECT 'RESTOCK' AS movement_type, H.id AS source_id,
+            COALESCE(H.stock_date, H.created_on) AS tran_date,
+            H.product_id, P.name AS product_name, P.product_no,
+            NULL AS reference,
+            H.quantity AS in_qty, 0 AS out_qty,
+            COALESCE(H.purchase_price, 0) AS unit_price,
+            (H.quantity * COALESCE(H.purchase_price, 0)) AS value,
+            M.name AS unit,
+            CONCAT(U.first_name,' ',U.last_name) AS user_name
+            FROM stock_histories H
+            INNER JOIN products P ON P.id = H.product_id
+            LEFT JOIN measurement_units M ON M.id = P.measurement_unit_id
+            LEFT JOIN users U ON U.id = H.user_id
+            WHERE COALESCE(H.status,'') <> 'Deleted'" . sprintf($scope, 'H', 'H');
+
+        $sales = "SELECT 'SALE' AS movement_type, O.id AS source_id,
+            COALESCE(S.tran_date, O.created_on) AS tran_date,
+            O.product_id, P.name AS product_name, P.product_no,
+            S.receipt_no AS reference,
+            0 AS in_qty, COALESCE(O.base_qty, O.qty) AS out_qty,
+            COALESCE(O.selling_price, K.selling_price, 0) AS unit_price,
+            (O.qty * COALESCE(O.selling_price, K.selling_price, 0)) AS value,
+            M.name AS unit,
+            CONCAT(U.first_name,' ',U.last_name) AS user_name
+            FROM order_items O
+            INNER JOIN orders S ON S.id = O.order_id
+            INNER JOIN products P ON P.id = O.product_id
+            -- stocks holds one row per product PER BRANCH; without the branch
+            -- predicate a multi-branch product duplicates every sale line
+            LEFT JOIN stocks K ON K.product_id = O.product_id AND K.branch_id = O.branch_id
+            LEFT JOIN measurement_units M ON M.id = P.measurement_unit_id
+            LEFT JOIN users U ON U.id = O.created_by
+            WHERE COALESCE(O.status,'') <> 'Deleted' AND COALESCE(S.status,'') <> 'Deleted'" . sprintf($scope, 'O', 'O');
+
+        // date range applied outside the window so the balance carries forward
+        $dateWhere = [];
+        if (!empty($request->from_date)) {
+            $dateWhere[] = "tran_date::date >= ?";
+            $bindings[] = date('Y-m-d', strtotime($request->from_date));
+        }
+        if (!empty($request->to_date)) {
+            $dateWhere[] = "tran_date::date <= ?";
+            $bindings[] = date('Y-m-d', strtotime($request->to_date));
+        }
+        if (!empty($request->movementType) && in_array($request->movementType, ['RESTOCK', 'SALE'])) {
+            $dateWhere[] = "movement_type = ?";
+            $bindings[] = $request->movementType;
+        }
+        $outerSql = count($dateWhere) ? " WHERE " . implode(" AND ", $dateWhere) : "";
+
+        // Current stock on hand, carried on every row so the UI can show the
+        // statement balance next to it. They can legitimately differ: restock()
+        // appends a true received-quantity row, but editing a product overwrites
+        // the latest stock_histories row with an absolute quantity instead of
+        // appending a movement, so quantity changed that way is not in the ledger.
+        $onHandScope = $isNotAdmin ? " WHERE branch_id = " . intval($userData->branch_id) : "";
+        $onHand = "SELECT product_id, SUM(quantity) AS quantity FROM stocks $onHandScope GROUP BY product_id";
+
+        $sqlString = "SELECT t.*, COALESCE(OH.quantity, 0) AS stock_on_hand FROM (
+            SELECT mv.*,
+                SUM(mv.in_qty - mv.out_qty) OVER (
+                    PARTITION BY mv.product_id
+                    ORDER BY mv.tran_date, mv.movement_type, mv.source_id
+                    ROWS UNBOUNDED PRECEDING
+                ) AS balance
+            FROM ( $restocks UNION ALL $sales ) mv
+            $movementSql
+        ) t
+        LEFT JOIN ( $onHand ) OH ON OH.product_id = t.product_id
+        $outerSql ORDER BY product_name ASC, tran_date ASC, movement_type ASC, source_id ASC";
+
+        $statement = DB::select($sqlString, $bindings);
+        return $this->genericResponse(true, "Stock statement", 200, $statement, "getStockStatement", $request);
+    }
 
     public function downLoadProductPdfReport()
     {
