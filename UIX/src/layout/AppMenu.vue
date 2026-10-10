@@ -97,6 +97,7 @@ const operationalConfig = [
         permission: null,
         items: [
             { label: 'Products Report', permission: 'ViewProductsReport', to: '/products-report' },
+            { label: 'Stock Statement', permission: 'ViewProductsReport', to: '/stock-statement' },
             { label: 'Sales Transaction Report', permission: 'ViewSalesReport', to: '/sales-report' },
             { label: 'Sales Report', permission: 'ViewSalesReport', to: '/sales-item-report' },
             { label: 'Cash Book', permission: 'ViewCashBook', to: '/cash-book' },

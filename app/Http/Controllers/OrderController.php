@@ -79,6 +79,10 @@ class OrderController extends Controller
         $order->status = $request->status;
         $order->customer_id = $request->customer_id;
         $order->address = $request->address;
+        // Customer's own (hand-written / external) receipt number, if they had one.
+        // ?? null because approveBatchSales() calls newSale() with a stdClass that
+        // has no such property.
+        $order->physical_receipt_no = $request->physical_receipt_no ?? null;
         $order->payment_method = $request->payment_method;
         $order->payment_status = $request->Paid;
         $order->institution_id = $userData->institution_id;
@@ -483,7 +487,7 @@ class OrderController extends Controller
 
         log::info("Fetching orders with filters - Start Date: $startDate, End Date: $endDate, Search Keyword: $searchKeyword, User ID: $userData->id");
 
-        $queryString = "SELECT O.id, O.ref_no, O.receipt_no, O.tran_id, O.item_count, O.total,
+        $queryString = "SELECT O.id, O.ref_no, O.receipt_no, O.physical_receipt_no, O.tran_id, O.item_count, O.total,
         O.discount, O.amount_paid, O.user_id, O.customer_id, O.tran_date,
         O.status, O.payment_status, O.institution_id, O.branch_id, O.created_on,
         O.created_at, O.updated_at FROM orders O";
@@ -509,8 +513,10 @@ class OrderController extends Controller
         }
         log::info("keyword after trim: '" . $searchKeyword . "'");
         if (!empty(trim($searchKeyword))) {
-            $queryString .= " AND (O.ref_no ILIKE '%" . $searchKeyword . "%' OR O.receipt_no ILIKE '%" . $searchKeyword . "%')";
-            $totalSql .= " AND (O.ref_no ILIKE '%" . $searchKeyword . "%' OR O.receipt_no ILIKE '%" . $searchKeyword . "%')";
+            $searchClause = " AND (O.ref_no ILIKE '%" . $searchKeyword . "%' OR O.receipt_no ILIKE '%" . $searchKeyword . "%'"
+                . " OR O.physical_receipt_no ILIKE '%" . $searchKeyword . "%')";
+            $queryString .= $searchClause;
+            $totalSql .= $searchClause;
         }
 
         $queryString .= " ORDER BY O.id DESC";
@@ -529,7 +535,7 @@ class OrderController extends Controller
     {
         $queryString = " SELECT O.id, O.order_id, O.product_id,O.qty, O.status,O.institution_id, O.branch_id, O.created_at, P.name,
         P.product_no, COALESCE(O.selling_price ,S.selling_price)  AS price, I.name AS institution_name, B.name AS branch_name, Q.ref_no,
-        Q.receipt_no, Q.tran_id, Q.item_count, Q.total, Q.discount, Q.amount_paid, Q.tran_date, Q.payment_status, Q.efris_response,
+        Q.receipt_no, Q.physical_receipt_no, Q.tran_id, Q.item_count, Q.total, Q.discount, Q.amount_paid, Q.tran_date, Q.payment_status, Q.efris_response,
         CONCAT(U.first_name,' ',U.last_name,' ',U.other_name) AS user_name, B.address AS branch_address,
 		C.name AS customer_name, X.name AS unit, I.p_o_box,I.address AS institution_address FROM order_items O
         INNER JOIN products P ON P.id = O.product_id

@@ -482,6 +482,14 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: '/stock-statement',
+                    name: 'StockStatement',
+                    component: () => import('@/views/pages/reports/StockStatement.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
                     path: '/sales-report',
                     name: 'SalesReport',
                     component: () => import('@/views/pages/reports/SalesReport.vue'),
