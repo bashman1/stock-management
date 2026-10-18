@@ -363,7 +363,14 @@ class ProductController extends Controller
         $stock = null;
         $history = null;
         if (isset($isEdit)) {
-            $stock = stock::where('product_id', $isEdit)->first();
+            // the editor's own branch row: a product has one stocks row per branch,
+            // and an unscoped first() overwrote another branch's price/quantity
+            $stock = stock::where(['product_id' => $isEdit, 'branch_id' => $userData->branch_id])->first();
+            if (!isset($stock)) {
+                $stock = new stock();
+                $stock->created_by = $userData->id;
+                $stock->created_on = Carbon::now();
+            }
             $stock->updated_by = $userData->id;
             $stock->updated_on = Carbon::now();
 
@@ -950,6 +957,7 @@ class ProductController extends Controller
             $unitsByProduct = $this->getUnitsForProducts($ids);
             $products->getCollection()->transform(function ($row) use ($unitsByProduct) {
                 $row->units = $unitsByProduct->get($row->id, collect())->values();
+                $this->useBranchBaseUnitPrice($row);
                 return $row;
             });
 
@@ -988,6 +996,23 @@ class ProductController extends Controller
                 ];
             })
             ->groupBy('product_id');
+    }
+
+    /**
+     * Each branch sells at its own stocks.selling_price, but product_units rows
+     * are shared by every branch. The web and mobile POS take the base unit's
+     * selling_price, so give the base unit this row's branch price. Units are
+     * cloned because rows of the same product (one per branch) share them.
+     */
+    private function useBranchBaseUnitPrice($row)
+    {
+        $row->units = collect($row->units ?? [])->map(function ($u) use ($row) {
+            $u = clone $u;
+            if ($u->is_base) {
+                $u->selling_price = (float) $row->selling_price;
+            }
+            return $u;
+        })->values();
     }
 
 
