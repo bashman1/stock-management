@@ -88,6 +88,8 @@ const OnSelectItem = (data) => {
 
     // Build the sellable units from the product's configured units of measure.
     // `weight` carries the conversion_factor (base units per one of this unit).
+    // The base unit sells at the branch's own price (the one shown in the search
+    // list); product_units prices are shared by every branch.
     let units;
     if (data.units && data.units.length) {
         units = data.units.map((u, i) => ({
@@ -95,7 +97,7 @@ const OnSelectItem = (data) => {
             ind: u.is_base ? "Base" : "Alt",
             name: u.name,
             weight: Number(u.conversion_factor),
-            price: Number(u.selling_price),
+            price: u.is_base ? Number(data.selling_price) : Number(u.selling_price),
             unit_id: u.measurement_unit_id
         }));
     } else {
