@@ -366,7 +366,7 @@ onMounted(() => {
 </script>
 <template>
     <div className="card">
-        <h5>View Sales-X</h5>
+        <h5>View Sales</h5>
         <Toolbar class="mb-1">
             <template #start>
                 <span class="p-float-label mr-2">

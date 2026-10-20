@@ -1,8 +1,8 @@
 import { actions, state } from '../../store';
 
 export default class CommonService {
-    //  baseUrl = "http://localhost:8000/api/";
-     baseUrl = "https://prod.smartcollect.co.ug/api/";   //prod environment
+     baseUrl = "http://localhost:8000/api/";
+    //  baseUrl = "https://prod.smartcollect.co.ug/api/";   //prod environment
     // baseUrl = "https://biiteek.smartcollect.co.ug/api/";   //prod biiteek environment
     // baseUrl = "https://test.smartcollect.co.ug/api/";   //test environment
 //    baseUrl = "../api/";
@@ -519,6 +519,20 @@ export default class CommonService {
         }else{
             return number
         }
+    }
+
+    // Rounds to 2 decimals before separating, so float totals don't print 10+ decimals
+    formatMoney = (value) => {
+        return this.commaSeparator(Math.round((Number(value) || 0) * 100) / 100);
+    }
+
+    // Picked calendar date as YYYY-MM-DD. A Date sent as-is is serialised in UTC,
+    // which for East Africa lands on the previous day.
+    toApiDate = (value) => {
+        if (!value) return null;
+        const date = new Date(value);
+        const pad = (num) => String(num).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     }
 
 

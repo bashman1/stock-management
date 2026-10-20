@@ -488,7 +488,7 @@ class OrderController extends Controller
         log::info("Fetching orders with filters - Start Date: $startDate, End Date: $endDate, Search Keyword: $searchKeyword, User ID: $userData->id");
 
         $queryString = "SELECT O.id, O.ref_no, O.receipt_no, O.physical_receipt_no, O.tran_id, O.item_count, O.total,
-        O.discount, O.amount_paid, O.user_id, O.customer_id, O.tran_date,
+        O.discount, O.amount_paid, O.payment_method, O.user_id, O.customer_id, O.tran_date,
         O.status, O.payment_status, O.institution_id, O.branch_id, O.created_on,
         O.created_at, O.updated_at FROM orders O";
 
@@ -512,9 +512,11 @@ class OrderController extends Controller
             $totalSql .= " AND O.tran_date::date <= '$endDate'";
         }
         log::info("keyword after trim: '" . $searchKeyword . "'");
-        if (!empty(trim($searchKeyword))) {
-            $searchClause = " AND (O.ref_no ILIKE '%" . $searchKeyword . "%' OR O.receipt_no ILIKE '%" . $searchKeyword . "%'"
-                . " OR O.physical_receipt_no ILIKE '%" . $searchKeyword . "%')";
+        if (!empty(trim((string) $searchKeyword))) {
+            // paginate() takes raw SQL, so double single quotes (standard SQL escape)
+            $keyword = str_replace("'", "''", trim($searchKeyword));
+            $searchClause = " AND (O.ref_no ILIKE '%" . $keyword . "%' OR O.receipt_no ILIKE '%" . $keyword . "%'"
+                . " OR O.physical_receipt_no ILIKE '%" . $keyword . "%')";
             $queryString .= $searchClause;
             $totalSql .= $searchClause;
         }
@@ -534,18 +536,20 @@ class OrderController extends Controller
     public function getOderDetails($orderId)
     {
         $queryString = " SELECT O.id, O.order_id, O.product_id,O.qty, O.status,O.institution_id, O.branch_id, O.created_at, P.name,
-        P.product_no, COALESCE(O.selling_price ,S.selling_price)  AS price, I.name AS institution_name, B.name AS branch_name, Q.ref_no,
-        Q.receipt_no, Q.physical_receipt_no, Q.tran_id, Q.item_count, Q.total, Q.discount, Q.amount_paid, Q.tran_date, Q.payment_status, Q.efris_response,
+        P.product_no, " . $this->saleLinePriceSql() . " AS price, I.name AS institution_name, B.name AS branch_name, Q.ref_no,
+        Q.receipt_no, Q.physical_receipt_no, Q.tran_id, Q.item_count, Q.total, Q.discount, Q.amount_paid, Q.payment_method, Q.tran_date, Q.payment_status, Q.efris_response,
         CONCAT(U.first_name,' ',U.last_name,' ',U.other_name) AS user_name, B.address AS branch_address,
-		C.name AS customer_name, X.name AS unit, I.p_o_box,I.address AS institution_address FROM order_items O
+		C.name AS customer_name, COALESCE(X.name, M.name) AS unit, I.p_o_box,I.address AS institution_address FROM order_items O
         INNER JOIN products P ON P.id = O.product_id
-        INNER JOIN stocks S  ON S.product_id = P.id
+        -- stocks is per branch: joining on product alone repeated each line once per branch
+        " . $this->saleLineJoins() . "
+        LEFT JOIN measurement_units M ON M.id = P.measurement_unit_id
         INNER JOIN institutions I ON I.id =O.institution_id
         LEFT JOIN branches B ON B.id = O.branch_id
         INNER JOIN orders Q ON Q.id = O.order_id
 		LEFT JOIN customers C ON C.id = Q.customer_id
         LEFT JOIN measurement_units X ON X.id = O.measurement_unit_id
-        INNER JOIN users U ON Q.user_id = U.id WHERE  O.order_id = $orderId";
+        INNER JOIN users U ON Q.user_id = U.id WHERE  O.order_id = " . intval($orderId) . " ORDER BY O.id";
         $orderDetails = DB::select($queryString);
         return $this->genericResponse(true, "Order details fetched successfully", 200, $orderDetails, "getOderDetails", $orderId);
     }

@@ -27,7 +27,14 @@ const currentPage = ref(1);
 
 
 const getSales = () => {
-    commonService.genericRequest('get-orders?page='+currentPage.value +'&rows_per_page='+rowsPerPage.value+'&search='+searchKeyWord.value+'&start_date='+ startDate.value+'&end_date='+endDate.value, 'get', true, {}).then((response) => {
+    const params = new URLSearchParams({
+        page: currentPage.value,
+        rows_per_page: rowsPerPage.value,
+        search: searchKeyWord.value || '',
+        start_date: commonService.toApiDate(startDate.value) || '',
+        end_date: commonService.toApiDate(endDate.value) || ''
+    });
+    commonService.genericRequest('get-orders?' + params.toString(), 'get', true, {}).then((response) => {
         if (response.status) {
             memberBatch.value = response?.data;
         } else {
@@ -61,6 +68,9 @@ const getOrderDetails = (orderId) => {
         }
     })
 }
+
+// amount_paid is the cash tendered; a credit sale has nothing paid and no change
+const changeGiven = (order) => Math.max((Number(order?.amount_paid) || 0) - (Number(order?.total) || 0), 0);
 
 const toggleModal = (action) => {
     showProductDetailsModal.value = action;
@@ -155,8 +165,10 @@ const trayzPrinter = async () => {
     };
 
     const amountPaid = Number(orderItems.value[0]?.amount_paid) || 0;
+    const discount = Number(orderItems.value[0]?.discount) || 0;
 
     const subTotal = receipt.items.reduce((sum, i) => sum + i.qty * i.price, 0);
+    const orderTotal = Number(orderItems.value[0]?.total) || subTotal;
     const tax = subTotal * receipt.taxRate;
     const grandTotal = subTotal + tax;
 
@@ -208,9 +220,13 @@ const trayzPrinter = async () => {
     //   padLine(`Subtotal: ${receipt.currency} ${subTotal.toLocaleString()}`) + '\n',
     //   padLine(`Tax (18%): ${receipt.currency} ${tax.toLocaleString()}`) + '\n',
     //   padLine(`TOTAL:    ${receipt.currency} ${grandTotal.toLocaleString()}`) + '\n',
-      padLine(`TOTAL:    ${receipt.currency} ${subTotal.toLocaleString()}`) + '\n',
+      ...(discount > 0 ? [
+        padLine(`SUBTOTAL:    ${receipt.currency} ${subTotal.toLocaleString()}`) + '\n',
+        padLine(`DISCOUNT:    ${receipt.currency} ${discount.toLocaleString()}`) + '\n'
+      ] : []),
+      padLine(`TOTAL:    ${receipt.currency} ${orderTotal.toLocaleString()}`) + '\n',
       padLine(`AMOUNT PAID:    ${receipt.currency} ${amountPaid.toLocaleString()}`) + '\n',
-      padLine(`CHANGE:    ${receipt.currency} ${(subTotal - amountPaid).toLocaleString()}`) + '\n',
+      padLine(`CHANGE:    ${receipt.currency} ${changeGiven(orderItems.value[0]).toLocaleString()}`) + '\n',
       '='.repeat(LINE_WIDTH) + '\n',
       '\x1B\x61\x01',  // Center text
       '\n',           // extra blank line
@@ -311,6 +327,10 @@ const printInvoice = () => {
         ${productRows}
       </tbody>
       <tfoot>
+        ${Number(orderItems.value[0]?.discount) > 0 ? `<tr>
+          <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>Discount</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.formatMoney(orderItems.value[0]?.discount)}</td>
+        </tr>` : ''}
         <tr>
           <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #000;'>Total</td>
           <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #000;'>${orderItems.value[0].total? commonService.commaSeparator( Number(orderItems.value[0]?.total) ) : 0}</td>
@@ -321,7 +341,7 @@ const printInvoice = () => {
         </tr>
         <tr>
           <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>Change</td>
-          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.commaSeparator( Number(orderItems.value[0]?.amount_paid) - Number(orderItems.value[0]?.total))}</td>
+          <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #000;'>${commonService.formatMoney(changeGiven(orderItems.value[0]))}</td>
         </tr>
 
       </tfoot>
@@ -369,7 +389,7 @@ onMounted(() => {
 </script>
 <template>
     <div className="card">
-        <h5>View Sales-X</h5>
+        <h5>View Sales</h5>
         <Toolbar class="mb-1">
             <template #start>
                 <span class="p-float-label mr-2">
@@ -433,24 +453,30 @@ onMounted(() => {
                     {{ commonService.commaSeparator(data.total) }}
                 </template>
             </Column> -->
-            <Column field="name" header="Amount Paid" style="min-width: 10rem">
+            <!-- total is what the customer was charged: after discount, including any VAT -->
+            <Column field="name" header="Total" style="min-width: 10rem">
                 <template #body="{ data }">
-                    {{ commonService.commaSeparator(data.amount_paid) }}
-                </template>
-            </Column>
-            <Column field="name" header="Cost" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ commonService.commaSeparator(data.total) }}
-                </template>
-            </Column>
-            <Column field="name" header="Change" style="min-width: 10rem">
-                <template #body="{ data }">
-                    {{ commonService.commaSeparator(data.amount_paid-data.total) }}
+                    {{ commonService.formatMoney(data.total) }}
                 </template>
             </Column>
             <Column header="Discount" style="min-width: 10rem">
                 <template #body="{ data }">
-                    {{ commonService.commaSeparator(data.discount) }}
+                    {{ commonService.formatMoney(data.discount) }}
+                </template>
+            </Column>
+            <Column header="Payment" style="min-width: 7rem">
+                <template #body="{ data }">
+                    {{ data.payment_method }}
+                </template>
+            </Column>
+            <Column field="name" header="Amount Paid" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ commonService.formatMoney(data.amount_paid) }}
+                </template>
+            </Column>
+            <Column field="name" header="Change" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ commonService.formatMoney(changeGiven(data)) }}
                 </template>
             </Column>
             <Column header="Status" style="min-width: 10rem">
@@ -460,7 +486,7 @@ onMounted(() => {
             </Column>
             <Column header="Date" style="max-width: 10rem">
                 <template #body="{ data }">
-                    {{ data.created_at }}
+                    {{ data.tran_date || data.created_at }}
                 </template>
             </Column>
             <Column headerStyle="min-width:10rem;">
@@ -633,6 +659,10 @@ onMounted(() => {
                     </tr>
                 </tbody>
                 <tfoot>
+                    <tr v-if="Number(orderItems[0]?.discount) > 0">
+                    <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>Discount</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.formatMoney(orderItems[0]?.discount) }}</td>
+                    </tr>
                     <tr>
                     <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #666;'>Total</td>
                     <td style='border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: #666;'>{{ orderItems[0]?.total	 ? commonService.commaSeparator( Number(orderItems[0]?.total) ) : 0 }}</td>
@@ -643,7 +673,7 @@ onMounted(() => {
                     </tr>
                     <tr>
                     <td colspan='3' style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>Change</td>
-                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator( Number(orderItems[0]?.amount_paid	) - Number(orderItems[0]?.total)) }}</td>
+                    <td style='border: 1px solid #000; padding: 8px; text-align: right; color: #666;'>{{ commonService.formatMoney(changeGiven(orderItems[0])) }}</td>
                     </tr>
 
                 </tfoot>

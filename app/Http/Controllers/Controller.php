@@ -1785,8 +1785,10 @@ class Controller extends BaseController
         }
 
         try {
-            // Try normal parsing first (ISO, Y-m-d, etc.)
-            $date = Carbon::parse($value)->toDateString();
+            // Try normal parsing first (ISO, Y-m-d, etc.). A JS Date serialises to
+            // UTC ("2026-10-18T21:00:00.000Z" for local midnight on the 19th), so
+            // convert to the app timezone before taking the date part.
+            $date = Carbon::parse($value)->setTimezone(config('app.timezone'))->toDateString();
         } catch (\Throwable $e) {
             try {
                 // Handle bad JS date: "Thu Jan 01 1970 03:00:00 GMT..."
@@ -1800,6 +1802,38 @@ class Controller extends BaseController
 
         // Kill the epoch date here
         return $date === '1970-01-01' ? null : $date;
+    }
+
+    /**
+     * Joins needed to price an order_items row (aliased O) in the unit it was sold in:
+     * the branch stock row (S) and the sold unit's conversion factor (PU).
+     */
+    protected function saleLineJoins(): string
+    {
+        return " LEFT JOIN stocks S ON S.product_id = O.product_id AND S.branch_id = O.branch_id
+            LEFT JOIN LATERAL (SELECT PX.conversion_factor FROM product_units PX
+                WHERE PX.product_id = O.product_id AND PX.measurement_unit_id = O.measurement_unit_id AND PX.status = 'Active'
+                ORDER BY (PX.branch_id = O.branch_id) DESC NULLS LAST, PX.id LIMIT 1) PU ON TRUE ";
+    }
+
+    /**
+     * Selling price per sold unit. Lines from before base_qty existed may have no
+     * selling_price, so fall back to the stock (base unit) price scaled to the sold unit.
+     */
+    protected function saleLinePriceSql(): string
+    {
+        return "COALESCE(O.selling_price, S.selling_price * COALESCE(PU.conversion_factor, 1), 0)";
+    }
+
+    /**
+     * Purchase price per sold unit. Lines from before base_qty existed stored the
+     * column default of 0, so fall back to the stock price scaled to the sold unit.
+     */
+    protected function saleLineCostSql(): string
+    {
+        return "(CASE WHEN O.base_qty IS NULL AND COALESCE(O.purchase_price, 0) = 0
+            THEN COALESCE(S.purchase_price * COALESCE(PU.conversion_factor, 1), 0)
+            ELSE COALESCE(O.purchase_price, 0) END)";
     }
 
     /**
