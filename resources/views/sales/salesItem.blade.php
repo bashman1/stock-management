@@ -86,7 +86,7 @@
         <tr class="items">
 
             <td scope="row">
-                {{ $item->created_at }}
+                {{ $item->tran_date }}
             </td>
             <td>
                 {{ $item->product_name }}
@@ -98,13 +98,13 @@
                 {{$item->measurement_unit }}
             </td>
             <td>
-                {{$item->quantity * $item->selling_price }}
+                {{$item->amount }}
             </td>
             <td>
                 {{$item->selling_price }}
             </td>
             <td>
-                {{$item->selling_price - $item->purchase_price }}
+                {{$item->profit }}
             </td>
         </tr>
         @endforeach

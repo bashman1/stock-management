@@ -17,8 +17,8 @@ const searchKeyWord = ref(null);
 const getProductsReport=()=>{
     let postData ={
         status: 'Active',
-        from_date: startDate.value,
-        to_date: endDate.value,
+        from_date: commonService.toApiDate(startDate.value),
+        to_date: commonService.toApiDate(endDate.value),
         searchKey: searchKeyWord.value
     }
     commonService.genericRequest('get-sales-report', 'post', true, postData).then((response)=>{
@@ -36,6 +36,18 @@ const totalAmount = computed(() =>
 
 const totalAmountPaid = computed(() =>
   (productsReport.value || []).reduce((sum, item) => sum + (Number(item.amount_paid) || 0), 0)
+);
+
+const totalDiscount = computed(() =>
+  (productsReport.value || []).reduce((sum, item) => sum + (Number(item.discount) || 0), 0)
+);
+
+// amount_paid is the cash tendered, so change is only what was handed back;
+// a credit sale has nothing paid yet and no change.
+const changeGiven = (item) => Math.max((Number(item.amount_paid) || 0) - (Number(item.total) || 0), 0);
+
+const totalChange = computed(() =>
+  (productsReport.value || []).reduce((sum, item) => sum + changeGiven(item), 0)
 );
 
 const totalItemCount = computed(() =>
@@ -100,25 +112,41 @@ const totalItemCount = computed(() =>
                         {{ data.physical_receipt_no }}
                     </template>
                 </Column>
+                <Column field="name" header="Discount" style="min-width: 8rem">
+                    <template #body="{ data }">
+                        {{ commonService.formatMoney(data.discount) }}
+                    </template>
+                    <template #footer>
+                        <strong>{{ commonService.formatMoney(totalDiscount) }}</strong>
+                    </template>
+                </Column>
                 <Column field="name" header="Amount" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ commonService.commaSeparator(data.total) }}
+                        {{ commonService.formatMoney(data.total) }}
                     </template>
                      <template #footer>
-                        <strong>{{ commonService.commaSeparator(totalAmount) }}</strong>
+                        <strong>{{ commonService.formatMoney(totalAmount) }}</strong>
+                    </template>
+                </Column>
+                <Column field="name" header="Payment" style="min-width: 7rem">
+                    <template #body="{ data }">
+                        {{ data.payment_method }}
                     </template>
                 </Column>
                 <Column field="name" header="Amount Paid" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ commonService.commaSeparator(data.amount_paid) }}
+                        {{ commonService.formatMoney(data.amount_paid) }}
                     </template>
                     <template #footer>
-                        <strong>{{ commonService.commaSeparator(totalAmountPaid) }}</strong>
+                        <strong>{{ commonService.formatMoney(totalAmountPaid) }}</strong>
                     </template>
                 </Column>
                 <Column field="name" header="Change" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ data.amount_paid - data.total==0?0:commonService.commaSeparator(data.amount_paid - data.total) }}
+                        {{ commonService.formatMoney(changeGiven(data)) }}
+                    </template>
+                    <template #footer>
+                        <strong>{{ commonService.formatMoney(totalChange) }}</strong>
                     </template>
                 </Column>
                 <Column field="name" header="Institution" style="min-width: 10rem">

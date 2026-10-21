@@ -15,13 +15,15 @@ const startDate = ref(null);
 const endDate = ref(null);
 const searchKeyWord = ref(null);
 
+const reportFilters = () => ({
+    status: 'Active',
+    from_date: commonService.toApiDate(startDate.value),
+    to_date: commonService.toApiDate(endDate.value),
+    searchKey: searchKeyWord.value
+});
+
 const getProductsReport = () => {
-    let postData = {
-        status: 'Active',
-        from_date: startDate.value,
-        to_date: endDate.value,
-        searchKey: searchKeyWord.value
-    };
+    let postData = reportFilters();
     commonService.genericRequest('get-item-sales-report', 'post', true, postData).then((response) => {
         if (response.status) {
             productsReport.value = response.data;
@@ -40,12 +42,7 @@ const goToSales = (data) => {
 
 const getProductReportPdfFile = () => {
     try {
-        let postData = {
-            status: 'Active',
-            from_date: startDate.value,
-            to_date: endDate.value,
-            searchKey: searchKeyWord.value
-        };
+        let postData = reportFilters();
         isDownloading.value = true;
         commonService
             .genericRequest('download-sales-item-report-pdf', 'post', true, postData, true)
@@ -70,7 +67,7 @@ const getProductReportCsvFile = () => {
     try {
         isDownloading.value = true;
         commonService
-            .genericRequest('download-sales-item-report-csv', 'post', true, {status: 'Active'}, true)
+            .genericRequest('download-sales-item-report-csv', 'post', true, reportFilters(), true)
             .then((blob) => {
                 const fileURL = window.URL.createObjectURL(new Blob([blob]));
                 const fileLink = document.createElement('a');
@@ -91,16 +88,18 @@ const totalQuantity = computed(() =>
   productsReport?.value?.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
 );
 
+// amount and profit come from the server, already priced in the unit each line was sold in
 const totalAmount = computed(() =>
-  productsReport?.value?.reduce((sum, item) => sum + ((Number(item.quantity) || 0) * (Number(item.selling_price) || 0)), 0)
-);
-
-const totalSellingPrice = computed(() =>
-  productsReport?.value?.reduce((sum, item) => sum + (Number(item.selling_price) || 0), 0)
+  productsReport?.value?.reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
 );
 
 const totalProfitMargin = computed(() =>
-  productsReport?.value?.reduce((sum, item) => sum + (((Number(item.selling_price) || 0) - (Number(item.purchase_price) || 0)) * (Number(item.quantity) || 0)), 0)
+  productsReport?.value?.reduce((sum, item) => sum + (Number(item.profit) || 0), 0)
+);
+
+// profit as a share of sales; adding up unit prices of different products means nothing
+const profitMarginPercent = computed(() =>
+  totalAmount.value ? Math.round((totalProfitMargin.value / totalAmount.value) * 10000) / 100 : 0
 );
 
 onMounted(() => {
@@ -145,7 +144,7 @@ onMounted(() => {
                 </Column>
                 <Column field="name" header="Date" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ data.created_at }}
+                        {{ data.tran_date }}
                     </template>
                 </Column>
                 <Column field="name" header="Name" style="min-width: 10rem">
@@ -168,27 +167,24 @@ onMounted(() => {
                 </Column>
                 <Column field="name" header="Amount" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ commonService.commaSeparator(data.quantity * data.selling_price) }}
+                        {{ commonService.formatMoney(data.amount) }}
                     </template>
                     <template #footer>
-                        <b>{{ commonService.commaSeparator(totalAmount) }}</b>
+                        <b>{{ commonService.formatMoney(totalAmount) }}</b>
                     </template>
                 </Column>
 
                 <Column field="name" header="Selling Price" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ commonService.commaSeparator(data.selling_price) }}
-                    </template>
-                    <template #footer>
-                        <b>{{ commonService.commaSeparator(totalSellingPrice) }}</b>
+                        {{ commonService.formatMoney(data.selling_price) }}
                     </template>
                 </Column>
                 <Column field="name" header="Profit Margin" style="min-width: 10rem">
                     <template #body="{ data }">
-                        {{ commonService.commaSeparator((data.selling_price - data.purchase_price)*data.quantity) }}
+                        {{ commonService.formatMoney(data.profit) }}
                     </template>
                     <template #footer>
-                        <b>{{ commonService.commaSeparator(totalProfitMargin) }}</b>
+                        <b>{{ commonService.formatMoney(totalProfitMargin) }} ({{ profitMarginPercent }}%)</b>
                     </template>
                 </Column>
             </DataTable>

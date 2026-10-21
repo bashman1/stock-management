@@ -3,9 +3,11 @@ import { onMounted, reactive, ref, watch } from 'vue';
 import ProductService from '@/service/ProductService';
 import { useLayout } from '@/layout/composables/layout';
 import CommonService from '@/service/CommonService';
+import { useToast } from 'primevue/usetoast';
 
 
 const commonService = new CommonService();
+const toast = useToast();
 const { isDarkTheme } = useLayout();
 const stats=ref(null);
 const monthLabel = ref(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jly', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']);
@@ -213,7 +215,7 @@ watch(
                         <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_branches)}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-orange-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-share-alt text-orange-500 text-xl"></i>
+                        <i class="pi pi-sitemap text-orange-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">%52+ </span> -->
@@ -228,7 +230,7 @@ watch(
                         <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_users)}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-cyan-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-user text-cyan-500 text-xl"></i>
+                        <i class="pi pi-id-card text-cyan-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">520 </span> -->
@@ -242,8 +244,8 @@ watch(
                         <span class="block text-500 font-bold text-xl mb-3">Members</span>
                         <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_customers)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-users text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-teal-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-users text-teal-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -258,8 +260,8 @@ watch(
                         <span class="block text-500 font-bold text-xl mb-3">Products</span>
                         <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.products)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-indigo-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-box text-indigo-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -274,8 +276,8 @@ watch(
                         <span class="block text-500 font-bold text-xl mb-3">Sales</span>
                         <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.sales)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-credit-card text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-blue-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-shopping-cart text-blue-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -287,11 +289,11 @@ watch(
             <div class="card mb-0">
                 <div class="flex justify-content-between mb-3">
                     <div>
-                        <span class="block text-500 font-bold text-xl mb-3">Products Sold</span>
-                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.product_sold)}}</div>
+                        <span class="block text-500 font-bold text-xl mb-3">Gross Sales Value</span>
+                        <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.product_sold)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-money-bill text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-tags text-purple-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -304,10 +306,10 @@ watch(
                 <div class="flex justify-content-between mb-3">
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Total Sales Value</span>
-                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_sales_value)}}</div>
+                        <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.total_sales_value)}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-money-bill text-green-500 text-xl"></i>
+                        <i class="pi pi-chart-line text-green-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -321,10 +323,10 @@ watch(
                 <div class="flex justify-content-between mb-3">
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Today's Sales Value</span>
-                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.today_sales_value)}}</div>
+                        <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.today_sales_value)}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-money-bill text-green-500 text-xl"></i>
+                        <i class="pi pi-wallet text-green-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -338,10 +340,10 @@ watch(
                 <div class="flex justify-content-between mb-3">
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Total Stock Value</span>
-                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_stock_value)}}</div>
+                        <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.total_stock_value)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-indigo-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-database text-indigo-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -354,10 +356,10 @@ watch(
                 <div class="flex justify-content-between mb-3">
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Today's Purchases</span>
-                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.today_stock_value)}}</div>
+                        <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.today_stock_value)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-orange-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-truck text-orange-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -370,10 +372,10 @@ watch(
                 <div class="flex justify-content-between mb-3">
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Today's Markup Value</span>
-                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.today_mark_up)}}</div>
+                        <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.today_mark_up)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-teal-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-chart-bar text-teal-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -388,8 +390,8 @@ watch(
                         <span class="block text-500 font-bold text-xl mb-3">Today's Markup Percentage</span>
                         <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.today_mark_up_percentage)}} %</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-teal-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-percentage text-teal-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -402,10 +404,10 @@ watch(
                 <div class="flex justify-content-between mb-3">
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Total Income</span>
-                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_income)}}</div>
+                        <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.total_income)}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                        <i class="pi pi-arrow-down-left text-green-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -419,10 +421,10 @@ watch(
                 <div class="flex justify-content-between mb-3">
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Today Income</span>
-                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.today_income)}}</div>
+                        <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.today_income)}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                        <i class="pi pi-money-bill text-green-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -436,10 +438,10 @@ watch(
                 <div class="flex justify-content-between mb-3">
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Total Expenses</span>
-                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_expenses)}}</div>
+                        <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.total_expenses)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-red-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-arrow-up-right text-red-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -452,10 +454,10 @@ watch(
                 <div class="flex justify-content-between mb-3">
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Today Expenses</span>
-                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.today_expenses)}}</div>
+                        <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.today_expenses)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-red-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-credit-card text-red-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -468,10 +470,10 @@ watch(
                 <div class="flex justify-content-between mb-3">
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Total Investment</span>
-                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_investment_value)}}</div>
+                        <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.total_investment_value)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-briefcase text-purple-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -486,8 +488,8 @@ watch(
                         <span class="block text-500 font-bold text-xl mb-3">Running Investment</span>
                         <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_active_investments)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-blue-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-sync text-blue-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -502,8 +504,8 @@ watch(
                         <span class="block text-500 font-bold text-xl mb-3">Withdrawn Investment</span>
                         <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_withdrawn_investments)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-orange-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-sign-out text-orange-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -518,8 +520,8 @@ watch(
                         <span class="block text-500 font-bold text-xl mb-3">Estates</span>
                         <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_buildings)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-bluegray-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-home text-bluegray-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -535,7 +537,7 @@ watch(
                         <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_building_units_available)}}</div>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                        <i class="pi pi-key text-green-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -550,8 +552,8 @@ watch(
                         <span class="block text-500 font-bold text-xl mb-3">Estates Units Occupied</span>
                         <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.total_building_units_occupied)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-orange-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-lock text-orange-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -564,10 +566,10 @@ watch(
                 <div class="flex justify-content-between mb-3">
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Expected Monthly Rent</span>
-                        <div class="text-900 font-bold text-xl">{{commonService.commaSeparator(stats?.monthly_rent_income)}}</div>
+                        <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.monthly_rent_income)}}</div>
                     </div>
-                    <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-bag text-green-500 text-xl"></i>
+                    <div class="flex align-items-center justify-content-center bg-teal-100 border-round" style="width: 2.5rem; height: 2.5rem">
+                        <i class="pi pi-calendar text-teal-500 text-xl"></i>
                     </div>
                 </div>
                 <!-- <span class="text-green-500 font-bold text-xl">85 </span> -->
@@ -637,16 +639,20 @@ watch(
             <div class="card">
                 <h5>Best Selling Products</h5>
                 <DataTable :value="dashBoardData?.bestSellingProduct" stripedRows :rows="10" :paginator="true" responsiveLayout="scroll">
-                    <Column field="name" header="Name" :sortable="true" style="width: 35%"></Column>
-                    <Column field="quantity" header="Quantity" :sortable="true" style="width: 35%"></Column>
-                    <Column field="price" header="Price" :sortable="true" style="width: 35%">
+                    <Column field="name" header="Name" :sortable="true" style="width: 30%"></Column>
+                    <Column field="quantity" header="Quantity" :sortable="true" style="width: 20%">
                         <template #body="slotProps">
-                            {{ commonService.commaSeparator(slotProps.data.selling_price) }}
+                            {{ commonService.commaSeparator(slotProps.data.quantity) }} {{ slotProps.data.unit }}
                         </template>
                     </Column>
-                    <Column field="" header="MarkUp" :sortable="true" style="width: 40%">
+                    <Column field="revenue" header="Revenue" :sortable="true" style="width: 25%">
                         <template #body="slotProps">
-                            {{ commonService.commaSeparator(slotProps.data.quantity * (slotProps.data.selling_price - slotProps.data.purchase_price)) }}
+                            {{ commonService.formatMoney(slotProps.data.revenue) }}
+                        </template>
+                    </Column>
+                    <Column field="markup" header="MarkUp" :sortable="true" style="width: 25%">
+                        <template #body="slotProps">
+                            {{ commonService.formatMoney(slotProps.data.markup) }}
                         </template>
                     </Column>
                 </DataTable>

@@ -24,148 +24,102 @@ class CommonController extends Controller
     {
         $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
-        $data = null;
-        $collectionGraph = null;
-        $membersGraph = null;
-        $productsGraph = null;
-        $salesGraph = null;
-        $bestSellingProduct = [];
 
-        if ($isNotAdmin) {
+        // Branch users see their own branch; system admins (no institution) see everything.
+        // $scope('X') filters a table aliased X; $instScope('X') stops at the institution.
+        $institutionId = intval($userData->institution_id);
+        $branchId = intval($userData->branch_id);
+        $scope = fn ($alias) => $isNotAdmin ? " AND $alias.institution_id = $institutionId AND $alias.branch_id = $branchId" : "";
+        $instScope = fn ($alias) => $isNotAdmin ? " AND $alias.institution_id = $institutionId" : "";
+        // "today" in the app timezone, not the database server's
+        $today = now()->toDateString();
 
-            $inventoryAcct = $this->getControlAcctByCode("STI");
-            $salesAcct = $this->getControlAcctByCode("SL");
-            $data = DB::select("SELECT
-            -- (SELECT COUNT(id) FROM institutions WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_institutions,
-            (SELECT COUNT(id) FROM branches WHERE status ='Active' AND institution_id = $userData->institution_id) AS total_branches,
-            (SELECT COUNT(id) FROM users WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_users,
-            (SELECT COUNT(id) FROM members WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_customers,
-            (SELECT COALESCE(sum(amount), 0) FROM temp_collections WHERE status ='Pending' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_pending_collection,
-            (SELECT COALESCE(sum(amount), 0) FROM temp_collections WHERE status ='Declined' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_declined_collection,
-            (SELECT COALESCE(sum(amount), 0) FROM collections WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_approved_collection,
-            (SELECT COUNT(id) FROM products WHERE status ='Active' AND institution_id = $userData->institution_id) AS products,
-            (SELECT COUNT(id) FROM orders WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS sales,
-            (SELECT COALESCE(SUM(O.qty * COALESCE(O.selling_price, S.selling_price)), 0) FROM order_items O INNER JOIN stocks S ON O.product_id = S.product_id AND  O.branch_id = S.branch_id WHERE O.status ='Active' AND O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id) AS product_sold,
-            (SELECT COALESCE(SUM(tran_amount), 0) FROM gl_histories WHERE acct_no = '$inventoryAcct' AND reversal_flag = 'N') AS total_stock_value,
-            (SELECT COALESCE(SUM(tran_amount), 0) FROM gl_histories WHERE acct_no = '$inventoryAcct' AND reversal_flag = 'N' AND DATE(transaction_date) = CURRENT_DATE) AS today_stock_value,
-            (SELECT COALESCE(SUM(tran_amount), 0) FROM gl_histories WHERE acct_no = '$salesAcct' AND reversal_flag = 'N') AS total_sales_value,
-            (SELECT COALESCE(SUM(tran_amount), 0) FROM gl_histories WHERE acct_no = '$salesAcct' AND reversal_flag = 'N' AND DATE(transaction_date) = CURRENT_DATE) AS today_sales_value,
-            (SELECT COALESCE(SUM(S.selling_price) - SUM(S.purchase_price), 0)  FROM orders O INNER JOIN order_items I ON O.id= I.order_id INNER JOIN stocks S ON I.product_id = S.product_id
-            WHERE DATE ( tran_date ) = CURRENT_DATE AND O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id ) AS today_mark_up,
-            (SELECT COALESCE(ROUND(CAST(((SUM(S.selling_price) - SUM(S.purchase_price))/SUM(S.purchase_price))*100 AS NUMERIC), 2), 0)  FROM orders O INNER JOIN order_items I ON O.id= I.order_id
-            INNER JOIN stocks S ON I.product_id = S.product_id WHERE DATE(tran_date) = CURRENT_DATE AND O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id ) AS today_mark_up_percentage,
-            (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'EXPENSE' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id) AS total_expenses,
-            (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'INCOME' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id) AS total_income,
-            (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'EXPENSE' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id AND DATE(transaction_date) = CURRENT_DATE) AS today_expenses,
-            (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no WHERE A.acct_type = 'INCOME' AND H.institution_id = $userData->institution_id AND H.branch_id=$userData->branch_id AND DATE(transaction_date) = CURRENT_DATE) AS today_income,
-            (SELECT COUNT(id) FROM investments WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_active_investments,
-            (SELECT COUNT(id) FROM investments WHERE status ='Withdrawn' AND institution_id = $userData->institution_id AND branch_id=$userData->branch_id) AS total_withdrawn_investments,
-            (SELECT COALESCE(SUM(I.quantity * P.monitory) ,0) FROM investments I INNER JOIN projects P ON P.id = I.project_id WHERE I.institution_id = $userData->institution_id AND I.branch_id=$userData->branch_id) AS total_investment_value,
-            (SELECT COUNT(id) FROM buildings WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id = $userData->branch_id) AS total_buildings,
-            (SELECT COUNT(id) FROM building_units WHERE status ='Active' AND institution_id = $userData->institution_id AND branch_id = $userData->branch_id) AS total_building_units_available,
-            (SELECT COUNT(id) FROM building_units WHERE status ='Occupied' AND institution_id = $userData->institution_id AND branch_id = $userData->branch_id ) AS total_building_units_occupied,
-            (SELECT SUM(rent) FROM building_units WHERE (status ='Occupied' OR status ='Active') AND institution_id = $userData->institution_id AND branch_id = $userData->branch_id) AS monthly_rent_income
+        // Control accounts (STI, SL, ...) are per-branch: the parameter holds "***"
+        // where the branch code goes. Resolve them for every branch in scope.
+        $branchFilter = $isNotAdmin ? " AND BR.id = $branchId" : "";
+        $controlAccts = fn ($codes) => "SELECT REPLACE(C.param_value, '***', BR.code) FROM cntrl_parameters C
+            INNER JOIN branches BR ON BR.institution_id = C.institution_id
+            WHERE C.param_cd IN ($codes) $branchFilter";
+        $inventoryAccts = $controlAccts("'STI'");
+        $revenueAccts = $controlAccts("'SL', 'SVR', 'DGS'");
+        // GL rows hold positive amounts with a Dr/Cr flag; reversed postings are flagged Y.
+        $drMinusCr = "CASE WHEN H.dr_cr_ind = 'Dr' THEN H.tran_amount ELSE -H.tran_amount END";
+
+        // Sale lines of active orders, priced in the unit they were sold in.
+        $price = $this->saleLinePriceSql();
+        $cost = $this->saleLineCostSql();
+        $saleFrom = "FROM order_items O INNER JOIN orders Q ON Q.id = O.order_id " . $this->saleLineJoins();
+        $saleWhere = " WHERE O.status = 'Active' AND Q.status = 'Active'" . $scope('O');
+        $saleLines = $saleFrom . $saleWhere;
+        $todayLines = "$saleLines AND DATE(COALESCE(Q.tran_date, O.created_at)) = '$today'";
+
+        $data = DB::select("SELECT
+            (SELECT COUNT(id) FROM institutions WHERE status ='Active'" . ($isNotAdmin ? " AND id = $institutionId" : "") . ") AS total_institutions,
+            (SELECT COUNT(id) FROM branches B WHERE status ='Active'" . $instScope('B') . ") AS total_branches,
+            (SELECT COUNT(id) FROM users U WHERE status ='Active'" . $scope('U') . ") AS total_users,
+            (SELECT COUNT(id) FROM members M WHERE status ='Active'" . $scope('M') . ") AS total_customers,
+            (SELECT COALESCE(SUM(amount), 0) FROM temp_collections T WHERE status ='Pending'" . $scope('T') . ") AS total_pending_collection,
+            (SELECT COALESCE(SUM(amount), 0) FROM temp_collections T WHERE status ='Declined'" . $scope('T') . ") AS total_declined_collection,
+            (SELECT COALESCE(SUM(amount), 0) FROM collections C WHERE status ='Active'" . $scope('C') . ") AS total_approved_collection,
+            (SELECT COUNT(id) FROM products P WHERE status ='Active'" . $instScope('P') . ") AS products,
+            (SELECT COUNT(id) FROM orders Q WHERE status ='Active'" . $scope('Q') . ") AS sales,
+            (SELECT COALESCE(SUM(O.qty * $price), 0) $saleLines) AS product_sold,
+            (SELECT COALESCE(SUM($drMinusCr), 0) FROM gl_histories H WHERE H.reversal_flag = 'N' AND H.acct_no IN ($inventoryAccts)) AS total_stock_value,
+            (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H WHERE H.reversal_flag = 'N' AND H.dr_cr_ind = 'Dr' AND H.acct_no IN ($inventoryAccts)
+                AND DATE(H.transaction_date) = '$today') AS today_stock_value,
+            (SELECT COALESCE(-SUM($drMinusCr), 0) FROM gl_histories H WHERE H.reversal_flag = 'N' AND H.acct_no IN ($revenueAccts)) AS total_sales_value,
+            (SELECT COALESCE(-SUM($drMinusCr), 0) FROM gl_histories H WHERE H.reversal_flag = 'N' AND H.acct_no IN ($revenueAccts)
+                AND DATE(H.transaction_date) = '$today') AS today_sales_value,
+            (SELECT COALESCE(ROUND(CAST(SUM(O.qty * ($price - $cost)) AS NUMERIC), 2), 0) $todayLines) AS today_mark_up,
+            (SELECT COALESCE(ROUND(CAST(SUM(O.qty * ($price - $cost)) * 100 / NULLIF(SUM(O.qty * $cost), 0) AS NUMERIC), 2), 0) $todayLines) AS today_mark_up_percentage,
+            (SELECT COALESCE(SUM($drMinusCr), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no
+                WHERE A.acct_type = 'EXPENSE' AND H.reversal_flag = 'N'" . $scope('H') . ") AS total_expenses,
+            (SELECT COALESCE(-SUM($drMinusCr), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no
+                WHERE A.acct_type = 'INCOME' AND H.reversal_flag = 'N'" . $scope('H') . ") AS total_income,
+            (SELECT COALESCE(SUM($drMinusCr), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no
+                WHERE A.acct_type = 'EXPENSE' AND H.reversal_flag = 'N'" . $scope('H') . " AND DATE(H.transaction_date) = '$today') AS today_expenses,
+            (SELECT COALESCE(-SUM($drMinusCr), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no
+                WHERE A.acct_type = 'INCOME' AND H.reversal_flag = 'N'" . $scope('H') . " AND DATE(H.transaction_date) = '$today') AS today_income,
+            (SELECT COUNT(id) FROM investments I WHERE status ='Active'" . $scope('I') . ") AS total_active_investments,
+            (SELECT COUNT(id) FROM investments I WHERE status ='Withdrawn'" . $scope('I') . ") AS total_withdrawn_investments,
+            (SELECT COALESCE(SUM(I.quantity * P.monitory), 0) FROM investments I INNER JOIN projects P ON P.id = I.project_id WHERE 1 = 1" . $scope('I') . ") AS total_investment_value,
+            (SELECT COUNT(id) FROM buildings B WHERE status ='Active'" . $scope('B') . ") AS total_buildings,
+            (SELECT COUNT(id) FROM building_units B WHERE status ='Active'" . $scope('B') . ") AS total_building_units_available,
+            (SELECT COUNT(id) FROM building_units B WHERE status ='Occupied'" . $scope('B') . ") AS total_building_units_occupied,
+            (SELECT COALESCE(SUM(rent), 0) FROM building_units B WHERE (status ='Occupied' OR status ='Active')" . $scope('B') . ") AS monthly_rent_income
             ");
 
-            $collectionGraph = DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
+        $monthlyCounts = fn ($table, $extra) => DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
             generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
-            AS gs(month) LEFT JOIN collections c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
-            AND c.institution_id = $userData->institution_id AND c.branch_id=$userData->branch_id
+            AS gs(month) LEFT JOIN $table c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month) $extra
             GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
 
-            $membersGraph = DB::select("SELECT COALESCE(COUNT(m.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
-            AS gs(month) LEFT JOIN members m ON date_trunc('MONTH', m.created_at) = date_trunc('MONTH', gs.month)
-            AND m.institution_id = $userData->institution_id AND m.branch_id=$userData->branch_id
-            GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month) ");
+        $collectionGraph = $monthlyCounts('collections', $scope('c'));
+        $membersGraph = $monthlyCounts('members', $scope('c'));
+        $productsGraph = $monthlyCounts('products', $instScope('c'));
+        // reversed sales are not sales
+        $salesGraph = $monthlyCounts('orders', "AND c.status = 'Active'" . $scope('c'));
 
-            $productsGraph = DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
-            AS gs(month) LEFT JOIN products c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
-            AND c.institution_id = $userData->institution_id
-            GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
-
-            $salesGraph = DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
-            AS gs(month) LEFT JOIN orders c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
-            AND c.institution_id = $userData->institution_id AND c.branch_id=$userData->branch_id
-            GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
-
-            $bestSellingProduct = DB::select("SELECT P.name, S.purchase_price, S.selling_price, SUM(COALESCE(I.base_qty, I.qty)) AS quantity
-            FROM orders O INNER JOIN order_items I ON O.id = I.order_id
-            INNER JOIN products P ON P.id = I.product_id
-            INNER JOIN stocks S ON P.id = S.product_id
-            WHERE O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id    --DATE(O.tran_date) = CURRENT_DATE
-            GROUP BY P.name, S.purchase_price, S.selling_price
+        // Quantity is summed in the base unit so mixed-unit sales of a product add up;
+        // the markup comes from each line's own price and cost.
+        $bestSellingProduct = DB::select("SELECT P.name, M.name AS unit, MAX(S.selling_price) AS selling_price,
+            SUM(COALESCE(O.base_qty, O.qty)) AS quantity,
+            ROUND(CAST(SUM(O.qty * $price) AS NUMERIC), 2) AS revenue,
+            ROUND(CAST(SUM(O.qty * ($price - $cost)) AS NUMERIC), 2) AS markup
+            $saleFrom
+            INNER JOIN products P ON P.id = O.product_id
+            LEFT JOIN measurement_units M ON M.id = P.measurement_unit_id
+            $saleWhere
+            GROUP BY P.id, P.name, M.name
             ORDER BY quantity DESC
-            LIMIT 10;");
-
-            $productAboutToExpire = DB::select("SELECT P.name, S.purchase_price, S.selling_price, S.quantity,
-            DATE_PART('day', AGE(S.expiry_date::date, CURRENT_DATE::date)) AS days_difference, S.expiry_date
-            FROM orders O INNER JOIN order_items I ON O.id = I.order_id
-            INNER JOIN products P ON P.id = I.product_id
-            INNER JOIN stocks S ON P.id = S.product_id
-            WHERE O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id  AND
-            DATE_PART('day', AGE(S.expiry_date::date, CURRENT_DATE::date)) > 0
-            GROUP BY P.name, S.purchase_price, S.selling_price, S.quantity, S.expiry_date
+            LIMIT 10");
+        // read straight from stock: the old query only saw products that had been sold
+        $productAboutToExpire = DB::select("SELECT P.name, S.purchase_price, S.selling_price, S.quantity,
+            (S.expiry_date::date - DATE '$today') AS days_difference, S.expiry_date
+            FROM stocks S INNER JOIN products P ON P.id = S.product_id
+            WHERE S.expiry_date IS NOT NULL AND S.expiry_date::date >= DATE '$today' AND S.quantity > 0" . $scope('S') . "
             ORDER BY days_difference ASC
-            LIMIT 10;");
-        } else {
-            $data = DB::select("SELECT
-            (SELECT COUNT(id) FROM institutions WHERE status ='Active') AS total_institutions,
-            (SELECT COUNT(id) FROM branches WHERE status ='Active') AS total_branches,
-            (SELECT COUNT(id) FROM users WHERE status ='Active') AS total_users,
-            (SELECT COUNT(id) FROM members WHERE status ='Active') AS total_customers,
-            (SELECT sum(amount) FROM temp_collections WHERE status ='Pending') AS total_pending_collection,
-            (SELECT sum(amount) FROM temp_collections WHERE status ='Declined') AS total_declined_collection,
-            (SELECT sum(amount) FROM collections WHERE status ='Active') AS total_approved_collection,
-            (SELECT COUNT(id) FROM products WHERE status ='Active') AS products,
-            (SELECT COUNT(id) FROM orders WHERE status ='Active') AS sales,
-                        (SELECT COUNT(id) FROM investments WHERE status ='Active') AS total_active_investments,
-            (SELECT COUNT(id) FROM investments WHERE status ='Withdrawn' ) AS total_withdrawn_investments,
-            (SELECT COALESCE(SUM(I.quantity * P.monitory) ,0) FROM investments I INNER JOIN projects P ON P.id = I.project_id) AS total_investment_value,
-          --  (SELECT COUNT(id) FROM order_items WHERE status ='Active') AS product_sold
-            (SELECT COALESCE(SUM(O.qty * COALESCE(O.selling_price, S.selling_price)), 0) FROM order_items O INNER JOIN stocks S ON O.product_id = S.product_id AND  O.branch_id = S.branch_id WHERE O.status ='Active') AS product_sold,
-            (SELECT COUNT(id) FROM buildings WHERE status ='Active') AS total_buildings,
-            (SELECT COUNT(id) FROM building_units WHERE status ='Active') AS total_building_units_available,
-            (SELECT COUNT(id) FROM building_units WHERE status ='Occupied') AS total_building_units_occupied,
-            (SELECT SUM(rent) FROM building_units WHERE (status ='Occupied' OR status ='Active')) AS monthly_rent_income
-            -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  reversal_flag = 'N') AS total_stock_value,
-            -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  reversal_flag = 'N') AS today_stock_value
-            -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  AND reversal_flag = 'N') AS total_sales_value
-            -- (SELECT SUM(tran_amount) FROM gl_histories WHERE  AND reversal_flag = 'N') AS today_sales_value
-            ");
-            $collectionGraph = DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
-            AS gs(month) LEFT JOIN collections c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
-            GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
-
-            $membersGraph = DB::select("SELECT COALESCE(COUNT(m.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
-            AS gs(month) LEFT JOIN members m ON date_trunc('MONTH', m.created_at) = date_trunc('MONTH', gs.month)
-            GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month) ");
-
-            $productsGraph = DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
-            AS gs(month) LEFT JOIN products c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
-            GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
-
-            $salesGraph = DB::select("SELECT COALESCE(COUNT(c.id), 0) AS count, date_trunc('MONTH', gs.month) AS month FROM
-            generate_series((NOW() - INTERVAL '11 MONTH')::date, NOW()::date, '1 month'::interval)
-            AS gs(month) LEFT JOIN orders c ON date_trunc('MONTH', c.created_at) = date_trunc('MONTH', gs.month)
-            GROUP BY date_trunc('MONTH', gs.month) ORDER BY date_trunc('MONTH', gs.month)");
-
-            $productAboutToExpire = DB::select("SELECT P.name, S.purchase_price, S.selling_price, S.quantity,
-            DATE_PART('day', AGE(S.expiry_date::date, CURRENT_DATE::date)) AS days_difference, S.expiry_date
-            FROM orders O INNER JOIN order_items I ON O.id = I.order_id
-            INNER JOIN products P ON P.id = I.product_id
-            INNER JOIN stocks S ON P.id = S.product_id
-            WHERE --O.institution_id = $userData->institution_id AND O.branch_id=$userData->branch_id  AND
-            DATE_PART('day', AGE(S.expiry_date::date, CURRENT_DATE::date)) > 0
-            GROUP BY P.name, S.purchase_price, S.selling_price, S.quantity, S.expiry_date
-            ORDER BY days_difference ASC
-            LIMIT 10;");
-        }
+            LIMIT 10");
 
         return $this->genericResponse(true, "Stats", 200, [
             "count" => $data,

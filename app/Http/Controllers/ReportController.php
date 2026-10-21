@@ -342,50 +342,55 @@ class ReportController extends Controller
     {
         $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
+        $price = $this->saleLinePriceSql();
+        $cost = $this->saleLineCostSql();
+        // qty, selling_price and purchase_price are all in the unit the line was sold
+        // in, so amount and profit are qty x per-unit figures (not base_qty).
         $sqlString = "SELECT O.id, O.order_id, O.product_id, O.qty AS quantity, O.status, O.institution_id, O.branch_id,
-            O.created_by, O.updated_by, O.updated_on, O.created_at, O.updated_at, P.name AS product_name,
+            O.created_by, O.updated_by, O.updated_on, O.created_at, O.updated_at,
+            COALESCE(Q.tran_date, O.created_at) AS tran_date, P.name AS product_name,
             P.description, P.product_no, P.ref_no, Q.ref_no AS transaction_ref, Q.receipt_no, Q.tran_id,
-            COALESCE(O.selling_price, S.selling_price) AS selling_price, COALESCE(O.purchase_price, S.purchase_price) AS purchase_price,
+            ROUND(CAST($price AS NUMERIC), 2) AS selling_price,
+            ROUND(CAST($cost AS NUMERIC), 2) AS purchase_price,
+            ROUND(CAST(O.qty * $price AS NUMERIC), 2) AS amount,
+            ROUND(CAST(O.qty * ($price - $cost) AS NUMERIC), 2) AS profit,
             COALESCE(X.name, M.name) AS measurement_unit FROM order_items O
             INNER JOIN products P ON O.product_id = P.id
             INNER JOIN orders Q ON Q.id = O.order_id
-            INNER JOIN stocks S ON S.branch_id = O.branch_id AND S.product_id = O.product_id
             INNER JOIN measurement_units  M ON M.id = P.measurement_unit_id
-            LEFT JOIN measurement_units X ON X.id = O.measurement_unit_id";
+            LEFT JOIN measurement_units X ON X.id = O.measurement_unit_id" . $this->saleLineJoins();
 
-        // $sqlString .= " WHERE O.status = '$request->status' ";
-        // if ($isNotAdmin) {
-        //     $sqlString .= " AND O.institution_id = $userData->institution_id AND O.branch_id = $userData->branch_id";
-        // }
-        $conditions = [];
+        // User input is bound, not interpolated: addslashes is not a valid escape for PostgreSQL.
+        $bindings = [];
+        // a reversed sale marks both the order and its lines Deleted
+        $conditions = ["COALESCE(Q.status, '') <> 'Deleted'"];
         if (isset($request->status)) {
-            $conditions[] = "O.status = '" . addslashes($request->status) . "'";
+            $conditions[] = "O.status = ?";
+            $bindings[] = $request->status;
         }
         if ($isNotAdmin) {
             $conditions[] = "O.institution_id = " . intval($userData->institution_id);
             $conditions[] = "O.branch_id = " . intval($userData->branch_id);
         }
-        if (isset($request->from_date) && isset($request->to_date)) {
-            $from_date = date('Y-m-d', strtotime($request->from_date));
-            $to_date   = date('Y-m-d', strtotime($request->to_date));
-            $conditions[] = "DATE(Q.tran_date) BETWEEN '$from_date' AND '$to_date'";
-        } else if (isset($request->from_date)) {
-            $conditions[] = "DATE(Q.tran_date) >= '" . addslashes($request->from_date) . "'";
-        } else if (isset($request->to_date)) {
-            $conditions[] = "DATE(Q.tran_date) <= '" . addslashes($request->to_date) . "'";
+        $fromDate = $this->safeDate($request->from_date);
+        $toDate = $this->safeDate($request->to_date);
+        if ($fromDate) {
+            $conditions[] = "DATE(COALESCE(Q.tran_date, O.created_at)) >= ?";
+            $bindings[] = $fromDate;
         }
-        if (isset($request->searchKey)) {
-            $searchKey = addslashes($request->searchKey);
-            $conditions[] = "(P.name ILIKE '%$searchKey%' OR P.product_no ILIKE '%$searchKey%'
-            OR Q.ref_no ILIKE '%$searchKey%' OR Q.receipt_no ILIKE '%$searchKey%'
-            OR Q.tran_id ILIKE '%$searchKey%')";
+        if ($toDate) {
+            $conditions[] = "DATE(COALESCE(Q.tran_date, O.created_at)) <= ?";
+            $bindings[] = $toDate;
         }
-        if (count($conditions) > 0) {
-            $sqlString .= " WHERE " . implode(" AND ", $conditions);
+        if (!empty(trim((string) $request->searchKey))) {
+            $like = '%' . trim($request->searchKey) . '%';
+            $conditions[] = "(P.name ILIKE ? OR P.product_no ILIKE ? OR Q.ref_no ILIKE ? OR Q.receipt_no ILIKE ? OR Q.tran_id ILIKE ?)";
+            array_push($bindings, $like, $like, $like, $like, $like);
         }
+        $sqlString .= " WHERE " . implode(" AND ", $conditions);
 
         $sqlString .= " ORDER BY O.id DESC";
-        return DB::select($sqlString);
+        return DB::select($sqlString, $bindings);
     }
 
     public function downloadSalesItemCSVReport(Request $request)
@@ -405,13 +410,13 @@ class ReportController extends Controller
         $genericData = [
             'data' => $sales,
             'headers' => [
-                ['header' => 'Date', 'key' => 'created_at'],
+                ['header' => 'Date', 'key' => 'tran_date'],
                 ['header' => 'Name', 'key' => 'product_name'],
                 ['header' => 'Quantity Sold', 'key' => 'quantity'],
                 ['header' => 'Measurement Unit', 'key' => 'measurement_unit'],
-                ['header' => 'Amount', 'key' => 'selling_price'],
+                ['header' => 'Amount', 'key' => 'amount'],
                 ['header' => 'Selling Price', 'key' => 'selling_price'],
-                ['header' => 'Profit Margin', 'key' => 'purchase_price'],
+                ['header' => 'Profit Margin', 'key' => 'profit'],
             ]
         ];
 
