@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamp('date_of_birth')->nullable();
             $table->text('address')->nullable();
             $table->unsignedBigInteger('city_id')->nullable();
-            $table->string('email')->unique();
+            $table->string('email')->index()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string("status");
@@ -32,6 +32,8 @@ return new class extends Migration
             $table->string("street")->nullable();
             $table->string("p_o_box")->nullable();
             $table->text('description')->nullable();
+            $table->string('image')->nullable();
+            $table->string('signature')->nullable();
             $table->unsignedBigInteger('role_id');
             $table->unsignedBigInteger('institution_id')->nullable();
             $table->unsignedBigInteger('branch_id')->nullable();
@@ -40,6 +42,7 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamp('created_on')->nullable();
             $table->timestamp('updated_on')->nullable();
+            $table->string('token');
             $table->rememberToken();
             $table->timestamps();
         });

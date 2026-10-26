@@ -21,6 +21,10 @@ return new class extends Migration
             $table->string('phone_number')->nullable();
             $table->string('member_number');
             $table->string('alt_member_number')->nullable();
+            $table->string('email')->nullable();
+            $table->string('kin_name')->nullable();
+            $table->string('kin_contact')->nullable();
+            $table->string('kin_relationship')->nullable();
             $table->string('gender')->nullable();
             $table->timestamp('date_of_birth')->nullable();
             $table->text('address')->nullable();

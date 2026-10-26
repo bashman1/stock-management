@@ -2,10 +2,9 @@
 
 namespace App\Exports;
 
-use App\Models\Order;
 use Illuminate\View\View;
-use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\FromView;
+
 
 class SalesItemReport implements FromView
 {

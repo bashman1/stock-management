@@ -1,7 +1,7 @@
 <script setup>
-import { FilterMatchMode } from 'primevue/api';
-import { ref, onMounted, onBeforeMount } from 'vue';
-import { useRouter } from 'vue-router';
+// import { FilterMatchMode } from 'primevue/api';
+import { ref, onMounted, onBeforeMount, nextTick } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import CommonService from '@/service/CommonService'
 import { useToast } from 'primevue/usetoast';
 // import { ProductService } from '@/service/ProductService';
@@ -9,6 +9,7 @@ import { useToast } from 'primevue/usetoast';
 const toast = useToast();
 const commonService = new CommonService();
 const router = useRouter();
+const route = useRoute();
 
 const productList = ref(null);
 const selectedProduct = ref([{ id: null, price: null, quantity: null, discount: null, name: '', tax_config: null }]);
@@ -18,6 +19,8 @@ const balance = ref(0);
 const filters = ref({});
 const institutionDetails = ref({});
 const extraTax = ref(0);
+
+const isProforma = ref(false);
 
 const totalInclusiveTax = ref(0);
 const totalExclusiveTax = ref(0);
@@ -29,10 +32,19 @@ const customerAddress = ref(null);
 const customerContact = ref(null);
 const customerDesc = ref(null);
 const customerData = ref([]);
+// const dueDate = ref(new Date()); // 30 days from now
+const dueDate = ref(new Date());
+dueDate.value.setMonth(dueDate.value.getMonth() + 1);
 
 const showInvoiceModal = ref(false);
 const userData = ref({});
+const op = ref();
+const searchKeyWord = ref('');
+const metaKey = ref(true);
+const searchInput = ref(null);
+const itemsBackUp = ref([]);
 
+// const editableSelect = ref(null);
 
 const VAT = ref([
     { id: 1, name: "18%", amount: 0, total: 0 },
@@ -41,7 +53,14 @@ const VAT = ref([
 
 // **************************************************************************
 const getProducts = () => {
-    commonService.genericRequest('get-products', 'get', true, {}).then((response) => {
+    let postData = {
+        page: 1,
+        search: searchKeyWord.value,
+        rowPerPage: 5,
+        startDate: null,
+        endDate: null,
+    }
+    commonService.genericRequest('get-products', 'POST', true, postData).then((response) => {
         if (response.status) {
             productList.value = response.data;
         } else {
@@ -52,7 +71,17 @@ const getProducts = () => {
 
 const OnSelectItem = (data) => {
 
-    // console.log(JSON.stringify(data));
+    itemsBackUp.value.push(data);
+
+    let actualProduct = productList.value?.data.find(item => item.id === data.id);
+    if (!actualProduct) {
+        commonService.showError(toast, "Product not found");
+        return;
+    }
+    if(Number(actualProduct?.quantity) <= 0){
+        commonService.showError(toast, "Product out of stock");
+        return;
+    }
 
     let obj = {
         id: data.id, price: Number(data.selling_price), quantity: 1, discount: 0, name: data.name, tax_config: data.tax_config,
@@ -90,9 +119,22 @@ const OnSelectRemoveItem = (data) => {
 }
 
 const updateQty = (event, data) => {
+    let actualProduct = itemsBackUp.value?.find(item => item.id === data.id);
+    let newQty = Number(event.target.value);
+    if (!actualProduct) {
+        commonService.showError(toast, "Product not found");
+        return;
+    }
+
+    if (Number(event.target.value) > Number(actualProduct?.quantity)) {
+        commonService.showError(toast, "Quantity exceeds available stock "+actualProduct?.quantity);
+        newQty = Number(actualProduct?.quantity);
+        // return;
+    }
+
     selectedProduct.value = selectedProduct.value.map(product => {
-        if (product.id === data.id) {
-            return { ...product, quantity: Number(event.target.value) };
+        if (product.id === data.id ) {
+            return { ...product, quantity: newQty };
         }
         return product;
     });
@@ -109,6 +151,35 @@ const updatePrice = (event, data) => {
 }
 
 const increaseReduce = (data, action) => {
+
+    let actualProduct = itemsBackUp.value?.find(item => item.id === data.id);
+    if (!actualProduct) {
+        commonService.showError(toast, "Product not found");
+        return;
+    }
+
+    let selectedItm = selectedProduct.value.find(item => item.id === data.id);
+
+    if (!selectedItm) {
+        commonService.showError(toast, "Product not found in selected items");
+        return;
+    }
+
+
+
+    if (action == 'Add'){
+        if (Number(selectedItm?.quantity) >= Number(actualProduct?.quantity)) {
+            commonService.showError(toast, "Quantity exceeds available stock "+actualProduct?.quantity);
+            return;
+        }
+    } else {
+        if (Number(selectedItm?.quantity) <= 0) {
+            commonService.showError(toast, "Quantity cannot be less than 0");
+            return;
+        }
+    }
+
+
     selectedProduct.value = selectedProduct.value.map(product => {
         if (product.id === data.id) {
             if (action == 'Add') {
@@ -179,11 +250,11 @@ const getInstitutionDetails = () => {
     })
 }
 
-const initFilters = () => {
-    filters.value = {
-        global: { value: null, matchMode: FilterMatchMode.CONTAINS }
-    };
-};
+// const initFilters = () => {
+//     filters.value = {
+//         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+//     };
+// };
 
 const computeVAT = () => {
     let taxExTotal = 0;
@@ -237,7 +308,7 @@ const toggleCustomerModal = (action) => {
 
 
 const toggleInvoiceModel = (action) => {
-    showInvoiceModal.value = action
+    showInvoiceModal.value = action;
 }
 
 const onCustomerInputBlur = (value, key) => {
@@ -377,10 +448,6 @@ const isPositiveInteger = (val) => {
 
 const onCellEditComplete = (event) => {
     let { data, newValue, field } = event;
-    // const rowIndex = event.rowIndex;
-    // alert(rowIndex)
-    // console.log(event)
-    // alert(JSON.stringify(event))
 
     computeNewSum()
 
@@ -414,8 +481,6 @@ const onCellEditComplete = (event) => {
 const onDropdownChange = (uuid, name) => {
     let index = products.value.findIndex(element => element.uuid === uuid);
     let value = products.value[index];
-    console.log('---------------------------------------------------------')
-    console.log(name)
     value.name = name.name;
     value.id = name.id;
     value.description = name.description;
@@ -462,14 +527,41 @@ const computeNewSum = () => {
 
 
 const onSubmitNewOrder = () => {
-    console.log('****************************************************************')
 
     let sortedProducts = products.value.find(obj => obj.id != null);
-    console.log(JSON.stringify(sortedProducts));
+}
+
+const togglePanel = (event) => {
+    op.value.show(event);
+}
+
+const onSearchInputAndOpen = (e) => {
+    onSearchInput(e);
+    // if (!op.value.visible) {
+        op.value.show(e); // Keep open
+    // }
+    // searchInput.value?.$el.querySelector('input')?.focus()
+    refocus();
+};
+
+
+const onSearchInput =(event)=> {
+    const value = event.target.value;
+    if (value.length > 3 || value.length === 0) {
+        getProducts();
+    }
+}
+
+const refocus = async ()=>{
+    await nextTick();
+    searchInput.value.$el.focus();
 }
 
 
-
+const onRowSelect = (event) => {
+    OnSelectItem(event.data);
+    op.value.hide(event); // Keep open
+}
 
 
 /**
@@ -481,6 +573,37 @@ const close = () => {
     toggleInvoiceModel(false);
     printInvoice();
 };
+
+
+
+const onSubmitInvoice = ()=>{
+    selectedProduct.value = selectedProduct?.value.filter(obj => obj.id != null);
+    let postData = {
+        total: totalPrice(selectedProduct?.value) - Number(discount?.value) + Number(extraTax.value),
+        discount: Number(discount?.value),
+        amountPaid: Number(amountTOPay?.value),
+        itemCount: selectedProduct?.value.length,
+        tranDate: saleDate.value,
+        items: selectedProduct?.value,
+        status: "Active",
+        vat: Number(extraTax.value),
+        vatInc: totalInclusiveTax.value,
+        vatEx: totalExclusiveTax.value,
+        payment_method: payBy?.value.value,
+        address: billingAddress.value,
+        customer_id: customer?.value?.id
+    }
+
+    commonService.genericRequest('create-invoice', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            toggleInvoiceModel(false);
+            // printInvoice();
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
 
 
 const printInvoice = () => {
@@ -508,19 +631,19 @@ const printInvoice = () => {
 <body style="background-color: #fff;">
   <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
     <header style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
-      <h1 style='color: #002060; margin: 0;'>INVOICE</h1>
-      <div style='width: 80px; height: 80px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;'>LOGO</div>
+      <h1 style='color: #2B5F2C; margin: 0;'>INVOICE</h1>
     </header>
 
     <section>
       <div style='display: flex; justify-content: space-between;'>
         <div>
-          <p style="color: #666;"><strong>Company Name:</strong> ${commonService.getStorage()?.institution_name}</p>
+          <p style="color: #666;"><strong>Company Name:</strong> ${userData.value?.institution_name}</p>
+          <p style="color: #666;"><strong>P.O.Box:</strong> ${userData.value?.p_o_box +' '+userData.value?.address }</p>
         </div>
         <div style='text-align: right;'>
           <p style="color: #666;"><strong>Invoice #:</strong> ${commonService.generateRandomFiveId()}</p>
           <p style="color: #666;"><strong>Date:</strong> ${commonService.formatDate(commonService.getCurrentTimestamp())}</p>
-          <p style="color: #666;"><strong>Due Date:</strong> 26/02/2019</p>
+          <p style="color: #666;"><strong>Due Date:</strong> ${commonService.formatDate(dueDate.value)}</p>
         </div>
       </div>
     </section>
@@ -529,11 +652,11 @@ const printInvoice = () => {
       <div style='display: flex; justify-content: space-between;'>
         <div>
           <div style='background: #002060; padding: 5px 10px; font-weight: bold;'>BILL TO</div>
-          <p style="color: #666;">${customer?.name}</p>
+          <p style="color: #666;">${customer.value?.name}</p>
         </div>
         <div>
           <div style='background: #002060; padding: 5px 10px; font-weight: bold;'>SHIP TO</div>
-          <p style="color: #666;">${billingAddress}</p>
+          <p style="color: #666;">${billingAddress.value}</p>
         </div>
       </div>
     </section>
@@ -585,15 +708,48 @@ const printInvoice = () => {
 };
 
 
+const invoice = (path)=>{
+    if (path.includes('/proforma-invoice')) {
+        isProforma.value = true;
+    }
+}
+
+const getInvoiceDetails= (path, id )=>{
+    if (path.includes('/proforma-invoice') && Number(id)){
+
+        let postData = {
+            id: Number(id)
+        }
+
+        commonService.genericRequest('get-invoice-details', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            // toggleInvoiceModel(false);
+            // printInvoice();
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+
+
+    }
+}
+
+
 onBeforeMount(() => {
-    initFilters();
+    // initFilters();
 });
 
 onMounted(() => {
+    searchInput.value.$el.focus();
+    invoice(route.path)
+    getInvoiceDetails(route.path, route.params.id);
     getProducts();
     getInstitutionDetails();
     getCustomers()
     products.value = initializeProducts();
+    userData.value=commonService.getStorage().userData;
+
 });
 
 
@@ -602,15 +758,13 @@ onMounted(() => {
     <div class="grid p-fluid">
 
 
+
         <div class="field col-12 md:col-3">
-            <!--                        <div class="p-inputgroup">-->
             <span class="p-float-label">
                 <Dropdown id="paymentMethod" :options="paymentOptions" filter v-model="payBy" optionLabel="name">
                 </Dropdown>
                 <label for="paymentMethod">Payment methods</label>
             </span>
-            <!--                            <Button @click="toggleGaugeModal(true)" icon="pi pi-plus" />-->
-            <!--                        </div>-->
         </div>
 
         <div class="field col-12 md:col-3">
@@ -660,9 +814,10 @@ onMounted(() => {
                     filterDisplay="menu" responsiveLayout="scroll">
                     <Column field="name" header="Name" style="max-width: 10rem;">
                         <template #body="{ data }">
-                            <Dropdown id="subCategory" change="" :options="productList" filter v-if="!data.id"
+                            <!-- <Dropdown id="subCategory" :options="productList?.data" filter v-if="!data.id"
                                 optionLabel="name" @change="OnSelectItem($event.value)">
-                            </Dropdown>
+                            </Dropdown> -->
+
                             {{ data.name }}
                         </template>
                     </Column>
@@ -720,6 +875,71 @@ onMounted(() => {
                         </template>
                     </Column>
                 </DataTable>
+
+                        <div>
+                            <span class="p-input-icon-right">
+                                <InputText  ref="searchInput" v-model="searchKeyWord" type="text"   @input="onSearchInputAndOpen" @keydown="onSearchInputAndOpen" placeholder="Search" fluid />
+                                <i class="pi pi-search" />
+                            </span>
+                        </div>
+
+                        <!-- <div>
+                            <Dropdown v-model="editableSelect" filter editable :options="productList?.data" optionLabel="name" placeholder="Select a item" class="w-full md:w-14rem" />
+                        </div> -->
+
+                        <OverlayPanel ref="op" showCloseIcon="true" :dismissable="false" appendTo="body">
+                            <div class="flex flex-column gap-3 max-h-10 overflow-y-auto">
+                                <DataTable
+                                :value="productList?.data"
+                                stripedRows
+                                size="small"
+                                dataKey="id"
+                                :rowHover="true"
+                                filterDisplay="menu"
+                                responsiveLayout="scroll"
+                                selectionMode="single"
+                                :metaKeySelection="metaKey"
+                                @row-select="onRowSelect"
+                                    >
+                                    <Column header="#" style="width: 3rem; text-align: center;">
+                                        <template #body="{ index }">
+                                            {{  index + 1 }}
+                                        </template>
+                                    </Column>
+                                    <Column field="name" header="Product" style="min-width: 10rem">
+                                        <template #body="{ data }">
+                                            {{ data.name }}
+                                        </template>
+                                    </Column>
+                                    <Column field="name" header="Category" style="min-width: 10rem">
+                                        <template #body="{ data }">
+                                            {{ data.category_name }}
+                                        </template>
+                                    </Column>
+                                    <Column field="name" header="Selling Price" style="min-width: 10rem">
+                                        <template #body="{ data }">
+                                            {{ commonService.commaSeparator(data.selling_price) }}
+                                        </template>
+                                    </Column>
+                                    <Column field="name" header="Quantity" style="min-width: 10rem">
+                                        <template #body="{ data }">
+                                            {{ data.quantity }}
+                                        </template>
+                                    </Column>
+                                    <Column field="name" header="Unit" style="min-width: 10rem">
+                                        <template #body="{ data }">
+                                            {{ data.unit }}
+                                        </template>
+                                    </Column>
+                                    <Column header="Date" style="min-width: 10rem">
+                                        <template #body="{ data }">
+                                            {{ data.created_at }}
+                                        </template>
+                                    </Column>
+                                </DataTable>
+                            </div>
+                        </OverlayPanel>
+
                 <!-- </div> -->
             </div>
         </div>
@@ -728,12 +948,12 @@ onMounted(() => {
                 class=" p-button-danger mr-2 mb-2" />
 
         </div>
-        <div class="col-12 md:col-2">
+        <div class="col-12 md:col-2" v-if="isProforma">
             <Button label="Generate Invoice" @click="toggleInvoiceModel(true)" icon="pi pi-file" iconPos="left"
                 class=" p-button-info mr-2 mb-2" />
         </div>
 
-        <div class="col-12 md:col-12">
+        <div class="col-12 md:col-12" v-if="!isProforma">
             <div class="card" v-if="institutionDetails?.is_tax_enabled && selectedProduct.length > 0">
                 <h5>V.A.T 18%</h5><br>
                 <div class="grid">
@@ -763,25 +983,25 @@ onMounted(() => {
 
         <div class="col-12 md:col-4"></div>
         <div class="col-12 md:col-3"></div>
-        <div class="col-12 md:col-3">
+        <div class="col-12 md:col-3" v-if="!isProforma">
             <p class="font-bold text-right text-xl green-color">Total: {{ totalPrice(selectedProduct) ?
                 commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}
             </p>
         </div>
 
         <div class="col-12 md:col-3"></div>
-        <div class="col-12 md:col-3">
+        <div class="col-12 md:col-3" v-if="!isProforma">
             <span class="p-float-label">
                 <InputText type="text" id="discount" v-model="amountTOPay" /> <!-- class="p-invalid"-->
                 <label for="productId">Amount</label>
             </span>
         </div>
-        <div class="col-12 md:col-3">
+        <div class="col-12 md:col-3" v-if="!isProforma">
             <p class="font-bold text-left text-xl green-color" v-if="amountTOPay && amountTOPay > 0">Change: {{
                 commonService.commaSeparator(Number(amountTOPay) + Number(discount) -
                     (totalPrice(selectedProduct)+Number(extraTax))) }}</p>
         </div>
-        <div class="col-12 md:col-3">
+        <div class="col-12 md:col-3" v-if="!isProforma">
             <Button @click="onSubmitOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" />
             <!-- <Button @click="onSubmitNewOrder" label="SUBMIT" class="p-button-outlined mr-2 mb-2" /> -->
         </div>
@@ -848,101 +1068,105 @@ onMounted(() => {
             <!-- template -->
 
             <!DOCTYPE html>
-<html lang='en'>
+            <html lang='en'>
 
-<head>
-  <meta charset='UTF-8'>
-  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-  <title>Invoice</title>
-</head>
+            <head>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>Invoice</title>
+            </head>
 
-<body style="background-color: #fff;">
-  <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
-    <header style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
-      <h1 style='color: #002060; margin: 0;'>INVOICE</h1>
-      <div style='width: 80px; height: 80px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;'>LOGO</div>
-    </header>
+            <body style="background-color: #fff;">
+            <div style='max-width: 750px; font-family: monospace; margin: 20px auto; padding: 30px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); background: #fff'>
+                <header style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
+                <h1 style='color: #2B5F2C; margin: 0;'>INVOICE</h1>
+                <div style='width: 50px; height: 50px; background: #ccc; border-radius: 50%; text-align: center; line-height: 80px; font-size: 20px; font-weight: bold;'>
+                    <img :src="userData?.institution_logo" style="position: relative; width:50px;">
+                </div>
+                </header>
 
-    <section>
-      <div style='display: flex; justify-content: space-between;'>
-        <div>
-          <p style="color: #666;"><strong>Company Name:</strong> {{ commonService.getStorage()?.institution_name }}</p>
-        </div>
-        <div style='text-align: right;'>
-          <p style="color: #666;"><strong>Invoice #:</strong> {{ commonService.generateRandomFiveId() }}</p>
-          <p style="color: #666;"><strong>Date:</strong> {{ commonService.formatDate(commonService.getCurrentTimestamp()) }}</p>
-          <p style="color: #666;"><strong>Due Date:</strong> 26/02/2019</p>
-        </div>
-      </div>
-    </section>
+                <section>
+                <div style='display: flex; justify-content: space-between;'>
+                    <div>
+                    <p style="color: #666;"><strong>Company Name:</strong> {{ userData?.institution_name }}</p>
+                    <p style="color: #666;"><strong>P.O.Box:</strong> {{ userData?.p_o_box +' '+userData?.address }}</p>
+                    </div>
+                    <div style='text-align: right;'>
+                    <p style="color: #666;"><strong>Invoice #:</strong> {{ commonService.generateRandomFiveId() }}</p>
+                    <p style="color: #666;"><strong>Date:</strong> {{ commonService.formatDate(commonService.getCurrentTimestamp()) }}</p>
+                    <p style="color: #666;"><strong>Due Date:</strong> {{commonService.formatDate(dueDate)}}</p>
+                    </div>
+                </div>
+                </section>
 
-    <section style='margin-top: 20px;'>
-      <div style='display: flex; justify-content: space-between;'>
-        <div>
-          <div style='background: #002060; padding: 5px 10px; font-weight: bold;'>BILL TO</div>
-          <p style="color: #666;">{{ customer?.name }}</p>
-          <!-- <p style="color: #666;">{{ billingAddress }}</p> -->
-        </div>
-        <div>
-          <div style='background: #002060; padding: 5px 10px; font-weight: bold;'>SHIP TO</div>
-          <!-- <p style="color: #666;">{{ customer?.name }}</p> -->
-          <p style="color: #666;">{{ billingAddress }}</p>
-        </div>
-      </div>
-    </section>
+                <section style='margin-top: 20px;'>
+                <div style='display: flex; justify-content: space-between;'>
+                    <div>
+                    <div style='background: #2B5F2C; padding: 5px 10px; font-weight: bold;'>BILL TO</div>
+                    <p style="color: #666;">{{ customer?.name }}</p>
+                    <!-- <p style="color: #666;">{{ billingAddress }}</p> -->
+                    </div>
+                    <div>
+                    <div style='background: #2B5F2C; padding: 5px 10px; font-weight: bold;'>SHIP TO</div>
+                    <!-- <p style="color: #666;">{{ customer?.name }}</p> -->
+                    <p style="color: #666;">{{ billingAddress }}</p>
+                    </div>
+                </div>
+                </section>
 
-    <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
-      <thead>
-        <tr>
-          <th style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #002060; color: #fff;'>QTY</th>
-          <th style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #002060; color: #fff;'>DESCRIPTION</th>
-          <th style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #002060; color: #fff;'>UNIT PRICE</th>
-          <th style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #002060; color: #fff;'>AMOUNT</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for='(prod, index) of selectedProduct' :key='prod.id'>
-          <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>{{ prod.quantity }}</td>
-          <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>{{ prod.name }}</td>
-          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(prod.price) }}</td>
-          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(prod.price * prod.quantity) }}</td>
-        </tr>
-      </tbody>
-      <tfoot>
-        <tr>
-            <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>Taxable</td>
-            <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(VAT[0].amount) }}</td>
-          </tr>
-        <tr>
-          <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>VAT 18%</td>
-          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(VAT[0].total) }}</td>
-        </tr>
-        <tr>
-          <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>Total</td>
-          <td style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>{{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}</td>
-        </tr>
-      </tfoot>
-    </table>
+                <table style='width: 100%; border-collapse: collapse; margin-top: 10px;'>
+                <thead>
+                    <tr>
+                    <th style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #2B5F2C; color: #fff;'>QTY</th>
+                    <th style='border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #2B5F2C; color: #fff;'>DESCRIPTION</th>
+                    <th style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #2B5F2C; color: #fff;'>UNIT PRICE</th>
+                    <th style='border: 1px solid #ddd; padding: 8px; text-align: right; background-color: #2B5F2C; color: #fff;'>AMOUNT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for='(prod, index) of selectedProduct' :key='prod.id'>
+                    <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>{{ prod.quantity }}</td>
+                    <td style='border: 1px solid #ddd; padding: 8px; color: #666;'>{{ prod.name }}</td>
+                    <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(prod.price) }}</td>
+                    <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(prod.price * prod.quantity) }}</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>Taxable</td>
+                        <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(VAT[0].amount) }}</td>
+                    </tr>
+                    <tr>
+                    <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>VAT 18%</td>
+                    <td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: #666;'>{{ commonService.commaSeparator(VAT[0].total) }}</td>
+                    </tr>
+                    <tr>
+                    <td colspan='3' style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>Total</td>
+                    <td style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: #666;'>{{ totalPrice(selectedProduct) ? commonService.commaSeparator(totalPrice(selectedProduct) - Number(discount) + Number(extraTax)) : 0 }}</td>
+                    </tr>
+                </tfoot>
+                </table>
 
-    <div style='margin-top: 20px; border: 1px solid #ddd; padding: 10px; background: #f2f2f2;'>
-      <p style="color: #666;"><strong>Other Comments:</strong></p>
-      <p style="color: #666;">1. Total payment due in 30 days.</p>
-      <p style="color: #666;">2. Please include the invoice number on your check.</p>
-    </div>
+                <div style='margin-top: 20px; border: 1px solid #ddd; padding: 10px; background: #f2f2f2;'>
+                <p style="color: #666;"><strong>Other Comments:</strong></p>
+                <p style="color: #666;">1. Total payment due in 30 days.</p>
+                <p style="color: #666;">2. Please include the invoice number on your check.</p>
+                </div>
 
-    <div style='text-align: center; margin-top: 30px;'>
-      <p style='font-size: 0.9em; color: #666;'>Thank you for your business!</p>
-      <p style='font-size: 0.9em; color: #666;'>Payment is due within 15 days.</p>
-      <!-- <p style='font-size: 0.9em; color: #666;'>Please make checks payable to: {{ commonService.getStorage()?.institution_name }}.</p> -->
-    </div>
-  </div>
-</body>
+                <div style='text-align: center; margin-top: 30px;'>
+                <p style='font-size: 0.9em; color: #666;'>Thank you for your business!</p>
+                <p style='font-size: 0.9em; color: #666;'>Payment is due within 15 days.</p>
+                <!-- <p style='font-size: 0.9em; color: #666;'>Please make checks payable to: {{ commonService.getStorage()?.institution_name }}.</p> -->
+                </div>
+            </div>
+            </body>
 
-</html>
+            </html>
 
             <!-- /template -->
             <template #footer>
-                <Button label="print" @click="close" icon="pi pi-print" class="p-button-outlined" />
+                <Button label="Print" @click="printInvoice" icon="pi pi-print" class="p-button-outlined" />
+                <Button label="Submit" @click="onSubmitInvoice" icon="pi pi-print" class="p-button-outlined" />
             </template>
         </Dialog>
     </div>

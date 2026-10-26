@@ -8,6 +8,8 @@ use App\Models\Permissions;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class DefaultRoleController extends Controller
 {
@@ -18,7 +20,7 @@ class DefaultRoleController extends Controller
                 "name"=>$request->name,
                 "status"=> $request->status,
                 "description"=> $request->description,
-                "created_by"=>auth()->user()->id,
+                "created_by"=>Auth::user()->id,
                 "created_on"=>Carbon::now(),
             ]);
             DB::commit();
@@ -58,7 +60,7 @@ class DefaultRoleController extends Controller
                 $assignDefaultRolePermission = new DefaultRolePermission();
                 $assignDefaultRolePermission->role_id = $request->roleId;
                 $assignDefaultRolePermission->permission_id = $request->permissionId;
-                $assignDefaultRolePermission->created_by = auth()->user()->id;
+                $assignDefaultRolePermission->created_by = Auth::user()->id;
                 $assignDefaultRolePermission->created_on = now();
                 $assignDefaultRolePermission->save();
             }else{

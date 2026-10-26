@@ -8,11 +8,39 @@ const toast = useToast();
 const members = ref(null);
 const commonService = new CommonService();
 
-//  const router = useRouter();
+ const router = useRouter();
+ const deleteMemberDialog = ref(false);
+const selectedMember = ref(null);
 
+ const toggleModal=(action)=>{
+    deleteMemberDialog.value = action;
+ }
+
+const confirmDeleteMember =(data)=>{
+    selectedMember.value = data;
+    toggleModal(true);
+}
+
+
+const deleteMember =()=>{
+    let postData = {
+        id: selectedMember.value.id
+    };
+
+    commonService.genericRequest('delete-member', 'post', true, postData).then((response) => {
+        if (response.status) {
+            // members.value = response.data;
+            commonService.showSuccess(toast, response.message);
+            getAllMembers();
+            toggleModal(false);
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
 
 const AddRolesPermissions=(role)=>{
-    alert(JSON.stringify(role))
+    // alert(JSON.stringify(role))
 }
 
 const getAllMembers = () => {
@@ -23,6 +51,10 @@ const getAllMembers = () => {
             commonService.showError(toast, response.message);
         }
     })
+}
+
+const viewDetails = (member) => {
+    commonService.redirect(router, 'member-profile/'+member.id);
 }
 
 onMounted(() => {
@@ -75,15 +107,32 @@ onMounted(() => {
                     </Column>
                     <Column headerStyle="min-width:10rem;">
                         <template #body="{ data }">
-                            <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2"
+                            <Button icon="pi pi-eye" class="p-button p-button-success mr-2"
+                                @click="viewDetails(data)" />
+                            <Button icon="pi pi-pencil" class="p-button p-button-success mr-2"
                                 @click="AddRolesPermissions(data)" />
-                            <Button icon="pi pi-trash" class="p-button-rounded p-button-warning mt-2"
-                                @click="confirmDeleteProduct(data)" />
+
+                            <Button icon="pi pi-trash" class="p-button p-button-danger mt-2"
+                                @click="confirmDeleteMember(data)" />
                         </template>
                     </Column>
 
                 </DataTable>
             </div>
         </div>
+
+        <Dialog v-model:visible="deleteMemberDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
+                    <div class="flex align-items-center justify-content-center">
+                        <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
+                        <span v-if="selectedMember"
+                            >Are you sure you want to delete <b>{{ selectedMember?.first_name }}</b
+                            >?</span
+                        >
+                    </div>
+                    <template #footer>
+                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteMemberDialog = false" />
+                        <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteMember" />
+                    </template>
+                </Dialog>
     </div>
 </template>

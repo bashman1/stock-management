@@ -122,6 +122,7 @@ const paymentMethod=ref( {id:1, name: "Cash", value:"CASH"})
 const weight = ref(null);
 const weightUnit = ref(null);
 const weightPrice = ref(null);
+const src = ref([]);
 
 
 // ********************************************************
@@ -239,6 +240,10 @@ const onSubmit= ()=>{
     commonService.genericRequest('create-product', 'post', true, postData).then((response) => {
         if (response.status) {
             commonService.showSuccess(toast, response.message);
+            if(isEdit.value){
+                // router.push("/view-product-details/"+editId.value);
+                 commonService.redirect(router,"/view-product-details/"+editId.value);
+            }
             name.value=null;
             category.value=null;
             subCategory.value=null;
@@ -261,8 +266,11 @@ const onSubmit= ()=>{
             weight.value=null;
             weightUnit.value=null;
             weightPrice.value=null;
-            tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'};
+            // tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'};
             paymentMethod.value={id:1, name: "Cash", value:"CASH"};
+
+
+
         } else {
             commonService.showError(toast, response.message);
         }
@@ -603,25 +611,37 @@ const getProductDetails=(prodId)=>{
         if (response.status) {
             productDetails.value = response.data[0];
             name.value= productDetails.value.name;
-            category.value=productCategoryData.value.find(cat=>cat.id ==productDetails.value.category_id)
-            manufacturer.value=manufacturersData.value.find(cat=>cat.id ==productDetails.value.manufacturer_id)
-            supplier.value=suppliersData.value.find(cat=>cat.id ==productDetails.value.supplier_id)
+            category.value=productCategoryData.value?.find(cat=>cat.id ==productDetails.value.category_id)
+            manufacturer.value=manufacturersData.value?.find(cat=>cat.id ==productDetails.value.manufacturer_id)
+            supplier.value=suppliersData.value?.find(cat=>cat.id ==productDetails.value.supplier_id)
             productId.value =productDetails.value.product_no;
             description.value =productDetails.value.description;
             quantity.value= productDetails.value.quantity
             minStock.value= productDetails.value.min_quantity
             maxStock.value= productDetails.value.max_quantity
-            measurementUnit.value = measurementUnitsData.value.find(cat=>cat.id ==productDetails.value.measurement_unit_id)
+            measurementUnit.value = measurementUnitsData.value?.find(cat=>cat.id ==productDetails.value.measurement_unit_id)
             purchasePrice.value =productDetails.value.purchase_price
             date.value =productDetails.value.stock_date
             sellingPrice.value =productDetails.value.selling_price
-            prodType.value =productTypeList.value.find(cat=>cat.id ==productDetails.value.type_id)
-            prodGauge.value =productGaugeList.value.find(cat=>cat.id ==productDetails.value.gauge_id)
-            taxConfig.value = taxOptions.value.find(tax=>tax.value ==productDetails.value.tax_config)
+            prodType.value =productTypeList.value?.find(cat=>cat.id ==productDetails.value.type_id)
+            prodGauge.value =productGaugeList.value?.find(cat=>cat.id ==productDetails.value.gauge_id)
+            taxConfig.value = taxOptions.value?.find(tax=>tax.value ==productDetails.value.tax_config)
         } else {
             commonService.showError(toast, response.message);
         }
     })
+}
+
+
+const onFileSelect=(event) =>{
+    const file = event.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+        src.value.push(e.target.result);
+    };
+
+    reader.readAsDataURL(file);
 }
 
 onMounted(() => {
@@ -745,6 +765,18 @@ onMounted(() => {
                             <Textarea inputId="description" rows="11" v-model="description"></Textarea>
                             <label for="description">Description</label>
                         </span>
+                    </div>
+
+                    <div class="field col-12 md:col-12">
+                        <span class="p-float-label">
+                            <FileUpload mode="basic" :multiple="true" @select="onFileSelect" accept="image/*" customUpload auto severity="secondary" class="p-button-outlined" />
+
+                            <span v-for="(img, index) of src" :key="index">
+                                <img v-if="img" :src="img" alt="Image" class="shadow-md rounded-xl w-full sm:w-64" style="filter: grayscale(100%)" />
+                            </span>
+                            <!-- <FileUpload name="demo[]" @uploader="onUpload" :multiple="true" accept="image/*" :maxFileSize="1000000" customUpload /> -->
+                        </span>
+                        <!-- :multiple="true" -->
                     </div>
                 </div>
             </div>

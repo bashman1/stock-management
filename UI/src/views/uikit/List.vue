@@ -62,7 +62,7 @@ const onSortChange = (event) => {
         <div class="col-12">
             <div class="card">
                 <h5>DataView</h5>
-                <DataView :value="dataviewValue" :layout="layout" :paginator="true" :rows="9" :sortOrder="sortOrder" :sortField="sortField">
+                <!-- <DataView :value="dataviewValue" :layout="layout" :paginator="true" :rows="9" :sortOrder="sortOrder" :sortField="sortField">
                     <template #header>
                         <div class="grid grid-nogutter">
                             <div class="col-6 text-left">
@@ -118,7 +118,7 @@ const onSortChange = (event) => {
                             </div>
                         </div>
                     </template>
-                </DataView>
+                </DataView> -->
             </div>
         </div>
 

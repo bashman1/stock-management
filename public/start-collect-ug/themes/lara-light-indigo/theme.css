@@ -1730,12 +1730,12 @@
 .p-button:enabled:hover {   /** changed from  #4F46E5 **/
   background: #38570f;
   color: #ffffff;
-  border-color: #38570f;
+  border-color:  #38570f;
 }
 .p-button:enabled:active {
   background: #38570f;
   color: #ffffff;
-  border-color: #38570f;
+  border-color:  #38570f;
 }
 .p-button.p-button-outlined {
   background-color: transparent;

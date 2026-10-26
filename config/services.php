@@ -31,4 +31,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'efris' => [
+        'base_url' => env('EFRIS_BASE_URL'),
+        'bearer_token' => env('EFRIS_BEARER_TOKEN'),
+    ],
+
 ];

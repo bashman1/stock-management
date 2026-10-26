@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\InvestmentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InstitutionController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\MemberController;
 use App\Http\Controllers\CityRefController;
 use App\Http\Controllers\InstitutionTypeRefController;
 use App\Http\Controllers\BankRefController;
+use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\TempMemberController;
 use \App\Http\Controllers\CollectionController;
 use App\Http\Controllers\ComissionController;
@@ -23,18 +25,34 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ProductTypeController;
 use App\Http\Controllers\ProductGaugeController;
 use App\Http\Controllers\GLBalanceController;
+use App\Http\Controllers\AccountingHealthController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\MtnPaymentsController;
 use App\Http\Controllers\GlAccountsController;
+use App\Http\Controllers\JournalController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TempProductController;
 use App\Http\Controllers\TempSaleController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerReceivableController;
 use App\Http\Controllers\DefaultRoleController;
+use App\Http\Controllers\DurationController;
+use App\Http\Controllers\FixedAssetController;
+use App\Http\Controllers\DepreciationRateController;
+use App\Http\Controllers\AssetTransferController;
+use App\Http\Controllers\AssetMaintenanceController;
+use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\ManufacturingController;
+use App\Http\Controllers\StockControlController;
+use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\LicensePackageController;
 use App\Http\Controllers\MailReceiverController;
 use App\Http\Controllers\PayableController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SystemLogController;
+use App\Models\Project;
 
 /*
 |--------------------------------------------------------------------------
@@ -78,6 +96,23 @@ Route::get('get-institution-types', [InstitutionTypeRefController::class, 'getIn
 Route::get('get-city-county-id/{id}', [CityRefController::class, 'getCityByCountryId']);
 Route::get('get-bank-ref', [BankRefController::class, 'getBanks']);
 Route::post("institution-self-registration", [InstitutionController::class, "institutionSelfRegistration"]);
+Route::get('get-durations', [DurationController::class, 'getDurations']);
+Route::get("get-license-packages", [LicensePackageController::class, "getLicensePackages"]);
+
+// Route::post('test-efris', [ProductController::class, "testEfrisProductCreation"]);
+
+
+// Show request form
+Route::get('/forgot-password', [UserController::class, 'requestForm'])->name('password.request');
+
+// Handle form submission
+Route::post('/forgot-password', [UserController::class, 'sendResetLink'])->name('password.email');
+
+// Show reset form
+Route::get('/reset-password/{token}', [UserController::class, 'resetForm'])->name('password.reset');
+
+// Handle password update
+Route::post('/reset-password', [UserController::class, 'updatePassword'])->name('password.update');
 
 Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('crate-role', [RoleController::class, 'createRole']);
@@ -113,6 +148,7 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::get('get-institutions', [InstitutionController::class, 'getInstitutions']);
     Route::get('get-institutions/{status}', [InstitutionController::class, 'getInstitutionsByStatus']);
     Route::get('get-users', [UserController::class, 'getUsers']);
+    Route::post('get-users-list', [UserController::class, 'getUsersList']);
     Route::get('get-members', [MemberController::class,'getMembers']);
     Route::get('get-role/{id}', [RoleController::class, 'getRoleById']);
     Route::get('get-permissions', [RoleController::class, 'getPermissions']);
@@ -123,23 +159,51 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('create-product-sub-category', [ProductCategoryController::class, "createProductSubCategory"]);
     Route::get('get-product-sub-categories', [ProductCategoryController::class, "getProductSubCategory"]);
     Route::get('get-countries', [CountryRefController::class, "getCountries"]);
-
     Route::post('create-manufacturer', [ManufacturerController::class, "createManufacturer"]);
     Route::get('get-manufacturers', [ManufacturerController::class, "getManufacturers"]);
-
+    // Manufacturer management
+    Route::post('update-manufacturer', [ManufacturerController::class, "updateManufacturer"]);
+    Route::post('get-manufacturer-profile', [ManufacturerController::class, "getManufacturerProfile"]);
+    Route::post('get-manufacturer-products', [ManufacturerController::class, "getManufacturerProducts"]);
+    Route::post('get-manufacturer-deliveries', [ManufacturerController::class, "getManufacturerDeliveries"]);
+    Route::post('create-manufacturer-contact', [ManufacturerController::class, "createManufacturerContact"]);
+    Route::post('get-manufacturer-contacts', [ManufacturerController::class, "getManufacturerContacts"]);
+    Route::post('delete-manufacturer-contact', [ManufacturerController::class, "deleteManufacturerContact"]);
+    Route::post('add-manufacturer-rating', [ManufacturerController::class, "addManufacturerRating"]);
+    Route::post('get-manufacturer-ratings', [ManufacturerController::class, "getManufacturerRatings"]);
+    Route::post('create-manufacturer-contract', [ManufacturerController::class, "createManufacturerContract"]);
+    Route::post('get-manufacturer-contracts', [ManufacturerController::class, "getManufacturerContracts"]);
+    Route::post('delete-manufacturer-contract', [ManufacturerController::class, "deleteManufacturerContract"]);
+    Route::post('create-manufacturer-document', [ManufacturerController::class, "createManufacturerDocument"]);
+    Route::post('get-manufacturer-documents', [ManufacturerController::class, "getManufacturerDocuments"]);
+    Route::post('delete-manufacturer-document', [ManufacturerController::class, "deleteManufacturerDocument"]);
     Route::post('create-supplier', [SupplierController::class, "createSupplier"]);
     Route::get('get-suppliers', [SupplierController::class, "getSuppliers"]);
-
+    // Supplier management
+    Route::post('update-supplier', [SupplierController::class, "updateSupplier"]);
+    Route::post('get-supplier-profile', [SupplierController::class, "getSupplierProfile"]);
+    Route::post('get-supplier-products', [SupplierController::class, "getSupplierProducts"]);
+    Route::post('get-supplier-deliveries', [SupplierController::class, "getSupplierDeliveries"]);
+    Route::post('create-supplier-contact', [SupplierController::class, "createSupplierContact"]);
+    Route::post('get-supplier-contacts', [SupplierController::class, "getSupplierContacts"]);
+    Route::post('delete-supplier-contact', [SupplierController::class, "deleteSupplierContact"]);
+    Route::post('add-supplier-rating', [SupplierController::class, "addSupplierRating"]);
+    Route::post('get-supplier-ratings', [SupplierController::class, "getSupplierRatings"]);
+    Route::post('create-supplier-contract', [SupplierController::class, "createSupplierContract"]);
+    Route::post('get-supplier-contracts', [SupplierController::class, "getSupplierContracts"]);
+    Route::post('delete-supplier-contract', [SupplierController::class, "deleteSupplierContract"]);
+    Route::post('create-supplier-document', [SupplierController::class, "createSupplierDocument"]);
+    Route::post('get-supplier-documents', [SupplierController::class, "getSupplierDocuments"]);
+    Route::post('delete-supplier-document', [SupplierController::class, "deleteSupplierDocument"]);
+    Route::post('create-payment-term', [SupplierController::class, "createPaymentTerm"]);
+    Route::get('get-payment-terms', [SupplierController::class, "getPaymentTerms"]);
     Route::post('create-measurement-unit', [MeasurementUnitController::class, "createMeasurementUnit"]);
     Route::get('get-measurement-unit', [MeasurementUnitController::class, "getMeasurementUnit"]);
-
     Route::post('create-product', [ProductController::class, "createProduct"]);
     Route::get('get-dashboard-stats', [CommonController::class, "getDashboardStats"]);
-
-    Route::get('get-products', [ProductController::class, "getProducts"]);
+    Route::post('get-products', [ProductController::class, "getProducts"]);
     Route::post('create-product-type', [ProductTypeController::class, "createProductTypes"]);
     Route::get('get-product-types', [ProductTypeController::class, "getProductTypes"]);
-
     Route::post('create-product-gauge', [ProductGaugeController::class, "createGauge"]);
     Route::get('get-product-gauge', [ProductGaugeController::class, "getGauges"]);
     Route::post('create-order', [OrderController::class, "createOrder"]);
@@ -154,14 +218,19 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post('gl-search', [GlAccountsController::class, "searchGl"]);
     Route::get('gl-cats', [GlAccountsController::class, "getLedgerCategories"]);
     Route::post('debit-credit-acct', [GlAccountsController::class, "debitCreditGl"]);
+    Route::post('create-journal-entry', [JournalController::class, "createJournalEntry"]);
+    Route::post('get-journal-entries', [JournalController::class, "getJournalEntries"]);
+    Route::post('get-journal-entry', [JournalController::class, "getJournalEntry"]);
+    Route::post('reverse-journal-entry', [JournalController::class, "reverseJournalEntry"]);
+    Route::post('create-expense', [ExpenseController::class, "createExpense"]);
+    Route::post('get-expenses', [ExpenseController::class, "getExpenses"]);
+    Route::post('pay-expense', [ExpenseController::class, "payExpense"]);
     Route::post('create-gl-account', [GlAccountsController::class, "createGlAcct"]);
-
     Route::post('get-product-details', [ProductController::class, "getProductDetails"]);
     Route::post('download-product-report-pdf', [ReportController::class, "downLoadProductPdfReport"]);
     Route::post('download-product-report-csv', [ReportController::class, "downLoadProductCsvReport"]);
     Route::post("download-sales-item-report-csv", [ReportController::class, "downloadSalesItemCSVReport"]);
     Route::post('download-sales-item-report-pdf', [ReportController::class, "downloadSalesItemPDFReport"]);
-
     Route::post('get-gl-history', [GlAccountsController::class, "glAcctHistory"]);
     Route::post('get-gl-overview', [GlAccountsController::class, "glAcctOverView"]);
     Route::post('get-gl-balance', [GlAccountsController::class, "getGlBalances"]);
@@ -170,8 +239,15 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-products-report", [ReportController::class, "getInventoryReport"]);
     Route::post("get-sales-report", [ReportController::class,"getSalesReport"]);
     Route::post("get-balance-sheet", [GlAccountsController::class, "getBalanceSheet"]);
+
+    // admin: scan a business's books and apply repairs
+    Route::post("accounting-health/businesses", [AccountingHealthController::class, "getBusinesses"]);
+    Route::post("accounting-health/scan", [AccountingHealthController::class, "scanBusiness"]);
+    Route::post("accounting-health/fix", [AccountingHealthController::class, "applyFixes"]);
+    Route::post("accounting-health/logs", [AccountingHealthController::class, "getFixLogs"]);
     Route::post("get-inventory-product-report", [ReportController::class, "getInventoryHistoryReport"]);
     Route::post("get-sales-product-report", [ReportController::class, "getSalesHistoryReport"]);
+    Route::post("get-stock-statement", [ReportController::class, "getStockStatement"]);
     Route::get("get-institution-details", [InstitutionController::class, "getInstitutionDetails"]);
     Route::post("restock-product", [ProductController::class, "restock"]);
     Route::post("archive-product", [ProductController::class, "archiveProduct"]);
@@ -186,6 +262,17 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-item-sales-report", [ReportController::class, "getItemSalesReport"]);
     Route::post("create-customer", [CustomerController::class, "createCustomer"]);
     Route::post("get-customers", [CustomerController::class, "getCustomers"]);
+    // Customer management
+    Route::post("update-customer", [CustomerController::class, "updateCustomer"]);
+    Route::post("get-customer-profile", [CustomerController::class, "getCustomerProfile"]);
+    Route::post("get-customer-sales", [CustomerController::class, "getCustomerSales"]);
+    Route::post("get-customer-receivables", [CustomerController::class, "getCustomerReceivables"]);
+    Route::post("create-customer-price", [CustomerController::class, "createCustomerPrice"]);
+    Route::post("get-customer-prices", [CustomerController::class, "getCustomerPrices"]);
+    Route::post("delete-customer-price", [CustomerController::class, "deleteCustomerPrice"]);
+    Route::post("get-customer-pricing", [CustomerController::class, "getCustomerPricing"]);
+    Route::post("create-customer-group", [CustomerController::class, "createCustomerGroup"]);
+    Route::get("get-customer-groups", [CustomerController::class, "getCustomerGroups"]);
     Route::post("download-collections-csv", [CollectionController::class, "downLoadOfficerReport"]);
     Route::post("create-branch", [InstitutionController::class,"createBranch"]);
     Route::post("get-branches", [InstitutionController::class,"getBranches"]);
@@ -209,4 +296,97 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("upload-mail-receivers", [MailReceiverController::class, "uploadMailReceivers"]);
     Route::get("get-mailReceivers", [MailReceiverController::class, "getMailReceivers"]);
     Route::post("send-bulk-mails", [MailReceiverController::class, "sendBulkMails"]);
+    Route::post("reverse-sale", [OrderController::class, "deleteOrder"]);
+    Route::get("get-license-package-configs", [LicensePackageController::class, "getLicensePackageConfigs"]);
+    Route::get("get-license-package-limitation", [LicensePackageController::class, "getLicensePackageLimitations"]);
+    Route::post("create-license-package", [LicensePackageController::class, "createLicensePackage"]);
+    Route::get("get-license-benefits", [LicensePackageController::class, "getLicenseBenefits"]);
+    Route::post("update-user-status", [UserController::class, "updateUserStatus"]);
+    Route::get("get-payment-methods", [FixedAssetController::class, "getPaymentMethods"]);
+    Route::get("get-depreciation-rates", [FixedAssetController::class, "getDepreciationRates"]);
+    Route::post("create-fixed-asset", [FixedAssetController::class, "createFixedAsset"]);
+    Route::post("get-fixed-assets", [FixedAssetController::class, "getFixedAssets"]);
+    Route::post("get-fixed-asset", [FixedAssetController::class, "getFixedAsset"]);
+    Route::post("run-depreciation", [FixedAssetController::class, "runDepreciation"]);
+    Route::post("create-depreciation-rate", [DepreciationRateController::class, "createDepreciationRate"]);
+    Route::post("create-asset-transfer", [AssetTransferController::class, "createTransfer"]);
+    Route::post("get-asset-transfers", [AssetTransferController::class, "getTransfers"]);
+    Route::post("create-asset-maintenance", [AssetMaintenanceController::class, "createMaintenance"]);
+    Route::post("get-asset-maintenances", [AssetMaintenanceController::class, "getMaintenances"]);
+    // Warehouse management
+    Route::post("create-warehouse", [WarehouseController::class, "createWarehouse"]);
+    Route::post("update-warehouse", [WarehouseController::class, "updateWarehouse"]);
+    Route::post("get-warehouses", [WarehouseController::class, "getWarehouses"]);
+    Route::post("create-warehouse-location", [WarehouseController::class, "createLocation"]);
+    Route::post("get-warehouse-locations", [WarehouseController::class, "getLocations"]);
+    Route::post("get-warehouse-stock", [WarehouseController::class, "getWarehouseStock"]);
+    Route::post("create-warehouse-transfer", [WarehouseController::class, "createTransfer"]);
+    Route::post("put-away-stock", [WarehouseController::class, "putAway"]);
+    Route::post("get-warehouse-transfers", [WarehouseController::class, "getTransfers"]);
+    // Manufacturing
+    Route::post("create-bom", [ManufacturingController::class, "createBom"]);
+    Route::post("get-boms", [ManufacturingController::class, "getBoms"]);
+    Route::post("get-bom", [ManufacturingController::class, "getBom"]);
+    Route::post("create-production-order", [ManufacturingController::class, "createProductionOrder"]);
+    Route::post("get-production-orders", [ManufacturingController::class, "getProductionOrders"]);
+    Route::post("get-production-order", [ManufacturingController::class, "getProductionOrder"]);
+    Route::post("issue-materials", [ManufacturingController::class, "issueMaterials"]);
+    Route::post("record-scrap", [ManufacturingController::class, "recordScrap"]);
+    Route::post("complete-production", [ManufacturingController::class, "completeProduction"]);
+    Route::post("cancel-production-order", [ManufacturingController::class, "cancelProductionOrder"]);
+    // Stock control (valuation + adjustments)
+    Route::post("get-cost-layers", [StockControlController::class, "getCostLayers"]);
+    Route::post("create-stock-adjustment", [StockControlController::class, "createStockAdjustment"]);
+    Route::post("get-stock-adjustments", [StockControlController::class, "getStockAdjustments"]);
+    // Analytics
+    Route::post("get-analytics", [AnalyticsController::class, "getAnalytics"]);
+    Route::post("get-calendar-feed", [AnalyticsController::class, "getCalendarFeed"]);
+    Route::post("create-calendar-event", [AnalyticsController::class, "createCalendarEvent"]);
+    Route::post("update-calendar-event", [AnalyticsController::class, "updateCalendarEvent"]);
+    Route::post("delete-calendar-event", [AnalyticsController::class, "deleteCalendarEvent"]);
+    Route::post("create-project", [ProjectController::class, "createProject"]);
+    Route::get("get-projects", [ProjectController::class, "getProjects"]);
+    Route::post("create-investment", [InvestmentController::class, "createInvestment"]);
+    Route::post("get-investments", [InvestmentController::class, "getInvestments"]);
+    Route::post("pay-receivable", [CustomerReceivableController::class, "makePayment"]);
+    Route::post("create-invoice", [InvoiceController::class, "createInvoice"]);
+    Route::post("create-building", [BuildingController::class, "createBuilding"]);
+    Route::post("get-buildings", [BuildingController::class, "getBuildings"]);
+    Route::post("create-building-unit", [BuildingController::class, "createBuildingUnit"]);
+    Route::post("get-building-units", [BuildingController::class, "getBuildingUnits"]);
+    Route::post("rent-building-unit", [BuildingController::class, "rentUnit"]);
+    Route::post("get-building-rentals", [BuildingController::class, "getRentals"]);
+    Route::post("get-invoices", [InvoiceController::class, "getInvoices"]);
+    Route::post("get-member-details", [MemberController::class, "getMemberDetails"]);
+    Route::post("withdraw-investment", [InvestmentController::class, "withdrawInvestment"]);
+    Route::post("make-rental-payments", [BuildingController::class, "makeRentPayment"]);
+    Route::post("get-invoice-details", [ProductController::class, "getInvoiceDetails"]);
+    Route::post("upload-buildings", [BuildingController::class, "uploadBuildings"]);
+    Route::post("upload-building-units", [BuildingController::class, "uploadBuildingUnits"]);
+    Route::post("upload-tenants-room", [BuildingController::class, "uploadTenantsRoom"]);
+    Route::post("get-building-uploaded-batch", [BuildingController::class, "getBuildingBatches"]);
+    Route::post("get-building-units-uploaded-batch", [BuildingController::class, "getBuildingUnitBatches"]);
+    Route::post("get-rental-uploaded-batch", [BuildingController::class, "getRentalBatches"]);
+    Route::post("get-batch-buildings", [BuildingController::class, "getBatchBuildings"]);
+    Route::post("get-batch-building-units", [BuildingController::class, "getBatchBuildingUnits"]);
+    Route::post("get-batch-rentals", [BuildingController::class, "getBatchRentals"]);
+    Route::post("approve-batch-buildings", [BuildingController::class, "approveBuilding"]);
+    Route::post("approve-batch-building-units", [BuildingController::class, "approveBuildingUnit"]);
+    Route::post("approve-batch-rentals", [BuildingController::class, "approveRental"]);
+    Route::post("get-notification-types", [CommonController::class, "getNotificationTypes"]);
+    Route::post("create-notification-config", [CommonController::class, "createNotificationConfig"]);
+    Route::post("evacuate-building-unit", [BuildingController::class, "evacuateUnit"]);
+    Route::post("landlord-payments", [BuildingController::class, "landLoadPayment"]);
+    Route::post("get-land-load-payments", [BuildingController::class, "getLandLoadPayments"]);
+    Route::post("rent-arrears-report", [ReportController::class, "rentArrearsReport"]);
+    Route::get("get-printer-configs", [CommonController::class, "getPrinterConfigs"]);
+    Route::post("delete-receivable", [CustomerReceivableController::class, "deleteReceivable"]);
+    Route::post("archive-building", [BuildingController::class, "archiveBuilding"]);
+    Route::post("archive-building-unit", [BuildingController::class, "archiveBuildingUnit"]);
+    Route::post("delete-member", [MemberController::class, "deleteMember"]);
+    Route::get("efris-measurement-units", [ProductController::class, "getEfrisMeasurementUnits"]);
+    Route::get("efris-commodity-categories", [ProductCategoryController::class, "iteratePages"]);
+    Route::post("search-efris-commodity-categories", [ProductCategoryController::class, "searchEfrisCommodityCategories"]);
+    Route::get("efris-outbound-transactions", [CommonController::class, "getEfrisOutBound"]);
+    Route::post("consume-efris-outbound", [CommonController::class, "consumePaddingEfrisOutBound"]);
 });

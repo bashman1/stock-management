@@ -1,0 +1,167 @@
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import CommonService from '@/service/CommonService'
+import { useToast } from 'primevue/usetoast';
+
+const toast = useToast();
+const glAccountHistory = ref(null);
+const commonService = new CommonService();
+const router = useRouter();
+const route = useRoute()
+
+const updateGlModal = ref(false)
+const description = ref(null);
+const acctNo = ref(null);
+const formError = ref({});
+const debitSelected = ref(null);
+const balance = ref(0);
+
+const getGlAccountHistory = (productId) => {
+    let postData = {
+        productId: productId
+    }
+    commonService.genericRequest('get-sales-product-report', 'post', true, postData).then((response) => {
+        if (response.status) {
+            glAccountHistory.value = response.data;
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const onInputBlur = (value, key) => {
+    formError.value[key] = commonService.validateFormField(value);
+}
+
+const updateGl = (event) => {
+    description.value = event.description
+    acctNo.value = event.acct_no
+    toggleEditModal(true)
+
+}
+
+const toggleEditModal = (action) => {
+    updateGlModal.value = action
+}
+
+const updateGlName = () => {
+    formError.value.description = commonService.validateFormField(description.value);
+    let invalid = commonService.validateRequiredFields(formError.value);
+    if (invalid) {
+        commonService.showError(toast, "Please fill in the missing field");
+        return
+    }
+
+    let postData = {
+        description: description.value,
+        acctNo: acctNo.value
+    }
+    commonService.genericRequest('update-gl-account', 'post', true, postData).then((response) => {
+        if (response.status) {
+            commonService.showSuccess(toast, response.message);
+            getGlAccounts();
+            toggleEditModal(false)
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+const calculateBalance = (amount, type, ind) => {
+    if (ind == 'Dr') {
+        if (type == 'ASSET' || type == 'EXPENSE') {
+           return balance.value= Number(balance.value) + Number(amount);
+        } else {
+           return balance.value= Number(balance.value) - Number(amount);
+        }
+    }
+    if (ind == 'Cr') {
+        if (type == 'ASSET' || type == 'EXPENSE') {
+          return  balance.value= Number(balance.value) - Number(amount);
+        } else {
+           return balance.value= Number(balance.value) + Number(amount);
+        }
+    }
+}
+
+const debitAccount = (event) => {
+
+}
+
+const creditAccount = (event) => {
+
+}
+
+onMounted(() => {
+    getGlAccountHistory(route.params.productId)
+});
+
+</script>
+
+<template>
+    <div className="card">
+        <h5>Product Sales Report</h5>
+        <DataTable scrollable scrollHeight="65vh" :value="glAccountHistory" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id"
+            :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+            <ColumnGroup type="header">
+                <Row>
+                    <Column header="Transaction Date" sortable field="tran_date" />
+                    <Column header="Name" sortable field="product_name" />
+                    <Column header="Receipt No." sortable field="receipt_no" />
+                    <Column header="Selling Price" sortable field="selling_price" />
+                    <Column header="Quantity" sortable field="quantity" />
+                </Row>
+
+            </ColumnGroup>
+            <Column field="tran_date" header="Transaction Date" style="min-width: 12rem">
+                <template #body="{ data }">
+                    {{ data.tran_date }}
+                </template>
+            </Column>
+            <Column field="description" header="Name" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ data.product_name }}
+                </template>
+            </Column>
+            <Column field="receipt_no" header="Receipt No." style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ data.receipt_no }}
+                </template>
+            </Column>
+            <!-- <Column field="dr" header="Debit" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ data.dr_cr_ind == 'Dr' ? commonService.commaSeparator(data.tran_amount) : '' }}
+                </template>
+            </Column> -->
+            <!-- <Column field="cr" header="Credit" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ data.dr_cr_ind == 'Cr' ? commonService.commaSeparator(data.tran_amount) : '' }}
+                </template>
+            </Column> -->
+            <Column field="selling_price" header="Selling Price" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ commonService.commaSeparator(data.selling_price) }}
+                </template>
+            </Column>
+            <Column field="quantity" header="Quantity" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ commonService.commaSeparator(data.quantity) }} {{ data.measurement_unit }}
+                </template>
+            </Column>
+            <!-- <Column field="reversal_flag" header="Reversed" style="max-width: 10rem">
+                <template #body="{ data }">
+                    {{ data.reversal_flag == 'N' ? 'No' : 'Yes' }}
+                </template>
+            </Column>
+            <Column field="name" header="Posted By" style="min-width: 10rem">
+                <template #body="{ data }">
+                    {{ data.user_name }}
+                </template>
+            </Column> -->
+        </DataTable>
+
+
+
+    </div>
+</template>

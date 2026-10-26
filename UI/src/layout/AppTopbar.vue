@@ -28,6 +28,7 @@ onBeforeUnmount(() => {
 const logoUrl = computed(() => {
     // return `layout/images/${layoutConfig.darkTheme.value ? 'logo-white' : 'logo-dark'}.svg`;
     // return `demo/images/Smart-Collect-logo-black-removebg.png`;
+    // return `demo/images/logo-sm-home-1.png`;
     return `demo/images/SmarCollectlogo-removebg-preview.png`;
 
 
@@ -103,7 +104,7 @@ const getStorageData=()=>{
             <i class="pi pi-bars"></i>
         </button>
 
-        <span class="block text-500 font-bold text-xl ml-3">{{ "User: "+ storageData?.userData?.first_name+" "+storageData?.userData?.last_name+" "+storageData?.userData?.other_name +" | Role: "+ storageData?.userData?.role_name+" | Business: "+ storageData?.userData?.institution_name+" | Branch: "+storageData?.userData?.branch_name }}</span>
+        <span class="hidden lg:block text-500 font-bold text-sl ml-3">{{ "User: "+ storageData?.userData?.first_name+" "+storageData?.userData?.last_name+" "+storageData?.userData?.other_name +" | Role: "+ storageData?.userData?.role_name+" | Business: "+ storageData?.userData?.institution_name+" | Branch: "+storageData?.userData?.branch_name+" | License: "+  storageData?.license?.package_name+" Plan: "+storageData?.license?.duration +" Started: "+ storageData?.license?.start_date+" Ends: "+storageData?.license?.end_date}}</span>
 
         <button class="p-link layout-topbar-menu-button layout-topbar-button" @click="onTopBarMenuButton()">
             <i class="pi pi-ellipsis-v"></i>

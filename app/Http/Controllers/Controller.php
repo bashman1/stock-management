@@ -36,7 +36,13 @@ use Illuminate\Support\Facades\Request as IpRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
-
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Institution;
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\InstitutionContact;
+// use Illuminate\Support\Facades\Log;
 // use
 
 // use Illuminate\Support\Str;
@@ -64,22 +70,35 @@ class Controller extends BaseController
      */
     public function genericResponse($status, $message, $code, $data, $action = null, $request = null)
     {
+        // Only audit meaningful events — writes, auth, exports and any failure.
+        // Routine successful reads are skipped (kills noise + self-logging of the log viewer).
+        if ($this->isAuditable($action, $status)) {
+            $meta = $this->deriveAuditMeta($action, $code, $status, $data);
+            $req = request();
 
-        $log = [
-            "action" => $action,
-            "ip" => IpRequest::ip(),
-            "http_code" => $code,
-            "request" => $request instanceof Request ? $request->all() : $request,
-            "response" => $data,
-            "return_status" => $status,
-            "return_message" => $message,
-            "user_id" => auth()->user() ? auth()->user()->id : null,
-            "institution_id" => auth()->user() ? auth()->user()->institution_id : null,
-            "branch_id" => auth()->user() ? auth()->user()->branch_id : null,
-            "created_on" => now()
-        ];
-        $this->setLogs($log);
-
+            $log = [
+                "uuid" => (string) Str::uuid(),
+                "action" => $action,
+                "entity_type" => $meta['entity_type'],
+                "entity_id" => $meta['entity_id'],
+                "ip" => IpRequest::ip(),
+                "user_agent" => $req ? substr((string) $req->userAgent(), 0, 255) : null,
+                "method" => $req ? $req->method() : null,
+                "route" => $req ? substr((string) $req->path(), 0, 255) : null,
+                "http_code" => $code,
+                "severity" => $meta['severity'],
+                "event_category" => $meta['event_category'],
+                "request" => $this->sanitizeForAudit($request instanceof Request ? $request->all() : $request),
+                "response" => $this->sanitizeForAudit($data),
+                "return_status" => $status,
+                "return_message" => $message,
+                "user_id" => Auth::user() ? Auth::user()->id : null,
+                "institution_id" => Auth::user() ? Auth::user()->institution_id : null,
+                "branch_id" => Auth::user() ? Auth::user()->branch_id : null,
+                "created_on" => now(),
+            ];
+            $this->setLogs($log);
+        }
 
         return response()->json([
             "status" => $status,
@@ -87,6 +106,117 @@ class Controller extends BaseController
             "message" => $message,
             "data" => $data
         ], $code);
+    }
+
+    /**
+     * Audit only writes / auth / exports / failures; skip routine successful reads.
+     */
+    private function isAuditable($action, $status): bool
+    {
+        $action = (string) $action;
+        if ($status === false) {
+            return true; // always audit failures
+        }
+        if (preg_match('/^(download|export)/i', $action)) {
+            return true; // exports/downloads are auditable
+        }
+        // routine reads are not auditable
+        return !preg_match('/^(get|view|list|fetch|search)/i', $action);
+    }
+
+    /**
+     * Recursively redact secrets and cap the size of audit payloads.
+     */
+    private function sanitizeForAudit($value)
+    {
+        $redactKeys = [
+            'password', 'password_confirmation', 'current_password', 'new_password',
+            'token', 'access_token', 'auth_token', 'secret', 'otp', 'pin',
+            'receipt', 'image', 'base64', 'src', 'logo',
+        ];
+
+        $clean = function ($data) use (&$clean, $redactKeys) {
+            if (is_object($data)) {
+                $data = json_decode(json_encode($data), true);
+            }
+            if (!is_array($data)) {
+                return $data;
+            }
+            $out = [];
+            foreach ($data as $k => $v) {
+                if (is_string($k) && in_array(strtolower($k), $redactKeys, true)) {
+                    $out[$k] = '***REDACTED***';
+                } else {
+                    $out[$k] = (is_array($v) || is_object($v)) ? $clean($v) : $v;
+                }
+            }
+            return $out;
+        };
+
+        $cleaned = $clean($value);
+
+        // size cap: store a summary instead of huge blobs
+        $encoded = json_encode($cleaned);
+        if ($encoded !== false && strlen($encoded) > 8192) {
+            return [
+                '_truncated' => true,
+                'size' => strlen($encoded),
+                'keys' => is_array($cleaned) ? array_slice(array_keys($cleaned), 0, 20) : [],
+            ];
+        }
+
+        return $cleaned;
+    }
+
+    /**
+     * Derive entity, severity and event category from the action + outcome.
+     */
+    private function deriveAuditMeta($action, $code, $status, $data): array
+    {
+        $action = (string) $action;
+
+        // entity type = action with the leading verb stripped (createExpense -> Expense)
+        $entityType = preg_replace('/^(create|update|delete|get|restock|pay|approve|archive|reverse|new)/i', '', $action);
+        $entityType = $entityType !== '' ? ucfirst($entityType) : null;
+
+        // entity id from a saved model/object response
+        $entityId = null;
+        if (is_object($data) && isset($data->id)) {
+            $entityId = (string) $data->id;
+        } elseif (is_array($data) && isset($data['id'])) {
+            $entityId = (string) $data['id'];
+        }
+
+        // severity
+        if ((int) $code >= 500) {
+            $severity = 'ERROR';
+        } elseif ($status === false || (int) $code >= 400) {
+            $severity = 'WARNING';
+        } elseif (preg_match('/^(delete|reverse|archive)/i', $action)) {
+            $severity = 'CRITICAL';
+        } else {
+            $severity = 'INFO';
+        }
+
+        // event category
+        if (preg_match('/(login|logout|logOut)/i', $action)) {
+            $category = 'AUTH';
+        } elseif (preg_match('/(expense|order|invoice|gl|payable|receivable|pay|restock|stock|sale|product|reconcile)/i', $action)) {
+            $category = 'FINANCIAL';
+        } elseif (preg_match('/^(download|export)/i', $action)) {
+            $category = 'EXPORT';
+        } elseif (preg_match('/^(create|update|delete|approve|archive|new)/i', $action)) {
+            $category = 'DATA';
+        } else {
+            $category = 'SYSTEM';
+        }
+
+        return [
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'severity' => $severity,
+            'event_category' => $category,
+        ];
     }
 
 
@@ -97,7 +227,7 @@ class Controller extends BaseController
      */
     public function getUserLogin()
     {
-        return auth()->user();
+        return Auth::user();
     }
 
 
@@ -124,7 +254,7 @@ class Controller extends BaseController
 
     public function isNotAdmin(): bool
     {
-        return auth()->user()->institution_id !== null;
+        return Auth::user()->institution_id !== null;
     }
 
 
@@ -236,8 +366,8 @@ class Controller extends BaseController
             $acctNo = str_replace('braCd', $branchCd, $acctNo);
             $acctNo = str_replace('glNo', $value['gl_no'], $acctNo);
 
-            $checkExistingGlAcct = GlAccounts::where('acct_no', $acctNo)->get();
-            if (!isset($checkExistingGlAcct)  || !empty($checkExistingGlAcct)) {
+            $checkExistingGlAcct = GlAccounts::where('acct_no', $acctNo)->first();
+            if (!isset($checkExistingGlAcct)) {
                 $glAcct = new GlAccounts();
                 $glAcct->gl_no = $value['gl_no'];
                 $glAcct->acct_no = $acctNo;
@@ -253,8 +383,8 @@ class Controller extends BaseController
                 $glAcct->created_on = now();
                 $glAcct->save();
             }
-            $checkExistingGlBal = GlBalances::where('acct_no', $acctNo)->get();
-            if (!isset($checkExistingGlBal) || !empty($checkExistingGlBal)) {
+            $checkExistingGlBal = GlBalances::where('acct_no', $acctNo)->first();
+            if (!isset($checkExistingGlBal)) {
                 $glBal = new GlBalances();
                 $glBal->acct_no =  $acctNo;
                 $glBal->acct_type = $value['acct_type'];
@@ -351,6 +481,9 @@ class Controller extends BaseController
             ->where('gl_no', '4040001')
             ->first();
 
+        if (!isset($sl)) {
+            return false;
+        }
         $isSlExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($sl->replaced_acct_no)])->exists();
         if (!$isSlExisting) {
             $newSti = new CntrlParameter();
@@ -370,6 +503,9 @@ class Controller extends BaseController
             ->where('gl_no', '1305001')
             ->first();
 
+        if (!isset($pia)) {
+            return false;
+        }
         $isPiaExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($pia->replaced_acct_no)])->exists();
         if (!$isPiaExisting) {
             $newSti = new CntrlParameter();
@@ -388,6 +524,9 @@ class Controller extends BaseController
             ->where('gl_no', '2205001')
             ->first();
 
+        if (!isset($pil)) {
+            return false;
+        }
         $isPilExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($pil->replaced_acct_no)])->exists();
         if (!$isPilExisting) {
             $newSti = new CntrlParameter();
@@ -407,6 +546,9 @@ class Controller extends BaseController
             ->where('gl_no', '5020001')
             ->first();
 
+        if (!isset($pp)) {
+            return false;
+        }
         $isPpExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($pp->replaced_acct_no)])->exists();
         if (!$isPpExisting) {
             $newSti = new CntrlParameter();
@@ -426,6 +568,9 @@ class Controller extends BaseController
             ->where('gl_no', '4050001')
             ->first();
 
+        if (!isset($pd)) {
+            return false;
+        }
         $isPdExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($pd->replaced_acct_no)])->exists();
         if (!$isPdExisting) {
             $newSti = new CntrlParameter();
@@ -445,6 +590,9 @@ class Controller extends BaseController
             ->where('gl_no', '5010001')
             ->first();
 
+        if (!isset($rin)) {
+            return false;
+        }
         $isRinExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($rin->replaced_acct_no)])->exists();
         if (!$isRinExisting) {
             $newSti = new CntrlParameter();
@@ -464,6 +612,9 @@ class Controller extends BaseController
             ->where('gl_no', '5030001')
             ->first();
 
+        if (!isset($rot)) {
+            return false;
+        }
         $isRotExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($rot->replaced_acct_no)])->exists();
         if (!$isRotExisting) {
             $newSti = new CntrlParameter();
@@ -483,6 +634,9 @@ class Controller extends BaseController
             ->where('gl_no', '5040001')
             ->first();
 
+        if (!isset($ope)) {
+            return false;
+        }
         $isOpeExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($ope->replaced_acct_no)])->exists();
         if (!$isOpeExisting) {
             $newSti = new CntrlParameter();
@@ -497,10 +651,14 @@ class Controller extends BaseController
         $gfs = DB::table('gl_accounts')
             ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
             ->where('institution_id', $instId)
-            ->where('acct_type', 'ASSET')
+            // 1307001 was reclassified from ASSET to EXPENSE (Cost of Goods Sold)
+            ->where('acct_type', 'EXPENSE')
             ->where('gl_no', '1307001')
             ->first();
 
+        if (!isset($gfs)) {
+            return false;
+        }
         $isGfsExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($gfs->replaced_acct_no)])->exists();
         if (!$isGfsExisting) {
             $newSti = new CntrlParameter();
@@ -519,6 +677,9 @@ class Controller extends BaseController
             ->where('gl_no', '2203001')
             ->first();
 
+        if (!isset($tax)) {
+            return false;
+        }
         $isTaxExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($tax->replaced_acct_no)])->exists();
         if (!$isTaxExisting) {
             $newSti = new CntrlParameter();
@@ -539,6 +700,9 @@ class Controller extends BaseController
             ->where('gl_no', '1303001')
             ->first();
 
+        if (!isset($rcbl)) {
+            return false;
+        }
         $isRcblExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($rcbl->replaced_acct_no)])->exists();
         if (!$isRcblExisting) {
             $newSti = new CntrlParameter();
@@ -558,6 +722,9 @@ class Controller extends BaseController
             ->where('gl_no', '2202001')
             ->first();
 
+        if (!isset($pybl)) {
+            return false;
+        }
         $isPyblExisting =  CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($pybl->replaced_acct_no)])->exists();
         if (!$isPyblExisting) {
             $newSti = new CntrlParameter();
@@ -569,7 +736,71 @@ class Controller extends BaseController
             $newSti->save();
         }
 
+        // Accumulated Depreciation (contra-asset) for the asset module
+        $accDep = DB::table('gl_accounts')
+            ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+            ->where('institution_id', $instId)
+            ->where('acct_type', 'ASSET')
+            ->where('gl_no', '1113001')
+            ->first();
+        if (!isset($accDep)) {
+            return false;
+        }
+        $isAdExisting = CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($accDep->replaced_acct_no)])->exists();
+        if (!$isAdExisting) {
+            $newSti = new CntrlParameter();
+            $newSti->param_name = "Accumulated Depreciation AD";
+            $newSti->param_cd = "AD";
+            $newSti->param_value = strrev($accDep->replaced_acct_no);
+            $newSti->institution_id = $instId;
+            $newSti->created_on = now();
+            $newSti->save();
+        }
 
+        // Depreciation Expense for the asset module
+        $depExp = DB::table('gl_accounts')
+            ->selectRaw("REPLACE(REVERSE(acct_no), SUBSTR(REVERSE(acct_no), 17, 3), '***') AS replaced_acct_no")
+            ->where('institution_id', $instId)
+            ->where('acct_type', 'EXPENSE')
+            ->where('gl_no', '5250001')
+            ->first();
+        if (!isset($depExp)) {
+            return false;
+        }
+        $isDexExisting = CntrlParameter::where(["institution_id" => $instId, "param_value" => strrev($depExp->replaced_acct_no)])->exists();
+        if (!$isDexExisting) {
+            $newSti = new CntrlParameter();
+            $newSti->param_name = "Depreciation Expense DEX";
+            $newSti->param_cd = "DEX";
+            $newSti->param_value = strrev($depExp->replaced_acct_no);
+            $newSti->institution_id = $instId;
+            $newSti->created_on = now();
+            $newSti->save();
+        }
+
+        // parameters added after the original chart (by migration for existing
+        // businesses); new businesses need them too or sales/adjustments fail
+        $laterParams = [
+            'SVR' => ['4240001', 'Service Revenue SVR'],
+            'DGS' => ['4250001', 'Digital Sales DGS'],
+            'PPV' => ['5270001', 'Purchase Price Variance'],
+            'SAD' => ['5280001', 'Stock Adjustment'],
+            'OBE' => ['3109001', 'Opening Balance Equity'],
+        ];
+        foreach ($laterParams as $cd => [$glNo, $name]) {
+            $hasAcct = DB::table('gl_accounts')->where('institution_id', $instId)->where('gl_no', $glNo)->exists();
+            $hasParam = CntrlParameter::where(['institution_id' => $instId, 'param_cd' => $cd])->exists();
+            if ($hasAcct && !$hasParam) {
+                $param = new CntrlParameter();
+                $param->param_name = $name;
+                $param->param_cd = $cd;
+                $param->param_value = "$instId-***-000-000-$glNo";
+                $param->institution_id = $instId;
+                $param->status = 'Active';
+                $param->created_on = now();
+                $param->save();
+            }
+        }
 
         DB::commit();
         return true;
@@ -583,12 +814,45 @@ class Controller extends BaseController
      * @return void
      * @author bsh <email>
      */
+    /**
+     * Fetch the gl_balances row for an account, creating a zero-balance row if
+     * one does not yet exist (incomplete setup). Throws a descriptive exception
+     * if the GL account itself is missing, so the caller's transaction rolls back
+     * instead of crashing on a null dereference.
+     */
+    private function resolveGlBalance($acctNo): GlBalances
+    {
+        $glBalances = GlBalances::where('acct_no', $acctNo)->first();
+        if (isset($glBalances)) {
+            return $glBalances;
+        }
+
+        $glAccount = GlAccounts::where('acct_no', $acctNo)->first();
+        if (!isset($glAccount)) {
+            throw new \RuntimeException("GL account $acctNo not found; cannot post to its balance.");
+        }
+
+        $glBalances = new GlBalances();
+        $glBalances->acct_no = $glAccount->acct_no;
+        $glBalances->acct_type = $glAccount->acct_type;
+        $glBalances->balance = 0;
+        $glBalances->branch_cd = $glAccount->branch_cd;
+        $glBalances->status = $glAccount->status;
+        $glBalances->institution_id = $glAccount->institution_id;
+        $glBalances->branch_id = $glAccount->branch_id;
+        $glBalances->created_on = now();
+        $glBalances->save();
+
+        return $glBalances;
+    }
+
     public function postGlDR($data): GlHistory
     {
         DB::beginTransaction();
-        $glBalances = GlBalances::where('acct_no', $data->acct_no)->first();
+        $glBalances = $this->resolveGlBalance($data->acct_no);
 
-        if ($data->acct_type == 'ASSET' || $data->acct_type == 'EXPENSE') {
+        // sign by the account's own type: callers have passed the wrong type before
+        if ($this->isDebitNormal($glBalances->acct_type ?? $data->acct_type)) {
             $glBalances->balance = $glBalances->balance + $data->tran_amt;
         } else {
             $glBalances->balance = $glBalances->balance - $data->tran_amt;
@@ -629,9 +893,9 @@ class Controller extends BaseController
     public function postGlCR($data): GlHistory
     {
         DB::beginTransaction();
-        $glBalances = GlBalances::where('acct_no', $data->acct_no)->first();
+        $glBalances = $this->resolveGlBalance($data->acct_no);
 
-        if ($data->acct_type == 'ASSET' || $data->acct_type == 'EXPENSE') {
+        if ($this->isDebitNormal($glBalances->acct_type ?? $data->acct_type)) {
             $glBalances->balance = $glBalances->balance - $data->tran_amt;
         } else {
             $glBalances->balance = $glBalances->balance + $data->tran_amt;
@@ -697,23 +961,6 @@ class Controller extends BaseController
         $transaction = new Transaction();
         DB::beginTransaction();
         $transaction = Transaction::create($transactions);
-        // $transaction->acct_no = $transactions->acct_no;
-        // $transaction->acct_type = $transactions->acct_type;
-        // $transaction->contra_acct_no = $transactions->contra_acct_no;
-        // $transaction->contra_acct_type = $transactions->contra_acct_type;
-        // $transaction->description = $transactions->description;
-        // $transaction->dr_cr_ind = $transactions->dr_cr_ind;
-        // $transaction->tran_amount = (float) $transactions->tran_amount;
-        // $transaction->reversal_flag = $transactions->reversal_flag;
-        // $transaction->tran_date = $transactions->tran_date;
-        // $transaction->tran_cd = $transactions->tran_cd;
-        // $transaction->tran_id = $transactions->tran_id;
-        // $transaction->status = $transactions->status;
-        // $transaction->institution_id = $transactions->institution_id;
-        // $transaction->branch_id = $transactions->branch_id;
-        // $transaction->created_by = $transactions->created_by;
-        // $transaction->created_on = $transactions->created_on;
-        // $transaction->save();
         DB::commit();
         return $transaction;
     }
@@ -726,10 +973,13 @@ class Controller extends BaseController
      * @return void
      * @author bsh <email>
      */
-    public function getControlAcctByCode($code): array|string
+    public function getControlAcctByCode($code): array|string|null
     {
-        $cntrl = CntrlParameter::where(["param_cd" => $code, "institution_id" => auth()->user()->institution_id])->first();
-        $branch = Branch::find(auth()->user()->branch_id);
+        $cntrl = CntrlParameter::where(["param_cd" => $code, "institution_id" => Auth::user()->institution_id])->first();
+        $branch = Branch::find(Auth::user()->branch_id);
+        if (!isset($cntrl) || !isset($branch)) {
+            return null;
+        }
         return str_replace("***", $branch->code, $cntrl->param_value);
     }
 
@@ -746,10 +996,92 @@ class Controller extends BaseController
         return $response;
     }
 
+    // --- Shared balanced-journal helpers (used by Expense + Asset modules) -----
+
+    /**
+     * Map a payment method to the control-parameter code for the credited account.
+     */
+    protected function payParamCode($method): string
+    {
+        switch (strtoupper((string) $method)) {
+            case 'BANK':
+                return 'CGL';
+            case 'CREDIT':
+                return 'AP';
+            case 'CASH':
+            default:
+                return 'CL';
+        }
+    }
+
+    /**
+     * Resolve a branch GL account (acct_no + acct_type) from a control-parameter code.
+     */
+    protected function resolveControlAccount($paramCd, $instId, $branchCode)
+    {
+        $cp = CntrlParameter::where(['param_cd' => $paramCd, 'institution_id' => $instId])->first();
+        if (!isset($cp)) {
+            return null;
+        }
+        $acctNo = str_replace('***', $branchCode, $cp->param_value);
+        return GlAccounts::where('acct_no', $acctNo)->first();
+    }
+
+    /**
+     * Post one balanced journal (a single Dr and Cr) plus the transaction record.
+     */
+    protected function postJournal($drAcctNo, $drType, $crAcctNo, $crType, $amount, $tranId, $desc, $date, $userData, $tranCd, $label): void
+    {
+        $tran = (array) [
+            'acct_no' => $drAcctNo,
+            'acct_type' => $drType,
+            'contra_acct_no' => $crAcctNo,
+            'contra_acct_type' => $crType,
+            'description' => $desc,
+            'dr_cr_ind' => 'DR/CR',
+            'tran_amount' => $amount,
+            'reversal_flag' => 'N',
+            'tran_date' => $date,
+            'tran_cd' => $tranCd,
+            'tran_id' => $tranId,
+            'status' => 'Active',
+            'institution_id' => $userData->institution_id,
+            'branch_id' => $userData->branch_id,
+            'created_by' => $userData->id,
+            'created_on' => now(),
+            'ext_ref' => $drAcctNo,
+            'tran' => $label,
+        ];
+        $this->postTransaction($tran);
+
+        $base = [
+            'tran_amt' => $amount,
+            'reversal_flag' => 'N',
+            'description' => $desc,
+            'transaction_date' => $date,
+            'tran_type' => $label,
+            'tran_cd' => $tranCd,
+            'tran_id' => $tranId,
+            'institution_id' => $userData->institution_id,
+            'branch_id' => $userData->branch_id,
+            'created_by' => $userData->id,
+            'status' => 'Active',
+        ];
+
+        $this->postGlDR((object) array_merge($base, [
+            'acct_no' => $drAcctNo, 'acct_type' => $drType,
+            'contra_acct_no' => $crAcctNo, 'contra_acct_type' => $crType,
+        ]));
+        $this->postGlCR((object) array_merge($base, [
+            'acct_no' => $crAcctNo, 'acct_type' => $crType,
+            'contra_acct_no' => $drAcctNo, 'contra_acct_type' => $drType,
+        ]));
+    }
+
 
     public function getUsersByInstitution($institutionId): array
     {
-        $userData = auth()->user();
+        $userData = Auth::user();
         $isNotAdmin = $this->isNotAdmin();
 
         $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email,
@@ -776,7 +1108,8 @@ class Controller extends BaseController
             $queryString = "SELECT H.*, B.acct_type
                         FROM gl_histories H
                         INNER JOIN gl_balances B ON H.acct_no = B.acct_no
-                        WHERE H.acct_no = :acctNo";
+                        WHERE H.acct_no = :acctNo
+                        AND COALESCE(H.reversal_flag, 'N') = 'N'";
 
             // Add date filtering if both start and end dates are provided
             if ($startDate && $endDate) {
@@ -801,21 +1134,47 @@ class Controller extends BaseController
             // Loop through the history and calculate the balance
             foreach ($glHistory as $value) {
                 $tranAmount = (float) $value->tran_amount;
-                if (($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') && $value->dr_cr_ind == 'Dr') {
-                    $sum += $tranAmount;
-                } elseif (($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') && $value->dr_cr_ind == 'Cr') {
-                    $sum -= $tranAmount;
-                } elseif (($value->acct_type == 'LIABILITY' || $value->acct_type == 'INCOME') && $value->dr_cr_ind == 'Cr') {
-                    $sum += $tranAmount;
-                } elseif (($value->acct_type == 'LIABILITY' || $value->acct_type == 'INCOME') && $value->dr_cr_ind == 'Dr') {
-                    $sum -= $tranAmount;
-                }
+                $sum += (($value->dr_cr_ind == 'Dr') === $this->isDebitNormal($value->acct_type)) ? $tranAmount : -$tranAmount;
             }
 
             return $sum;
         } catch (\Throwable $th) {
             throw $th; // Rethrow the exception after logging it if needed
         }
+    }
+
+    /**
+     * Signed GL balance for an account cumulatively up to a date.
+     * Uses the same Dr/Cr normal-balance logic as getGlBalancesAsOf, but as a
+     * running balance "as of" $asOfDate (needed for opening/closing stock).
+     *
+     * @param string $acctNo
+     * @param string $asOfDate
+     * @param bool   $inclusive  true => transaction_date <= date, false => < date
+     * @return float
+     */
+    public function getGlBalanceAsOf($acctNo, $asOfDate, $inclusive = true): float
+    {
+        $operator = $inclusive ? '<=' : '<';
+
+        $queryString = "SELECT H.tran_amount, H.dr_cr_ind, B.acct_type
+                        FROM gl_histories H
+                        INNER JOIN gl_balances B ON H.acct_no = B.acct_no
+                        WHERE H.acct_no = :acctNo
+                        AND COALESCE(H.reversal_flag, 'N') = 'N'
+                        AND H.transaction_date::date $operator :asOfDate
+                        ORDER BY H.id ASC";
+
+        $glHistory = DB::select($queryString, ['acctNo' => $acctNo, 'asOfDate' => $asOfDate]);
+
+        $sum = 0;
+        foreach ($glHistory as $value) {
+            $tranAmount = (float) $value->tran_amount;
+            // CAPITAL/EQUITY are credit-normal too; they used to fall through and count as 0
+            $sum += (($value->dr_cr_ind == 'Dr') === $this->isDebitNormal($value->acct_type)) ? $tranAmount : -$tranAmount;
+        }
+
+        return $sum;
     }
 
 
@@ -827,6 +1186,8 @@ class Controller extends BaseController
             $userRole = null;
             $defaultRole = DefaultRole::where('status', "Active")->get();
             foreach ($defaultRole as $value) {
+                // Log::info('This is the default role ---.');
+
                 $role = Role::create([
                     "name" => $value["name"],
                     "type" => $value["type"],
@@ -844,8 +1205,9 @@ class Controller extends BaseController
 
                 $defaultRolePermissions = DefaultRolePermission::where("role_id", $value["id"])->get();
                 foreach ($defaultRolePermissions as $defaultRolePermission) {
+                    // Log::info('This is an the default permission ++++.');
                     $rolePermission = RolePermission::create([
-                        "role_id" => $defaultRolePermission["role_id"],
+                        "role_id" => $role->id,
                         "permission_id" => $defaultRolePermission["permission_id"],
                         // "created_by"=>auth()->user()->id,
                         "created_on" => Carbon::now(),
@@ -893,40 +1255,106 @@ class Controller extends BaseController
 
     public function newUser($request)
     {
-        $user = null;
-        if ($request && isset($request->id) && !empty($request->id)) {
-            $user = User::find($request->id);
-            $user->updated_at = Carbon::now();
-        } else {
-            $user = new User();
-            $user->created_by = 1;
-            $user->created_on = now();
-            $user->password = bcrypt($request->password);
+        try {
+            DB::beginTransaction();
+            // $user = $this->createUser($request);
+
+            if (User::where('email', $request->email)->exists()) {
+                throw new \Exception('Email already exists', 409);
+            }
+
+            $pic = null;
+            $sign = null;
+            if (isset($request->pic)) {
+                $pic = $this->saveBase64Image($request->pic, 'users');
+            }
+            if (isset($request->sign)) {
+                $sign = $this->saveBase64Image($request->sign, 'signatures');
+            }
+
+
+
+            $user = null;
+            if ($request && isset($request->id) && !empty($request->id)) {
+                $user = User::find($request->id);
+                $user->updated_at = Carbon::now();
+            } else {
+                $user = new User();
+                $user->created_by = Auth::user()->id ?? 1;
+                $user->created_on = now();
+                $user->password = bcrypt($request->password);
+            }
+
+            $user->first_name = $request->first_name;
+            $user->last_name = $request->last_name;
+            $user->other_name = $request->other_name;
+            $user->image = $pic;
+            $user->signature = $sign;
+            $user->email = $request->email;
+            $user->phone_number = $request->phone_number;
+            $user->gender = $request->gender;
+            $user->date_of_birth = $request->date_of_birth;
+            $user->address = $request->address;
+            $user->city_id = $request->city_id;
+            $user->status = $request->status;
+            $user->street = $request->street;
+            $user->p_o_box = $request->p_o_box;
+            $user->description = $request->description;
+            $user->role_id =  $request->role_id;
+            $user->user_type = $request->user_type;
+            $user->reset_required = true;
+            $user->user_category =  $request->user_category;
+            $user->institution_id = $request->institution_id;
+            $user->branch_id =  $request->branch_id;
+            $user->original_branch_id = $request->branch_id;
+
+            if (isset($user->institution_id)) {
+                $institution = Institution::find($request->institution_id);
+                $this->sendEmailToUser($user->email, $request->password, $institution->name, $user->first_name . ' ' . $user->last_name . ' ' . $user->other_name);
+            }
+
+
+
+            $user->save();
+            // return $user;
+            DB::commit();
+            return $user;
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            throw $th;
         }
+    }
 
-        $user->first_name = $request->first_name;
-        $user->last_name = $request->last_name;
-        $user->other_name = $request->other_name;
-        $user->email = $request->email;
-        $user->phone_number = $request->phone_number;
-        $user->gender = $request->gender;
-        $user->date_of_birth = $request->date_of_birth;
-        $user->address = $request->address;
-        $user->city_id = $request->city_id;
-        $user->status = $request->status;
-        $user->street = $request->street;
-        $user->p_o_box = $request->p_o_box;
-        $user->description = $request->description;
-        $user->role_id =  $request->role_id;
-        $user->user_type = $request->user_type;
-        $user->reset_required = true;
-        $user->user_category =  $request->user_category;
-        $user->institution_id = $request->institution_id;
-        $user->branch_id =  $request->branch_id;
-        $user->original_branch_id = $request->branch_id;
 
-        $user->save();
-        return $user;
+    public function sendEmailToUser($email,  $temporary_password, $institution_name, $user_name): void
+    {
+        $body = "
+        <p>Dear $user_name,</p>
+
+        <p>Welcome to $institution_name! Your account has been successfully created.</p>
+
+        <p>Here are your login details:</p>
+
+        <p>Username: $email</p>
+        <p>Temporary Password: $temporary_password</p>
+
+        <p>For security reasons, we recommend that you log in and change your password immediately after your first login.</p>
+
+        <p>You can access your account by visiting:</p>
+        👉<p> [Login URL] </p>";
+        $sendMail = [
+            "subject" => 'User account creation',
+            "body" => $body,
+            "has_attachment" => false,
+            "to" => $email,
+            "cc" => [],
+            "bcc" => [],
+            "attachment" => "",
+            "created_on" => Carbon::now(),
+            "attachment_name" => "",
+        ];
+        // Send the email
+        $this->sendMail($sendMail);
     }
 
 
@@ -970,157 +1398,681 @@ class Controller extends BaseController
     }
 
 
-    // public function updateTransaction($description, $institutionId, $branchId){
-    //     $transaction = Transaction::where(['description'=> $description, 'institution_id'=>$institutionId, 'branch_id'=>$branchId])->first();
-    //     $transaction->amount=100;
-    //     $transaction->updated_on=Carbon::now();
-    //     $transaction->save();
-    // }
+    // --- Stock accounting helpers ---------------------------------------------
+    // Every inventory movement posts one balanced journal and moves the cost-layer
+    // sub-ledger with it, so the Inventories account (STI) always equals the value
+    // of the open cost layers. History is never rewritten: corrections are new
+    // postings (against Stock Adjustment) or flag-and-exclude reversals.
 
-    public function updateTransaction(int $productId, int $institutionId, int $branchId, float $amount)
+    /**
+     * ASSET and EXPENSE accounts are debit-normal; LIABILITY, INCOME, CAPITAL and
+     * EQUITY are credit-normal.
+     */
+    protected function isDebitNormal($acctType): bool
+    {
+        return $acctType === 'ASSET' || $acctType === 'EXPENSE';
+    }
+
+    /**
+     * Turn a date sent by the client into app-timezone wall time. Browsers send
+     * UTC ISO strings, so a date picked as 21 Sep arrives as "2026-09-20T21:00Z"
+     * and was stored on the wrong day. Values without an offset are already local.
+     */
+    protected function businessDate($value)
+    {
+        if (empty($value)) {
+            return now();
+        }
+        try {
+            return Carbon::parse($value)->setTimezone(config('app.timezone'));
+        } catch (\Throwable $th) {
+            return now();
+        }
+    }
+
+    /**
+     * Control-parameter code credited when stock is received: opening stock is the
+     * owner's contribution (Opening Balance Equity), otherwise the payment account.
+     */
+    protected function stockReceiptCreditParam($method): string
+    {
+        return strtoupper((string) $method) === 'OPENING' ? 'OBE' : $this->payParamCode($method);
+    }
+
+    /**
+     * Post a stock receipt (Dr Inventories / Cr cash, bank, payables or opening
+     * balance equity) with its transaction record. Returns the Transaction, or
+     * null when the amount is zero.
+     */
+    protected function postStockReceipt($userData, $branch, $product, float $amount, $paymentMethod, $date, string $label, $extRef, $stockId = null)
+    {
+        if (abs($amount) < 0.005) {
+            return null;
+        }
+        $inv = $this->resolveControlAccount('STI', $userData->institution_id, $branch->code);
+        $pay = $this->resolveControlAccount($this->stockReceiptCreditParam($paymentMethod), $userData->institution_id, $branch->code);
+        if (!$inv || !$pay) {
+            throw new \RuntimeException("Inventory or payment control account is missing for branch $branch->code.");
+        }
+
+        $date = $this->businessDate($date);
+        $desc = "$label:- $product->name on " . date('Y-m-d H:i:s');
+        $tran = $this->postTransaction([
+            'acct_no' => $inv->acct_no, 'acct_type' => $inv->acct_type,
+            'contra_acct_no' => $pay->acct_no, 'contra_acct_type' => $pay->acct_type,
+            'description' => $desc, 'dr_cr_ind' => 'DR/CR', 'tran_amount' => $amount,
+            'reversal_flag' => 'N', 'tran_date' => $date, 'tran_cd' => 'STI', 'tran_id' => $this->generateUuid(),
+            'status' => 'Active', 'institution_id' => $userData->institution_id, 'branch_id' => $userData->branch_id,
+            'created_by' => $userData->id, 'created_on' => now(),
+            'product_id' => $product->id, 'stock_id' => $stockId, 'ext_ref' => $extRef, 'tran' => $label,
+        ]);
+
+        $base = [
+            'tran_amt' => $amount, 'reversal_flag' => 'N', 'description' => $desc, 'transaction_date' => $date,
+            'tran_type' => 'STOCK IN', 'tran_cd' => 'STI', 'tran_id' => $tran->tran_id,
+            'institution_id' => $userData->institution_id, 'branch_id' => $userData->branch_id,
+            'created_by' => $userData->id, 'status' => 'Active',
+        ];
+        $this->postGlDR((object) array_merge($base, [
+            'acct_no' => $inv->acct_no, 'acct_type' => $inv->acct_type,
+            'contra_acct_no' => $pay->acct_no, 'contra_acct_type' => $pay->acct_type,
+        ]));
+        $this->postGlCR((object) array_merge($base, [
+            'acct_no' => $pay->acct_no, 'acct_type' => $pay->acct_type,
+            'contra_acct_no' => $inv->acct_no, 'contra_acct_type' => $inv->acct_type,
+        ]));
+
+        return $tran;
+    }
+
+    /**
+     * Post a change in inventory value against Stock Adjustment: a positive amount
+     * raises Inventories (Dr STI / Cr SAD), a negative one writes it down.
+     */
+    protected function postInventoryAdjustment($userData, $branch, float $amount, $tranId, string $desc): void
+    {
+        if (abs($amount) < 0.005) {
+            return;
+        }
+        $inv = $this->resolveControlAccount('STI', $userData->institution_id, $branch->code);
+        $sad = $this->resolveControlAccount('SAD', $userData->institution_id, $branch->code);
+        if (!$inv || !$sad) {
+            throw new \RuntimeException("Inventory or stock adjustment control account is missing for branch $branch->code.");
+        }
+        if ($amount > 0) {
+            $this->postJournal($inv->acct_no, $inv->acct_type, $sad->acct_no, $sad->acct_type, $amount, $tranId, $desc, now(), $userData, 'ADJ', 'Stock Adjustment');
+        } else {
+            $this->postJournal($sad->acct_no, $sad->acct_type, $inv->acct_no, $inv->acct_type, abs($amount), $tranId, $desc, now(), $userData, 'ADJ', 'Stock Adjustment');
+        }
+    }
+
+    /**
+     * Bring a product's on-hand stock to an edited quantity and unit cost: revalue
+     * the open cost layers when the cost changed, then receive or issue the
+     * quantity difference. Each value change is posted against Stock Adjustment.
+     * Callers own stocks.quantity; this keeps the layers and the GL in step with it.
+     */
+    protected function adjustStockToCount($product, $branch, $userData, float $newQty, float $newUnitCost, float $oldUnitCost, $ref): void
+    {
+        $method = $product->valuation_method ?? 'WAVG';
+        $tranId = $this->generateUuid();
+        $layers = \App\Models\InventoryCostLayer::where([
+            'product_id' => $product->id, 'branch_id' => $branch->id, 'status' => 'Active',
+        ])->where('remaining_quantity', '>', 0)->get();
+        $layerQty = 0;
+        $layerVal = 0;
+        foreach ($layers as $l) {
+            $layerQty += (float) $l->remaining_quantity;
+            $layerVal += (float) $l->remaining_quantity * (float) $l->unit_cost;
+        }
+
+        // a changed cost re-values what is on hand (standard-cost layers stay at standard)
+        if ($method !== 'STANDARD' && $layerQty > 0 && abs($newUnitCost - $oldUnitCost) > 0.0001) {
+            foreach ($layers as $l) {
+                $l->unit_cost = $newUnitCost;
+                $l->updated_on = now();
+                $l->save();
+            }
+            $this->postInventoryAdjustment($userData, $branch, $newUnitCost * $layerQty - $layerVal, $tranId,
+                "Revalue $product->name to $newUnitCost per unit ($ref)");
+        }
+
+        $diff = $newQty - $layerQty;
+        if ($diff > 0.000001) {
+            $unit = $method === 'STANDARD' ? (float) ($product->standard_cost ?? 0) : $newUnitCost;
+            $this->receiveStock($product->id, $branch->id, $diff, $newUnitCost, 'ADJUSTMENT', $ref, now(), $userData, $tranId);
+            $this->postInventoryAdjustment($userData, $branch, $unit * $diff, $tranId, "Stock count increase for $product->name ($ref)");
+        } elseif ($diff < -0.000001) {
+            $cost = $this->issueStock($product->id, $branch->id, -$diff, $userData, 'ADJUSTMENT', $ref, $tranId);
+            $this->postInventoryAdjustment($userData, $branch, -$cost, $tranId, "Stock count decrease for $product->name ($ref)");
+        }
+        $this->refreshStockCost($product->id, $branch->id);
+    }
+
+    /**
+     * Reverse a posted transaction by flag-and-exclude: undo each live row's effect
+     * on gl_balances (by the account's own type) and mark the row reversed. No
+     * opposite rows are written, so a repeated reversal cannot cascade.
+     * Returns the reversed rows.
+     */
+    protected function reverseGlTran($tranId, $userId)
+    {
+        $rows = GlHistory::where(['tran_id' => $tranId, 'reversal_flag' => 'N'])->get();
+        foreach ($rows as $item) {
+            $balance = GlBalances::where('acct_no', $item->acct_no)->first();
+            if (isset($balance)) {
+                $amt = (float) $item->tran_amount;
+                $sign = ($item->dr_cr_ind == 'Dr') === $this->isDebitNormal($balance->acct_type) ? -1 : 1;
+                $balance->balance = $balance->balance + $sign * $amt;
+                $balance->updated_on = now();
+                $balance->save();
+            }
+            $item->status = 'Deleted';
+            $item->reversal_flag = 'Y';
+            $item->updated_by = $userId;
+            $item->updated_on = now();
+            $item->save();
+        }
+        return $rows;
+    }
+
+
+    /**
+     * Summary of paginate
+     * @param mixed $rowsPerPage
+     * @param mixed $totalSql
+     * @param mixed $sqlQuery
+     * @return LengthAwarePaginator<TKey, mixed>
+     */
+    public function paginate($rowsPerPage, $totalSql, $sqlQuery, $currentPage = null): LengthAwarePaginator
     {
         try {
-            $transaction = Transaction::where('product_id', $productId)
-                ->where('institution_id', $institutionId)
-                ->where('branch_id', $branchId)
-                ->first();
-
-            if (!$transaction) {
-                Log::error("Transaction not found for description: {$productId}, institutionId: {$institutionId}, branchId: {$branchId}");
-                throw new \Exception("Transaction not found for description: {$productId}, institutionId: {$institutionId}, branchId: {$branchId}");
+            if (is_null($currentPage)) {
+                $currentPage = LengthAwarePaginator::resolveCurrentPage();
             }
 
-            $oldAmount = $transaction->tran_amount;
-            $transaction->update([
-                'tran_amount' => $amount,
-                'updated_on' => Carbon::now(),
-            ]);
+            $totalResult = DB::select($totalSql);
 
-            $transaction['old_amount']= $oldAmount;
-            return $transaction;
 
-        } catch (\Exception $e) {
-            Log::error("Failed to update transaction: " . $e->getMessage());
-            throw new \Exception("An error occurred while updating the transaction.", 500, $e);
+            $total = isset($totalResult[0]) ? (int) $totalResult[0]->total : 0;
+
+            if (!isset($rowsPerPage)) {
+                $rowsPerPage = 10;
+            }
+
+            $offset = ($currentPage - 1) * $rowsPerPage;
+
+            $sqlQuery .= " LIMIT $rowsPerPage OFFSET $offset ";
+
+            $results = DB::select($sqlQuery);
+
+
+            $paginatedLogs = new LengthAwarePaginator(
+                $results,
+                $total,
+                $rowsPerPage,
+                $currentPage,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+
+            return $paginatedLogs;
+        } catch (\Throwable $th) {
+            throw $th;
         }
     }
 
 
-    public function updatePayable(string $tranId, float $amount)
+
+    public function getLicenseDetails($institutionId)
     {
-        $payable = Payable::where('tran_id', $tranId)->first();
-        if ($payable) {
-            $payable->update([
-                'amount' => $amount,
-                'updated_on' => Carbon::now(),
-            ]);
+        try {
+            $queryString = "SELECT L.id, L.license_package_id, L.license_package_price_id,
+            L.start_date, L.end_date, L.quantity, L.paid, L.institution_id,
+            L.status, L.created_at, P.name AS package_name, P.implementation,
+            P.description,X.amount, D.name AS duration, D.unit,
+            D.description as duration_desc,
+            COALESCE(
+                json_agg(
+                DISTINCT jsonb_build_object(
+                    'id', C.id,
+                    'license_benefit_id', C.license_benefit_id,
+                    'benefit', B.name,
+                    'status', C.status,
+                    'created_at', C.created_at
+                )
+                ) FILTER (WHERE C.id IS NOT NULL),
+                '[]'
+            ) AS benefits,
+                GREATEST(AGE(L.end_date, NOW()), INTERVAL '0') AS remaining_time
+            FROM institution_licenses L
+            INNER JOIN license_packages P ON P.id =  L.license_package_id
+            INNER JOIN license_package_prices X ON X.id = L.license_package_price_id
+            INNER JOIN durations D ON D.id = X.duration_id
+            LEFT JOIN license_package_benefits C ON C.license_package_id = P.id
+            LEFT JOIN license_benefits B ON B.id = C.license_benefit_id
+            WHERE L.institution_id = ?
+            GROUP BY L.id, P.name, P.implementation, P.description,
+            X.amount, D.name, D.unit, D.description";
+
+            return  DB::select($queryString, [$institutionId]);
+        } catch (\Throwable $th) {
+            throw new \Exception("An error occurred while validating the institution ID.", 500, $th);
         }
-        return $payable;
     }
 
 
-    public function updateGlHistory(string $tranId, float $amount, float $old_amount)
+    function saveBase64Image(string $base64Image, string $directory = 'images'): ?string
     {
-        $glHistory = GlHistory::where(['tran_id'=> $tranId, 'tran_amount'=> $old_amount])->get();
+        // Check if base64 string has the image data and mime type
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
+            $image = substr($base64Image, strpos($base64Image, ',') + 1);
+            $extension = strtolower($type[1]); // jpg, png, gif
 
-        Log::info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        Log::info($glHistory);
-        Log::info($tranId);
-        Log::info($amount);
+            if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
+                throw new \Exception('Invalid image type');
+            }
+
+            $image = base64_decode($image);
+
+            if ($image === false) {
+                throw new \Exception('Base64 decode failed');
+            }
+
+            // $fileName = Str::uuid() . '.' . $extension;
+            $fileName = now()->format('Y_m_d_His') . '_' . Str::uuid() . '.' . $extension;
+            $filePath = $directory . '/' . $fileName;
+
+            Storage::disk('public')->put($filePath, $image);
+
+            // return $filePath; // saved under storage/app/public/$directory
+            return asset(Storage::url($filePath));
+        }
+
+        return null;
+    }
+
+    /**
+     * Save a base64 data-URL of any supported document (images, PDF, Office docs)
+     * to the public disk and return its asset URL. Used for supplier contracts and
+     * documents. Returns null if the input is not a recognised base64 data URL.
+     */
+    protected function saveBase64File(string $base64, string $directory = 'documents'): ?string
+    {
+        if (!preg_match('#^data:([\w.+/-]+);base64,#', $base64, $m)) {
+            return null;
+        }
+        $mime = strtolower($m[1]);
+        $map = [
+            'image/jpeg' => 'jpg', 'image/jpg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif',
+            'image/webp' => 'webp', 'application/pdf' => 'pdf', 'text/plain' => 'txt', 'text/csv' => 'csv',
+            'application/msword' => 'doc',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+            'application/vnd.ms-excel' => 'xls',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+        ];
+        if (!isset($map[$mime])) {
+            throw new \Exception('Unsupported document type');
+        }
+        $data = base64_decode(substr($base64, strpos($base64, ',') + 1));
+        if ($data === false) {
+            throw new \Exception('Base64 decode failed');
+        }
+        $filePath = $directory . '/' . now()->format('Y_m_d_His') . '_' . Str::uuid() . '.' . $map[$mime];
+        Storage::disk('public')->put($filePath, $data);
+        return asset(Storage::url($filePath));
+    }
 
 
-        foreach ($glHistory as $value) {
-            $glBalance = GlBalances::where('acct_no', $value['acct_no'])->first();
+
+    /**
+     * Summary of getCntParameterByCd
+     * getting control parameter by code
+     * @param mixed $param_cd
+     * @param mixed $institution_id
+     * @param mixed $branch_cd
+     * @return GlAccounts|null
+     */
+    public function getCntParameterByCd($param_cd, $institution_id, $branch_cd)
+    {
+        $cnt = CntrlParameter::where(['param_cd' => $param_cd, 'institution_id' => $institution_id])->first();
+        if (!isset($cnt)) {
+            return null;
+        }
+        $cntGl = str_replace('***', $branch_cd, $cnt->param_value);
+        $acct = GlAccounts::where('acct_no', $cntGl)->first();
+        return $acct;
+    }
 
 
-            if ($value['dr_cr_ind'] == 'Dr') {
-                if ($glBalance->acct_type == 'ASSET' || $glBalance->acct_type == 'EXPENSE') {
-                    $glBalance->update([
-                        "balance" => $glBalance->balance - $value['tran_amount'],
-                        'updated_on' => Carbon::now(),
-                    ]);
 
-                    $glBalance->update([
-                        "balance" => $glBalance->balance + $amount,
-                        'updated_on' => Carbon::now(),
-                    ]);
-                } else {
-                    $glBalance->update([
-                        "balance" => $glBalance->balance + $value['tran_amount'],
-                        'updated_on' => Carbon::now(),
-                    ]);
 
-                    $glBalance->update([
-                        "balance" => $glBalance->balance - $amount,
-                        'updated_on' => Carbon::now(),
-                    ]);
+    public function downloadPDF($title, $orientation = 'portrait', $genericData)
+    {
+        $userData = $this->getUserLogin();
+        $institution = Institution::find($userData->institution_id);
+        $institutionContact = InstitutionContact::where("institution_id", $userData->institution_id)->first();
+
+        if (count($genericData) > 0) {
+            // Set options and load the view
+            Pdf::setOption(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+
+            $pdf = Pdf::loadView('generic.report', compact('genericData'));
+
+            // Set paper size and orientation
+            $pdf->setBasePath(public_path());
+            $pdf->setPaper('A4', $orientation); // 'portrait' or 'landscape'
+
+            // Render the PDF to access the DomPDF canvas
+            $pdf->render();
+            $dompdf = $pdf->getDomPDF();
+            $canvas = $dompdf->getCanvas();
+            $font = $dompdf->getFontMetrics()->getFont('Helvetica', 'normal');
+
+            // Add header to each page
+            // $canvas->page_text(30, 30, "Document NameContact Information Address", $font, 10, [0, 0, 0]);
+            $canvas->page_text(350, 15, $title, $font, 12, [0, 0, 0]);
+
+            $canvas->page_text(30, 10, $institution->name, $font, 10, [0, 0, 0]);
+            $canvas->page_text(30, 20, "Phone number:" . $institutionContact->phone_number . " Email:" . $institutionContact->email, $font, 10, [0, 0, 0]);
+            $canvas->page_text(30, 30, $institution->address, $font, 10, [0, 0, 0]);
+
+            // Add footer to each page
+            // Position and add printed by and powered by text
+            $canvas->page_text(30, 550, "Powered by:Smart Collect. Printed by:" . $userData->first_name . ". " . $userData->last_name . " " . $userData->other_name . " On:" . date('D d M Y'), $font, 10, [0, 0, 0]);
+
+            $canvas->page_text(700, 550, "Page {PAGE_NUM} of {PAGE_COUNT}", $font, 10, [0, 0, 0]);     //landscape
+
+            // Stream the generated PDF
+            return $pdf->stream('sales_report.pdf');
+        }
+    }
+
+    public function getUserInstitution()
+    {
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+            if (!$isNotAdmin) {
+                throw new \Exception("Unauthorized access to institution data.", 403);
+            }
+            $institution = Institution::find($userData->institution_id);
+            return $institution;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+
+    /**
+     * Safe Date
+     * This method is used to safely parse a date string and return null if the date is invalid.
+     * It also handles bad JS date: "Thu Jan 01 1970 03:00:00 GMT..."
+     *
+     * @param string|null $value
+     * @return string|null
+     * @throws \Exception
+     * @author Bashir <wamulabash1@gmail.com.com>
+     */
+    public function safeDate(?string $value): ?string
+    {
+        if (empty($value) || $value === 'null') {
+            return null;
+        }
+
+        try {
+            // Try normal parsing first (ISO, Y-m-d, etc.). A JS Date serialises to
+            // UTC ("2026-10-18T21:00:00.000Z" for local midnight on the 19th), so
+            // convert to the app timezone before taking the date part.
+            $date = Carbon::parse($value)->setTimezone(config('app.timezone'))->toDateString();
+        } catch (\Throwable $e) {
+            try {
+                // Handle bad JS date: "Thu Jan 01 1970 03:00:00 GMT..."
+                $clean = substr($value, 0, 24);
+                $date = Carbon::createFromFormat('D M d Y H:i:s', $clean)
+                    ->toDateString();
+            } catch (\Throwable $e) {
+                return null; // NEVER throw
+            }
+        }
+
+        // Kill the epoch date here
+        return $date === '1970-01-01' ? null : $date;
+    }
+
+    /**
+     * Joins needed to price an order_items row (aliased O) in the unit it was sold in:
+     * the branch stock row (S) and the sold unit's conversion factor (PU).
+     */
+    protected function saleLineJoins(): string
+    {
+        return " LEFT JOIN stocks S ON S.product_id = O.product_id AND S.branch_id = O.branch_id
+            LEFT JOIN LATERAL (SELECT PX.conversion_factor FROM product_units PX
+                WHERE PX.product_id = O.product_id AND PX.measurement_unit_id = O.measurement_unit_id AND PX.status = 'Active'
+                ORDER BY (PX.branch_id = O.branch_id) DESC NULLS LAST, PX.id LIMIT 1) PU ON TRUE ";
+    }
+
+    /**
+     * Selling price per sold unit. Lines from before base_qty existed may have no
+     * selling_price, so fall back to the stock (base unit) price scaled to the sold unit.
+     */
+    protected function saleLinePriceSql(): string
+    {
+        return "COALESCE(O.selling_price, S.selling_price * COALESCE(PU.conversion_factor, 1), 0)";
+    }
+
+    /**
+     * Purchase price per sold unit. Lines from before base_qty existed stored the
+     * column default of 0, so fall back to the stock price scaled to the sold unit.
+     */
+    protected function saleLineCostSql(): string
+    {
+        return "(CASE WHEN O.base_qty IS NULL AND COALESCE(O.purchase_price, 0) = 0
+            THEN COALESCE(S.purchase_price * COALESCE(PU.conversion_factor, 1), 0)
+            ELSE COALESCE(O.purchase_price, 0) END)";
+    }
+
+    /**
+     * Keep the warehouse stock sub-ledger in step with branch stock movements.
+     * Applies a signed base-unit delta to a product's row in the branch's default
+     * warehouse (or the given warehouse). Best-effort: any failure is logged, not
+     * thrown, so it can never break a sale or product save.
+     */
+    protected function adjustWarehouseStock($productId, $branchId, $deltaBaseQty, $warehouseId = null)
+    {
+        try {
+            if (!$warehouseId) {
+                $wh = \App\Models\Warehouse::where(['branch_id' => $branchId, 'is_default' => true])->first()
+                    ?: \App\Models\Warehouse::where('branch_id', $branchId)->first();
+                if (!$wh) {
+                    return; // no warehouse for this branch yet
                 }
+                $warehouseId = $wh->id;
             } else {
-                if ($glBalance->acct_type == 'ASSET' || $glBalance->acct_type == 'EXPENSE') {
-                    $glBalance->update([
-                        "balance" => $glBalance->balance + $value['tran_amount'],
-                        'updated_on' => Carbon::now(),
-                    ]);
-                    $glBalance->update([
-                        "balance" => $glBalance->balance - $amount,
-                        'updated_on' => Carbon::now(),
-                    ]);
-                } else {
-                    $glBalance->update([
-                        "balance" => $glBalance->balance - $value['tran_amount'],
-                        'updated_on' => Carbon::now(),
-                    ]);
-
-                    $glBalance->update([
-                        "balance" => $glBalance->balance + $amount,
-                        'updated_on' => Carbon::now(),
-                    ]);
-                }
+                $wh = \App\Models\Warehouse::find($warehouseId);
             }
-            $editHistory = GlHistory::find($value['id']);
-            $editHistory->update([
-                'tran_amount' => $amount
-            ]);
+
+            $row = \App\Models\WarehouseStock::where([
+                'warehouse_id' => $warehouseId,
+                'product_id' => $productId,
+            ])->whereNull('location_id')->first();
+
+            if (!$row) {
+                $row = new \App\Models\WarehouseStock();
+                $row->warehouse_id = $warehouseId;
+                $row->location_id = null;
+                $row->product_id = $productId;
+                $row->quantity = 0;
+                $row->institution_id = $wh->institution_id ?? null;
+                $row->branch_id = $branchId;
+                $row->status = 'Active';
+                $row->created_on = now();
+            }
+            $row->quantity = (float) $row->quantity + (float) $deltaBaseQty;
+            $row->updated_on = now();
+            $row->save();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('adjustWarehouseStock failed: ' . $e->getMessage());
         }
     }
 
+    // ============================ Inventory valuation engine ================
+    // Perpetual cost layers: every receipt records a costed layer; every issue
+    // consumes layers by the product's valuation_method and returns the cost the
+    // caller posts to the GL. These manage COST only — callers still own the
+    // stocks.quantity change, so SUM(remaining) stays == stocks.quantity.
 
-//     public function updateGlHistory(int $tranId, float $amount): void
-// {
-//     try {
-//         DB::transaction(function () use ($tranId, $amount) {
-//             $glHistories = GlHistory::where('tran_id', $tranId)->get();
+    /**
+     * Record a stock receipt as a cost layer. Returns the standard-cost variance
+     * (0 unless the product is STANDARD-costed): (actual - standard) * qty. Refreshes
+     * the cached stocks.purchase_price to the weighted average and logs an IN movement.
+     * The caller posts the receipt GL (and postStandardVariance for the returned value).
+     */
+    protected function receiveStock($productId, $branchId, $qty, $actualUnitCost, $sourceType, $sourceRef, $date, $userData, $tranId = null)
+    {
+        $qty = (float) $qty;
+        if ($qty <= 0) {
+            return 0;
+        }
+        $product = \App\Models\Product::find($productId);
+        $method = $product->valuation_method ?? 'WAVG';
+        $standard = (float) ($product->standard_cost ?? 0);
+        $layerCost = ($method === 'STANDARD') ? $standard : (float) $actualUnitCost;
+        $variance = ($method === 'STANDARD') ? (((float) $actualUnitCost - $standard) * $qty) : 0;
 
-//             foreach ($glHistories as $history) {
-//                 $glBalance = GlBalances::where('acct_no', $history->acct_no)->first();
+        \App\Models\InventoryCostLayer::create([
+            'product_id' => $productId, 'branch_id' => $branchId, 'institution_id' => $userData->institution_id,
+            'source_type' => $sourceType, 'source_ref' => $sourceRef, 'receipt_date' => $date ?? now(),
+            'quantity' => $qty, 'remaining_quantity' => $qty, 'unit_cost' => $layerCost,
+            'status' => 'Active', 'created_by' => $userData->id ?? null, 'created_on' => now(),
+        ]);
 
-//                 if (!$glBalance) {
-//                     throw new \Exception("GL Balance not found for account: {$history->acct_no}");
-//                 }
+        $this->refreshStockCost($productId, $branchId);
 
-//                 // Determine the sign change based on account type and Dr/Cr indicator
-//                 $multiplier = ($glBalance->acct_type == 'ASSET' || $glBalance->acct_type == 'EXPENSE') ? 1 : -1;
-//                 $adjustment = ($history->dr_cr_ind == 'Dr') ? -1 : 1;
+        \App\Models\InventoryMovement::create([
+            'product_id' => $productId, 'branch_id' => $branchId, 'institution_id' => $userData->institution_id,
+            'direction' => 'IN', 'quantity' => $qty, 'unit_cost' => $layerCost, 'total_cost' => $layerCost * $qty,
+            'method' => $method, 'source_type' => $sourceType, 'ref_no' => $sourceRef, 'tran_id' => $tranId,
+            'created_by' => $userData->id ?? null, 'created_on' => now(),
+        ]);
 
-//                 // Compute new balance
-//                 $newBalance = $glBalance->balance + ($adjustment * $multiplier * -$history->tran_amount);
-//                 $newBalance += ($adjustment * $multiplier * $amount);
+        return $variance;
+    }
 
-//                 // Update GL balance in a single query
-//                 $glBalance->update([
-//                     'balance' => $newBalance,
-//                     'updated_on' => Carbon::now(),
-//                 ]);
+    /**
+     * Issue stock from the cost-layer ledger by the product's valuation method and
+     * return the total cost consumed. Decrements remaining_quantity, refreshes the
+     * cached cost, logs an OUT movement. The caller posts the GL with this cost.
+     */
+    protected function issueStock($productId, $branchId, $qty, $userData, $sourceType = 'SALE', $sourceRef = null, $tranId = null)
+    {
+        $qty = (float) $qty;
+        if ($qty <= 0) {
+            return 0;
+        }
+        $product = \App\Models\Product::find($productId);
+        $method = $product->valuation_method ?? 'WAVG';
+        $standard = (float) ($product->standard_cost ?? 0);
 
-//                 // Update GL history
-//                 $history->update([
-//                     'tran_amount' => $amount
-//                 ]);
-//             }
-//         });
-//     } catch (\Exception $e) {
-//         Log::error("Failed to update GL History: " . $e->getMessage());
-//         throw new \Exception("An error occurred while updating GL history.", 500, $e);
-//     }
-// }
+        $base = \App\Models\InventoryCostLayer::where([
+            'product_id' => $productId, 'branch_id' => $branchId, 'status' => 'Active',
+        ])->where('remaining_quantity', '>', 0);
+
+        // pooled weighted-average across open layers (used by WAVG)
+        $avg = 0;
+        if ($method === 'WAVG') {
+            $totRem = 0; $totVal = 0;
+            foreach ((clone $base)->get() as $l) {
+                $totRem += (float) $l->remaining_quantity;
+                $totVal += (float) $l->remaining_quantity * (float) $l->unit_cost;
+            }
+            $avg = $totRem > 0 ? $totVal / $totRem : 0;
+            // perpetual average: every unit left carries the average too. Leaving
+            // the layers at their own costs while charging the average made the
+            // layer value drift from the Inventories account on every sale.
+            (clone $base)->update(['unit_cost' => $avg, 'updated_on' => now()]);
+        }
+
+        $layers = $method === 'LIFO'
+            ? (clone $base)->orderBy('receipt_date', 'desc')->orderBy('id', 'desc')->get()
+            : (clone $base)->orderBy('receipt_date', 'asc')->orderBy('id', 'asc')->get();
+
+        $remainingToIssue = $qty;
+        $totalCost = 0;
+        foreach ($layers as $layer) {
+            if ($remainingToIssue <= 0) {
+                break;
+            }
+            $take = min((float) $layer->remaining_quantity, $remainingToIssue);
+            if ($method === 'WAVG') {
+                $unit = $avg;
+            } elseif ($method === 'STANDARD') {
+                $unit = $standard;
+            } else {
+                $unit = (float) $layer->unit_cost; // FIFO / LIFO
+            }
+            $totalCost += $take * $unit;
+            $layer->remaining_quantity = (float) $layer->remaining_quantity - $take;
+            $layer->updated_on = now();
+            $layer->save();
+            $remainingToIssue -= $take;
+        }
+        // not enough layered quantity (e.g. legacy drift): cost the remainder sensibly
+        if ($remainingToIssue > 0.00001) {
+            $unit = ($method === 'STANDARD') ? $standard : (($method === 'WAVG') ? $avg : (float) ($product->standard_cost ?? 0));
+            $totalCost += $remainingToIssue * $unit;
+        }
+
+        $this->refreshStockCost($productId, $branchId);
+
+        \App\Models\InventoryMovement::create([
+            'product_id' => $productId, 'branch_id' => $branchId, 'institution_id' => $userData->institution_id,
+            'direction' => 'OUT', 'quantity' => $qty, 'unit_cost' => $qty > 0 ? $totalCost / $qty : 0, 'total_cost' => $totalCost,
+            'method' => $method, 'source_type' => $sourceType, 'ref_no' => $sourceRef, 'tran_id' => $tranId,
+            'created_by' => $userData->id ?? null, 'created_on' => now(),
+        ]);
+
+        return $totalCost;
+    }
+
+    /**
+     * Recompute the cached stocks.purchase_price as the weighted average of the
+     * product's open cost layers (display/last-cost convenience only).
+     */
+    protected function refreshStockCost($productId, $branchId)
+    {
+        $layers = \App\Models\InventoryCostLayer::where([
+            'product_id' => $productId, 'branch_id' => $branchId, 'status' => 'Active',
+        ])->where('remaining_quantity', '>', 0)->get();
+        $totRem = 0; $totVal = 0;
+        foreach ($layers as $l) {
+            $totRem += (float) $l->remaining_quantity;
+            $totVal += (float) $l->remaining_quantity * (float) $l->unit_cost;
+        }
+        if ($totRem > 0) {
+            \App\Models\stock::where(['product_id' => $productId, 'branch_id' => $branchId])
+                ->update(['purchase_price' => $totVal / $totRem]);
+        }
+    }
+
+    /**
+     * For STANDARD-cost products, move the actual-vs-standard difference out of
+     * Inventory into Purchase Price Variance, so inventory is carried at standard.
+     * variance > 0 = paid above standard (Dr PPV / Cr Inventory); < 0 = below.
+     */
+    protected function postStandardVariance($userData, $branch, $variance, $tranId, $desc)
+    {
+        if (abs((float) $variance) < 0.0001) {
+            return;
+        }
+        $inv = $this->resolveControlAccount('STI', $userData->institution_id, $branch->code);
+        $ppv = $this->resolveControlAccount('PPV', $userData->institution_id, $branch->code);
+        if (!$inv || !$ppv) {
+            return;
+        }
+        if ($variance > 0) {
+            $this->postJournal($ppv->acct_no, $ppv->acct_type, $inv->acct_no, $inv->acct_type, (float) $variance, $tranId, $desc, now(), $userData, 'PPV', 'Purchase Price Variance');
+        } else {
+            $this->postJournal($inv->acct_no, $inv->acct_type, $ppv->acct_no, $ppv->acct_type, abs((float) $variance), $tranId, $desc, now(), $userData, 'PPV', 'Purchase Price Variance');
+        }
+    }
 }

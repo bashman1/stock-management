@@ -12,54 +12,25 @@ use App\Models\UserBranch;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
 
 
     public function createUser(Request $request){
-        // try {
+        try {
             $user = $this->newUser($request);
-            // if(isset($request->id)){
-            //     $user = User::find($request->id);
-            //     $user->updated_at = Carbon::now();
-            // }else{
-            //     $user = new User();
-            //     $user->created_by = 1;
-            //     $user->created_on = now();
-            //     $user->password = bcrypt($request->password);
-            // }
-
-            // $user->first_name = $request->first_name;
-            // $user->last_name = $request->last_name;
-            // $user->other_name = $request->other_name;
-            // $user->email = $request->email;
-            // $user->phone_number = $request->phone_number;
-            // $user->gender = $request->gender;
-            // $user->date_of_birth = $request->date_of_birth;
-            // $user->address = $request->address;
-            // $user->city_id = $request->city_id;
-            // $user->status = $request->status;
-            // $user->street = $request->street;
-            // $user->p_o_box = $request->p_o_box;
-            // $user->description = $request->description;
-            // $user->role_id =  $request->role_id;
-            // $user->user_type = $request->user_type;
-            // $user->user_category =  $request->user_category;
-            // $user->institution_id = $request->institution_id;
-            // $user->branch_id =  $request->branch_id;
-            // $user->original_branch_id = $request->branch_id;
-
-            // $user->save();
             return $this->genericResponse(true, "User created successfully", 201, $user, "createUser", $request);
-        // } catch (\Throwable $th) {
-        //     return $this->genericResponse(false, "User creation  Failed", 500, []);
-        // }
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, "User creation  Failed", 500, []);
+        }
     }
 
 
     public function login(Request $request){
-        // try {
+        try {
             $login_data = $request->validate([
                 "email" => "required",
                 "password" => "required",
@@ -74,6 +45,8 @@ class UserController extends Controller
                 return $this->genericResponse(false, "User account not activated", 404, ["login" => auth()->attempt($login_data)], "login", $request->all());
             }
 
+            $license= null;
+
             if (isset($userData->institution_id)){
                 $institution = Institution::find($userData->institution_id);
                 $branch = Branch::find($userData->branch_id);
@@ -84,7 +57,17 @@ class UserController extends Controller
 
                 $userData->institution_name=$institution->name;
                 $userData->branch_name=$branch->name;
+                $userData->institution_logo=$institution->image;
 
+
+                $license = $this->getLicenseDetails($institution->id);
+                if (isset($license[0]->id)){
+                    if (Carbon::parse($license[0]->end_date)->isPast()) {
+                        // End date is before now (expired)
+                        return $this->genericResponse(false, "Business license expired", 404, [], "login", $request);
+                    }
+                    $license = $license[0];
+                }
             }else{
                 $userData->institution_name=null;
                 $userData->branch_name=null;
@@ -116,16 +99,15 @@ class UserController extends Controller
             $userData->role = $role;
             $userData->permissions = $permissions;
 
-            return $this->genericResponse(true, "Logged in successfully", 200, ["token" => $token, "user_data" => $userData], "login", $request);
-        // } catch (\Exception $e) {
-        //     return $this->genericResponse(false, "User creation  Failed", 500, $e->getMessage());
-        // }
+            return $this->genericResponse(true, "Logged in successfully", 200, ["token" => $token, "user_data" => $userData, 'license'=>$license], "login", $request);
+        } catch (\Exception $e) {
+            return $this->genericResponse(false, "User creation  Failed", 500, $e->getMessage());
+        }
     }
 
     public function getUsers(){
         try {
-            // $users = User::orderBy('id', 'desc')->get();
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
 
             $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email,
@@ -133,9 +115,9 @@ class UserController extends Controller
             U.created_on,U.updated_at, C.name AS city, R.name AS role, I.name AS institution, B.name AS branch,
             CONCAT(V.first_name,' ', V.last_name,' ', V.other_name) as created_by
             FROM users U LEFT JOIN city_refs C ON C.id =U.city_id
-            INNER JOIN roles R ON R.id = U.role_id
-            INNER JOIN institutions I ON I.id = U.institution_id
-            INNER JOIN branches B ON B.id = U.branch_id
+            LEFT JOIN roles R ON R.id = U.role_id
+            LEFT JOIN institutions I ON I.id = U.institution_id
+            LEFT JOIN branches B ON B.id = U.branch_id
             LEFT JOIN users V ON V.id = U.created_by  ";
             if($isNotAdmin){
                     $queryString.=" WHERE U.institution_id = $userData->institution_id AND U.branch_id=$userData->branch_id ";
@@ -149,12 +131,64 @@ class UserController extends Controller
     }
 
 
-    public function getUserDetails(Request $request){
+    /**
+     * Server-side paginated + filtered user list for the Users table (lazy load).
+     * Filters: search (name/email/phone/institution/role), status, created date range.
+     */
+    public function getUsersList(Request $request){
         try {
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
 
-            $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email,
+            $select = "SELECT U.id, U.first_name, U.last_name, U.other_name, U.phone_number, U.gender, U.email,
+                U.status, U.role_id, U.institution_id, U.branch_id, U.created_at,
+                R.name AS role, I.name AS institution, B.name AS branch,
+                CONCAT(V.first_name,' ', V.last_name,' ', V.other_name) as created_by ";
+            $from = " FROM users U
+                LEFT JOIN roles R ON R.id = U.role_id
+                LEFT JOIN institutions I ON I.id = U.institution_id
+                LEFT JOIN branches B ON B.id = U.branch_id
+                LEFT JOIN users V ON V.id = U.created_by ";
+
+            $where = " WHERE 1=1 ";
+            if ($isNotAdmin) {
+                $where .= " AND U.institution_id = " . (int) $userData->institution_id . " AND U.branch_id = " . (int) $userData->branch_id . " ";
+            }
+            if (!empty(trim($request->search ?? ''))) {
+                $s = str_replace("'", "", trim($request->search));
+                $where .= " AND (U.first_name ILIKE '%$s%' OR U.last_name ILIKE '%$s%' OR U.other_name ILIKE '%$s%'
+                    OR U.email ILIKE '%$s%' OR U.phone_number ILIKE '%$s%' OR I.name ILIKE '%$s%' OR R.name ILIKE '%$s%') ";
+            }
+            if (!empty($request->status)) {
+                $st = str_replace("'", "", $request->status);
+                $where .= " AND U.status = '$st' ";
+            }
+            if (!empty($request->startDate)) {
+                $sd = date('Y-m-d', strtotime($request->startDate));
+                $where .= " AND U.created_at::date >= '$sd' ";
+            }
+            if (!empty($request->endDate)) {
+                $ed = date('Y-m-d', strtotime($request->endDate));
+                $where .= " AND U.created_at::date <= '$ed' ";
+            }
+
+            $queryString = $select . $from . $where . " ORDER BY U.id DESC ";
+            $totalSql = " SELECT COUNT(U.id) AS total " . $from . $where;
+
+            $users = $this->paginate($request->rowPerPage, $totalSql, $queryString);
+            return $this->genericResponse(true, "Users retrieved successfully", 200, $users, "getUsersList", []);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, "Users could not be retrieved", 500, [], "getUsersList", []);
+        }
+    }
+
+
+    public function getUserDetails(Request $request){
+        try {
+            $userData = $this->getUserLogin();
+            $isNotAdmin = $this->isNotAdmin();
+
+            $queryString = "SELECT U.id,U.first_name, U.last_name,U.other_name, U.phone_number, U.gender, U.date_of_birth, U.address, U.city_id, U.email, U.image,
             U.status, U.user_type, U.user_category, U.street, U.p_o_box, U.description, U.role_id, U.institution_id, U.branch_id, U.created_at,
             U.created_on,U.updated_at, C.name AS city, R.name AS role, I.name AS institution, B.name AS branch,
             CONCAT(V.first_name,' ', V.last_name,' ', V.other_name) as created_by
@@ -165,7 +199,6 @@ class UserController extends Controller
             LEFT JOIN users V ON V.id = U.created_by
             WHERE U.id = $request->userId ";
             if($isNotAdmin){
-                    // $queryString.=" AND U.institution_id = $userData->institution_id AND U.branch_id=$userData->branch_id ";
                     $queryString.=" AND U.institution_id = $userData->institution_id ";
             }
             $queryString.=" ORDER BY U.id DESC ";
@@ -186,7 +219,7 @@ class UserController extends Controller
 
     public function assignBranchesToUsers(Request $request){
         try {
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
             DB::beginTransaction();
             $clearExisting = UserBranch::where(["user_id"=> $request->user, "status"=> "Active"])->get();
 
@@ -228,7 +261,6 @@ class UserController extends Controller
     public function getUserBranches(Request $request){
         try {
             $userBranches = DB::select("SELECT U.*, B.name FROM user_branches U INNER JOIN branches B ON U.branch_id = B.id WHERE U.user_id = $request->user_id AND  U.status = '$request->status' ");
-        //    $userBranches = UserBranch::where(['user_id'=> $request->user_id, 'status'=>$request->status])->get();
            return $this->genericResponse(true, "Users branch fetched successfully", 200, $userBranches, "getUserBranches", $request);
         } catch (\Throwable $th) {
             return $this->genericResponse(false,  $th->getMessage(), 500,  $th, "getUserBranches", $request);
@@ -289,11 +321,6 @@ class UserController extends Controller
                 return $this->genericResponse(false, "User not found", 404, null, "resetPassword", $request);
             }
 
-            // Check if the provided old password matches the hashed password in the database
-            // if (!Hash::check($request->oldPassword, $user->password)) {
-            //     return $this->genericResponse(false, "Invalid old password", 401, null);
-            // }
-
             // Ensure new password and confirm password match
             if ($request->newPassword !== $request->confirmPassword) {
                 return $this->genericResponse(false, "New password and confirm password do not match", 401, null , "resetPassword", $request);
@@ -311,6 +338,73 @@ class UserController extends Controller
             DB::rollBack();
             return $this->genericResponse(false, $th->getMessage(), 500, $th, "resetPassword", $request);
         }
+    }
+
+
+    // passwsword reset methods
+
+       public function requestForm()
+    {
+        return view('auth.forgot-password');
+    }
+
+    public function sendResetLink(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        return $status === Password::RESET_LINK_SENT
+            ? back()->with(['status' => __($status)])
+            : back()->withErrors(['email' => __($status)]);
+    }
+
+    public function resetForm($token)
+    {
+        return view('auth.reset-password', ['token' => $token]);
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                    'remember_token' => Str::random(60),
+                ])->save();
+            }
+        );
+
+        return $status === Password::PASSWORD_RESET
+            ? redirect()->route('login')->with('status', __($status))
+            : back()->withErrors(['email' => [__($status)]]);
+    }
+
+
+    public function updateUserStatus(Request $request)
+    {
+        // try {
+            $user = User::find($request->userId);
+            // if (!$user) {
+            //     return $this->genericResponse(false, "User not found", 404, null, "updateUserStatus", $request);
+            // }
+
+            $user->status = $request->status;
+            $user->save();
+
+            return $this->genericResponse(true, "User status updated successfully", 200, $user, "updateUserStatus", $request);
+        // } catch (\Throwable $th) {
+        //     return $this->genericResponse(false, "Failed to update user status: " . $th->getMessage(), 500, [], "updateUserStatus", $request);
+        // }
     }
 
 

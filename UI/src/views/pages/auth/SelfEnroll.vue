@@ -41,6 +41,13 @@ const email = ref(null);
 const password = ref(null);
 const confirmPassword = ref(null);
 
+const packages = ref(null);
+const selectedPackage = ref(null);
+const prices = ref([]);
+const selectedPrice = ref(null);
+const licenseQuantity = ref(1);
+const totalLicense = ref(0);
+
 const getInstitutionTypes = () => {
     commonService.genericRequest('get-institution-types', 'get', false, {}).then((response) => {
         if (response.status) {
@@ -94,6 +101,53 @@ const validationCheck = (value, key) => {
 }
 
 
+const getPackages = (currentPage) => {
+    commonService.genericRequest(`get-license-packages?page=${currentPage}`, 'get', false, {}).then((response) => {
+        if (response.status) {
+            packages.value = response?.data?.data;
+            packages.value = packages.value.map(pkg => {
+                return {
+                    ...pkg,
+                    package_name: `${pkg.package_name}.  Implementation Fee: UGX ${commonService.commaSeparator(pkg.implementation)}`,
+                }
+            });
+        } else {
+            commonService.showError(toast, response.message);
+        }
+    })
+}
+
+
+const onPackage = (event) => {
+    if (event?.value?.license_prices) {
+        try {
+            const parsedPrices = JSON.parse(event.value.license_prices);
+            prices.value = parsedPrices.map(price => ({
+                ...price,
+                duration: `${price.duration}: UGX ${commonService.commaSeparator(price.amount)}`
+            }));
+        } catch (error) {
+            console.error('Invalid JSON in license_prices:', error);
+            prices.value = [];
+        }
+    } else {
+        prices.value = [];
+    }
+
+    getLicenseTotal();
+};
+
+
+const getLicenseTotal = () => {
+  const implementation = Number(selectedPackage.value?.implementation ?? 0);
+  const amount = Number(selectedPrice.value?.amount ?? 0);
+  const quantity = Number(licenseQuantity.value ?? 0);
+
+  totalLicense.value = implementation + (amount * quantity);
+};
+
+
+
 const onSubmit = () => {
     formError.value.name = commonService.validateFormField(name.value);
     formError.value.type = commonService.validateFormField(type.value);
@@ -111,6 +165,10 @@ const onSubmit = () => {
     formError.value.email = commonService.validateFormField(email.value);
     formError.value.password = commonService.validateFormField(password.value);
     formError.value.confirmPassword = commonService.validateFormField(confirmPassword.value);
+    formError.value.selectedPackage = commonService.validateFormField(selectedPackage.value);
+    formError.value.selectedPrice = commonService.validateFormField(selectedPrice.value);
+    formError.value.licenseQuantity = commonService.validateFormField(licenseQuantity.value);
+
 
     let invalid = commonService.validateRequiredFields(formError.value);
     if (invalid) {
@@ -144,7 +202,11 @@ const onSubmit = () => {
         other_name: oName.value,
         email: email.value,
         password: password.value,
-        confirm_password: confirmPassword.value
+        confirm_password: confirmPassword.value,
+        package: selectedPackage?.value?.id,
+        price: selectedPrice?.value?.id,
+        license_quantity: licenseQuantity?.value,
+        total_license: Number(totalLicense?.value),
     }
 
     // console.log("*****************************************")
@@ -152,7 +214,9 @@ const onSubmit = () => {
     commonService.genericRequest('institution-self-registration', 'post', false, postData).then((response) => {
         if (response.status) {
             commonService.showSuccess(toast, response.message);
-            commonService.redirect(router, "/view-institutions");
+            setTimeout(() => {
+                commonService.redirect(router, "/view-institutions");
+            }, 2000);
         } else {
             commonService.showError(toast, response.message);
         }
@@ -169,6 +233,7 @@ onMounted(() => {
     getInstitutionTypes();
     getCities();
     getBanks();
+    getPackages(1);
 
 });
 
@@ -234,6 +299,39 @@ onMounted(() => {
                     <span class="p-float-label">
                         <InputText type="text" id="instPOBox" v-model="pOBox" />
                         <label for="instPOBox">P.O Box</label>
+                    </span>
+                </div>
+
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <Dropdown id="instCity" :options="packages" v-model="selectedPackage"
+                            @blur="onInputBlur(selectedPackage, 'selectedPackage')" :class="{ 'p-invalid': formError?.selectedPackage }"
+                            optionLabel="package_name" @change="onPackage($event)"></Dropdown>
+                        <label for="instCity">Select License Package</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4" v-if="selectedPackage">
+                    <span class="p-float-label">
+                        <Dropdown id="instCity" :options="prices" v-model="selectedPrice"
+                            @blur="onInputBlur(selectedPrice, 'selectedPrice')" :class="{ 'p-invalid': formError?.selectedPrice }"
+                            optionLabel="duration" @change="getLicenseTotal"></Dropdown>
+                        <label for="instCity">Select License Pricing</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4" v-if="selectedPackage">
+                    <span class="p-float-label">
+                        <InputText type="text" id="tin" v-model="licenseQuantity"
+                        @blur="onInputBlur(licenseQuantity, 'licenseQuantity')" @change="getLicenseTotal" :class="{ 'p-invalid': formError?.licenseQuantity }"/>
+                        <label for="instPOBox">License Quantity</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4" v-if="selectedPackage">
+                    <span class="p-float-label">
+                        <h4 for="instPOBox">Total License : {{ commonService.commaSeparator(totalLicense) }}</h4>
                     </span>
                 </div>
                 <!-- <div class="field col-12 md:col-4">

@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Institution;
 use App\Models\InstitutionConfig;
 use App\Models\Branch;
+use App\Models\Duration;
 use App\Models\InstitutionBank;
 use App\Models\InstitutionContact;
+use App\Models\InstitutionLicense;
+use App\Models\LicensePackagePrice;
 use Illuminate\Http\Request;
 use App\Models\MemberNoConfig;
 use App\Models\Product;
@@ -16,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 // use Illuminate\Support\Facades\DB;
 use App\Services\SavingAccountProductService;
 use App\Services\CommissionConfigService;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class InstitutionController extends Controller
@@ -35,12 +39,17 @@ class InstitutionController extends Controller
 
         try {
             DB::beginTransaction();
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
 
             $instConfig = InstitutionConfig::where('type', 'institution_ref')->first();
             $instRef = $instConfig->prefix . '' . $instConfig->starting . '' . $instConfig->current;
             $instConfig->current = $instConfig->current + $instConfig->step;
             $instConfig->save();
+
+            $image = null;
+            if(isset($request->image)){
+                $image=$this->saveBase64Image($request->image, 'institutions');
+            }
 
             $institution = null;
             if (isset($request->id)) {
@@ -54,6 +63,7 @@ class InstitutionController extends Controller
                 $institution->created_on = now();
             }
             $institution->name = $request->name;
+            $institution->image = $image;
             $institution->institution_type_id = $request->type;
             $institution->start_date = $request->start_date;
             $institution->address = $request->address;
@@ -102,6 +112,43 @@ class InstitutionController extends Controller
                 $contact->branch_id = $branch->id;
                 $contact->created_on = now();
                 $contact->save();
+
+
+                // license
+                $this->licenseInstitution($request, $institution->id, $userData->id);
+                // $packagePrice = LicensePackagePrice::where('id', $request->price)->first();
+                // if (!$packagePrice) {
+                //     return $this->genericResponse(false, "License package price not found", 404, [], "createInstitution", $request);
+                // }
+                // $duration = Duration::find($packagePrice->duration_id);
+                // if (!$duration) {
+                //     return $this->genericResponse(false, "Duration not found for the license package price", 404, [], "createInstitution", $request);
+                // }
+
+                // $endDate = null;
+                // if ($duration->unit == 'Day') {
+                //     $endDate = now()->addDays((int) $request->license_quantity);
+                // } elseif ($duration->unit == 'Week') {
+                //     $endDate = now()->addWeeks((int) $request->license_quantity);
+                // }elseif ($duration->unit == 'Month') {
+                //     $endDate = now()->addMonths((int) $request->license_quantity);
+                // } elseif ($duration->unit == 'Year') {
+                //     $endDate = now()->addYears((int) $request->license_quantity);
+                // } else {
+                //     return $this->genericResponse(false, "Invalid duration unit for the license package price", 400, [], "createInstitution", $request);
+                // }
+
+                // $license = InstitutionLicense::create([
+                //     'institution_id' => $institution->id,
+                //     'license_package_id' => $request->package,
+                //     'license_package_price_id' => $request->price,
+                //     'start_date' => now(),
+                //     'end_date' => $endDate,
+                //     'quantity' => $request->license_quantity,
+                //     'paid' => $request->total_license ?? 0,
+                //     'created_by' => $userData->id,
+                //     'created_on' => now(),
+                // ]);
 
                 $productRequest = (object)[
                     "name" => "Default Savings Product",
@@ -154,6 +201,59 @@ class InstitutionController extends Controller
     }
 
 
+
+    public function licenseInstitution($request, $institution_id, $user_id)
+    {
+        try {
+            DB::beginTransaction();
+            $packagePrice = LicensePackagePrice::where('id', $request->price)->first();
+                if (!$packagePrice) {
+                    throw new \Exception("License package price not found");
+                    // return $this->genericResponse(false, "License package price not found", 404, [], "createInstitution", $request);
+                }
+                $duration = Duration::find($packagePrice->duration_id);
+                if (!$duration) {
+                    throw new \Exception("Duration not found for the license package price");
+                    // return $this->genericResponse(false, "Duration not found for the license package price", 404, [], "createInstitution", $request);
+                }
+
+                $endDate = null;
+                if ($duration->unit == 'Day(s)') {
+                    $endDate = now()->addDays((int) $request->license_quantity);
+                } elseif ($duration->unit == 'Week(s)') {
+                    $endDate = now()->addWeeks((int) $request->license_quantity);
+                }elseif ($duration->unit == 'Month(s)') {
+                    $endDate = now()->addMonths((int) $request->license_quantity);
+                } elseif ($duration->unit == 'Year(s)') {
+                    $endDate = now()->addYears((int) $request->license_quantity);
+                } else {
+                    throw new \Exception("Invalid duration unit for the license package price");
+                    // return $this->genericResponse(false, "Invalid duration unit for the license package price", 400, [], "createInstitution", $request);
+                }
+
+                $license = InstitutionLicense::create([
+                    'institution_id' => $institution_id,
+                    'license_package_id' => $request->package,
+                    'license_package_price_id' => $request->price,
+                    'start_date' => now(),
+                    'end_date' => $endDate,
+                    'quantity' => $request->license_quantity,
+                    'paid' => $request->total_license ?? 0,
+                    'created_by' => $user_id,
+                    'created_on' => now(),
+                ]);
+
+            DB::commit();
+            // return $this->genericResponse(true, "Institution licensed successfully", 201, $license, "licenseInstitution", $request);
+        } catch (\Throwable $th) {
+            DB::rollback();
+            Log::error($th->getMessage());
+            throw $th;
+            // return $this->genericResponse(false, $th->getMessage(), 500, $th, "licenseInstitution", $request);
+        }
+    }
+
+
     public function createBranch(Request $request)
     {
         DB::beginTransaction();
@@ -183,11 +283,13 @@ class InstitutionController extends Controller
             $stock->quantity = 0;
             $stock->institution_id = $request->institution_id;
             $stock->branch_id = $branch->id;
-            $stock->user_id = auth()->user()->id;
-            $stock->created_by = auth()->user()->id;
+            $stock->user_id = $this->getUserLogin()->id;
+            $stock->created_by = $this->getUserLogin()->id;
             $stock->created_on = Carbon::now();
             $stock->save();
         }
+
+        $this->createBranchGlAccounts($request->institution_id, $branch->code, $branch->id);
 
         DB::commit();
         return $this->genericResponse(true, "Branch created successfully", 201, $branch, "createBranch", $request);
@@ -196,7 +298,7 @@ class InstitutionController extends Controller
 
     public function getBranches(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $queryString = "SELECT B.id, B.name, B.institution_id, B.address, B.city_id, B.street, B.p_o_box,
             B.description, B.status, B.is_main, B.created_by, B.updated_by, B.created_on,
@@ -295,7 +397,7 @@ class InstitutionController extends Controller
 
     public function getInstitutionProfile(Request $request)
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $isNotAdmin = $this->isNotAdmin();
         $queryString = "SELECT I.id, I.name, I.ref_no, I.institution_type_id, I.start_date, I.address,
         I.city_id, I.street, I.p_o_box, I.description, I.status, I.created_by, I.updated_by,
@@ -364,7 +466,7 @@ class InstitutionController extends Controller
 
     public function getInstitutionDetails()
     {
-        $userData = auth()->user();
+        $userData = $this->getUserLogin();
         $institution = Institution::find($userData->institution_id);
         return $this->genericResponse(true, "Institution details", 200, $institution, "getInstitutionDetails", []);
     }
@@ -434,6 +536,9 @@ class InstitutionController extends Controller
             $contact->branch_id = $branch->id;
             $contact->created_on = now();
             $contact->save();
+
+            // license
+            $this->licenseInstitution($request, $institution->id, 1);
 
             $productRequest = (object)[
                 "name" => "Default Savings Product",
@@ -540,7 +645,7 @@ class InstitutionController extends Controller
     public function approveInstitution(Request $request){
         try {
             DB::beginTransaction();
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
             $updateCount = DB::table('institutions')
                 ->where('id', $request->id)
                 ->update([

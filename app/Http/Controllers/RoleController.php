@@ -6,6 +6,8 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use App\Models\RolePermission;
 use App\Models\Permissions;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class RoleController extends Controller
 {
@@ -14,7 +16,7 @@ class RoleController extends Controller
     public function createRole(Request $request){
         $role = new Role();
         // try {
-            $userData = auth()->user();
+            $userData = Auth::user();
             $role->name = $request->name;
             $role->type = $request->type;
             $role->institution_id = $request->institution_id;
@@ -33,7 +35,16 @@ class RoleController extends Controller
 
     public function getAllRoles(){
         try {
-            $roles =  Role::orderBy("id", "desc")->get();
+            $queryString = "SELECT R.id, R.name, R.type, R.role_type, R.status, R.description,
+            R.institution_id, R.created_by AS created_by_id, R.updated_by, R.created_on, R.updated_on,
+            R.created_at, R.updated_at,
+            NULLIF(TRIM(CONCAT_WS(' ', U.first_name, U.last_name, U.other_name)), '') AS created_by,
+            COALESCE(I.name, 'Super Admin') AS institution_name
+            FROM roles R
+            LEFT JOIN users U ON U.id = R.created_by
+            LEFT JOIN institutions I ON I.id = R.institution_id
+            ORDER BY R.id DESC ";
+            $roles = DB::select($queryString);
             return $this->genericResponse(true, "Roles retrieved successfully", 200, $roles);
         } catch (\Throwable $th) {
             return $this->genericResponse(false, "Role retrieval  Failed", 500, $th, "getAllRoles", []);

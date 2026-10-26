@@ -1,10 +1,11 @@
 import { actions, state } from '../../store';
 
 export default class CommonService {
-     baseUrl = "http://localhost:8000/api/";
-    // baseUrl = "https://prod.smartcollect.co.ug/api/";   //prod environment
+    //  baseUrl = "http://localhost:8000/api/";
+    //  baseUrl = "https://prod.smartcollect.co.ug/api/";   //prod environment
+    // baseUrl = "https://biiteek.smartcollect.co.ug/api/";   //prod biiteek environment
     // baseUrl = "https://test.smartcollect.co.ug/api/";   //test environment
-//    baseUrl = "../api/";
+   baseUrl = "../api/";
 
     // loggedIn = this.checkingAuthentication();
 
@@ -392,7 +393,7 @@ export default class CommonService {
      * @returns
      * @author Bash
      */
-    showError = (toast, message, duration = 3000) => {
+    showError = (toast, message, duration = 5000) => {
         return toast.add({ severity: 'error', summary: 'Process Failed', detail: message, life: duration });
     };
 
@@ -659,7 +660,8 @@ export default class CommonService {
         return permissions.some(element => element.name == permission);
     }
 
-    formatDate=(date)=> {
+    formatDate=(inputDate)=> {
+        const date = new Date(inputDate);
         const pad = (num) => String(num).padStart(2, '0');
         const day = pad(date.getDate());
         const month = pad(date.getMonth() + 1); // Months are zero-based
@@ -687,6 +689,17 @@ export default class CommonService {
     generateRandomFiveId = () => {
         return Math.floor(10000 + Math.random() * 90000); // Generates a random number between 10000 and 99999
     };
+
+    toggleModal = (currentValue)=>{
+        return !currentValue
+    }
+
+    openModal = ()=>{
+        return  true;
+    }
+    closeModal = ()=>{
+        return false
+    }
 
 }
 

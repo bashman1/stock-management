@@ -52,7 +52,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css"
           integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 
-    <title>Sale Report</title>
+    {{-- <title>SaleReport</title> --}}
 </head>
 
 <body>
@@ -86,10 +86,10 @@
         <tr class="items">
 
             <td scope="row">
-                {{ $item->created_at }}
+                {{ $item->tran_date }}
             </td>
             <td>
-                {{$item->product_name }}
+                {{ $item->product_name }}
             </td>
             <td>
                 {{$item->quantity }}
@@ -98,13 +98,13 @@
                 {{$item->measurement_unit }}
             </td>
             <td>
-                {{$item->quantity * $item->selling_price }}
+                {{$item->amount }}
             </td>
             <td>
                 {{$item->selling_price }}
             </td>
             <td>
-                {{$item->selling_price - $item->purchase_price }}
+                {{$item->profit }}
             </td>
         </tr>
         @endforeach
@@ -121,3 +121,7 @@
 </body>
 
 </html>
+
+
+
+

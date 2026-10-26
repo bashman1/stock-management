@@ -13,6 +13,10 @@ class ProductTypeController extends Controller
         $type = new ProductType();
         $type->name = $request->name;
         $type->description = $request->description ;
+        // nature drives product behaviour (stock/non-stock/service/digital/bundle).
+        $type->nature = in_array($request->nature, ['STOCK', 'NON_STOCK', 'SERVICE', 'DIGITAL', 'BUNDLE'])
+            ? $request->nature : 'STOCK';
+        $type->revenue_acct_no = $request->revenue_acct_no ?: null;
         $type->institution_id = $userData->institution_id ;
         $type->branch_id = $userData->branch_id ;
         $type->user_id = $userData->id ;

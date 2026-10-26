@@ -25,6 +25,9 @@ const userData=ref(null);
 const institutionsData=ref(null);
 const institution=ref(null);
 const formError = ref({});
+const kinName = ref(null);
+const kinContact = ref(null);
+const kinRelationship = ref(null);
 
 
 const genderOptions = ref([
@@ -56,7 +59,10 @@ const onSubmit = () => {
         street: street?.value,
         p_o_box: pOBox?.value,
         description: description?.value,
-        status: 'Active'
+        status: 'Active',
+        kin_name: kinName?.value,
+        kin_contact: kinContact?.value,
+        kin_relationship: kinRelationship?.value,
     }
     commonService.genericRequest('create-member', 'post', true, postData).then((response) => {
         if (response.status) {
@@ -193,6 +199,27 @@ onMounted(() => {
                     <span class="p-float-label">
                         <InputText type="text" id="instPOBox" v-model="pOBox" />
                         <label for="instPOBox">P.O Box</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="instPOBox" v-model="kinName" />
+                        <label for="instPOBox">Next Of Kin Name</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="instPOBox" v-model="kinContact" />
+                        <label for="instPOBox">Next Of Kin Contact</label>
+                    </span>
+                </div>
+
+                <div class="field col-12 md:col-4">
+                    <span class="p-float-label">
+                        <InputText type="text" id="instPOBox" v-model="kinRelationship" />
+                        <label for="instPOBox">Next Of Kin Relationship</label>
                     </span>
                 </div>
 

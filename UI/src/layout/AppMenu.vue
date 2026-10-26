@@ -10,9 +10,7 @@ const institutionMenu = ref(
     {
         label: 'Institution Management',
         icon: 'pi pi-fw pi-building',
-        items: [
-
-        ]
+        items: []
     },
 );
 
@@ -86,6 +84,14 @@ const pointOfSaleMenu = ref(
 //     }
 // )
 
+const invoiceMenu = ref(
+    {
+        label: 'Invoices',
+        icon: 'pi pi-file',
+        items: []
+    }
+)
+
 const salesMenu = ref(
     {
         label: 'sales',
@@ -111,6 +117,14 @@ const payableReceivable = ref(
     }
 )
 
+const licenseMenu = ref(
+    {
+        label: 'License',
+        icon: 'pi pi-verified',
+        items: []
+    }
+)
+
 const accountMenu = ref(
     {
         label: 'Account',
@@ -118,6 +132,24 @@ const accountMenu = ref(
         items: []
     }
 )
+
+const investMentMenu = ref(
+    {
+        label: 'Investment',
+        icon: 'pi pi-box',
+        items: []
+    }
+)
+
+const PropertyMenu = ref(
+    {
+        label: 'Estate Management',
+        icon: 'pi pi-building',
+        items: []
+    }
+)
+
+
 
 const logOut = ref({
     label: 'Log Out',
@@ -292,6 +324,64 @@ if (commonService.checkPermissions('ViewUploadBulkSalesBatch')) {
     );
 }
 
+if (commonService.checkPermissions('BulkUploadBuildings')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Buildings',
+            icon: 'pi pi-fw pi-circle',
+            to: '/bulk-upload-buildings'
+        }
+    );
+
+}
+
+if (commonService.checkPermissions('BulkUploadBuildingUnits')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Building Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/bulk-upload-building-units'
+        }
+    );
+}
+
+if (commonService.checkPermissions('BulkUploadTenantsUnits')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Upload Tenants Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/bulk-upload-tenants-room'
+        }
+    );
+}
+if (commonService.checkPermissions('ApproveBuildingBatch')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Approve Buildings Batch',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-building-uploaded-batches'
+        }
+    );
+
+}
+if (commonService.checkPermissions('ApproveBuildingUnitBatch')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Approve Building Units Batch',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-building-units-uploaded-batches'
+        }
+    );
+}
+if (commonService.checkPermissions('ApproveTenantUnitBatch')){
+    bulkMenu.value.items.push(
+        {
+            label: 'Approve Tenants Units Batch',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-tenants-rooms-uploaded-batches'
+        }
+    );
+}
 
 if (commonService.checkPermissions('CollectMoney')) {
     collectionMenu.value.items.push(
@@ -422,7 +512,7 @@ if (commonService.checkPermissions('ViewCntrlParams')) {
     );
 }
 
-if (commonService.checkPermissions('ViewIncomeStatement')){
+if (commonService.checkPermissions('ViewIncomeStatement')) {
     chartOfAccountMenu.value.items.push(
         {
             label: 'Income Statement',
@@ -432,7 +522,7 @@ if (commonService.checkPermissions('ViewIncomeStatement')){
     )
 }
 
-if (commonService.checkPermissions('ViewBalanceSheet')){
+if (commonService.checkPermissions('ViewBalanceSheet')) {
     chartOfAccountMenu.value.items.push(
         {
             label: 'Balance Sheet',
@@ -442,7 +532,7 @@ if (commonService.checkPermissions('ViewBalanceSheet')){
     )
 }
 
-if (commonService.checkPermissions('CreateExpenses')){
+if (commonService.checkPermissions('CreateExpenses')) {
     chartOfAccountMenu.value.items.push(
         {
             label: 'Expenses',
@@ -452,7 +542,7 @@ if (commonService.checkPermissions('CreateExpenses')){
     )
 }
 
-if(commonService.checkPermissions('ViewProductsReport')){
+if (commonService.checkPermissions('ViewProductsReport')) {
     reportMenu.value.items.push(
         {
             label: 'Products Report',
@@ -462,7 +552,7 @@ if(commonService.checkPermissions('ViewProductsReport')){
     )
 }
 
-if(commonService.checkPermissions('ViewSalesReport')){
+if (commonService.checkPermissions('ViewSalesReport')) {
     reportMenu.value.items.push(
         {
             label: 'Sales Transaction Report',
@@ -473,7 +563,7 @@ if(commonService.checkPermissions('ViewSalesReport')){
 }
 
 
-if(commonService.checkPermissions('ViewSalesReport')){
+if (commonService.checkPermissions('ViewSalesReport')) {
     reportMenu.value.items.push(
         {
             label: 'Sales Report',
@@ -485,7 +575,7 @@ if(commonService.checkPermissions('ViewSalesReport')){
 
 
 
-if(commonService.checkPermissions('ViewCashBook')){
+if (commonService.checkPermissions('ViewCashBook')) {
     reportMenu.value.items.push(
         {
             label: 'Cash Book',
@@ -496,7 +586,7 @@ if(commonService.checkPermissions('ViewCashBook')){
 }
 
 
-if(commonService.checkPermissions('ViewVatPayable')){
+if (commonService.checkPermissions('ViewVatPayable')) {
     reportMenu.value.items.push(
         {
             label: 'VAT Payable',
@@ -506,8 +596,28 @@ if(commonService.checkPermissions('ViewVatPayable')){
     )
 }
 
+if (commonService.checkPermissions('RentArrearsReport')) {
+    reportMenu.value.items.push(
+        {
+            label: 'Rent Arrears Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/rental-arrears-report'
+        }
+    )
+}
 
-if(commonService.checkPermissions('ViewReceivables')){
+if (commonService.checkPermissions('LandLoadPaymentReport')){
+        reportMenu.value.items.push(
+        {
+            label: 'Land Load Payment Report',
+            icon: 'pi pi-fw pi-circle',
+            to: '/land-load-payment-report'
+        }
+    )
+}
+
+
+if (commonService.checkPermissions('ViewReceivables')) {
     payableReceivable.value.items.push(
         {
             label: 'Receivable',
@@ -517,7 +627,7 @@ if(commonService.checkPermissions('ViewReceivables')){
     )
 }
 
-if(commonService.checkPermissions('ViewPayables')){
+if (commonService.checkPermissions('ViewPayables')) {
     payableReceivable.value.items.push(
         {
             label: 'Payable',
@@ -527,28 +637,28 @@ if(commonService.checkPermissions('ViewPayables')){
     )
 }
 
-if(commonService.checkPermissions('ViewInstitutionProfile')){
+if (commonService.checkPermissions('ViewInstitutionProfile')) {
     accountMenu.value.items.push(
         {
             label: 'Institution Profile',
             icon: 'pi pi-fw pi-circle',
-            to: '/institution-profile/'+commonService.getStorage().userData?.institution_id
+            to: '/institution-profile/' + commonService.getStorage().userData?.institution_id
         }
     )
 }
 
 
-if(commonService.checkPermissions('ViewUserProfile')){
+if (commonService.checkPermissions('ViewUserProfile')) {
     accountMenu.value.items.push(
         {
             label: 'User Profile',
             icon: 'pi pi-fw pi-circle',
-            to: '/user-profile/'+commonService.getStorage().userData?.id
+            to: '/user-profile/' + commonService.getStorage().userData?.id
         }
     )
 }
 
-if(commonService.checkPermissions('ViewSystemLogs')){
+if (commonService.checkPermissions('ViewSystemLogs')) {
     accountMenu.value.items.push(
         {
             label: 'System Logs',
@@ -557,6 +667,150 @@ if(commonService.checkPermissions('ViewSystemLogs')){
         }
     )
 }
+
+if (commonService.checkPermissions('CanCreateLicensePackage')) {
+    licenseMenu.value.items.push(
+        {
+            label: 'Create License Package',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-license-package'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CanViewLicensePackages')) {
+    licenseMenu.value.items.push(
+        {
+            label: 'View License Packages',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-license-packages'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CanCreateProject')) {
+    investMentMenu.value.items.push(
+        {
+            label: 'Create Project',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-project'
+        }
+    );
+}
+if (commonService.checkPermissions('ViewProjects')) {
+    investMentMenu.value.items.push(
+        {
+            label: 'View Project',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-projects'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CreateInvestment')) {
+    investMentMenu.value.items.push(
+        {
+            label: 'Invest',
+            icon: 'pi pi-fw pi-circle',
+            to: '/invest'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewInvestment')) {
+    investMentMenu.value.items.push(
+        {
+            label: 'View Investments',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-invest'
+        }
+    );
+}
+
+
+if (commonService.checkPermissions('CanCreateBuilding')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'Create Building',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-building'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewBuildings')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'View Building',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-buildings'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CanCreateBuildingUnit')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'Create Building Unit',
+            icon: 'pi pi-fw pi-circle',
+            to: '/create-building-unit'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewBuildingUnits')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'View Building Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-building-units'
+        }
+    );
+}
+
+if (commonService.checkPermissions('RentBuildingUnits')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'Rent Building Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/rent-building-units'
+        }
+    );
+}
+
+
+if (commonService.checkPermissions('ViewRentBuildingUnits')) {
+    PropertyMenu.value.items.push(
+        {
+            label: 'View Rent Building Units',
+            icon: 'pi pi-fw pi-circle',
+            to: '/view-building-rentals'
+        }
+    );
+}
+
+if (commonService.checkPermissions('CanCreateInvoice')) {
+    invoiceMenu.value.items.push(
+        {
+            label: 'Create Invoice',
+            icon: 'pi pi-fw pi-circle',
+            to: '/proforma-invoice'
+        }
+    );
+}
+
+if (commonService.checkPermissions('ViewInvoice')) {
+    invoiceMenu.value.items.push(
+        {
+            label: 'View Invoices',
+            icon: 'pi pi-fw pi-circle',
+            to: '/View-proforma-invoices'
+        }
+    );
+}
+
+
+
 
 
 
@@ -601,6 +855,10 @@ if (reportMenu?.value?.items?.length > 0) {
     model.value[0].items.push(reportMenu.value);
 }
 
+if (invoiceMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(invoiceMenu.value);
+}
+
 if (stockMenu?.value?.items?.length > 0) {
     model.value[0].items.push(stockMenu.value);
 }
@@ -611,6 +869,18 @@ if (chartOfAccountMenu?.value?.items?.length > 0) {
 
 if (payableReceivable?.value?.items?.length > 0) {
     model.value[0].items.push(payableReceivable.value);
+}
+
+if (investMentMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(investMentMenu.value);
+}
+
+if (PropertyMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(PropertyMenu.value);
+}
+
+if (licenseMenu?.value?.items?.length > 0) {
+    model.value[0].items.push(licenseMenu.value);
 }
 
 if (accountMenu?.value?.items?.length > 0) {

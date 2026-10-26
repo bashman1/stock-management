@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import CommonService from '@/service/CommonService';
 import { useToast } from 'primevue/usetoast';
@@ -76,6 +76,24 @@ const getProductReportCsvFile = () => {
     }
 };
 
+
+const totalQuantity = computed(()=>
+    productsReport?.value?.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+);
+
+
+const totalSellingPrice = computed(() =>
+  productsReport?.value?.reduce((sum, item) => sum + (Number(item.selling_price) || 0) * (Number(item.quantity) || 0), 0)
+);
+
+const totalPurchasePrice = computed(() =>
+  productsReport?.value?.reduce((sum, item) => sum + (Number(item.purchase_price) || 0) * (Number(item.quantity) || 0), 0)
+);
+
+const totalProfitMargin = computed(() =>
+  productsReport?.value?.reduce((sum, item) => sum + (((Number(item.selling_price) || 0) - (Number(item.purchase_price) || 0)) * (Number(item.quantity) || 0)), 0)
+);
+
 onMounted(() => {
     getProductsReport();
 });
@@ -84,7 +102,6 @@ onMounted(() => {
     <div>
         <div class="card">
             <h5>Products report.</h5>
-            <!-- <div class="grid p-fluid mt-3"> -->
             <Toast />
             <Toolbar class="mb-4">
                 <template v-slot:end>
@@ -93,13 +110,13 @@ onMounted(() => {
                         <Button label="PDF" icon="pi pi-file-pdf" class="p-button-danger" @click="() => getProductReportPdfFile()" />
                     </div>
                 </template>
-
-                <!-- <template v-slot:end>
-                        <FileUpload mode="basic" accept="image/*" :maxFileSize="1000000" label="Import" chooseLabel="Import" class="mr-2 inline-block" />
-                        <Button label="Export" icon="pi pi-upload" class="p-button-help" @click="exportCSV($event)" />
-                    </template> -->
             </Toolbar>
             <DataTable :value="productsReport" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id" :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+                <Column header="#" style="width: 3rem; text-align: center;">
+                    <template #body="{ index }">
+                        {{  index + 1 }}
+                    </template>
+                </Column>
                 <Column field="name" header="Name" style="min-width: 10rem">
                     <template #body="{ data }">
                         {{ data.name }}
@@ -119,6 +136,9 @@ onMounted(() => {
                     <template #body="{ data }">
                         {{ commonService.commaSeparator(data.quantity) }}
                     </template>
+                    <template #footer>
+                        <b>{{ commonService.commaSeparator(totalQuantity) }}</b>
+                    </template>
                 </Column>
                 <Column field="name" header="Measurement" style="min-width: 10rem">
                     <template #body="{ data }">
@@ -129,15 +149,24 @@ onMounted(() => {
                     <template #body="{ data }">
                         {{ commonService.commaSeparator(data.purchase_price) }}
                     </template>
+                    <template #footer>
+                        <b>{{ commonService.commaSeparator(totalPurchasePrice) }}</b>
+                    </template>
                 </Column>
                 <Column field="name" header="Selling Price" style="min-width: 10rem">
                     <template #body="{ data }">
                         {{ commonService.commaSeparator(data.selling_price) }}
                     </template>
+                    <template #footer>
+                        <b>{{ commonService.commaSeparator(totalSellingPrice) }}</b>
+                    </template>
                 </Column>
                 <Column field="name" header="Profit Margin" style="min-width: 10rem">
                     <template #body="{ data }">
                         {{ commonService.commaSeparator(data.selling_price - data.purchase_price) }}
+                    </template>
+                    <template #footer>
+                        <b>{{ commonService.commaSeparator(totalProfitMargin) }}</b>
                     </template>
                 </Column>
 

@@ -23,6 +23,7 @@ return new class extends Migration
             $table->unsignedBigInteger('city_id')->nullable();
             $table->string('street')->nullable();
             $table->string('tin')->nullable();
+            $table->string('image')->nullable();
             $table->string('p_o_box')->nullable();
             $table->string('currency')->default('UGX');
             $table->text('receipt_note')->default('Thank you for choosing us.');

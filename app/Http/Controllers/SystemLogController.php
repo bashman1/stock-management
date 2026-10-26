@@ -12,51 +12,76 @@ use Illuminate\Support\Facades\Log;
 class SystemLogController extends Controller
 {
 
-    public function getSystemLogs()
+    public function getSystemLogs(Request $request)
     {
         try {
-            $userData = auth()->user();
+            $userData = $this->getUserLogin();
             $isNotAdmin = $this->isNotAdmin();
 
-            // Current page number
-            // Log::info("Hello there pagination initialization");
             $currentPage = LengthAwarePaginator::resolveCurrentPage();
-
-            // Number of items per page
-            $perPage = 10;
-            // Calculate the offset
+            $perPage = (int) ($request->query('perPage') ?: 15);
+            if ($perPage < 1 || $perPage > 100) {
+                $perPage = 15;
+            }
             $offset = ($currentPage - 1) * $perPage;
 
-            // Base query
-            $queryString = "SELECT S.id, S.action, S.ip, S.http_code, S.return_message, S.return_status,
-            S.status, S.user_id, S.institution_id, S.branch_id,
-            S.created_by, S.updated_by, S.created_on, S.updated_on, S.created_at,
-            S.updated_at, CONCAT(U.first_name, ' ', U.last_name, ' ', COALESCE(U.other_name, '')) AS user,
-            U.user_type, U.user_category, R.name AS role, I.name AS institution,
-            B.name AS branch
+            // Build a parameterized WHERE clause shared by the data + count queries.
+            $where = [];
+            $bindings = [];
+            if ($isNotAdmin) {
+                $where[] = "S.institution_id = ?";
+                $bindings[] = $userData->institution_id;
+            }
+            if ($request->filled('from_date')) {
+                $where[] = "S.created_at::date >= ?";
+                $bindings[] = $request->query('from_date');
+            }
+            if ($request->filled('to_date')) {
+                $where[] = "S.created_at::date <= ?";
+                $bindings[] = $request->query('to_date');
+            }
+            if ($request->filled('action')) {
+                $where[] = "S.action ILIKE ?";
+                $bindings[] = '%' . $request->query('action') . '%';
+            }
+            if ($request->filled('severity')) {
+                $where[] = "S.severity = ?";
+                $bindings[] = $request->query('severity');
+            }
+            if ($request->filled('event_category')) {
+                $where[] = "S.event_category = ?";
+                $bindings[] = $request->query('event_category');
+            }
+            if ($request->query('return_status') !== null && $request->query('return_status') !== '') {
+                $where[] = "S.return_status = ?";
+                $bindings[] = filter_var($request->query('return_status'), FILTER_VALIDATE_BOOLEAN);
+            }
+            if ($request->filled('search')) {
+                $s = '%' . $request->query('search') . '%';
+                $where[] = "(S.action ILIKE ? OR S.return_message ILIKE ? OR S.ip ILIKE ?
+                    OR S.entity_type ILIKE ? OR CONCAT(U.first_name, ' ', U.last_name) ILIKE ?)";
+                array_push($bindings, $s, $s, $s, $s, $s);
+            }
+            $whereSql = count($where) ? (' WHERE ' . implode(' AND ', $where)) : '';
+
+            $queryString = "SELECT S.id, S.uuid, S.action, S.entity_type, S.entity_id, S.ip, S.user_agent, S.method, S.route,
+            S.http_code, S.severity, S.event_category, S.return_message, S.return_status,
+            S.status, S.user_id, S.institution_id, S.branch_id, S.created_on, S.created_at,
+            CONCAT(U.first_name, ' ', U.last_name, ' ', COALESCE(U.other_name, '')) AS user,
+            U.user_type, U.user_category, R.name AS role, I.name AS institution, B.name AS branch
             FROM system_logs S
             LEFT JOIN users U ON U.id = S.user_id
             LEFT JOIN roles R ON R.id = U.role_id
             LEFT JOIN institutions I ON I.id = S.institution_id
-            LEFT JOIN branches B ON B.id = S.branch_id";
+            LEFT JOIN branches B ON B.id = S.branch_id"
+            . $whereSql
+            . " ORDER BY S.id DESC LIMIT ? OFFSET ?";
 
-            if ($isNotAdmin) {
-                $queryString .= " WHERE S.institution_id = " . $userData->institution_id;
-            }
+            $logs = DB::select($queryString, array_merge($bindings, [$perPage, $offset]));
 
-            $queryString .= " ORDER BY S.id DESC LIMIT $perPage OFFSET $offset";
-
-            // Fetch the logs for the current page
-            $logs = DB::select($queryString);
-
-            // Get the total count without limit/offset
-            $countQuery = "SELECT COUNT(*) as total FROM system_logs L ";
-
-            if ($isNotAdmin) {
-                $countQuery .= " WHERE L.institution_id = " . $userData->institution_id;
-            }
-
-            $totalLogs = DB::selectOne($countQuery)->total;
+            $countQuery = "SELECT COUNT(*) as total FROM system_logs S
+            LEFT JOIN users U ON U.id = S.user_id" . $whereSql;
+            $totalLogs = DB::selectOne($countQuery, $bindings)->total;
 
             // Create the paginator
             $paginatedLogs = new LengthAwarePaginator(

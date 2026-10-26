@@ -27,7 +27,7 @@ class SavingAccountProductService{
             return $product;
             // return $this->genericResponse(true, "Saving account created successfully", 201, $product);
         } catch (\Throwable $th) {
-            throw new $th;
+            throw $th;
             // return $this->genericResponse(false, "Saving account created successfully", 400, $th);
         }
     }
