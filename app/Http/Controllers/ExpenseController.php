@@ -54,7 +54,7 @@ class ExpenseController extends Controller
             }
         }
 
-        $expenseDate = $request->expense_date ?? now();
+        $expenseDate = $this->businessDate($request->expense_date ?? null);
         $desc = $request->description ?: ('Expense - ' . $expenseAcct->description);
         $refNo = 'EXP-' . strtoupper(substr(str_replace('-', '', $this->generateUuid()), 0, 8));
 

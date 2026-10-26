@@ -102,7 +102,7 @@ onMounted(() => {
 <template>
     <div className="card">
         <h5>Product Sales Report</h5>
-        <DataTable :value="glAccountHistory" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id"
+        <DataTable scrollable scrollHeight="65vh" :value="glAccountHistory" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id"
             :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
             <ColumnGroup type="header">
                 <Row>

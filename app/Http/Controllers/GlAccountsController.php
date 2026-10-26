@@ -267,7 +267,7 @@ class GlAccountsController extends Controller
             "dr_cr_ind" => "DR/CR",
             "tran_amount" => $request->tranAmt,
             "reversal_flag" => "N",
-            "tran_date" => $request->tranDate,
+            "tran_date" => $this->businessDate($request->tranDate),
             "tran_cd" => "GLI",
             "tran_id" => $this->generateUuid(),
             "status" => $request->status,
@@ -293,7 +293,7 @@ class GlAccountsController extends Controller
             "tran_amt" => $request->tranAmt,
             "reversal_flag" => 'N',
             "description" => $request->description,
-            "transaction_date" => $request->tranDate,
+            "transaction_date" => $this->businessDate($request->tranDate),
             "contra_acct_no" => $request->crAcctNo,
             "contra_acct_type" => $request->crAcctType,
             "tran_type" => 'GL INJECTION',
@@ -311,7 +311,7 @@ class GlAccountsController extends Controller
             "tran_amt" => $request->tranAmt,
             "reversal_flag" => 'N',
             "description" => $request->description,
-            "transaction_date" => $request->tranDate,
+            "transaction_date" => $this->businessDate($request->tranDate),
             "contra_acct_no" => $request->drAcctNo,
             "contra_acct_type" => $request->drAcctType,
             "tran_type" => 'GL INJECTION',
@@ -466,211 +466,168 @@ class GlAccountsController extends Controller
     }
 
 
-    public function generateIncomeStatement(Request $request)
+    /**
+     * Natural-sign ledger amount per account of a branch (debits positive for
+     * ASSET/EXPENSE, credits positive for the rest), from live gl_histories rows.
+     * $from/$to are optional inclusive dates; $before limits to rows before $from.
+     */
+    private function ledgerAmounts($instId, $branchId, $from = null, $to = null, $before = false)
     {
-        // return $this->genericResponse(true,"",200, ["startDate"=> $request->fromDate, "endDate"=>$request->toDate, "request"=>$request]);
-        // try {
-        $userData = $this->getUserLogin();
-        $sales = CntrlParameter::where(["param_cd" => "SL", "institution_id" => $userData->institution_id])->first();
-        $branch = Branch::find($userData->branch_id);
-        $salesAcctNo = str_replace("***", $branch->code, $sales->param_value);
-
-        $returnOutwards = CntrlParameter::where(["param_cd" => "ROT", "institution_id" => $userData->institution_id])->first();
-        $returnAcctNo = str_replace("***", $branch->code,  $returnOutwards->param_value);
-
-        $openingStock = CntrlParameter::where(["param_cd" => "STI", "institution_id" => $userData->institution_id])->first();
-        $stockAcctNo = str_replace("***", $branch->code,  $openingStock->param_value);
-
-        $purchases = CntrlParameter::where(["param_cd" => "PIA", "institution_id" => $userData->institution_id])->first();
-        $purchaseAcctNo = str_replace("***", $branch->code,  $purchases->param_value);
-
-        // Operating expenses = every EXPENSE account for this branch EXCEPT the ones
-        // already consumed by the gross-profit / COGS / returns logic: COGS/GFS,
-        // passage/PP, return-inwards/RIN, return-outwards/ROT. Resolved dynamically
-        // from control parameters (not hardcoded) so nothing is double-counted.
-        $excludeAcctNos = [];
-        foreach (['GFS', 'PP', 'RIN', 'ROT'] as $cd) {
-            $cp = CntrlParameter::where(["param_cd" => $cd, "institution_id" => $userData->institution_id])->first();
-            if ($cp) {
-                $excludeAcctNos[] = str_replace("***", $branch->code, $cp->param_value);
+        $where = "";
+        $bindings = [$instId, $branchId];
+        if ($before) {
+            $where .= " AND H.transaction_date::date < ?";
+            $bindings[] = $from;
+        } else {
+            if ($from) {
+                $where .= " AND H.transaction_date::date >= ?";
+                $bindings[] = $from;
+            }
+            if ($to) {
+                $where .= " AND H.transaction_date::date <= ?";
+                $bindings[] = $to;
             }
         }
+        return collect(DB::select("SELECT A.id, A.acct_no, A.gl_no, A.description, A.gl_cat_no, A.gl_sub_cat_no, A.gl_type_no,
+                A.acct_type, A.status,
+                ROUND(CAST(SUM(CASE WHEN (A.acct_type IN ('ASSET', 'EXPENSE')) = (H.dr_cr_ind = 'Dr')
+                    THEN H.tran_amount ELSE -H.tran_amount END) AS NUMERIC), 2) AS balance
+            FROM gl_accounts A INNER JOIN gl_histories H ON H.acct_no = A.acct_no AND COALESCE(H.reversal_flag, 'N') = 'N'
+            WHERE A.institution_id = ? AND A.branch_id = ? $where
+            GROUP BY A.id ORDER BY A.id", $bindings))
+            ->map(function ($r) {
+                $r->balance = (float) $r->balance; // NUMERIC arrives as a string
+                return $r;
+            })->keyBy('acct_no');
+    }
 
-        $opexQuery = DB::table('gl_histories as h')
-            ->join('gl_accounts as a', 'a.acct_no', '=', 'h.acct_no')
-            ->where('a.acct_type', 'EXPENSE')
-            ->where('a.institution_id', $userData->institution_id)
-            ->where('a.branch_id', $branch->id)
-            ->whereRaw("COALESCE(h.reversal_flag, 'N') = 'N'");
-        if (!empty($excludeAcctNos)) {
-            $opexQuery->whereNotIn('a.acct_no', $excludeAcctNos);
+    public function generateIncomeStatement(Request $request)
+    {
+        try {
+            $userData = $this->getUserLogin();
+            $instId = $userData->institution_id;
+            $branch = Branch::find($userData->branch_id);
+            // the page sends browser dates (UTC ISO strings); compare on local days
+            $from = $request->fromDate ? $this->businessDate($request->fromDate)->toDateString() : null;
+            $to = $request->toDate ? $this->businessDate($request->toDate)->toDateString() : null;
+            $acctNo = fn ($cd) => $this->resolveControlAccount($cd, $instId, $branch->code)?->acct_no;
+
+            // Perpetual inventory: cost of sales is what each sale posted to Cost of
+            // Goods Sold (GFS). Revenue is every sales account (goods, services,
+            // digital); returns inwards (RIN) reduce it. The old statement derived cost
+            // of sales from the Purchases memo account (PIA) plus the passage account,
+            // counted only the main sales account, and reported PBIT without cost of sales.
+            $salesAccts = array_values(array_filter([$acctNo('SL'), $acctNo('SVR'), $acctNo('DGS')]));
+            $stockAcct = $acctNo('STI');
+            $cogsAcct = $acctNo('GFS');
+            $returnsInAcct = $acctNo('RIN');
+
+            $period = $this->ledgerAmounts($instId, $branch->id, $from, $to);
+            $amount = fn ($acct) => (float) ($acct && isset($period[$acct]) ? $period[$acct]->balance : 0);
+
+            $totalSales = array_sum(array_map($amount, $salesAccts));
+            $totalReturns = $amount($returnsInAcct);
+            $netSales = $totalSales - $totalReturns;
+            $costOfSales = $amount($cogsAcct);
+
+            // the stock movement behind cost of sales, for display
+            $openingStock = 0;
+            if ($from && $stockAcct) {
+                $opening = $this->ledgerAmounts($instId, $branch->id, $from, null, true);
+                $openingStock = (float) ($opening[$stockAcct]->balance ?? 0);
+            }
+            $closingStock = (float) (($to ? $this->ledgerAmounts($instId, $branch->id, null, $to) : $this->ledgerAmounts($instId, $branch->id))[$stockAcct]->balance ?? 0);
+            $purchaseQuery = DB::table('gl_histories')->where('acct_no', $stockAcct)->where('dr_cr_ind', 'Dr')
+                ->where('tran_cd', 'STI')->whereRaw("COALESCE(reversal_flag, 'N') = 'N'");
+            if ($from) {
+                $purchaseQuery->whereRaw("transaction_date::date >= ?", [$from]);
+            }
+            if ($to) {
+                $purchaseQuery->whereRaw("transaction_date::date <= ?", [$to]);
+            }
+            $totalPurchases = round((float) $purchaseQuery->sum('tran_amount'), 2);
+            // adjustments, variances and sale reversals: whatever else moved inventory
+            $stockAdjustments = round($closingStock - $openingStock - $totalPurchases + $costOfSales, 2);
+            $goodsAvailableForSale = $openingStock + $totalPurchases + $stockAdjustments;
+
+            $grossProfit = $netSales - $costOfSales;
+
+            $notTrading = array_merge($salesAccts, [$cogsAcct, $returnsInAcct]);
+            $otherIncomes = $period->filter(fn ($r) => $r->acct_type === 'INCOME' && !in_array($r->acct_no, $notTrading) && abs((float) $r->balance) >= 0.005)
+                ->map(fn ($r) => ['acct_no' => $r->acct_no, 'description' => $r->description, 'amount' => (float) $r->balance])->values();
+            $operatingExpenses = $period->filter(fn ($r) => $r->acct_type === 'EXPENSE' && !in_array($r->acct_no, $notTrading) && abs((float) $r->balance) >= 0.005)
+                ->map(fn ($r) => ['acct_no' => $r->acct_no, 'description' => $r->description, 'amount' => (float) $r->balance])
+                ->sortByDesc('amount')->values();
+
+            $totalOtherIncome = (float) $otherIncomes->sum('amount');
+            $totalOperatingExpenses = (float) $operatingExpenses->sum('amount');
+            // gross profit plus other income: the "Total income" line
+            $totalIncome = $grossProfit + $totalOtherIncome;
+            $profitBeforeInterestAndTax = $totalIncome - $totalOperatingExpenses;
+
+            $response = [
+                'totalSales' => $totalSales,
+                'totalReturnIn' => $totalReturns,
+                'netSales' => $netSales,
+                'openingStock' => $openingStock,
+                'totalPurchases' => $totalPurchases,
+                'stockAdjustments' => $stockAdjustments,
+                'goodAvailableForSale' => $goodsAvailableForSale,
+                'closingStock' => $closingStock,
+                'costOfSales' => $costOfSales,
+                'grossProfit' => $grossProfit,
+                'otherIncomes' => $otherIncomes,
+                'totalOtherIncome' => $totalOtherIncome,
+                'totalIncome' => $totalIncome,
+                'operatingExpenses' => $operatingExpenses,
+                'totalOperatingExpenses' => $totalOperatingExpenses,
+                'profitBeforeInterestAndTax' => $profitBeforeInterestAndTax,
+                // no finance costs or tax are booked yet
+                'totalFinanceCosts' => 0,
+                'netProfit' => $profitBeforeInterestAndTax,
+            ];
+
+            return $this->genericResponse(true, 'total sales got', 200, $response, "generateIncomeStatement", $request);
+        } catch (\Throwable $th) {
+            return $this->genericResponse(false, $th->getMessage(), 400, null, "generateIncomeStatement", $request);
         }
-        if ($request->fromDate && $request->toDate) {
-            $opexQuery->whereRaw("h.transaction_date::date BETWEEN ? AND ?", [$request->fromDate, $request->toDate]);
-        }
-        $operatingExpenses = $opexQuery
-            ->groupBy('a.acct_no', 'a.description')
-            ->selectRaw("a.acct_no, a.description, SUM(CASE WHEN h.dr_cr_ind = 'Dr' THEN h.tran_amount ELSE -h.tran_amount END) AS amount")
-            ->havingRaw("SUM(CASE WHEN h.dr_cr_ind = 'Dr' THEN h.tran_amount ELSE -h.tran_amount END) <> 0")
-            ->orderByRaw("amount DESC")
-            ->get();
-
-        $passage = CntrlParameter::where(["param_cd" => "PP", "institution_id" => $userData->institution_id])->first();
-        $passageAcctNo = str_replace("***", $branch->code,  $passage->param_value);
-
-        // $totalSales = (float) DB::table('gl_histories')
-        //     ->where('acct_no', $salesAcctNo)
-        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-        //     ->sum('tran_amount');
-
-        $totalSales = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $salesAcctNo);
-
-        // $totalReturns = (float) DB::table('gl_histories')
-        //     ->where('acct_no', $returnAcctNo)
-        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-        //     ->sum('tran_amount');
-
-
-        $totalReturns = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $returnAcctNo);
-
-
-        // $totalOpenStock = (float) DB::table('gl_histories')
-        //     ->where('acct_no', $stockAcctNo)
-        //     ->where('transaction_date', '<', $request->fromDate)
-        //     ->sum('tran_amount');
-
-        // Opening stock = signed STI balance strictly before the period start
-        $totalOpenStock = $this->getGlBalanceAsOf($stockAcctNo, $request->fromDate, false);
-
-        // $totalCloseStock = (double) DB::table('gl_histories')
-        //     ->where('acct_no', $stockAcctNo)
-        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-        //     ->sum('tran_amount');
-
-        // $totalPurchases = (float) DB::table('gl_histories')
-        //     ->where('acct_no', $purchaseAcctNo)
-        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-        //     ->sum('tran_amount');
-        $totalPurchases = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $purchaseAcctNo);
-
-        // total operating expenses = sum of the per-category breakdown computed above
-        $totalOperatingExpenses = (float) $operatingExpenses->sum('amount');
-
-        // $totalPassage = (float) DB::table('gl_histories')
-        //     ->where('acct_no', $passageAcctNo)
-        //     ->whereBetween('transaction_date', [$request->fromDate, $request->toDate])
-        //     ->sum('tran_amount');
-
-
-        $totalPassage = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $passageAcctNo);
-
-        // $totalIncome = (float) DB::table('gl_balances')
-        //     ->where(['acct_type' => 'INCOME', 'institution_id' => $branch->institution_id, 'branch_id' => $branch->id])
-        //     ->sum('balance');
-
-        $getIncomeAccounts = GlAccounts::where(['acct_type' => 'INCOME', 'institution_id' => $branch->institution_id, 'branch_id' => $branch->id])->get();
-
-        $totalIncome = 0;
-        foreach ($getIncomeAccounts as $key => $value) {
-            $sum = $this->getGlBalancesAsOf($request->fromDate, $request->toDate, $value['acct_no']);
-            $totalIncome = $totalIncome + $sum;
-        }
-
-        // $totalIncome = $this->getGlBalancesAsOf();
-
-        //return needs to be purchase return
-        $goodsAvailableForSale = ($totalOpenStock + (($totalPurchases + $totalPassage) - $totalReturns));
-
-
-        // closing stock is Opening Stock+Purchases−Sales+Sales Returns−Purchase Returns±Adjustments
-        // $totalCloseStock = $totalOpenStock + $totalPurchases - $totalSales;
-
-        // Closing stock = signed STI balance as of the period end
-        $totalCloseStock = $this->getGlBalanceAsOf($stockAcctNo, $request->toDate, true);
-
-
-        // cost of sale = goods available for sale - closing stock
-        $costOfSales =  $goodsAvailableForSale - $totalCloseStock;
-        $grossProfit =  ($totalSales - $totalReturns) - $costOfSales;
-
-
-        $netProfit = $grossProfit - $totalOperatingExpenses;
-
-        $profitBeforeInterestAndTax = $totalIncome - $totalOperatingExpenses;
-
-        $response = [
-            'totalSales' => $totalSales,
-            'totalReturnIn' => $totalReturns,
-            'netSales' => $totalSales - $totalReturns,
-            'openingStock' => $totalOpenStock,
-            'closingStock' => $totalCloseStock,
-            'goodAvailableForSale' => $goodsAvailableForSale,
-            'costOfSales' => $costOfSales,
-            'grossProfit' => $grossProfit,
-            'netProfit' => $netProfit,
-            'totalPassage' => $totalPassage,
-            'totalOperatingExpenses' => $totalOperatingExpenses,
-            'operatingExpenses' => $operatingExpenses,
-            'totalPurchases' => $totalPurchases,
-            'totalIncome' => $totalIncome,
-            'profitBeforeInterestAndTax' => $profitBeforeInterestAndTax,
-        ];
-
-        return $this->genericResponse(true, 'total sales got', 200, $response, "generateIncomeStatement", $request);
-        // } catch (\Throwable $th) {
-        //     return $this->genericResponse(false, $th->getMessage(), 400, $th);
-        // }
     }
 
 
     public function getBalanceSheet(Request $request)
     {
         try {
-            // $userData = auth()->user();
             $userData = $this->getUserLogin();
             // A balance sheet is per entity, so always scope to the user's branch.
             $instId = intval($userData->institution_id);
             $branchId = intval($userData->branch_id);
-            $tempArray = array();
+            $asOf = $request->asOfDate ? $this->businessDate($request->asOfDate)->toDateString() : null;
 
-            // Asset / Liability (and Equity/Capital) sections, grouped by sub-category.
-            // All accounts are included — excluding one side of a balanced pair (the
-            // old PIA-only exclusion) is what previously unbalanced the sheet.
-            $glSubCat = GlSubCat::all();
-            foreach ($glSubCat as $key => $value) {
-                $queryString = "SELECT A.acct_no, A.gl_no, A.description, A.gl_cat_no,
-                A.gl_type_no, A.acct_type, A.status, B.balance
-                FROM gl_accounts A INNER JOIN gl_balances B ON A.acct_no = B.acct_no
-                WHERE (B.balance > 0 OR B.balance < 0)
-                AND A.gl_sub_cat_no = '" . $value['gl_no'] . "'
-                AND A.institution_id = $instId AND A.branch_id = $branchId
-                ORDER BY A.id ASC ";
-                $glList = DB::select($queryString);
+            // Balances come from the live ledger rows, not the cached gl_balances,
+            // which had drifted on several businesses (old reversals and edits
+            // changed one without the other).
+            $balances = $this->ledgerAmounts($instId, $branchId, null, $asOf)
+                ->filter(fn ($r) => abs((float) $r->balance) >= 0.005);
+
+            $tempArray = array();
+            foreach (GlSubCat::all() as $value) {
+                if ($value['acct_type'] == 'INCOME' || $value['acct_type'] == 'EXPENSE') {
+                    continue;
+                }
+                $glList = $balances->where('gl_sub_cat_no', $value['gl_no'])->values()->all();
                 array_push($glList, ['description' => 'Total', 'balance' => null, 'total' => $this->getTotalLedgerBalances($glList)]);
                 $value['list'] = $glList;
-                if ($value['acct_type'] != 'INCOME' && $value['acct_type'] != 'EXPENSE') {
-                    array_push($tempArray, $value);
-                }
+                array_push($tempArray, $value);
             }
 
-            // Totals by account type for this branch, used for the equity section and
-            // the Assets = Liabilities + Equity balance check.
-            $byType = DB::table('gl_balances')
-                ->select('acct_type', DB::raw('COALESCE(SUM(balance), 0) as total'))
-                ->where('institution_id', $instId)
-                ->where('branch_id', $branchId)
-                ->groupBy('acct_type')
-                ->pluck('total', 'acct_type');
-
-            $totalAssets = (float) ($byType['ASSET'] ?? 0);
-            $totalLiabilities = (float) ($byType['LIABILITY'] ?? 0);
-            $totalEquity = (float) ($byType['EQUITY'] ?? 0) + (float) ($byType['CAPITAL'] ?? 0);
-            $totalIncome = (float) ($byType['INCOME'] ?? 0);
-            $totalExpense = (float) ($byType['EXPENSE'] ?? 0);
-            // Retained earnings = accumulated net profit (now includes COGS as an expense)
-            $retainedEarnings = $totalIncome - $totalExpense;
+            $byType = fn ($type) => round((float) $balances->where('acct_type', $type)->sum('balance'), 2);
+            $totalAssets = $byType('ASSET');
+            $totalLiabilities = $byType('LIABILITY');
+            $totalEquity = $byType('EQUITY') + $byType('CAPITAL');
+            // current earnings not yet closed to an equity account
+            $retainedEarnings = $byType('INCOME') - $byType('EXPENSE');
             $totalEquityAndRetained = $totalEquity + $retainedEarnings;
-            $balanceCheck = $totalAssets - ($totalLiabilities + $totalEquityAndRetained);
+            $balanceCheck = round($totalAssets - ($totalLiabilities + $totalEquityAndRetained), 2);
 
             $summary = [
                 'totalAssets' => $totalAssets,
@@ -694,7 +651,7 @@ class GlAccountsController extends Controller
     {
         $total = 0;
         foreach ($acctList as $key => $value) {
-            $total =  $total + (float) $value->balance;
+            $total =  $total + (float) data_get($value, 'balance');
         }
         return $total;
     }

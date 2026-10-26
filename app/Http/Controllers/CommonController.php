@@ -42,6 +42,12 @@ class CommonController extends Controller
             WHERE C.param_cd IN ($codes) $branchFilter";
         $inventoryAccts = $controlAccts("'STI'");
         $revenueAccts = $controlAccts("'SL', 'SVR', 'DGS'");
+        // cost of goods sold and returns inwards are trading costs, not expenses
+        $tradingCostAccts = $controlAccts("'GFS', 'RIN'");
+        // "Income" matches the income statement's Total income: all income accounts
+        // less cost of sales and returns (gross profit + other income). Plain income
+        // was just sales again for a shop. Purchases are stock receipts only (STI),
+        // not adjustments or sale reversals that also debit inventory.
         // GL rows hold positive amounts with a Dr/Cr flag; reversed postings are flagged Y.
         $drMinusCr = "CASE WHEN H.dr_cr_ind = 'Dr' THEN H.tran_amount ELSE -H.tran_amount END";
 
@@ -66,20 +72,20 @@ class CommonController extends Controller
             (SELECT COALESCE(SUM(O.qty * $price), 0) $saleLines) AS product_sold,
             (SELECT COALESCE(SUM($drMinusCr), 0) FROM gl_histories H WHERE H.reversal_flag = 'N' AND H.acct_no IN ($inventoryAccts)) AS total_stock_value,
             (SELECT COALESCE(SUM(H.tran_amount), 0) FROM gl_histories H WHERE H.reversal_flag = 'N' AND H.dr_cr_ind = 'Dr' AND H.acct_no IN ($inventoryAccts)
-                AND DATE(H.transaction_date) = '$today') AS today_stock_value,
+                AND H.tran_cd = 'STI' AND DATE(H.transaction_date) = '$today') AS today_stock_value,
             (SELECT COALESCE(-SUM($drMinusCr), 0) FROM gl_histories H WHERE H.reversal_flag = 'N' AND H.acct_no IN ($revenueAccts)) AS total_sales_value,
             (SELECT COALESCE(-SUM($drMinusCr), 0) FROM gl_histories H WHERE H.reversal_flag = 'N' AND H.acct_no IN ($revenueAccts)
                 AND DATE(H.transaction_date) = '$today') AS today_sales_value,
             (SELECT COALESCE(ROUND(CAST(SUM(O.qty * ($price - $cost)) AS NUMERIC), 2), 0) $todayLines) AS today_mark_up,
             (SELECT COALESCE(ROUND(CAST(SUM(O.qty * ($price - $cost)) * 100 / NULLIF(SUM(O.qty * $cost), 0) AS NUMERIC), 2), 0) $todayLines) AS today_mark_up_percentage,
             (SELECT COALESCE(SUM($drMinusCr), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no
-                WHERE A.acct_type = 'EXPENSE' AND H.reversal_flag = 'N'" . $scope('H') . ") AS total_expenses,
+                WHERE A.acct_type = 'EXPENSE' AND H.reversal_flag = 'N' AND H.acct_no NOT IN ($tradingCostAccts)" . $scope('H') . ") AS total_expenses,
             (SELECT COALESCE(-SUM($drMinusCr), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no
-                WHERE A.acct_type = 'INCOME' AND H.reversal_flag = 'N'" . $scope('H') . ") AS total_income,
+                WHERE (A.acct_type = 'INCOME' OR H.acct_no IN ($tradingCostAccts)) AND H.reversal_flag = 'N'" . $scope('H') . ") AS total_income,
             (SELECT COALESCE(SUM($drMinusCr), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no
-                WHERE A.acct_type = 'EXPENSE' AND H.reversal_flag = 'N'" . $scope('H') . " AND DATE(H.transaction_date) = '$today') AS today_expenses,
+                WHERE A.acct_type = 'EXPENSE' AND H.reversal_flag = 'N' AND H.acct_no NOT IN ($tradingCostAccts)" . $scope('H') . " AND DATE(H.transaction_date) = '$today') AS today_expenses,
             (SELECT COALESCE(-SUM($drMinusCr), 0) FROM gl_histories H INNER JOIN gl_accounts A ON H.acct_no = A.acct_no
-                WHERE A.acct_type = 'INCOME' AND H.reversal_flag = 'N'" . $scope('H') . " AND DATE(H.transaction_date) = '$today') AS today_income,
+                WHERE (A.acct_type = 'INCOME' OR H.acct_no IN ($tradingCostAccts)) AND H.reversal_flag = 'N'" . $scope('H') . " AND DATE(H.transaction_date) = '$today') AS today_income,
             (SELECT COUNT(id) FROM investments I WHERE status ='Active'" . $scope('I') . ") AS total_active_investments,
             (SELECT COUNT(id) FROM investments I WHERE status ='Withdrawn'" . $scope('I') . ") AS total_withdrawn_investments,
             (SELECT COALESCE(SUM(I.quantity * P.monitory), 0) FROM investments I INNER JOIN projects P ON P.id = I.project_id WHERE 1 = 1" . $scope('I') . ") AS total_investment_value,

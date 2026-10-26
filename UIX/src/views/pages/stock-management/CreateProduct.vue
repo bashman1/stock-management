@@ -140,13 +140,17 @@ const taxExempted=ref([
     {id: 3, name:'Zero Sated Supplies', value: 'TAX_ZERO_RATED'},
 ])
 
+// Opening stock is stock the business already owns: it is booked to Opening
+// Balance Equity. Cash/Bank/Credit mean the stock is being bought now.
+const openingStockOption = {id:4, name: "Opening stock (already owned)", value:"OPENING"};
 const paymentMethodOptions=ref([
+    openingStockOption,
     {id:1, name: "Cash", value:"CASH"},
     {id:2, name: "Bank", value:"BANK"},
     {id:3, name: "Credit", value:"CREDIT"},
 ])
 
-const paymentMethod=ref( {id:1, name: "Cash", value:"CASH"})
+const paymentMethod=ref(openingStockOption)
 
 // Additional (non-base) units of measure. The base unit is the "Measurement Unit"
 // dropdown above with conversion_factor = 1. Each extra row converts to the base
@@ -354,7 +358,7 @@ const onSubmit= ()=>{
             valuationMethod.value='WAVG';
             standardCost.value=null;
             // tax_config.value = {id: 1, name:'Tax Exclusive', value: 'TAX_EXCLUSIVE'};
-            paymentMethod.value={id:1, name: "Cash", value:"CASH"};
+            paymentMethod.value=openingStockOption;
 
 
 
@@ -1048,7 +1052,8 @@ onMounted(() => {
                         </span>
                     </div>
 
-                     <div class="field col-12 md:col-6" >
+                     <!-- an edit is a stock count correction, not a purchase -->
+                     <div class="field col-12 md:col-6" v-if="!isEdit">
                         <span class="p-float-label">
                             <Dropdown id="instCity" :options="paymentMethodOptions" v-model="paymentMethod" @blur="onInputBlur(paymentMethod, 'paymentMethod')" :class="{ 'p-invalid': formError?.paymentMethod }" optionLabel="name"></Dropdown>
                             <label for="instCity">Payment Method</label>

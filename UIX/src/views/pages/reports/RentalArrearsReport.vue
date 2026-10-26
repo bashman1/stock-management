@@ -74,7 +74,7 @@ onMounted(() => {
             </template>
         </Toolbar>
 
-        <DataTable
+        <DataTable scrollable scrollHeight="65vh"
         :value="buildings?.data"
         :paginator="true"
         stripedRows

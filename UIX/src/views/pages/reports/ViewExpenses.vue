@@ -13,7 +13,7 @@ const toDate = ref(null);
 const fmtDate = (d) => {
     if (!d) return null;
     const dt = new Date(d);
-    return isNaN(dt.getTime()) ? null : dt.toISOString().slice(0, 10);
+    return isNaN(dt.getTime()) ? null : commonService.toApiDate(dt);
 };
 
 const totalAmount = computed(() => (expenses.value || []).reduce((s, e) => s + (Number(e.amount) || 0), 0));
@@ -87,7 +87,7 @@ onMounted(() => {
                 </template>
             </Toolbar>
 
-            <DataTable :value="expenses" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id"
+            <DataTable scrollable scrollHeight="65vh" :value="expenses" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id"
                 :rowHover="true" responsiveLayout="scroll">
                 <Column header="Date">
                     <template #body="{ data }">{{ fmtDate(data.expense_date) }}</template>

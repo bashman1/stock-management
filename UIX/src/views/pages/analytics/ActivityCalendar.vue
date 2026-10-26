@@ -132,8 +132,8 @@ const deleteEvent = () => {
 
 onMounted(() => {
     const now = new Date();
-    window.from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-    window.to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+    window.from = commonService.toApiDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    window.to = commonService.toApiDate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
     loadFeed();
 });
 </script>

@@ -31,32 +31,43 @@ class AnalyticsController extends Controller
         $from = $this->dateOr($request->from, date('Y-m-d', strtotime('-29 days')));
         $to = $this->dateOr($request->to, date('Y-m-d'));
 
-        $gfs = $this->getControlAcctByCode('GFS'); // COGS account for this branch
+        // control accounts of the branch being viewed (not the user's own branch)
+        $branchRow = \App\Models\Branch::where(['id' => $branch, 'institution_id' => $inst])->first();
+        if (!isset($branchRow)) {
+            return $this->genericResponse(false, 'Branch not found', 404, null, 'getAnalytics', $request);
+        }
+        $acct = fn ($cd) => $this->resolveControlAccount($cd, $inst, $branchRow->code)?->acct_no ?? '';
+        $gfs = $acct('GFS'); // cost of goods sold
+        $rin = $acct('RIN'); // returns inwards, a reduction of revenue
 
-        // ---- KPI aggregates from the GL (reversal_flag='N', within range) ----
-        $glWhere = "H.institution_id = $inst AND H.branch_id = $branch AND H.reversal_flag = 'N'
+        // Natural-sign amounts: credits are income, debits are expense. Summing raw
+        // tran_amount added both sides together.
+        $signed = "CASE WHEN (A.acct_type IN ('ASSET', 'EXPENSE')) = (H.dr_cr_ind = 'Dr') THEN H.tran_amount ELSE -H.tran_amount END";
+        $glWhere = "H.institution_id = $inst AND H.branch_id = $branch AND COALESCE(H.reversal_flag, 'N') = 'N'
             AND H.transaction_date::date BETWEEN '$from' AND '$to'";
+        $glFrom = "FROM gl_histories H JOIN gl_accounts A ON A.acct_no = H.acct_no WHERE $glWhere";
         $kpi = DB::select("SELECT
-            (SELECT COALESCE(SUM(H.tran_amount),0) FROM gl_histories H JOIN gl_accounts A ON A.acct_no=H.acct_no WHERE A.acct_type='INCOME' AND $glWhere) AS revenue,
-            (SELECT COALESCE(SUM(H.tran_amount),0) FROM gl_histories H WHERE H.acct_no='$gfs' AND $glWhere) AS cogs,
-            (SELECT COALESCE(SUM(H.tran_amount),0) FROM gl_histories H JOIN gl_accounts A ON A.acct_no=H.acct_no WHERE A.acct_type='EXPENSE' AND $glWhere) AS total_expense,
+            (SELECT COALESCE(SUM(CASE WHEN A.acct_type = 'INCOME' THEN $signed WHEN H.acct_no = '$rin' THEN -($signed) ELSE 0 END), 0) $glFrom) AS revenue,
+            (SELECT COALESCE(SUM(CASE WHEN H.acct_no = '$gfs' THEN $signed ELSE 0 END), 0) $glFrom) AS cogs,
+            (SELECT COALESCE(SUM(CASE WHEN A.acct_type = 'EXPENSE' AND H.acct_no NOT IN ('$gfs', '$rin') THEN $signed ELSE 0 END), 0) $glFrom) AS operating_expenses,
             (SELECT COUNT(id) FROM orders WHERE status='Active' AND institution_id=$inst AND branch_id=$branch AND tran_date::date BETWEEN '$from' AND '$to') AS orders_count,
             (SELECT COALESCE(SUM(remaining_quantity*unit_cost),0) FROM inventory_cost_layers WHERE branch_id=$branch AND status='Active' AND remaining_quantity>0) AS inventory_value,
             (SELECT COALESCE(SUM(amount-amount_paid),0) FROM customer_receivables WHERE status='Active' AND institution_id=$inst AND branch_id=$branch) AS receivables,
             (SELECT COALESCE(SUM(amount-amount_paid),0) FROM payables WHERE status='Active' AND institution_id=$inst AND branch_id=$branch) AS payables,
-            (SELECT COUNT(id) FROM stocks WHERE branch_id=$branch AND institution_id=$inst AND COALESCE(min_quantity,0)>0 AND quantity <= min_quantity) AS low_stock,
+            (SELECT COUNT(S.id) FROM stocks S JOIN products P ON P.id = S.product_id WHERE S.branch_id=$branch AND S.institution_id=$inst
+                AND P.status = 'Active' AND P.nature = 'STOCK' AND COALESCE(S.min_quantity,0)>0 AND S.quantity <= S.min_quantity) AS low_stock,
             (SELECT COUNT(id) FROM members WHERE status='Active' AND institution_id=$inst AND branch_id=$branch) AS customers
         ")[0];
 
         $revenue = (float) $kpi->revenue;
         $cogs = (float) $kpi->cogs;
-        $totalExpense = (float) $kpi->total_expense;
+        $operatingExpenses = (float) $kpi->operating_expenses;
         $kpis = [
             'revenue' => $revenue,
             'cogs' => $cogs,
             'gross_profit' => $revenue - $cogs,
-            'operating_expenses' => $totalExpense - $cogs,
-            'net_profit' => $revenue - $totalExpense,
+            'operating_expenses' => $operatingExpenses,
+            'net_profit' => $revenue - $cogs - $operatingExpenses,
             'inventory_value' => (float) $kpi->inventory_value,
             'receivables' => (float) $kpi->receivables,
             'payables' => (float) $kpi->payables,
@@ -69,34 +80,33 @@ class AnalyticsController extends Controller
         $days = (strtotime($to) - strtotime($from)) / 86400;
         $grain = $days <= 62 ? 'day' : 'month';
         $series = DB::select("SELECT to_char(date_trunc('$grain', H.transaction_date), 'YYYY-MM-DD') AS bucket,
-            COALESCE(SUM(CASE WHEN A.acct_type='INCOME' THEN H.tran_amount ELSE 0 END),0) AS revenue,
-            COALESCE(SUM(CASE WHEN H.acct_no='$gfs' THEN H.tran_amount ELSE 0 END),0) AS cogs,
-            COALESCE(SUM(CASE WHEN A.acct_type='EXPENSE' AND H.acct_no<>'$gfs' THEN H.tran_amount ELSE 0 END),0) AS expenses
-            FROM gl_histories H JOIN gl_accounts A ON A.acct_no=H.acct_no
-            WHERE $glWhere GROUP BY 1 ORDER BY 1");
+            COALESCE(SUM(CASE WHEN A.acct_type = 'INCOME' THEN $signed WHEN H.acct_no = '$rin' THEN -($signed) ELSE 0 END), 0) AS revenue,
+            COALESCE(SUM(CASE WHEN H.acct_no = '$gfs' THEN $signed ELSE 0 END), 0) AS cogs,
+            COALESCE(SUM(CASE WHEN A.acct_type = 'EXPENSE' AND H.acct_no NOT IN ('$gfs', '$rin') THEN $signed ELSE 0 END), 0) AS expenses
+            $glFrom GROUP BY 1 ORDER BY 1");
 
-        // ---- Top products by revenue (order_items in range) ----
-        $topProducts = DB::select("SELECT P.name, SUM(I.qty*I.selling_price) AS revenue, SUM(COALESCE(I.base_qty,I.qty)) AS qty
-            FROM order_items I JOIN orders O ON O.id=I.order_id JOIN products P ON P.id=I.product_id
-            WHERE O.status='Active' AND O.institution_id=$inst AND O.branch_id=$branch AND O.tran_date::date BETWEEN '$from' AND '$to'
-            GROUP BY P.name ORDER BY revenue DESC LIMIT 8");
+        // ---- Top products / categories by revenue (sale lines in range) ----
+        // older lines have no selling_price; price them like the dashboard does
+        $price = $this->saleLinePriceSql();
+        $linesFrom = "FROM order_items O JOIN orders Q ON Q.id = O.order_id " . $this->saleLineJoins() . "
+            JOIN products P ON P.id = O.product_id";
+        $linesWhere = "WHERE O.status = 'Active' AND Q.status = 'Active' AND Q.institution_id = $inst AND Q.branch_id = $branch
+            AND Q.tran_date::date BETWEEN '$from' AND '$to'";
+        $topProducts = DB::select("SELECT P.name, ROUND(CAST(SUM(O.qty * $price) AS NUMERIC), 2) AS revenue, SUM(COALESCE(O.base_qty, O.qty)) AS qty
+            $linesFrom $linesWhere GROUP BY P.name ORDER BY revenue DESC LIMIT 8");
 
-        // ---- Sales by category ----
-        $byCategory = DB::select("SELECT COALESCE(C.name,'Uncategorised') AS category, SUM(I.qty*I.selling_price) AS revenue
-            FROM order_items I JOIN orders O ON O.id=I.order_id JOIN products P ON P.id=I.product_id
-            LEFT JOIN product_categories C ON C.id=P.category_id
-            WHERE O.status='Active' AND O.institution_id=$inst AND O.branch_id=$branch AND O.tran_date::date BETWEEN '$from' AND '$to'
-            GROUP BY 1 ORDER BY revenue DESC LIMIT 8");
+        $byCategory = DB::select("SELECT COALESCE(C.name, 'Uncategorised') AS category, ROUND(CAST(SUM(O.qty * $price) AS NUMERIC), 2) AS revenue
+            $linesFrom LEFT JOIN product_categories C ON C.id = P.category_id $linesWhere GROUP BY 1 ORDER BY revenue DESC LIMIT 8");
 
-        // ---- Expense breakdown by GL account ----
-        $expenseBreakdown = DB::select("SELECT A.description AS account, SUM(H.tran_amount) AS amount
-            FROM gl_histories H JOIN gl_accounts A ON A.acct_no=H.acct_no
-            WHERE A.acct_type='EXPENSE' AND $glWhere GROUP BY A.description ORDER BY amount DESC LIMIT 8");
+        // ---- Operating expense breakdown (cost of sales is its own KPI) ----
+        $expenseBreakdown = DB::select("SELECT A.description AS account, ROUND(CAST(SUM($signed) AS NUMERIC), 2) AS amount
+            $glFrom AND A.acct_type = 'EXPENSE' AND H.acct_no NOT IN ('$gfs', '$rin')
+            GROUP BY A.description HAVING ABS(SUM($signed)) >= 0.005 ORDER BY amount DESC LIMIT 8");
 
         // ---- Activity volume (counts per type in range) ----
         $volume = DB::select("SELECT
-            (SELECT COUNT(id) FROM orders WHERE institution_id=$inst AND branch_id=$branch AND tran_date::date BETWEEN '$from' AND '$to') AS sales,
-            (SELECT COUNT(id) FROM stock_histories WHERE institution_id=$inst AND branch_id=$branch AND stock_date::date BETWEEN '$from' AND '$to') AS purchases,
+            (SELECT COUNT(id) FROM orders WHERE status='Active' AND institution_id=$inst AND branch_id=$branch AND tran_date::date BETWEEN '$from' AND '$to') AS sales,
+            (SELECT COUNT(id) FROM stock_histories WHERE institution_id=$inst AND branch_id=$branch AND source_type IN ('OPENING', 'RESTOCK') AND stock_date::date BETWEEN '$from' AND '$to') AS purchases,
             (SELECT COUNT(id) FROM expenses WHERE institution_id=$inst AND branch_id=$branch AND expense_date::date BETWEEN '$from' AND '$to') AS expenses,
             (SELECT COUNT(id) FROM journal_entries WHERE institution_id=$inst AND branch_id=$branch AND journal_date::date BETWEEN '$from' AND '$to') AS journals,
             (SELECT COUNT(id) FROM production_orders WHERE institution_id=$inst AND branch_id=$branch AND created_on::date BETWEEN '$from' AND '$to') AS production,

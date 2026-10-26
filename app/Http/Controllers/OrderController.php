@@ -15,6 +15,8 @@ use App\Models\GlHistory;
 use App\Models\Institution;
 use App\Models\TempSale;
 use App\Models\Transaction;
+use App\Models\CustomerReceivable;
+use App\Models\InventoryMovement;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
@@ -75,7 +77,9 @@ class OrderController extends Controller
         $order->amount_paid =  (float) $request->amountPaid;
         $order->user_id = $userData->id;
         $order->customer_id = $request->customerId;
-        $order->tran_date = $request->tranDate;
+        // the POS sends a UTC timestamp; store the sale in business-local time
+        $saleDate = $this->businessDate($request->tranDate ?? null);
+        $order->tran_date = $saleDate;
         $order->status = $request->status;
         $order->customer_id = $request->customer_id;
         $order->address = $request->address;
@@ -185,8 +189,8 @@ class OrderController extends Controller
             "dr_cr_ind" => "DR/CR",
             "tran_amount" => $request->total,
             "reversal_flag" => 'N',
-            "tran_date" => isset($request->tranDate) ? $request->tranDate : now(),
-            "tran_cd" => 'STI',
+            "tran_date" => $saleDate,
+            "tran_cd" => 'STO',
             "tran_id" => $this->generateUuid(),
             "status" => 'Active',
             "institution_id" => $userData->institution_id,
@@ -204,24 +208,6 @@ class OrderController extends Controller
         ];
 
         $postTran = $this->postTransaction($tran);
-        $creditRequest = (object)[
-            "acct_no" => $sgl,
-            "acct_type" => $stock->acct_type,
-            "tran_amt" => ($postTran->tran_amount ?? 0) - $totalVATPayable,
-            "reversal_flag" => 'N',
-            "description" => $postTran->description ?? '',
-            "transaction_date" => $postTran->tran_date ?? now(),
-            "contra_acct_no" => $cgl,
-            "contra_acct_type" => $cash->acct_type,
-            "tran_type" => 'STOCK IN',
-            "tran_cd" => 'STO',
-            "tran_id" => $postTran->tran_id ?? null,
-            "institution_id" => $userData->institution_id,
-            "branch_id" => $userData->branch_id,
-            "created_by" => $userData->id,
-            "status" => 'Active',
-        ];
-
         $debitRequest = (object)[
             "acct_no" => $cgl,
             "acct_type" => $cash->acct_type,
@@ -676,107 +662,114 @@ class OrderController extends Controller
 
     public function deleteOrder(Request $request)
     {
+        $userData = Auth::user();
         DB::beginTransaction();
-        $order = Order::find($request->id);
-        if (!isset($order)) {
-            return $this->genericResponse(false, "Order not found", 400, $order, "deleteOrder", $request->id);
-        }
-        // idempotency: never reverse an already-reversed order (prevents cascade)
-        if ($order->status === "Deleted") {
-            DB::rollBack();
-            return $this->genericResponse(false, "Order has already been reversed", 400, $order, "deleteOrder", $request->id);
-        }
-        $order->status = "Deleted";
-        $order->updated_by = Auth::user()->id;
-        $order->updated_on = now();
-        $order->save();
+        try {
+            $order = Order::find($request->id);
+            if (!isset($order) || ($userData->institution_id !== null && $order->institution_id != $userData->institution_id)) {
+                DB::rollBack();
+                return $this->genericResponse(false, "Order not found", 400, null, "deleteOrder", $request->id);
+            }
+            // idempotency: never reverse an already-reversed order (prevents cascade)
+            if ($order->status === "Deleted") {
+                DB::rollBack();
+                return $this->genericResponse(false, "Order has already been reversed", 400, $order, "deleteOrder", $request->id);
+            }
 
+            $orderTransaction = Transaction::where(['ext_ref' => $order->ref_no, 'institution_id' => $order->institution_id])->first();
+            if (!isset($orderTransaction)) {
+                DB::rollBack();
+                return $this->genericResponse(false, "Transaction not found", 400, null, "deleteOrder", $request->id);
+            }
 
-        // updating the transactions
-        $orderTransaction = Transaction::where(['ext_ref' => $order->ref_no])->first();
+            $order->status = "Deleted";
+            $order->updated_by = $userData->id;
+            $order->updated_on = now();
+            $order->save();
 
-        if (!isset($orderTransaction)) {
-            return $this->genericResponse(false, "Transaction not found", 400, $orderTransaction, "deleteOrder", $request->id);
-        }
-
-        if (isset($orderTransaction)) {
             $orderTransaction->status = "Deleted";
             $orderTransaction->reversal_flag = "Y";
             $orderTransaction->reversal_reason = "Order deleted";
-            $orderTransaction->reversed_by = Auth::user()->id;
+            $orderTransaction->reversed_by = $userData->id;
             $orderTransaction->reversed_on = now();
-            $orderTransaction->updated_by = Auth::user()->id;
+            $orderTransaction->updated_by = $userData->id;
             $orderTransaction->updated_on = now();
             $orderTransaction->save();
-        }
 
-        // Reverse the GL effect of this transaction's LIVE entries (flag-and-exclude):
-        // undo each posting's impact on gl_balances using the account's TRUE acct_type
-        // (looked up from gl_accounts, since gl_histories has no acct_type), then mark
-        // the row reversed. No opposite history rows are created, so re-deletes cannot
-        // cascade and the wrong-direction acct_type bug is avoided.
-        $glRows = GlHistory::where(['tran_id' => $orderTransaction->tran_id, 'reversal_flag' => 'N'])->get();
-        foreach ($glRows as $item) {
-            $glAccount = GlAccounts::where('acct_no', $item->acct_no)->first();
-            $acctType = $glAccount?->acct_type;
-            $balance = GlBalances::where('acct_no', $item->acct_no)->first();
-            if (isset($balance)) {
-                $isDebitNormal = ($acctType == 'ASSET' || $acctType == 'EXPENSE');
-                $amt = (float) $item->tran_amount;
-                // apply the OPPOSITE of the original posting's effect
-                if ($item->dr_cr_ind == 'Dr') {
-                    $balance->balance = $isDebitNormal ? $balance->balance - $amt : $balance->balance + $amt;
-                } else { // original was a credit
-                    $balance->balance = $isDebitNormal ? $balance->balance + $amt : $balance->balance - $amt;
+            $branch = Branch::find($order->branch_id);
+            $invAcct = $this->resolveControlAccount('STI', $order->institution_id, $branch->code);
+
+            // Reverse every live posting of the sale (cash/AR, revenue, VAT, COGS,
+            // inventory) and note how much inventory value the GL gets back.
+            $glRows = $this->reverseGlTran($orderTransaction->tran_id, $userData->id);
+            $inventoryBackInGl = 0;
+            foreach ($glRows as $row) {
+                if ($invAcct && $row->acct_no === $invAcct->acct_no) {
+                    $inventoryBackInGl += $row->dr_cr_ind === 'Cr' ? (float) $row->tran_amount : -(float) $row->tran_amount;
                 }
-                $balance->updated_on = now();
-                $balance->save();
             }
 
-            $item->status = "Deleted";
-            $item->reversal_flag = "Y";
-            $item->updated_by = Auth::user()->id;
-            $item->updated_on = now();
-            $item->save();
-        }
+            // a deleted credit sale is no longer owed by the customer
+            CustomerReceivable::where(['tran_id' => $order->tran_id, 'institution_id' => $order->institution_id])
+                ->where('status', '!=', 'Deleted')
+                ->update(['status' => 'Deleted', 'updated_by' => $userData->id, 'updated_on' => now()]);
 
-
-        // updating the receivable in case of credit sales
-
-
-        // updating the order items
-        $orderItems = OrderItem::where(['order_id' => $request->id])->get();
-        foreach ($orderItems as $item) {
-            $item->status = "Deleted";
-            $item->updated_by = Auth::user()->id;
-            // $item->updated_by = optional(auth()->user())->id;
-            // $item->updated_by = auth()->user()->id;
-            $item->updated_on = now();
-            $item->save();
-
-            // updating the stock
-            $stock = stock::where(['product_id' => $item->product_id, 'branch_id' => $order->branch_id])->first();
-            if (isset($stock)) {
-                // restore in base units (fall back to qty for pre-migration rows)
-                $restoreQty = ($item->base_qty ?? $item->qty);
-                $stock->quantity = $stock->quantity + $restoreQty;
-                $stock->save();
-                $this->adjustWarehouseStock($item->product_id, $order->branch_id, $restoreQty);
+            $orderItems = OrderItem::where(['order_id' => $order->id])->get();
+            foreach ($orderItems as $item) {
+                $item->status = "Deleted";
+                $item->updated_by = $userData->id;
+                $item->updated_on = now();
+                $item->save();
             }
-        }
 
-        // restore the cost layers this sale consumed (exact issued cost per product,
-        // covering both direct STOCK items and bundle components)
-        $outMovements = \App\Models\InventoryMovement::where([
-            'tran_id' => $orderTransaction->tran_id, 'direction' => 'OUT',
-        ])->get();
-        foreach ($outMovements as $mv) {
-            $unit = (float) $mv->quantity > 0 ? (float) $mv->total_cost / (float) $mv->quantity : (float) $mv->unit_cost;
-            $this->receiveStock($mv->product_id, $order->branch_id, (float) $mv->quantity, $unit, 'RETURN', $order->ref_no, now(), Auth::user(), $orderTransaction->tran_id);
-        }
+            // Put the stock back. Sales made through the cost-layer engine logged OUT
+            // movements: return exactly those quantities (bundle components included)
+            // at the cost they left with. Older sales have no movements, so return each
+            // stock line at today's cost.
+            $outMovements = InventoryMovement::where(['tran_id' => $orderTransaction->tran_id, 'direction' => 'OUT'])->get();
+            $returns = [];
+            if ($outMovements->count() > 0) {
+                foreach ($outMovements as $mv) {
+                    $unit = (float) $mv->quantity > 0 ? (float) $mv->total_cost / (float) $mv->quantity : (float) $mv->unit_cost;
+                    $returns[] = [$mv->product_id, (float) $mv->quantity, $unit];
+                }
+            } else {
+                foreach ($orderItems as $item) {
+                    $product = Product::find($item->product_id);
+                    if (($product->nature ?? 'STOCK') !== 'STOCK') {
+                        continue;
+                    }
+                    $stock = stock::where(['product_id' => $item->product_id, 'branch_id' => $order->branch_id])->first();
+                    // base_qty is null on pre-migration rows, where qty was in the base unit
+                    $returns[] = [$item->product_id, (float) ($item->base_qty ?? $item->qty), (float) ($stock->purchase_price ?? 0)];
+                }
+            }
 
-        DB::commit();
-        return $this->genericResponse(true, "Sale reversed successfully", 200, $order, "deleteOrder", $request->id);
+            $layerValueBack = 0;
+            foreach ($returns as [$productId, $qty, $unit]) {
+                $stock = stock::where(['product_id' => $productId, 'branch_id' => $order->branch_id])->first();
+                if (isset($stock)) {
+                    $stock->quantity = (float) $stock->quantity + $qty;
+                    $stock->save();
+                    $this->adjustWarehouseStock($productId, $order->branch_id, $qty);
+                }
+                $this->receiveStock($productId, $order->branch_id, $qty, $unit, 'RETURN', $order->ref_no, now(), $userData, $orderTransaction->tran_id);
+                $layerValueBack += $qty * $unit;
+            }
+
+            // Older sales costed COGS differently from today's layers: post the gap so
+            // the Inventories account still equals the value of stock on hand.
+            $this->postInventoryAdjustment((object) [
+                'id' => $userData->id, 'institution_id' => $order->institution_id, 'branch_id' => $order->branch_id,
+            ], $branch, $layerValueBack - $inventoryBackInGl, $orderTransaction->tran_id,
+                "Inventory cost difference on deleting sale $order->receipt_no");
+
+            DB::commit();
+            return $this->genericResponse(true, "Sale reversed successfully", 200, $order, "deleteOrder", $request->id);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->genericResponse(false, $th->getMessage(), 500, null, "deleteOrder", $request->id);
+        }
     }
 
 

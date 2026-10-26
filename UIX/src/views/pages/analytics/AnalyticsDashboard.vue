@@ -69,7 +69,8 @@ const buildKpiCards = () => {
 
 const computeRange = () => {
     const now = new Date();
-    const iso = (d) => d.toISOString().slice(0, 10);
+    // local calendar day: toISOString() is UTC, a day early for East Africa
+    const iso = (d) => commonService.toApiDate(d);
     if (period.value === 'custom') {
         return { from: from.value ? iso(new Date(from.value)) : null, to: to.value ? iso(new Date(to.value)) : null };
     }

@@ -13,7 +13,7 @@ const form = reactive({ asset: null, toBranch: null, toLocation: null, reason: n
 const formError = reactive({});
 
 const validateField = (v, k) => { formError[k] = commonService.validateFormField(v); };
-const fmtDate = (d) => { if (!d) return null; const dt = new Date(d); return isNaN(dt.getTime()) ? null : dt.toISOString().slice(0, 10); };
+const fmtDate = (d) => { if (!d) return null; const dt = new Date(d); return isNaN(dt.getTime()) ? null : commonService.toApiDate(dt); };
 
 const getAssets = () => commonService.genericRequest('get-fixed-assets', 'post', true, {}).then((r) => { if (r.status) assets.value = r.data; });
 const getBranches = () => commonService.genericRequest('get-branches', 'post', true, {}).then((r) => { if (r.status) branches.value = r.data?.data ?? r.data; });
