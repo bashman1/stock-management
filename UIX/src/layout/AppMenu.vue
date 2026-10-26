@@ -322,6 +322,7 @@ const adminConfig = [
             { label: 'Create Business', permission: 'CanCreateInstitution', to: '/create-institution', icon: 'pi-plus' },
             { label: 'View Businesses', permission: 'CanViewInstitution', to: '/view-institutions', icon: 'pi-list' },
             { label: 'Approve Businesses', permission: 'ApproveInstitution', to: '/approve-business', icon: 'pi-check-circle' },
+            { label: 'Accounting Health', permission: 'ManageAccountingHealth', to: '/accounting-health', icon: 'pi-heart' },
             { label: 'Create Branch', permission: 'CanCreateBranch', to: '/create-branch', icon: 'pi-sitemap' },
             { label: 'View Branches', permission: 'ViewBranches', to: '/view-branches', icon: 'pi-share-alt' }
         ]

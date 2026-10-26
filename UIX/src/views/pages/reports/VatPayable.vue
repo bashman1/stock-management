@@ -51,7 +51,7 @@ const getVatPayableReport=()=>{
                         <Button label="Export" icon="pi pi-upload" class="p-button-help" @click="exportCSV($event)" />
                     </template> -->
                 </Toolbar>
-                <DataTable :value="productsReport" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id"
+                <DataTable scrollable scrollHeight="65vh" :value="productsReport" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id"
                 :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
                 <Column field="name" header="Date" style="min-width: 10rem">
                     <template #body="{ data }">

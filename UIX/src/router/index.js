@@ -176,6 +176,14 @@ const router = createRouter({
                     },
                 },
                 {
+                    path: '/accounting-health',
+                    name: 'AccountingHealth',
+                    component: () => import('@/views/pages/institution-management/AccountingHealth.vue'),
+                    meta: {
+                        requiresAuth: true, // This route requires authentication
+                    },
+                },
+                {
                     path: '/create-user',
                     name: 'CreateUser',
                     component: () => import('@/views/pages/user-management/CreateUser.vue'),

@@ -175,79 +175,23 @@ class ProductController extends Controller
 
         if (!isset($isEdit) && $nature === 'STOCK') {
             $branch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
-            $cl = null;
-            if (isset($request->payment_method)) {
-                if ($request->payment_method == "BANK") {
-                    $cl = CntrlParameter::where(['param_cd' => 'CGL', 'institution_id' => $userData->institution_id])->first();
-                } elseif ($request->payment_method == "CREDIT") {
-                    $cl = CntrlParameter::where(['param_cd' => 'AP', 'institution_id' => $userData->institution_id])->first();
-                } else {
-                    $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
-                }
-            } else {
-                $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
-            }
 
-            $sti = CntrlParameter::where(['param_cd' => 'STI', 'institution_id' => $userData->institution_id])->first();
+            // Opening stock: Dr Inventories / Cr the payment account. Stock entered
+            // with a new product is the owner's stock unless it was paid for now, so
+            // a missing method means OPENING (Opening Balance Equity), not cash.
+            $paymentMethod = $request->payment_method ?? 'OPENING';
+            $postTran = $this->postStockReceipt($userData, $branch, $product,
+                (float) $request->quantity * (float) $request->purchase_price, $paymentMethod,
+                $request->date, 'Create Product', $refNo);
 
-            $pia = CntrlParameter::where(['param_cd' => 'PIA', 'institution_id' => $userData->institution_id])->first();
-            $pil = CntrlParameter::where(['param_cd' => 'PIL', 'institution_id' => $userData->institution_id])->first();
-            $pp = CntrlParameter::where(['param_cd' => 'PP', 'institution_id' => $userData->institution_id])->first();
-
-
-            $cgl = str_replace('***', $branch->code, $cl->param_value);
-            $cash = GlAccounts::where('acct_no', $cgl)->first();
-
-            $sgl = str_replace('***', $branch->code, $sti->param_value);
-            $stock = GlAccounts::where('acct_no', $sgl)->first();
-
-            $piagl = str_replace('***', $branch->code, $pia->param_value);
-            $pAss = GlAccounts::where('acct_no', $piagl)->first();
-
-            $pilgl = str_replace('***', $branch->code, $pil->param_value);
-            $pLia = GlAccounts::where('acct_no', $pilgl)->first();
-
-            $ppgl = str_replace('***', $branch->code, $pp->param_value);
-            $ppE = GlAccounts::where('acct_no', $ppgl)->first();
-
-            $tran = (array) [
-                "acct_no" => $sgl,
-                "acct_type" => $stock->acct_type,
-                "contra_acct_no" => $cgl,
-                "contra_acct_type" => $cash->acct_type,
-                "description" => "Create product:- $product->name on " . date('Y-m-d H:i:s'),
-                "dr_cr_ind" => "DR/CR",
-                "tran_amount" => $request->quantity * $request->purchase_price,
-                "reversal_flag" => 'N',
-                "tran_date" => isset($request->date) ? $request->date : now(),
-                "tran_cd" => 'STI',
-                "tran_id" => $this->generateUuid(),
-                "status" => 'Active',
-                "institution_id" => $userData->institution_id,
-                "branch_id" => $userData->branch_id,
-                "created_by" => $userData->id,
-                "created_on" => now(),
-                // "member_id"=>null,
-                "product_id" => $product->id,
-                // "stock_id"=>null,
-                "ext_ref" => $refNo,
-                "tran" => "Create Product",
-                // "reversal_reason"=>null,
-                // "reversed_by"=>null,
-                // "reversed_on"=>null,
-            ];
-
-            $postTran = $this->postTransaction($tran);
-
-
-            if ($request->payment_method == "CREDIT") {
+            if ($paymentMethod == "CREDIT" && $postTran) {
                 $payable = (array)[
                     "ref_no" => $refNo,
-                    "tran_id" => $postTran?->tran_id,
+                    "tran_id" => $postTran->tran_id,
                     "supplier_id" => $request->supplier_id,
                     "product_id" => $product->id,
                     "manufacturer_id" => $request->manufacturer_id,
-                    "amount" => (float) $postTran?->tran_amount,
+                    "amount" => (float) $postTran->tran_amount,
                     "amount_paid" => 0,
                     "status" => "Active",
                     "institution_id" => $userData->institution_id,
@@ -257,73 +201,6 @@ class ProductController extends Controller
                 ];
                 $this->createPayable($payable);
             }
-
-            $debitRequest = (object) [
-                "acct_no" => $sgl,
-                "acct_type" => $stock->acct_type,
-                "tran_amt" => $postTran?->tran_amount,
-                "reversal_flag" => 'N',
-                "description" => $postTran?->description,
-                "transaction_date" => $postTran?->tran_date,
-                "contra_acct_no" => $cgl,
-                "contra_acct_type" => $cash->acct_type,
-                "tran_type" => 'STOCK IN',
-                "tran_cd" => 'STI',
-                "tran_id" => $postTran?->tran_id,
-                "institution_id" => $userData->institution_id,
-                "branch_id" => $userData->branch_id,
-                "created_by" => $userData->id,
-                "status" => 'Active',
-            ];
-
-            $creditRequest = (object) [
-                "acct_no" => $cgl,
-                "acct_type" => $cash->acct_type,
-                "tran_amt" => $postTran?->tran_amount,
-                "reversal_flag" => 'N',
-                "description" => $postTran?->description,
-                "transaction_date" => $postTran?->tran_date,
-                "contra_acct_no" => $sgl,
-                "contra_acct_type" => $stock->acct_type,
-                "tran_type" => 'STOCK IN',
-                "tran_cd" => 'STI',
-                "tran_id" => $postTran?->tran_id,
-                "institution_id" => $userData->institution_id,
-                "branch_id" => $userData->branch_id,
-                "created_by" => $userData->id,
-                "status" => 'Active',
-            ];
-            $debitStock = $this->postGlDR($debitRequest);
-            $creditCash = $this->postGlCR($creditRequest);
-
-            $debitPurchases = $debitRequest;
-            $creditPurchases = $creditRequest;
-
-            $debitPurchases->acct_no = $piagl;
-            $debitPurchases->acct_type = $pAss->acct_type;
-            $debitPurchases->contra_acct_no = $pilgl;
-            $debitPurchases->contra_acct_type = $pLia->acct_type;
-
-            $creditPurchases->acct_no = $pilgl;
-            $creditPurchases->acct_type = $pLia->acct_type;
-            $creditPurchases->contra_acct_no = $piagl;
-            $creditPurchases->contra_acct_type = $pAss->acct_type;
-
-            $onDebitPurchases = $this->postGlDR($debitPurchases);
-            $onCreditPurchases = $this->postGlCR($creditPurchases);
-
-            $passageDebitRequest = $debitRequest;
-            $passageDebitRequest->acct_no = $ppgl;
-            $passageDebitRequest->tran_amt = 0;
-            $passageDebitRequest->acct_type = $ppE->acct_type;
-
-            $cashCreditRequest = $creditRequest;
-            $cashCreditRequest->contra_acct_no = $ppgl;
-            $cashCreditRequest->tran_amt = 0;
-            $cashCreditRequest->contra_acct_type = $ppE->acct_type;
-
-            $onDebitPassage = $this->postGlDR($passageDebitRequest);
-            $onCreditPassCash = $this->postGlCR($cashCreditRequest);
 
 
             if (isset($institutionData->is_tax_enabled) && $institutionData->efris_enabled) {
@@ -351,13 +228,6 @@ class ProductController extends Controller
         if (!isset($isEdit) && $nature === 'NON_STOCK'
             && (float) $request->quantity > 0 && (float) $request->purchase_price > 0) {
             $this->postNonStockPurchase($request, $product, $refNo, $userData);
-        }
-
-        // Editing a stock product re-values the original stock-in posting.
-        if (isset($isEdit) && $nature === 'STOCK') {
-            $updateTransaction = $this->updateTransaction($product->id, $userData->institution_id, $userData->branch_id, $request->quantity * $request->purchase_price);
-            $payable = $this->updatePayable($updateTransaction->tran_id, (float) $updateTransaction->tran_amount);
-            $updateHistory = $this->updateGlHistory($updateTransaction->tran_id, (float)$updateTransaction->tran_amount, (float)$updateTransaction->old_amount);
         }
 
         $stock = null;
@@ -407,6 +277,7 @@ class ProductController extends Controller
 
         // warehouse ledger follows the change in branch stock quantity
         $oldQty = (float) ($stock->quantity ?? 0);
+        $oldUnitCost = (float) ($stock->purchase_price ?? 0);
         $stock->purchase_price =  (float) $request->purchase_price;
         $stock->selling_price = (float) $request->selling_price;
         $stock->discount = $request->discount;
@@ -415,7 +286,7 @@ class ProductController extends Controller
         $stock->min_quantity = (float) $request->min_quantity;
         $stock->max_quantity = (float) $request->max_quantity;
         $stock->institution_id = $userData->institution_id;
-        $stock->stock_date = $request->date;
+        $stock->stock_date = $this->businessDate($request->date);
         $stock->manufactured_date = $request->manufactured_date;
         $stock->expiry_date = $request->expiry_date;
         $stock->payment_method = $request->payment_method;
@@ -427,10 +298,20 @@ class ProductController extends Controller
         // mirror the delta into the branch's default warehouse sub-ledger
         $this->adjustWarehouseStock($product->id, $userData->branch_id, ((float) $request->quantity) - $oldQty);
 
+        // An edit is a stock count / cost correction, never a rewrite of the original
+        // receipt: move the cost layers to the new quantity and cost and post the
+        // value difference against Stock Adjustment. (The old code overwrote the
+        // opening posting with on-hand qty x price, ignoring everything sold since.)
+        if (isset($isEdit) && $nature === 'STOCK') {
+            $editBranch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
+            $this->adjustStockToCount($product, $editBranch, $userData, (float) $request->quantity,
+                (float) $request->purchase_price, $oldUnitCost, $product->ref_no);
+        }
+
         // record opening stock as a cost layer (new STOCK products only); $branch and
         // $postTran were resolved in the GL block above under the same condition
         if (!isset($isEdit) && $nature === 'STOCK' && (float) $request->quantity > 0) {
-            $variance = $this->receiveStock($product->id, $userData->branch_id, (float) $request->quantity, (float) $request->purchase_price, 'OPENING', $refNo, $request->date, $userData, $postTran->tran_id ?? null);
+            $variance = $this->receiveStock($product->id, $userData->branch_id, (float) $request->quantity, (float) $request->purchase_price, 'OPENING', $refNo, $this->businessDate($request->date), $userData, $postTran->tran_id ?? null);
             $this->postStandardVariance($userData, $branch, $variance, $postTran->tran_id ?? null, "Opening stock variance for $product->name");
         }
 
@@ -452,7 +333,7 @@ class ProductController extends Controller
             $h->min_quantity = (float) $request->min_quantity;
             $h->max_quantity = (float) $request->max_quantity;
             $h->institution_id = $userData->institution_id;
-            $h->stock_date = $request->date;
+            $h->stock_date = $this->businessDate($request->date);
             $h->manufactured_date = $request->manufactured_date;
             $h->expiry_date = $request->expiry_date;
             $h->payment_method = $request->payment_method;
@@ -536,13 +417,14 @@ class ProductController extends Controller
 
         $amount = (float) $request->quantity * (float) $request->purchase_price;
         $tranId = $this->generateUuid();
+        $date = $this->businessDate($request->date ?? null);
         $desc = "Purchase non-stock item:- $product->name on " . date('Y-m-d H:i:s');
 
         $this->postTransaction((array) [
             'acct_no' => $expGl, 'acct_type' => $exp->acct_type,
             'contra_acct_no' => $cgl, 'contra_acct_type' => $cash->acct_type,
             'description' => $desc, 'dr_cr_ind' => 'DR/CR', 'tran_amount' => $amount,
-            'reversal_flag' => 'N', 'tran_date' => $request->date ?? now(), 'tran_cd' => 'EXP',
+            'reversal_flag' => 'N', 'tran_date' => $date, 'tran_cd' => 'EXP',
             'tran_id' => $tranId, 'status' => 'Active', 'institution_id' => $userData->institution_id,
             'branch_id' => $userData->branch_id, 'created_by' => $userData->id, 'created_on' => now(),
             'product_id' => $product->id, 'ext_ref' => $refNo, 'tran' => 'Purchase Non-stock',
@@ -550,7 +432,7 @@ class ProductController extends Controller
 
         $base = [
             'tran_amt' => $amount, 'reversal_flag' => 'N', 'description' => $desc,
-            'transaction_date' => $request->date ?? now(), 'tran_type' => 'PURCHASE', 'tran_cd' => 'EXP',
+            'transaction_date' => $date, 'tran_type' => 'PURCHASE', 'tran_cd' => 'EXP',
             'tran_id' => $tranId, 'institution_id' => $userData->institution_id, 'branch_id' => $userData->branch_id,
             'created_by' => $userData->id, 'status' => 'Active',
         ];
@@ -700,7 +582,7 @@ class ProductController extends Controller
         $stocks->quantity = (float) $stocks->quantity + $request->quantity;
         $stocks->min_quantity = (float) $request->min_quantity;
         $stocks->max_quantity = (float) $request->max_quantity;
-        $stocks->stock_date = $request->date;
+        $stocks->stock_date = $this->businessDate($request->date);
         $stocks->manufactured_date = $request->manufactured_date;
         $stocks->expiry_date = $request->expiry_date;
         $stocks->branch_id = $userData->branch_id;
@@ -722,7 +604,7 @@ class ProductController extends Controller
         $history->min_quantity = (float) $request->min_quantity;
         $history->max_quantity = (float) $request->max_quantity;
         $history->institution_id = $userData->institution_id;
-        $history->stock_date = $request->date;
+        $history->stock_date = $this->businessDate($request->date);
         $history->manufactured_date = $request->manufactured_date;
         $history->expiry_date = $request->expiry_date;
         $history->branch_id = $userData->branch_id;
@@ -734,139 +616,29 @@ class ProductController extends Controller
 
         $branch = Branch::where(['id' => $userData->branch_id, 'institution_id' => $userData->institution_id])->first();
 
-        $cl = null;
-        if (isset($request->payment_method)) {
-            if ($request->payment_method == "BANK") {
-                $cl = CntrlParameter::where(['param_cd' => 'CGL', 'institution_id' => $userData->institution_id])->first();
-            } elseif ($request->payment_method == "CREDIT") {
-                $cl = CntrlParameter::where(['param_cd' => 'AP', 'institution_id' => $userData->institution_id])->first();
-            } else {
-                $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
-            }
-        } else {
-            $cl = CntrlParameter::where(['param_cd' => 'CL', 'institution_id' => $userData->institution_id])->first();
+        // Dr Inventories / Cr cash, bank or payables
+        $paymentMethod = $request->payment_method ?? 'CASH';
+        $postTran = $this->postStockReceipt($userData, $branch, $product,
+            (float) $request->quantity * (float) $request->purchase_price, $paymentMethod,
+            $request->date, 'Stocking Product', $product->ref_no, $stocks->id);
+
+        // a credit restock is owed to the supplier like a credit opening purchase
+        if ($paymentMethod == "CREDIT" && $postTran) {
+            $this->createPayable((array)[
+                "ref_no" => $product->ref_no,
+                "tran_id" => $postTran->tran_id,
+                "supplier_id" => $request->supplier_id ?? $product->supplier_id,
+                "product_id" => $product->id,
+                "manufacturer_id" => $request->manufacturer_id ?? $product->manufacturer_id,
+                "amount" => (float) $postTran->tran_amount,
+                "amount_paid" => 0,
+                "status" => "Active",
+                "institution_id" => $userData->institution_id,
+                "branch_id" => $userData->branch_id,
+                "created_by" => $userData->id,
+                "created_on" => Carbon::now(),
+            ]);
         }
-
-        //            $cl = CntrlParameter::where(['param_cd'=>'CL', 'institution_id'=>$userData->institution_id])->first();
-        $sti = CntrlParameter::where(['param_cd' => 'STI', 'institution_id' => $userData->institution_id])->first();
-
-        $pia = CntrlParameter::where(['param_cd' => 'PIA', 'institution_id' => $userData->institution_id])->first();
-        $pil = CntrlParameter::where(['param_cd' => 'PIL', 'institution_id' => $userData->institution_id])->first();
-        $pp = CntrlParameter::where(['param_cd' => 'PP', 'institution_id' => $userData->institution_id])->first();
-
-
-        $cgl = str_replace('***', $branch->code, $cl->param_value);
-        $cash = GlAccounts::where('acct_no', $cgl)->first();
-
-        $sgl = str_replace('***', $branch->code, $sti->param_value);
-
-        log::info("**************** SGL ****************=>>   " . $sgl);
-        $stock = GlAccounts::where('acct_no', $sgl)->first();
-
-        $piagl = str_replace('***', $branch->code, $pia->param_value);
-        $pAss = GlAccounts::where('acct_no', $piagl)->first();
-
-        $pilgl = str_replace('***', $branch->code, $pil->param_value);
-        $pLia = GlAccounts::where('acct_no', $pilgl)->first();
-
-        $ppgl = str_replace('***', $branch->code, $pp->param_value);
-        $ppE = GlAccounts::where('acct_no', $ppgl)->first();
-
-        $tran = (array)[
-            "acct_no" => $sgl,
-            "acct_type" => $stock->acct_type,
-            "contra_acct_no" => $cgl,
-            "contra_acct_type" => $cash->acct_type,
-            "description" => "Create product:- $product->name on " . date('Y-m-d H:i:s'),
-            "dr_cr_ind" => "DR/CR",
-            "tran_amount" => $request->quantity * $request->purchase_price,
-            "reversal_flag" => 'N',
-            "tran_date" => isset($request->date) ? $request->date : now(),
-            "tran_cd" => 'STI',
-            "tran_id" => $this->generateUuid(),
-            "status" => 'Active',
-            "institution_id" => $userData->institution_id,
-            "branch_id" => $userData->branch_id,
-            "created_by" => $userData->id,
-            "created_on" => now(),
-            // "member_id"=>null,
-            "product_id" => $product->id,
-            "stock_id" => $stocks->id,
-            "ext_ref" => $product->ref_no,
-            "tran" => "Stocking Product",
-            // "reversal_reason"=>null,
-            // "reversed_by"=>null,
-            // "reversed_on"=>null,
-        ];
-
-        $postTran = $this->postTransaction($tran);
-
-        $debitRequest = (object)[
-            "acct_no" => $sgl,
-            "acct_type" => $stock->acct_type,
-            "tran_amt" => $postTran?->tran_amount,
-            "reversal_flag" => 'N',
-            "description" => $postTran?->description,
-            "transaction_date" => $postTran?->tran_date,
-            "contra_acct_no" => $cgl,
-            "contra_acct_type" => $cash->acct_type,
-            "tran_type" => 'STOCK IN',
-            "tran_cd" => 'STI',
-            "tran_id" => $postTran?->tran_id,
-            "institution_id" => $userData->institution_id,
-            "branch_id" => $userData->branch_id,
-            "created_by" => $userData->id,
-            "status" => 'Active',
-        ];
-
-        $creditRequest = (object)[
-            "acct_no" => $cgl,
-            "acct_type" => $cash->acct_type,
-            "tran_amt" => $postTran?->tran_amount,
-            "reversal_flag" => 'N',
-            "description" => $postTran?->description,
-            "transaction_date" => $postTran?->tran_date,
-            "contra_acct_no" => $sgl,
-            "contra_acct_type" => $stock->acct_type,
-            "tran_type" => 'STOCK IN',
-            "tran_cd" => 'STI',
-            "tran_id" => $postTran?->tran_id,
-            "institution_id" => $userData->institution_id,
-            "branch_id" => $userData->branch_id,
-            "created_by" => $userData->id,
-            "status" => 'Active',
-        ];
-        $debitStock = $this->postGlDR($debitRequest);
-        $creditCash = $this->postGlCR($creditRequest);
-
-        $debitPurchases = $debitRequest;
-        $creditPurchases = $creditRequest;
-
-        $debitPurchases->acct_no = $piagl;
-        $debitPurchases->acct_type = $pAss->acct_type;
-        $debitPurchases->contra_acct_no = $pilgl;
-        $debitPurchases->contra_acct_type = $pLia->acct_type;
-
-        $creditPurchases->acct_no = $pilgl;
-        $creditPurchases->acct_type = $pLia->acct_type;
-        $creditPurchases->contra_acct_no = $piagl;
-        $creditPurchases->contra_acct_type = $pAss->acct_type;
-
-        $onDebitPurchases = $this->postGlDR($debitPurchases);
-        $onCreditPurchases = $this->postGlCR($creditPurchases);
-
-        $passageDebitRequest = $debitRequest;
-        $passageDebitRequest->acct_no = $ppgl;
-        $passageDebitRequest->tran_amt = 0;
-        $passageDebitRequest->acct_type = $ppE->acct_type;
-
-        $cashCreditRequest = $creditRequest;
-        $cashCreditRequest->contra_acct_no = $ppgl;
-        $cashCreditRequest->tran_amt = 0;
-        $cashCreditRequest->contra_acct_type = $ppE->acct_type;
-
-        $onDebitPassage = $this->postGlDR($passageDebitRequest);
-        $onCreditPassCash = $this->postGlCR($cashCreditRequest);
 
 
         if (isset($institutionData->is_tax_enabled) && $institutionData->efris_enabled) {
@@ -879,7 +651,7 @@ class ProductController extends Controller
 
         // record the purchase as a cost layer (valuation engine); carry inventory at
         // standard for STANDARD-cost products via the returned variance
-        $variance = $this->receiveStock($request->productId, $userData->branch_id, (float) $request->quantity, (float) $request->purchase_price, 'PURCHASE', $product->ref_no, $request->date, $userData, $postTran?->tran_id);
+        $variance = $this->receiveStock($request->productId, $userData->branch_id, (float) $request->quantity, (float) $request->purchase_price, 'PURCHASE', $product->ref_no, $this->businessDate($request->date), $userData, $postTran?->tran_id);
         $this->postStandardVariance($userData, $branch, $variance, $postTran?->tran_id, "Purchase price variance for $product->name");
 
         DB::commit();
@@ -1169,7 +941,8 @@ class ProductController extends Controller
                 'secondary_measurement_unit_id' => null,
                 'secondary_weight' => null,
                 'secondary_price' => null,
-                'payment_method' => 'CASH',
+                // uploaded stock is opening stock, not a cash purchase
+                'payment_method' => 'OPENING',
                 // single base unit so bulk-approved products get a product_units row
                 'units' => [[
                     'measurement_unit_id' => $newProduct->measurement_unit_id,
@@ -1212,22 +985,13 @@ class ProductController extends Controller
     public function archiveProduct(Request $request)
     {
         try {
-            DB::beginTransaction();
+            $userData = $this->getUserLogin();
             $message = '';
 
-            $product = Product::find($request->productId);
+            $product = Product::where(['id' => $request->productId, 'institution_id' => $userData->institution_id])->first();
             if (!isset($product)) {
                 return $this->genericResponse(false, 'Product not found', 404, [], "archiveProduct", $request);
             }
-
-            $transaction = Transaction::where('product_id', $product->id)->first();
-            if (!isset($transaction)) {
-                return $this->genericResponse(false, 'Product not found', 404, [], "archiveProduct", $request);
-            }
-
-            $glHistory = GlHistory::where('tran_id', $transaction->tran_id)->get();
-
-
 
             if ($request->status == 'Archived') {
                 $message = 'product archived successfully';
@@ -1235,17 +999,17 @@ class ProductController extends Controller
                 $message = 'product activated successfully';
             }
 
-            $transaction->update([
-                'status' => $request->status,
-                'updated_on' => Carbon::now(),
-            ]);
-
+            // Archiving only hides the product. Its stock, cost layers and postings
+            // stay as they are, so inventory on the balance sheet still matches stock
+            // on hand; write stock off with a stock adjustment if it is really gone.
+            // (This used to require, and re-status, the opening purchase transaction,
+            // so products without one could not be archived.)
             $product->status = $request->status;
+            $product->updated_by = $userData->id;
+            $product->updated_on = Carbon::now();
             $product->save();
-            DB::commit();
             return $this->genericResponse(true, $message, 201, $product, "archiveProduct", $request);
         } catch (\Throwable $th) {
-            DB::rollBack();
             return $this->genericResponse(false, $th->getMessage(), 500, $th, "archiveProduct", $request);
         }
     }

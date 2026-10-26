@@ -39,7 +39,7 @@ class CollectionController extends Controller
         $collect = new TempCollection();
         $collect->amount = $request->amount;
         $collect->description = $request->description;
-        $collect->tran_date = $request->tran_date;
+        $collect->tran_date = $this->businessDate($request->tran_date);
         $collect->member_number = $request->member_number;
         $collect->member_id = $request->member_id;
         $collect->institution_id = $userData->institution_id;

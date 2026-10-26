@@ -778,6 +778,30 @@ class Controller extends BaseController
             $newSti->save();
         }
 
+        // parameters added after the original chart (by migration for existing
+        // businesses); new businesses need them too or sales/adjustments fail
+        $laterParams = [
+            'SVR' => ['4240001', 'Service Revenue SVR'],
+            'DGS' => ['4250001', 'Digital Sales DGS'],
+            'PPV' => ['5270001', 'Purchase Price Variance'],
+            'SAD' => ['5280001', 'Stock Adjustment'],
+            'OBE' => ['3109001', 'Opening Balance Equity'],
+        ];
+        foreach ($laterParams as $cd => [$glNo, $name]) {
+            $hasAcct = DB::table('gl_accounts')->where('institution_id', $instId)->where('gl_no', $glNo)->exists();
+            $hasParam = CntrlParameter::where(['institution_id' => $instId, 'param_cd' => $cd])->exists();
+            if ($hasAcct && !$hasParam) {
+                $param = new CntrlParameter();
+                $param->param_name = $name;
+                $param->param_cd = $cd;
+                $param->param_value = "$instId-***-000-000-$glNo";
+                $param->institution_id = $instId;
+                $param->status = 'Active';
+                $param->created_on = now();
+                $param->save();
+            }
+        }
+
         DB::commit();
         return true;
     }
@@ -827,7 +851,8 @@ class Controller extends BaseController
         DB::beginTransaction();
         $glBalances = $this->resolveGlBalance($data->acct_no);
 
-        if ($data->acct_type == 'ASSET' || $data->acct_type == 'EXPENSE') {
+        // sign by the account's own type: callers have passed the wrong type before
+        if ($this->isDebitNormal($glBalances->acct_type ?? $data->acct_type)) {
             $glBalances->balance = $glBalances->balance + $data->tran_amt;
         } else {
             $glBalances->balance = $glBalances->balance - $data->tran_amt;
@@ -870,7 +895,7 @@ class Controller extends BaseController
         DB::beginTransaction();
         $glBalances = $this->resolveGlBalance($data->acct_no);
 
-        if ($data->acct_type == 'ASSET' || $data->acct_type == 'EXPENSE') {
+        if ($this->isDebitNormal($glBalances->acct_type ?? $data->acct_type)) {
             $glBalances->balance = $glBalances->balance - $data->tran_amt;
         } else {
             $glBalances->balance = $glBalances->balance + $data->tran_amt;
@@ -1109,15 +1134,7 @@ class Controller extends BaseController
             // Loop through the history and calculate the balance
             foreach ($glHistory as $value) {
                 $tranAmount = (float) $value->tran_amount;
-                if (($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') && $value->dr_cr_ind == 'Dr') {
-                    $sum += $tranAmount;
-                } elseif (($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') && $value->dr_cr_ind == 'Cr') {
-                    $sum -= $tranAmount;
-                } elseif (($value->acct_type == 'LIABILITY' || $value->acct_type == 'INCOME') && $value->dr_cr_ind == 'Cr') {
-                    $sum += $tranAmount;
-                } elseif (($value->acct_type == 'LIABILITY' || $value->acct_type == 'INCOME') && $value->dr_cr_ind == 'Dr') {
-                    $sum -= $tranAmount;
-                }
+                $sum += (($value->dr_cr_ind == 'Dr') === $this->isDebitNormal($value->acct_type)) ? $tranAmount : -$tranAmount;
             }
 
             return $sum;
@@ -1153,15 +1170,8 @@ class Controller extends BaseController
         $sum = 0;
         foreach ($glHistory as $value) {
             $tranAmount = (float) $value->tran_amount;
-            if (($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') && $value->dr_cr_ind == 'Dr') {
-                $sum += $tranAmount;
-            } elseif (($value->acct_type == 'ASSET' || $value->acct_type == 'EXPENSE') && $value->dr_cr_ind == 'Cr') {
-                $sum -= $tranAmount;
-            } elseif (($value->acct_type == 'LIABILITY' || $value->acct_type == 'INCOME') && $value->dr_cr_ind == 'Cr') {
-                $sum += $tranAmount;
-            } elseif (($value->acct_type == 'LIABILITY' || $value->acct_type == 'INCOME') && $value->dr_cr_ind == 'Dr') {
-                $sum -= $tranAmount;
-            }
+            // CAPITAL/EQUITY are credit-normal too; they used to fall through and count as 0
+            $sum += (($value->dr_cr_ind == 'Dr') === $this->isDebitNormal($value->acct_type)) ? $tranAmount : -$tranAmount;
         }
 
         return $sum;
@@ -1388,158 +1398,183 @@ class Controller extends BaseController
     }
 
 
-    // public function updateTransaction($description, $institutionId, $branchId){
-    //     $transaction = Transaction::where(['description'=> $description, 'institution_id'=>$institutionId, 'branch_id'=>$branchId])->first();
-    //     $transaction->amount=100;
-    //     $transaction->updated_on=Carbon::now();
-    //     $transaction->save();
-    // }
+    // --- Stock accounting helpers ---------------------------------------------
+    // Every inventory movement posts one balanced journal and moves the cost-layer
+    // sub-ledger with it, so the Inventories account (STI) always equals the value
+    // of the open cost layers. History is never rewritten: corrections are new
+    // postings (against Stock Adjustment) or flag-and-exclude reversals.
 
-    public function updateTransaction(int $productId, int $institutionId, int $branchId, float $amount)
+    /**
+     * ASSET and EXPENSE accounts are debit-normal; LIABILITY, INCOME, CAPITAL and
+     * EQUITY are credit-normal.
+     */
+    protected function isDebitNormal($acctType): bool
     {
+        return $acctType === 'ASSET' || $acctType === 'EXPENSE';
+    }
+
+    /**
+     * Turn a date sent by the client into app-timezone wall time. Browsers send
+     * UTC ISO strings, so a date picked as 21 Sep arrives as "2026-09-20T21:00Z"
+     * and was stored on the wrong day. Values without an offset are already local.
+     */
+    protected function businessDate($value)
+    {
+        if (empty($value)) {
+            return now();
+        }
         try {
-            $transaction = Transaction::where('product_id', $productId)
-                ->where('institution_id', $institutionId)
-                ->where('branch_id', $branchId)
-                ->first();
-
-            if (!$transaction) {
-                Log::error("Transaction not found for description: {$productId}, institutionId: {$institutionId}, branchId: {$branchId}");
-                throw new \Exception("Transaction not found for description: {$productId}, institutionId: {$institutionId}, branchId: {$branchId}");
-            }
-
-            $oldAmount = $transaction->tran_amount;
-            $transaction->update([
-                'tran_amount' => $amount,
-                'updated_on' => Carbon::now(),
-            ]);
-
-            $transaction['old_amount'] = $oldAmount;
-            return $transaction;
-        } catch (\Exception $e) {
-            Log::error("Failed to update transaction: " . $e->getMessage());
-            throw new \Exception("An error occurred while updating the transaction.", 500, $e);
+            return Carbon::parse($value)->setTimezone(config('app.timezone'));
+        } catch (\Throwable $th) {
+            return now();
         }
     }
 
-
-    public function updatePayable(string $tranId, float $amount)
+    /**
+     * Control-parameter code credited when stock is received: opening stock is the
+     * owner's contribution (Opening Balance Equity), otherwise the payment account.
+     */
+    protected function stockReceiptCreditParam($method): string
     {
-        $payable = Payable::where('tran_id', $tranId)->first();
-        if ($payable) {
-            $payable->update([
-                'amount' => $amount,
-                'updated_on' => Carbon::now(),
-            ]);
-        }
-        return $payable;
+        return strtoupper((string) $method) === 'OPENING' ? 'OBE' : $this->payParamCode($method);
     }
 
-
-    public function updateGlHistory(string $tranId, float $amount, float $old_amount)
+    /**
+     * Post a stock receipt (Dr Inventories / Cr cash, bank, payables or opening
+     * balance equity) with its transaction record. Returns the Transaction, or
+     * null when the amount is zero.
+     */
+    protected function postStockReceipt($userData, $branch, $product, float $amount, $paymentMethod, $date, string $label, $extRef, $stockId = null)
     {
-        $glHistory = GlHistory::where(['tran_id' => $tranId, 'tran_amount' => $old_amount])->get();
+        if (abs($amount) < 0.005) {
+            return null;
+        }
+        $inv = $this->resolveControlAccount('STI', $userData->institution_id, $branch->code);
+        $pay = $this->resolveControlAccount($this->stockReceiptCreditParam($paymentMethod), $userData->institution_id, $branch->code);
+        if (!$inv || !$pay) {
+            throw new \RuntimeException("Inventory or payment control account is missing for branch $branch->code.");
+        }
 
-        // Log::info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        // Log::info($glHistory);
-        // Log::info($tranId);
-        // Log::info($amount);
+        $date = $this->businessDate($date);
+        $desc = "$label:- $product->name on " . date('Y-m-d H:i:s');
+        $tran = $this->postTransaction([
+            'acct_no' => $inv->acct_no, 'acct_type' => $inv->acct_type,
+            'contra_acct_no' => $pay->acct_no, 'contra_acct_type' => $pay->acct_type,
+            'description' => $desc, 'dr_cr_ind' => 'DR/CR', 'tran_amount' => $amount,
+            'reversal_flag' => 'N', 'tran_date' => $date, 'tran_cd' => 'STI', 'tran_id' => $this->generateUuid(),
+            'status' => 'Active', 'institution_id' => $userData->institution_id, 'branch_id' => $userData->branch_id,
+            'created_by' => $userData->id, 'created_on' => now(),
+            'product_id' => $product->id, 'stock_id' => $stockId, 'ext_ref' => $extRef, 'tran' => $label,
+        ]);
 
+        $base = [
+            'tran_amt' => $amount, 'reversal_flag' => 'N', 'description' => $desc, 'transaction_date' => $date,
+            'tran_type' => 'STOCK IN', 'tran_cd' => 'STI', 'tran_id' => $tran->tran_id,
+            'institution_id' => $userData->institution_id, 'branch_id' => $userData->branch_id,
+            'created_by' => $userData->id, 'status' => 'Active',
+        ];
+        $this->postGlDR((object) array_merge($base, [
+            'acct_no' => $inv->acct_no, 'acct_type' => $inv->acct_type,
+            'contra_acct_no' => $pay->acct_no, 'contra_acct_type' => $pay->acct_type,
+        ]));
+        $this->postGlCR((object) array_merge($base, [
+            'acct_no' => $pay->acct_no, 'acct_type' => $pay->acct_type,
+            'contra_acct_no' => $inv->acct_no, 'contra_acct_type' => $inv->acct_type,
+        ]));
 
-        foreach ($glHistory as $value) {
-            $glBalance = GlBalances::where('acct_no', $value['acct_no'])->first();
+        return $tran;
+    }
 
-
-            if ($value['dr_cr_ind'] == 'Dr') {
-                if ($glBalance->acct_type == 'ASSET' || $glBalance->acct_type == 'EXPENSE') {
-                    $glBalance->update([
-                        "balance" => $glBalance->balance - $value['tran_amount'],
-                        'updated_on' => Carbon::now(),
-                    ]);
-
-                    $glBalance->update([
-                        "balance" => $glBalance->balance + $amount,
-                        'updated_on' => Carbon::now(),
-                    ]);
-                } else {
-                    $glBalance->update([
-                        "balance" => $glBalance->balance + $value['tran_amount'],
-                        'updated_on' => Carbon::now(),
-                    ]);
-
-                    $glBalance->update([
-                        "balance" => $glBalance->balance - $amount,
-                        'updated_on' => Carbon::now(),
-                    ]);
-                }
-            } else {
-                if ($glBalance->acct_type == 'ASSET' || $glBalance->acct_type == 'EXPENSE') {
-                    $glBalance->update([
-                        "balance" => $glBalance->balance + $value['tran_amount'],
-                        'updated_on' => Carbon::now(),
-                    ]);
-                    $glBalance->update([
-                        "balance" => $glBalance->balance - $amount,
-                        'updated_on' => Carbon::now(),
-                    ]);
-                } else {
-                    $glBalance->update([
-                        "balance" => $glBalance->balance - $value['tran_amount'],
-                        'updated_on' => Carbon::now(),
-                    ]);
-
-                    $glBalance->update([
-                        "balance" => $glBalance->balance + $amount,
-                        'updated_on' => Carbon::now(),
-                    ]);
-                }
-            }
-            $editHistory = GlHistory::find($value['id']);
-            $editHistory->update([
-                'tran_amount' => $amount
-            ]);
+    /**
+     * Post a change in inventory value against Stock Adjustment: a positive amount
+     * raises Inventories (Dr STI / Cr SAD), a negative one writes it down.
+     */
+    protected function postInventoryAdjustment($userData, $branch, float $amount, $tranId, string $desc): void
+    {
+        if (abs($amount) < 0.005) {
+            return;
+        }
+        $inv = $this->resolveControlAccount('STI', $userData->institution_id, $branch->code);
+        $sad = $this->resolveControlAccount('SAD', $userData->institution_id, $branch->code);
+        if (!$inv || !$sad) {
+            throw new \RuntimeException("Inventory or stock adjustment control account is missing for branch $branch->code.");
+        }
+        if ($amount > 0) {
+            $this->postJournal($inv->acct_no, $inv->acct_type, $sad->acct_no, $sad->acct_type, $amount, $tranId, $desc, now(), $userData, 'ADJ', 'Stock Adjustment');
+        } else {
+            $this->postJournal($sad->acct_no, $sad->acct_type, $inv->acct_no, $inv->acct_type, abs($amount), $tranId, $desc, now(), $userData, 'ADJ', 'Stock Adjustment');
         }
     }
 
+    /**
+     * Bring a product's on-hand stock to an edited quantity and unit cost: revalue
+     * the open cost layers when the cost changed, then receive or issue the
+     * quantity difference. Each value change is posted against Stock Adjustment.
+     * Callers own stocks.quantity; this keeps the layers and the GL in step with it.
+     */
+    protected function adjustStockToCount($product, $branch, $userData, float $newQty, float $newUnitCost, float $oldUnitCost, $ref): void
+    {
+        $method = $product->valuation_method ?? 'WAVG';
+        $tranId = $this->generateUuid();
+        $layers = \App\Models\InventoryCostLayer::where([
+            'product_id' => $product->id, 'branch_id' => $branch->id, 'status' => 'Active',
+        ])->where('remaining_quantity', '>', 0)->get();
+        $layerQty = 0;
+        $layerVal = 0;
+        foreach ($layers as $l) {
+            $layerQty += (float) $l->remaining_quantity;
+            $layerVal += (float) $l->remaining_quantity * (float) $l->unit_cost;
+        }
 
-    //     public function updateGlHistory(int $tranId, float $amount): void
-    // {
-    //     try {
-    //         DB::transaction(function () use ($tranId, $amount) {
-    //             $glHistories = GlHistory::where('tran_id', $tranId)->get();
+        // a changed cost re-values what is on hand (standard-cost layers stay at standard)
+        if ($method !== 'STANDARD' && $layerQty > 0 && abs($newUnitCost - $oldUnitCost) > 0.0001) {
+            foreach ($layers as $l) {
+                $l->unit_cost = $newUnitCost;
+                $l->updated_on = now();
+                $l->save();
+            }
+            $this->postInventoryAdjustment($userData, $branch, $newUnitCost * $layerQty - $layerVal, $tranId,
+                "Revalue $product->name to $newUnitCost per unit ($ref)");
+        }
 
-    //             foreach ($glHistories as $history) {
-    //                 $glBalance = GlBalances::where('acct_no', $history->acct_no)->first();
+        $diff = $newQty - $layerQty;
+        if ($diff > 0.000001) {
+            $unit = $method === 'STANDARD' ? (float) ($product->standard_cost ?? 0) : $newUnitCost;
+            $this->receiveStock($product->id, $branch->id, $diff, $newUnitCost, 'ADJUSTMENT', $ref, now(), $userData, $tranId);
+            $this->postInventoryAdjustment($userData, $branch, $unit * $diff, $tranId, "Stock count increase for $product->name ($ref)");
+        } elseif ($diff < -0.000001) {
+            $cost = $this->issueStock($product->id, $branch->id, -$diff, $userData, 'ADJUSTMENT', $ref, $tranId);
+            $this->postInventoryAdjustment($userData, $branch, -$cost, $tranId, "Stock count decrease for $product->name ($ref)");
+        }
+        $this->refreshStockCost($product->id, $branch->id);
+    }
 
-    //                 if (!$glBalance) {
-    //                     throw new \Exception("GL Balance not found for account: {$history->acct_no}");
-    //                 }
-
-    //                 // Determine the sign change based on account type and Dr/Cr indicator
-    //                 $multiplier = ($glBalance->acct_type == 'ASSET' || $glBalance->acct_type == 'EXPENSE') ? 1 : -1;
-    //                 $adjustment = ($history->dr_cr_ind == 'Dr') ? -1 : 1;
-
-    //                 // Compute new balance
-    //                 $newBalance = $glBalance->balance + ($adjustment * $multiplier * -$history->tran_amount);
-    //                 $newBalance += ($adjustment * $multiplier * $amount);
-
-    //                 // Update GL balance in a single query
-    //                 $glBalance->update([
-    //                     'balance' => $newBalance,
-    //                     'updated_on' => Carbon::now(),
-    //                 ]);
-
-    //                 // Update GL history
-    //                 $history->update([
-    //                     'tran_amount' => $amount
-    //                 ]);
-    //             }
-    //         });
-    //     } catch (\Exception $e) {
-    //         Log::error("Failed to update GL History: " . $e->getMessage());
-    //         throw new \Exception("An error occurred while updating GL history.", 500, $e);
-    //     }
-    // }
+    /**
+     * Reverse a posted transaction by flag-and-exclude: undo each live row's effect
+     * on gl_balances (by the account's own type) and mark the row reversed. No
+     * opposite rows are written, so a repeated reversal cannot cascade.
+     * Returns the reversed rows.
+     */
+    protected function reverseGlTran($tranId, $userId)
+    {
+        $rows = GlHistory::where(['tran_id' => $tranId, 'reversal_flag' => 'N'])->get();
+        foreach ($rows as $item) {
+            $balance = GlBalances::where('acct_no', $item->acct_no)->first();
+            if (isset($balance)) {
+                $amt = (float) $item->tran_amount;
+                $sign = ($item->dr_cr_ind == 'Dr') === $this->isDebitNormal($balance->acct_type) ? -1 : 1;
+                $balance->balance = $balance->balance + $sign * $amt;
+                $balance->updated_on = now();
+                $balance->save();
+            }
+            $item->status = 'Deleted';
+            $item->reversal_flag = 'Y';
+            $item->updated_by = $userId;
+            $item->updated_on = now();
+            $item->save();
+        }
+        return $rows;
+    }
 
 
     /**
@@ -1951,6 +1986,10 @@ class Controller extends BaseController
                 $totVal += (float) $l->remaining_quantity * (float) $l->unit_cost;
             }
             $avg = $totRem > 0 ? $totVal / $totRem : 0;
+            // perpetual average: every unit left carries the average too. Leaving
+            // the layers at their own costs while charging the average made the
+            // layer value drift from the Inventories account on every sale.
+            (clone $base)->update(['unit_cost' => $avg, 'updated_on' => now()]);
         }
 
         $layers = $method === 'LIFO'

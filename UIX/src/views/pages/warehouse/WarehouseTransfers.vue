@@ -15,7 +15,7 @@ const form = reactive({ product: null, from: null, fromBin: null, to: null, toBi
 const formError = reactive({});
 
 const validateField = (v, k) => { formError[k] = commonService.validateFormField(v); };
-const fmtDate = (d) => { if (!d) return null; const dt = new Date(d); return isNaN(dt.getTime()) ? null : dt.toISOString().slice(0, 10); };
+const fmtDate = (d) => { if (!d) return null; const dt = new Date(d); return isNaN(dt.getTime()) ? null : commonService.toApiDate(dt); };
 
 const getWarehouses = () => commonService.genericRequest('get-warehouses', 'post', true, {}).then((r) => { if (r.status) warehouses.value = r.data; });
 

@@ -33,7 +33,7 @@ const removeLine = (i) => { if (lines.value.length > 2) lines.value.splice(i, 1)
 const onDebit = (l) => { if (num(l.debit) > 0) l.credit = null; };
 const onCredit = (l) => { if (num(l.credit) > 0) l.debit = null; };
 
-const fmtDate = (d) => { if (!d) return null; const dt = new Date(d); return isNaN(dt.getTime()) ? null : dt.toISOString().slice(0, 10); };
+const fmtDate = (d) => { if (!d) return null; const dt = new Date(d); return isNaN(dt.getTime()) ? null : commonService.toApiDate(dt); };
 const show = (v) => commonService.commaSeparator(v);
 
 const onSubmit = () => {

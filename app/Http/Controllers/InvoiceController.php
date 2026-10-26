@@ -25,7 +25,7 @@ class InvoiceController extends Controller
                 'amount_paid' => $request->amountPaid,
                 'user_id' => $userData->id,
                 'customer_id' => $request->customer_id,
-                'invoice_date' => $request->tranDate,
+                'invoice_date' => $this->businessDate($request->tranDate),
                 'status' => $request->status,
                 'address' => $request->address,
                 'payment_status' => $request->payment_status ?? 'UNPAID',

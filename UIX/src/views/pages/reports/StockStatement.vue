@@ -130,7 +130,7 @@ onMounted(() => {
                 <div class="col-6 md:col-2" v-if="unreconciledCount"><div class="stmt-tile"><span>Not reconciling</span><strong class="out-qty">{{ unreconciledCount }}</strong></div></div>
             </div>
 
-            <DataTable :value="statement" :loading="loading" :paginator="true" :rows="50"
+            <DataTable scrollable scrollHeight="65vh" :value="statement" :loading="loading" :paginator="true" :rows="50"
                 :rowsPerPageOptions="[25, 50, 100, 200]" dataKey="movement_type" size="small" stripedRows
                 class="p-datatable-gridlines" :rowHover="true" responsiveLayout="scroll"
                 rowGroupMode="subheader" groupRowsBy="product_name" sortMode="single" :sortOrder="1"

@@ -35,7 +35,7 @@ const form = reactive({
 const formError = reactive({});
 
 const validateField = (v, k) => { formError[k] = commonService.validateFormField(v); };
-const fmtDate = (d) => { if (!d) return null; const dt = new Date(d); return isNaN(dt.getTime()) ? null : dt.toISOString().slice(0, 10); };
+const fmtDate = (d) => { if (!d) return null; const dt = new Date(d); return isNaN(dt.getTime()) ? null : commonService.toApiDate(dt); };
 
 const fetchAssetAccounts = () => {
     commonService.genericRequest('gl-search', 'post', true, { acct_type: 'ASSET', indicator: 'DR' }).then((r) => {

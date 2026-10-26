@@ -111,7 +111,7 @@ onMounted(() => {
                     </div>
                 </template>
             </Toolbar>
-            <DataTable :value="productsReport" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id" :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
+            <DataTable scrollable scrollHeight="65vh" :value="productsReport" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id" :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
                 <Column header="#" style="width: 3rem; text-align: center;">
                     <template #body="{ index }">
                         {{  index + 1 }}

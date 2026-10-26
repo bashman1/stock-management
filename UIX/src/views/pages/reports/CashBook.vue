@@ -15,7 +15,7 @@ const fmtDate = (d) => {
     if (!d) return null;
     const dt = new Date(d);
     if (isNaN(dt.getTime())) return null;
-    return dt.toISOString().slice(0, 10);
+    return commonService.toApiDate(dt);
 };
 
 const getCashBook = () => {
@@ -122,7 +122,7 @@ onMounted(() => {
                 </div>
             </div>
 
-            <DataTable :value="entries" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id" :rowHover="true" responsiveLayout="scroll">
+            <DataTable scrollable scrollHeight="65vh" :value="entries" :paginator="true" class="p-datatable-gridlines" :rows="20" dataKey="id" :rowHover="true" responsiveLayout="scroll">
                 <ColumnGroup type="header">
                     <Row>
                         <Column header="Date" :rowspan="2" />

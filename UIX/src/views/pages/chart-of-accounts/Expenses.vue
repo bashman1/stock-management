@@ -54,7 +54,7 @@ const onReceiptSelect = (event) => {
 const fmtDate = (d) => {
     if (!d) return null;
     const dt = new Date(d);
-    return isNaN(dt.getTime()) ? null : dt.toISOString().slice(0, 10);
+    return isNaN(dt.getTime()) ? null : commonService.toApiDate(dt);
 };
 
 const onSubmit = () => {

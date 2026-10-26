@@ -90,7 +90,7 @@ const totalItemCount = computed(() =>
                         </div>
                     </template>
                 </Toolbar>
-                <DataTable :value="productsReport" :paginator="true" stripedRows size="small" :rows="20" dataKey="id"
+                <DataTable scrollable scrollHeight="65vh" :value="productsReport" :paginator="true" stripedRows size="small" :rows="20" dataKey="id"
                 :rowHover="true" filterDisplay="menu" responsiveLayout="scroll">
                 <Column field="name" header="Date" style="min-width: 10rem">
                     <template #body="{ data }">

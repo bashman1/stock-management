@@ -21,7 +21,7 @@ class TempSaleController extends Controller
 
         $batch = new SalesBatch();
         $batch->name=$request->name.now();
-        $batch->stock_date=$request->date;
+        $batch->stock_date=$this->businessDate($request->date);
         $batch->created_on=now();
         $batch->status='Pending';
         $batch->save();

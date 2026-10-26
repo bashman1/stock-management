@@ -405,6 +405,7 @@ watch(
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Total Income</span>
                         <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.total_income)}}</div>
+                        <span class="text-500 text-sm">Gross profit + other income</span>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
                         <i class="pi pi-arrow-down-left text-green-500 text-xl"></i>
@@ -422,6 +423,7 @@ watch(
                     <div>
                         <span class="block text-500 font-bold text-xl mb-3">Today Income</span>
                         <div class="text-900 font-bold text-xl">{{commonService.formatMoney(stats?.today_income)}}</div>
+                        <span class="text-500 text-sm">Gross profit + other income</span>
                     </div>
                     <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem">
                         <i class="pi pi-money-bill text-green-500 text-xl"></i>

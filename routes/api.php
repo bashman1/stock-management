@@ -25,6 +25,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ProductTypeController;
 use App\Http\Controllers\ProductGaugeController;
 use App\Http\Controllers\GLBalanceController;
+use App\Http\Controllers\AccountingHealthController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\MtnPaymentsController;
 use App\Http\Controllers\GlAccountsController;
@@ -238,6 +239,12 @@ Route::group(['middleware'=>["auth:api"]], function(){
     Route::post("get-products-report", [ReportController::class, "getInventoryReport"]);
     Route::post("get-sales-report", [ReportController::class,"getSalesReport"]);
     Route::post("get-balance-sheet", [GlAccountsController::class, "getBalanceSheet"]);
+
+    // admin: scan a business's books and apply repairs
+    Route::post("accounting-health/businesses", [AccountingHealthController::class, "getBusinesses"]);
+    Route::post("accounting-health/scan", [AccountingHealthController::class, "scanBusiness"]);
+    Route::post("accounting-health/fix", [AccountingHealthController::class, "applyFixes"]);
+    Route::post("accounting-health/logs", [AccountingHealthController::class, "getFixLogs"]);
     Route::post("get-inventory-product-report", [ReportController::class, "getInventoryHistoryReport"]);
     Route::post("get-sales-product-report", [ReportController::class, "getSalesHistoryReport"]);
     Route::post("get-stock-statement", [ReportController::class, "getStockStatement"]);
