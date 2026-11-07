@@ -762,8 +762,8 @@ class GlAccountsController extends Controller
                 COALESCE(I.selling_price, S.selling_price) AS selling_price,
                 O.ref_no, O.receipt_no, O.tran_id, O.user_id, O.customer_id,
                 P.name, P.product_no, P.ref_no AS product_ref, P.tax_config,
-                COALESCE(I.purchase_price, S.purchase_price) AS purchase_price, N.name AS institution_name, N.is_tax_enabled,
-                COALESCE(I.purchase_price, S.purchase_price) * I.qty AS total_purchases,
+                COALESCE(I.purchase_price, 0) AS purchase_price, N.name AS institution_name, N.is_tax_enabled,
+                COALESCE(I.purchase_price, 0) * I.qty AS total_purchases,
                 COALESCE(Y.name, 'Cash') AS customer_name,
                 -- Calculate the amount
                 COALESCE(I.qty * I.selling_price, I.qty * S.selling_price) AS amount,

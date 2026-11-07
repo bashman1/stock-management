@@ -1861,14 +1861,13 @@ class Controller extends BaseController
     }
 
     /**
-     * Purchase price per sold unit. Lines from before base_qty existed stored the
-     * column default of 0, so fall back to the stock price scaled to the sold unit.
+     * Purchase price per sold unit, as captured on the line at sale time. Never fall
+     * back to stocks.purchase_price: that is today's cost, and using it re-costed old
+     * sales every time the price changed (legacy lines were backfilled instead).
      */
     protected function saleLineCostSql(): string
     {
-        return "(CASE WHEN O.base_qty IS NULL AND COALESCE(O.purchase_price, 0) = 0
-            THEN COALESCE(S.purchase_price * COALESCE(PU.conversion_factor, 1), 0)
-            ELSE COALESCE(O.purchase_price, 0) END)";
+        return "COALESCE(O.purchase_price, 0)";
     }
 
     /**

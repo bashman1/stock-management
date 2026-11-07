@@ -120,7 +120,8 @@ class ReportController extends Controller
         O.institution_id, O.created_on, COALESCE(S.tran_date, O.created_on) AS tran_date,
         S.ref_no, S.receipt_no, S.tran_id,I.name AS institution_name,
         CONCAT(U.first_name,' ',U.last_name,' ', U.other_name) AS user_name,
-        COALESCE(O.purchase_price, K.purchase_price) AS purchase_price,
+        -- the cost frozen on the line at sale time, not today's stock cost
+        COALESCE(O.purchase_price, 0) AS purchase_price,
         COALESCE(O.selling_price, K.selling_price) AS selling_price,
         COALESCE(X.name, M.name) AS measurement_unit FROM order_items O
         INNER JOIN orders S ON S.id = O.order_id
