@@ -353,9 +353,10 @@ class ProductController extends Controller
             $adjustment->created_on = Carbon::now();
             $fillHistory($adjustment, $qtyDelta, 'ADJUSTMENT');
         } elseif (isset($history)) {
-            // quantity unchanged: refresh the prices on the latest movement, but
-            // leave its quantity alone so the ledger keeps its history
-            $history->purchase_price = (float) $request->purchase_price;
+            // quantity unchanged: refresh the selling price on the latest movement, but
+            // leave its quantity and purchase_price alone. That row is a past receipt,
+            // and its cost is what sales before this edit are costed from; the new
+            // cost is carried by stocks and the cost layers (adjustStockToCount above).
             $history->selling_price = (float) $request->selling_price;
             $history->discount = $request->discount;
             $history->updated_by = $userData->id;

@@ -391,9 +391,15 @@ class OrderController extends Controller
                     $this->postGlDR($mkGl($cogsAcctNo, $cogsAcctType, $cost, $invAcctNo, $invAcctType));
                     $this->postGlCR($mkGl($invAcctNo, $invAcctType, $cost, $cogsAcctNo, $cogsAcctType));
                 }
+                // freeze the cost actually booked to COGS on the line, so reports match
+                // the GL and later price changes never re-cost this sale
+                if ($cost > 0 && $chosenQty > 0) {
+                    $items->purchase_price = $cost / $chosenQty;
+                }
             } elseif ($nature === 'BUNDLE') {
                 // a bundle decrements each component's stock; COGS = sum of components
                 $components = ProductComponent::where('bundle_product_id', $product->id)->get();
+                $bundleCost = 0;
                 foreach ($components as $comp) {
                     $compStock = stock::where(['product_id' => $comp->component_product_id, 'branch_id' => $userData->branch_id])->first();
                     if (!isset($compStock)) {
@@ -408,6 +414,10 @@ class OrderController extends Controller
                         $this->postGlDR($mkGl($cogsAcctNo, $cogsAcctType, $compCost, $invAcctNo, $invAcctType));
                         $this->postGlCR($mkGl($invAcctNo, $invAcctType, $compCost, $cogsAcctNo, $cogsAcctType));
                     }
+                    $bundleCost += $compCost;
+                }
+                if ($bundleCost > 0 && $chosenQty > 0) {
+                    $items->purchase_price = $bundleCost / $chosenQty;
                 }
             }
             // NON_STOCK / SERVICE / DIGITAL: revenue only, no stock movement or COGS.
